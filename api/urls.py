@@ -5,6 +5,14 @@ from api import views
 app_name = 'api'
 
 urlpatterns = [
+    # Authentication endpoints
+    url(r'auth/register/$', views.register_user, name='register'),
+    url(r'auth/login/$', views.login_user, name='login'),
+    url(r'auth/logout/$', views.logout_user, name='logout'),
+    url(r'auth/profile/$', views.get_user_profile, name='get_user_profile'),
+    url(r'auth/profile/update/$', views.update_user_profile, name='update_user_profile'),
+    
+    # Existing endpoints
     url(r'questions/$', views.QuestionList.as_view(), name='questions'),
     url(r'questions/(?P<pk>[0-9]+)/$', views.QuestionDetail.as_view(),
         name='question'),
@@ -26,8 +34,7 @@ urlpatterns = [
     url(r'course/(?P<pk>[0-9]+)/$',
         views.GetCourse.as_view(), name='get_course'),
     url(r'quit/(?P<answerpaper_id>\d+)/$', views.QuitQuiz.as_view(),
-        name="quit_quiz"),
-    url(r'login/$', views.login, name='login')
+        name="quit_quiz")
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)

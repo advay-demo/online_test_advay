@@ -1301,10 +1301,17 @@ class ConcurrentUser(models.Model):
 class Profile(models.Model):
     """Profile for a user to store roll number and other details."""
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    roll_number = models.CharField(max_length=20)
-    institute = models.CharField(max_length=128)
-    department = models.CharField(max_length=64)
-    position = models.CharField(max_length=64)
+    roll_number = models.CharField(max_length=20, blank=True, null=True)
+    institute = models.CharField(max_length=128, blank=True, null=True)
+    department = models.CharField(max_length=64, blank=True, null=True)
+    position = models.CharField(max_length=64, blank=True, null=True)
+    bio = models.TextField(blank=True, null=True)
+    phone = models.CharField(max_length=20, blank=True, null=True)
+    city = models.CharField(max_length=255, blank=True, null=True)
+    country = models.CharField(max_length=255, blank=True, null=True)
+    linkedin = models.URLField(max_length=255, blank=True, null=True)
+    github = models.URLField(max_length=255, blank=True, null=True)
+    display_name = models.CharField(max_length=255, blank=True, null=True)
     is_moderator = models.BooleanField(default=False)
     timezone = models.CharField(
         max_length=64,

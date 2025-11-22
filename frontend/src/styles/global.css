@@ -1,0 +1,250 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-1: #0b0b11;
+  --bg-2: #0c0c13;
+  --surface: #111118;
+  --surface-2: #14141c;
+  --muted: rgba(255, 255, 255, 0.52);
+  --soft: rgba(255, 255, 255, 0.78);
+  --grad-1: #7b2ff7;
+  --grad-2: #ff4da6;
+  --grad-3: #ff914d;
+}
+
+@layer base {
+  * {
+    @apply m-0 p-0 box-border;
+  }
+
+  body {
+    @apply min-h-screen;
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 100%);
+    color: #fff;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  input,
+  textarea,
+  select {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff !important;
+    border-radius: 8px;
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    outline: none;
+    border-color: rgba(99, 102, 241, 0.5);
+    background: rgba(255, 255, 255, 0.05) !important;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: rgba(255, 255, 255, 0.3) !important;
+  }
+
+  select option {
+    background: var(--bg-2) !important;
+    color: #fff !important;
+  }
+}
+
+@layer components {
+  .grid-texture {
+    @apply relative;
+  }
+
+  .grid-texture::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size: 48px 48px;
+    opacity: 0.12;
+    mix-blend-mode: overlay;
+  }
+
+  .logo-badge {
+    background: linear-gradient(135deg, var(--grad-1), var(--grad-2));
+    box-shadow: 0 6px 18px rgba(123, 47, 247, 0.12);
+  }
+
+  .btn-grad {
+    background: linear-gradient(90deg, var(--grad-1), var(--grad-2));
+    box-shadow: 0 0 18px rgba(123, 47, 247, 0.2);
+  }
+
+  .btn-primary {
+    background: linear-gradient(90deg, var(--grad-1), var(--grad-2));
+    border-radius: 12px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    transition: transform 0.18s ease;
+  }
+
+  .card:hover {
+    transform: translateY(-2px);
+  }
+
+  .card-strong {
+    background: var(--surface-2);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+  }
+
+  .subtle-accent {
+    border: 1px solid rgba(123, 47, 247, 0.08);
+  }
+
+  .icon-circle {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+  }
+
+  .muted {
+    color: var(--muted);
+  }
+
+  .soft {
+    color: var(--soft);
+  }
+
+  .neon-text {
+    background: linear-gradient(90deg, var(--grad-1), var(--grad-2), var(--grad-3));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Hero Background */
+  .hero-bg {
+    background:
+      radial-gradient(circle at 50% -20%, rgba(123, 47, 247, 0.25), transparent 60%),
+      linear-gradient(to bottom, #0b0b11 0%, #0c0c13 60%, #0b0b11 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-bg::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    background-size: 45px 45px;
+    opacity: 0.25;
+  }
+
+  /* CTA Background */
+  .cta-bg {
+    background:
+      radial-gradient(circle at 80% 160%, rgba(255, 77, 166, 0.18), transparent 70%),
+      linear-gradient(145deg, #0f0f15 0%, #12121a 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cta-bg::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    background-size: 50px 50px;
+    opacity: 0.22;
+  }
+
+  /* Social Button */
+  .social-btn {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.2s;
+  }
+
+  .social-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(99, 102, 241, 0.3);
+  }
+
+  /* Sidebar */
+  .app-sidebar {
+    background: linear-gradient(180deg, #0e0e14 0%, #0b0b11 100%);
+    border-right: 1px solid rgba(255, 255, 255, 0.04);
+  }
+
+  /* Glow Card */
+  .glow-card {
+    background: var(--surface-2);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    transition: 0.25s ease;
+  }
+
+  .glow-card:hover {
+    transform: translateY(-4px);
+  }
+
+  /* Question Button States */
+  .question-btn {
+    background: var(--surface);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    color: var(--soft);
+    transition: all 0.2s;
+  }
+
+  .question-btn:hover {
+    border-color: rgba(123, 47, 247, 0.5);
+    color: white;
+  }
+
+  .question-btn.current {
+    background: #4f46e5;
+    border-color: transparent;
+    color: white;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+  }
+
+  .question-btn.attempted {
+    background: rgba(34, 197, 94, 0.2);
+    border-color: rgba(34, 197, 94, 0.5);
+    color: rgb(134, 239, 172);
+  }
+
+  /* Badge Cards */
+  .badge-cyan {
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(8, 145, 178, 0.05));
+    border: 1px solid rgba(6, 182, 212, 0.2);
+  }
+
+  .badge-orange {
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.1), rgba(234, 88, 12, 0.05));
+    border: 1px solid rgba(249, 115, 22, 0.2);
+  }
+
+  .badge-purple {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(147, 51, 234, 0.05));
+    border: 1px solid rgba(168, 85, 247, 0.2);
+  }
+
+  .badge-blue {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.05));
+    border: 1px solid rgba(59, 130, 246, 0.2);
+  }
+}
