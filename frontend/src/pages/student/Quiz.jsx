@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FaClock, FaCheck, FaArrowRight } from 'react-icons/fa';
 import { AiOutlineWarning } from 'react-icons/ai';
-import QuizSidebar from '../components/layout/QuizSidebar';
+import QuizSidebar from '../../components/layout/QuizSidebar';
 
 const Quiz = () => {
   const [answer, setAnswer] = useState('');
@@ -10,7 +10,7 @@ const Quiz = () => {
   return (
     <div className="flex min-h-screen relative grid-texture">
       <QuizSidebar currentQuestion={1} totalQuestions={11} attemptedQuestions={[5]} />
-      
+
       <main className="flex-1 flex flex-col">
         {/* Top Bar */}
         <header className="px-8 py-4 flex justify-end items-center border-b border-white/6 bg-gradient-to-b from-white/[0.01] to-transparent">
@@ -19,8 +19,8 @@ const Quiz = () => {
               <FaClock className="w-5 h-5 text-indigo-400" />
               <span className="text-md font-mono font-bold">00:29:51</span>
             </div>
-            <Link 
-              to="/submission" 
+            <Link
+              to="/submission"
               className="bg-red-600 text-white text-md px-6 py-2 rounded-lg font-semibold hover:bg-red-700 transition inline-flex items-center"
             >
               Quit Exam
@@ -35,8 +35,8 @@ const Quiz = () => {
             <div className="mb-8">
               <h1 className="text-3xl font-bold">Demo Module</h1>
               <p className="text-gray-400 text-sm mt-1">
-                <Link to="/courses" className="hover:text-white transition">Yaksh Demo Course</Link> / 
-                <Link to="/module" className="hover:text-white transition"> Demo Module</Link> / 
+                <Link to="/courses" className="hover:text-white transition">Yaksh Demo Course</Link> /
+                <Link to="/module" className="hover:text-white transition"> Demo Module</Link> /
                 <span className="text-white"> Quiz</span>
               </p>
             </div>
@@ -44,7 +44,7 @@ const Quiz = () => {
             {/* Question Header */}
             <div className="mb-6">
               <h2 className="text-3xl font-bold mb-4">Find the value of n</h2>
-              
+
               <div className="flex flex-wrap gap-4 mb-4">
                 <div className="text-sm px-4 py-2 rounded-lg bg-blue-500/10 border border-blue-500/30">
                   <span className="muted">Language:</span>
@@ -65,7 +65,7 @@ const Quiz = () => {
             {/* Question Body */}
             <div className="card p-8 mb-6">
               <p className="soft mb-6 text-lg">Write the value of <em>n</em> for the following equation:</p>
-              
+
               <div className="rounded-lg p-8 text-center mb-8 bg-white/[0.02] border border-white/[0.05]">
                 <div className="text-3xl font-serif text-white">
                   3 = <span className="text-4xl font-bold text-indigo-400">n²</span> / <span className="text-2xl">3</span>
@@ -73,8 +73,8 @@ const Quiz = () => {
               </div>
 
               <label className="block text-sm font-semibold mb-2 soft">Enter Integer:</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 className="w-full px-4 py-3 text-lg"
                 placeholder="Enter your answer..."
                 value={answer}

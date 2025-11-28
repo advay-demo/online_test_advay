@@ -8,12 +8,12 @@ import { useAuthStore } from '../store/authStore';
 const Signin = () => {
   const navigate = useNavigate();
   const { login, user, isAuthenticated, isLoading, error, initializeAuth, clearError } = useAuthStore();
-  
+
   const [formData, setFormData] = useState({
     username: '',
     password: '',
   });
-  
+
   const [showPassword, setShowPassword] = useState(false);
   const [formErrors, setFormErrors] = useState({});
 
@@ -32,7 +32,7 @@ const Signin = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    
+
     // Clear field-specific error when user starts typing
     if (formErrors[name]) {
       setFormErrors(prev => ({ ...prev, [name]: null }));
@@ -41,36 +41,36 @@ const Signin = () => {
 
   const validateForm = () => {
     const errors = {};
-    
+
     if (!formData.username.trim()) {
       errors.username = 'Username is required';
     }
-    
+
     if (!formData.password.trim()) {
       errors.password = 'Password is required';
     } else if (formData.password.length < 6) {
       errors.password = 'Password must be at least 6 characters';
     }
-    
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
-    
+
     clearError();
-    
+
     try {
       const result = await login({
         username: formData.username,
         password: formData.password
       });
-      
+
       if (result.success) {
         navigate('/dashboard');
       }
@@ -89,7 +89,7 @@ const Signin = () => {
       {/* Left side (Brand / Illustration) */}
       <div className="hidden lg:flex flex-col justify-center items-center w-1/2 h-screen bg-gradient-to-br from-[#0e0e14] to-[#1a1a2e] text-white relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-radial from-purple-500/15 via-transparent to-transparent"></div>
-        
+
         <div className="relative z-10 max-w-md px-10 text-center">
           <div className="w-20 h-20 mx-auto mb-6 logo-badge rounded-2xl flex items-center justify-center">
             <span className="text-3xl font-bold">Y</span>

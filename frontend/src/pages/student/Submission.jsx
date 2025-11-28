@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { FaCheck, FaTimes, FaExclamationTriangle } from 'react-icons/fa';
-import Logo from '../components/ui/Logo';
+import Logo from '../../components/ui/Logo';
 
 const Submission = () => {
   const questions = [
@@ -55,11 +55,10 @@ const Submission = () => {
                 </thead>
                 <tbody>
                   {questions.map((question, index) => (
-                    <tr 
-                      key={question.id} 
-                      className={`border-b border-white/5 hover:bg-white/[0.03] transition-colors ${
-                        index === questions.length - 1 ? 'border-b-0' : ''
-                      }`}
+                    <tr
+                      key={question.id}
+                      className={`border-b border-white/5 hover:bg-white/[0.03] transition-colors ${index === questions.length - 1 ? 'border-b-0' : ''
+                        }`}
                     >
                       <td className="px-6 py-4 soft">{question.title}</td>
                       <td className="px-6 py-4">
@@ -103,17 +102,17 @@ const Submission = () => {
             <p className="text-lg soft mb-2">Your current answers are saved.</p>
             <p className="text-xl font-semibold text-white mb-2">Are you sure you wish to quit exam?</p>
             <p className="text-base muted mb-8">Be sure, as you won't be able to restart this exam.</p>
-            
+
             <div className="flex justify-center gap-4 flex-wrap">
-              <Link 
-                to="/module" 
+              <Link
+                to="/module"
                 className="bg-green-600 text-white px-10 py-3 rounded-xl font-semibold hover:bg-green-700 transition text-lg flex items-center gap-2"
               >
                 <FaCheck className="w-5 h-5" />
                 Yes, Quit
               </Link>
-              <Link 
-                to="/quiz" 
+              <Link
+                to="/quiz"
                 className="bg-red-600 text-white px-10 py-3 rounded-xl font-semibold hover:bg-red-700 transition text-lg flex items-center gap-2"
               >
                 <FaTimes className="w-5 h-5" />

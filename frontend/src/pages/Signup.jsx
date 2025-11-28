@@ -8,7 +8,7 @@ import { useAuthStore } from '../store/authStore';
 const Signup = () => {
   const navigate = useNavigate();
   const { register, user, isAuthenticated, isLoading, error, initializeAuth, clearError } = useAuthStore();
-  
+
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -22,7 +22,7 @@ const Signup = () => {
     position: '',
     timezone: 'Asia/Kolkata',
   });
-  
+
   const [formErrors, setFormErrors] = useState({});
 
   // Initialize auth state on mount
@@ -40,7 +40,7 @@ const Signup = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    
+
     // Clear field-specific error when user starts typing
     if (formErrors[name]) {
       setFormErrors(prev => ({ ...prev, [name]: null }));
@@ -49,52 +49,52 @@ const Signup = () => {
 
   const validateForm = () => {
     const errors = {};
-    
+
     if (!formData.username.trim()) {
       errors.username = 'Username is required';
     } else if (formData.username.length < 3) {
       errors.username = 'Username must be at least 3 characters';
     }
-    
+
     if (!formData.email.trim()) {
       errors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       errors.email = 'Please enter a valid email address';
     }
-    
+
     if (!formData.password) {
       errors.password = 'Password is required';
     } else if (formData.password.length < 6) {
       errors.password = 'Password must be at least 6 characters';
     }
-    
+
     if (!formData.confirmPassword) {
       errors.confirmPassword = 'Please confirm password';
     } else if (formData.password !== formData.confirmPassword) {
       errors.confirmPassword = 'Passwords do not match';
     }
-    
+
     if (!formData.first_name.trim()) {
       errors.first_name = 'First name is required';
     }
-    
+
     if (!formData.last_name.trim()) {
       errors.last_name = 'Last name is required';
     }
-    
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
-    
+
     clearError();
-    
+
     const userData = {
       username: formData.username,
       email: formData.email,
@@ -107,10 +107,10 @@ const Signup = () => {
       position: formData.position,
       timezone: formData.timezone
     };
-    
+
     try {
       const result = await register(userData);
-      
+
       if (result.success) {
         navigate('/dashboard');
       }
@@ -142,7 +142,7 @@ const Signup = () => {
             Welcome to <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">Yaksh</span>
           </h1>
           <p className="soft text-lg leading-relaxed">
-            Learn, grow, and achieve milestones — all in one platform.  
+            Learn, grow, and achieve milestones — all in one platform.
             Unlock badges, complete courses, and showcase your learning journey.
           </p>
 
@@ -191,14 +191,14 @@ const Signup = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium soft mb-2">Username</label>
-              <input 
-                type="text" 
-                name="username" 
+              <input
+                type="text"
+                name="username"
                 value={formData.username}
                 onChange={handleChange}
                 className={`w-full px-4 py-2.5 border ${formErrors.username ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm`}
-                placeholder="Username" 
-                required 
+                placeholder="Username"
+                required
                 disabled={isLoading}
               />
               {formErrors.username && (
@@ -209,14 +209,14 @@ const Signup = () => {
 
             <div>
               <label className="block text-sm font-medium soft mb-2">Email</label>
-              <input 
-                type="email" 
-                name="email" 
+              <input
+                type="email"
+                name="email"
                 value={formData.email}
                 onChange={handleChange}
                 className={`w-full px-4 py-2.5 border ${formErrors.email ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm`}
-                placeholder="you@example.com" 
-                required 
+                placeholder="you@example.com"
+                required
                 disabled={isLoading}
               />
               {formErrors.email && (
@@ -226,14 +226,14 @@ const Signup = () => {
 
             <div>
               <label className="block text-sm font-medium soft mb-2">Password</label>
-              <input 
-                type="password" 
-                name="password" 
+              <input
+                type="password"
+                name="password"
                 value={formData.password}
                 onChange={handleChange}
                 className={`w-full px-4 py-2.5 border ${formErrors.password ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm`}
-                placeholder="•••••••" 
-                required 
+                placeholder="•••••••"
+                required
                 disabled={isLoading}
               />
               {formErrors.password && (
@@ -243,14 +243,14 @@ const Signup = () => {
 
             <div>
               <label className="block text-sm font-medium soft mb-2">Confirm Password</label>
-              <input 
-                type="password" 
-                name="confirmPassword" 
+              <input
+                type="password"
+                name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 className={`w-full px-4 py-2.5 border ${formErrors.confirmPassword ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm`}
-                placeholder="•••••••" 
-                required 
+                placeholder="•••••••"
+                required
                 disabled={isLoading}
               />
               {formErrors.confirmPassword && (
@@ -261,14 +261,14 @@ const Signup = () => {
             <div className="flex gap-3">
               <div className="w-1/2">
                 <label className="block text-sm font-medium soft mb-2">First Name</label>
-                <input 
-                  type="text" 
-                  name="first_name" 
+                <input
+                  type="text"
+                  name="first_name"
                   value={formData.first_name}
                   onChange={handleChange}
                   className={`w-full px-4 py-2.5 border ${formErrors.first_name ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm`}
-                  placeholder="First Name" 
-                  required 
+                  placeholder="First Name"
+                  required
                   disabled={isLoading}
                 />
                 {formErrors.first_name && (
@@ -277,14 +277,14 @@ const Signup = () => {
               </div>
               <div className="w-1/2">
                 <label className="block text-sm font-medium soft mb-2">Last Name</label>
-                <input 
-                  type="text" 
-                  name="last_name" 
+                <input
+                  type="text"
+                  name="last_name"
                   value={formData.last_name}
                   onChange={handleChange}
                   className={`w-full px-4 py-2.5 border ${formErrors.last_name ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm`}
-                  placeholder="Last Name" 
-                  required 
+                  placeholder="Last Name"
+                  required
                   disabled={isLoading}
                 />
                 {formErrors.last_name && (
@@ -295,60 +295,60 @@ const Signup = () => {
 
             <div>
               <label className="block text-sm font-medium soft mb-2">Roll Number</label>
-              <input 
-                type="text" 
-                name="roll_number" 
+              <input
+                type="text"
+                name="roll_number"
                 value={formData.roll_number}
                 onChange={handleChange}
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm"
-                placeholder="Use a dummy if you don't have one" 
+                placeholder="Use a dummy if you don't have one"
                 disabled={isLoading}
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium soft mb-2">Institute/Organization</label>
-              <input 
-                type="text" 
-                name="institute" 
+              <input
+                type="text"
+                name="institute"
                 value={formData.institute}
                 onChange={handleChange}
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm"
-                placeholder="Institute or Organization" 
+                placeholder="Institute or Organization"
                 disabled={isLoading}
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium soft mb-2">Department</label>
-              <input 
-                type="text" 
-                name="department" 
+              <input
+                type="text"
+                name="department"
                 value={formData.department}
                 onChange={handleChange}
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm"
-                placeholder="Department you work/study at" 
+                placeholder="Department you work/study at"
                 disabled={isLoading}
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium soft mb-2">Position</label>
-              <input 
-                type="text" 
-                name="position" 
+              <input
+                type="text"
+                name="position"
                 value={formData.position}
                 onChange={handleChange}
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm"
-                placeholder="Student / Faculty / Researcher / Industry / etc." 
+                placeholder="Student / Faculty / Researcher / Industry / etc."
                 disabled={isLoading}
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium soft mb-2">Timezone</label>
-              <select 
-                name="timezone" 
+              <select
+                name="timezone"
                 value={formData.timezone}
                 onChange={handleChange}
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm"

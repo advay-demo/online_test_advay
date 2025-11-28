@@ -1,22 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FaLinkedin, FaGithub, FaUpload, FaPlus, FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaGraduationCap } from 'react-icons/fa';
-import Logo from '../components/ui/Logo';
-import { useUserStore } from '../store/userStore';
-import { useAuthStore } from '../store/authStore';
+import Logo from '../../components/ui/Logo';
+import { useUserStore } from '../../store/userStore';
+import { useAuthStore } from '../../store/authStore';
 
 const Profile = () => {
   const { user, isAuthenticated } = useAuthStore();
-  const { 
-    user: profileUser, 
-    fetchUserProfile, 
-    updateUserProfile, 
-    updateLocalUser, 
-    isLoading, 
+  const {
+    user: profileUser,
+    fetchUserProfile,
+    updateUserProfile,
+    updateLocalUser,
+    isLoading,
     error,
-    clearError 
+    clearError
   } = useUserStore();
-  
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -34,7 +34,7 @@ const Profile = () => {
     position: '',
     timezone: 'Asia/Kolkata'
   });
-  
+
   const [isEditing, setIsEditing] = useState(false);
   const [editMessage, setEditMessage] = useState('');
 
@@ -71,14 +71,14 @@ const Profile = () => {
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    
+
     // Update local form state immediately for UI responsiveness
     updateLocalUser({ [field]: value });
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
-    
+
     if (!user) {
       return;
     }
@@ -89,7 +89,7 @@ const Profile = () => {
 
     try {
       const result = await updateUserProfile(user.username, formData);
-      
+
       if (result.success) {
         setEditMessage('Profile updated successfully!');
         setTimeout(() => {
@@ -157,8 +157,8 @@ const Profile = () => {
         <header className="px-8 flex justify-between py-4 border-b border-white/6">
           <div className="flex items-center gap-4">
             <Logo />
-            <Link 
-              to="/dashboard" 
+            <Link
+              to="/dashboard"
               className="text-white hover:text-gray-300 transition text-sm"
             >
               ← Back to Dashboard
@@ -174,11 +174,10 @@ const Profile = () => {
 
           {/* Edit Message */}
           {editMessage && (
-            <div className={`mb-4 p-3 rounded-lg ${
-              editMessage.includes('successfully') 
-                ? 'bg-green-500/20 border-green-500/50 text-green-200' 
+            <div className={`mb-4 p-3 rounded-lg ${editMessage.includes('successfully')
+                ? 'bg-green-500/20 border-green-500/50 text-green-200'
                 : 'bg-red-500/20 border-red-500/50 text-red-200'
-            }`}>
+              }`}>
               <p className="text-sm">{editMessage}</p>
             </div>
           )}
@@ -188,10 +187,10 @@ const Profile = () => {
             <aside className="lg:w-80 w-full">
               <div className="card p-6 space-y-4">
                 <div className="flex items-center gap-4">
-                  <img 
-                    className="w-16 h-16 rounded-full border border-white/10 bg-gray-600" 
-                    src={`https://ui-avatars.com/api/?name=${formData.firstName}+${formData.lastName}&background=7b2ff7&color=fff&size=128`} 
-                    alt="Avatar" 
+                  <img
+                    className="w-16 h-16 rounded-full border border-white/10 bg-gray-600"
+                    src={`https://ui-avatars.com/api/?name=${formData.firstName}+${formData.lastName}&background=7b2ff7&color=fff&size=128`}
+                    alt="Avatar"
                   />
                   <div>
                     <h2 className="text-lg font-semibold">
@@ -216,14 +215,14 @@ const Profile = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <button 
+                  <button
                     onClick={handleResumeUpload}
                     className="w-full btn-primary text-white py-2 rounded-lg text-sm font-medium hover:brightness-110 transition disabled:opacity-50"
                     disabled={isLoading}
                   >
                     Upload Résumé
                   </button>
-                  <button 
+                  <button
                     onClick={handleAvatarChange}
                     className="w-full bg-white/[0.05] border border-white/10 py-2 rounded-lg text-sm hover:bg-white/10 transition"
                     disabled={isLoading}
@@ -262,16 +261,16 @@ const Profile = () => {
                 <form onSubmit={handleSave} className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-1">First name</label>
-                    <input 
-                      className="w-full py-1 px-1.5 bg-white/[0.05] border border-white/10 text-white" 
+                    <input
+                      className="w-full py-1 px-1.5 bg-white/[0.05] border border-white/10 text-white"
                       value={formData.firstName}
                       onChange={(e) => handleChange('firstName', e.target.value)}
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-1">Last name</label>
-                    <input 
-                      className="w-full py-1 px-1.5 bg-white/[0.05] border border-white/10 text-white" 
+                    <input
+                      className="w-full py-1 px-1.5 bg-white/[0.05] border border-white/10 text-white"
                       value={formData.lastName}
                       onChange={(e) => handleChange('lastName', e.target.value)}
                     />
@@ -279,8 +278,8 @@ const Profile = () => {
 
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-300 mb-1">Display name</label>
-                    <input 
-                      className="w-full py-1 px-1.5 bg-white/[0.05] border border-white/10 text-white" 
+                    <input
+                      className="w-full py-1 px-1.5 bg-white/[0.05] border border-white/10 text-white"
                       value={formData.displayName}
                       onChange={(e) => handleChange('displayName', e.target.value)}
                     />
@@ -288,8 +287,8 @@ const Profile = () => {
 
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-300 mb-1">Bio</label>
-                    <textarea 
-                      className="w-full py-1 px-1.5 bg-white/[0.05] border border-white/10 text-white" 
+                    <textarea
+                      className="w-full py-1 px-1.5 bg-white/[0.05] border border-white/10 text-white"
                       rows="3"
                       value={formData.bio}
                       onChange={(e) => handleChange('bio', e.target.value)}
@@ -297,14 +296,14 @@ const Profile = () => {
                   </div>
 
                   <div className="md:col-span-2 flex gap-3">
-                    <button 
+                    <button
                       type="submit"
                       disabled={isLoading}
                       className="px-6 py-2 rounded-lg btn-primary text-white font-medium hover:brightness-110 disabled:opacity-50"
                     >
                       {isLoading ? 'Saving...' : 'Save changes'}
                     </button>
-                    <button 
+                    <button
                       type="button"
                       onClick={handleCancel}
                       className="px-6 py-2 rounded-lg bg-white/[0.05] border border-white/10 text-sm hover:bg-white/10"
@@ -322,26 +321,26 @@ const Profile = () => {
                 <div>
                   <h4 className="font-medium mb-4 text-white">Contact</h4>
                   <label className="block text-xs text-gray-400 mb-1">Email</label>
-                  <input 
-                    className="w-full py-1 px-1.5 bg-white/[0.05] border border-white/10 text-white" 
-                      value={formData.email}
-                      onChange={(e) => handleChange('email', e.target.value)}
+                  <input
+                    className="w-full py-1 px-1.5 bg-white/[0.05] border border-white/10 text-white"
+                    value={formData.email}
+                    onChange={(e) => handleChange('email', e.target.value)}
                   />
                   <label className="block text-xs text-gray-400 mb-1 mt-3">Phone</label>
-                  <input 
-                    className="w-full py-1 px-1.5 bg-white/[0.05] border border-white/10 text-white" 
-                      value={formData.phone}
-                      onChange={(e) => handleChange('phone', e.target.value)}
+                  <input
+                    className="w-full py-1 px-1.5 bg-white/[0.05] border border-white/10 text-white"
+                    value={formData.phone}
+                    onChange={(e) => handleChange('phone', e.target.value)}
                   />
                 </div>
 
                 <div>
                   <h4 className="font-medium mb-4 text-white">Location</h4>
                   <label className="block text-xs text-gray-400 mb-1">City</label>
-                  <input 
-                    className="w-full py-1 px-1.5 bg-white/[0.05] border border-white/10 text-white" 
-                      value={formData.city}
-                      onChange={(e) => handleChange('city', e.target.value)}
+                  <input
+                    className="w-full py-1 px-1.5 bg-white/[0.05] border border-white/10 text-white"
+                    value={formData.city}
+                    onChange={(e) => handleChange('city', e.target.value)}
                   />
                   <label className="block text-xs text-gray-400 mb-1 mt-3">Country</label>
                   <select className="w-full py-1 px-1.5 bg-white/[0.05] border border-white/10 text-white" value={formData.country}>
@@ -358,32 +357,32 @@ const Profile = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-1">Roll Number</label>
-                    <input 
-                      className="w-full py-1 px-1.5 bg-white/[0.05] border border-white/10 text-white" 
+                    <input
+                      className="w-full py-1 px-1.5 bg-white/[0.05] border border-white/10 text-white"
                       value={formData.rollNumber}
                       onChange={(e) => handleChange('rollNumber', e.target.value)}
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-1">Institute</label>
-                    <input 
-                      className="w-full py-1 px-1.5 bg-white/[0.05] border border-white/10 text-white" 
+                    <input
+                      className="w-full py-1 px-1.5 bg-white/[0.05] border border-white/10 text-white"
                       value={formData.institute}
                       onChange={(e) => handleChange('institute', e.target.value)}
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-1">Department</label>
-                    <input 
-                      className="w-full py-1 px-1.5 bg-white/[0.05] border border-white/10 text-white" 
+                    <input
+                      className="w-full py-1 px-1.5 bg-white/[0.05] border border-white/10 text-white"
                       value={formData.department}
                       onChange={(e) => handleChange('department', e.target.value)}
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-1">Position</label>
-                    <input 
-                      className="w-full py-1 px-1.5 bg-white/[0.05] border border-white/10 text-white" 
+                    <input
+                      className="w-full py-1 px-1.5 bg-white/[0.05] border border-white/10 text-white"
                       value={formData.position}
                       onChange={(e) => handleChange('position', e.target.value)}
                     />
@@ -413,9 +412,9 @@ const Profile = () => {
                     <div className="w-8 h-8 bg-blue-500/20 rounded flex items-center justify-center text-blue-400 text-xs font-bold">
                       <FaLinkedin className="w-5 h-5" />
                     </div>
-                    <input 
-                      className="flex-1 py-1 px-1.5 bg-white/[0.05] border border-white/10 text-white" 
-                      placeholder="https://www.linkedin.com/in/..." 
+                    <input
+                      className="flex-1 py-1 px-1.5 bg-white/[0.05] border border-white/10 text-white"
+                      placeholder="https://www.linkedin.com/in/..."
                       value={formData.linkedin}
                       onChange={(e) => handleChange('linkedin', e.target.value)}
                     />
@@ -426,9 +425,9 @@ const Profile = () => {
                     <div className="w-8 h-8 bg-gray-700 rounded flex items-center justify-center text-white text-xs font-bold">
                       <FaGithub className="w-5 h-5" />
                     </div>
-                    <input 
-                      className="flex-1 py-1 px-1.5 bg-white/[0.05] border border-white/10 text-white" 
-                      placeholder="https://github.com/..." 
+                    <input
+                      className="flex-1 py-1 px-1.5 bg-white/[0.05] border border-white/10 text-white"
+                      placeholder="https://github.com/..."
                       value={formData.github}
                       onChange={(e) => handleChange('github', e.target.value)}
                     />
@@ -451,9 +450,9 @@ const Profile = () => {
                     </span>
                   ))}
                   <div className="w-full mt-3">
-                    <input 
-                      className="w-full py-1 px-1.5 bg-white/[0.05] border border-white/10 text-white" 
-                      placeholder="Add a skill and press Enter" 
+                    <input
+                      className="w-full py-1 px-1.5 bg-white/[0.05] border border-white/10 text-white"
+                      placeholder="Add a skill and press Enter"
                     />
                   </div>
                 </div>

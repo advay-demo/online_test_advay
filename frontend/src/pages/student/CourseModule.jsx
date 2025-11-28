@@ -1,23 +1,23 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { FaClipboardList, FaBook, FaComments, FaArrowRight } from 'react-icons/fa';
-import Sidebar from '../components/layout/Sidebar';
-import Header from '../components/layout/Header';
+import Sidebar from '../../components/layout/Sidebar';
+import Header from '../../components/layout/Header';
 
 const CourseModule = () => {
   return (
     <div className="flex min-h-screen relative grid-texture">
       <Sidebar />
-      
+
       <main className="flex-1">
         <Header isAuth />
-        
+
         <div className="p-8">
           {/* Heading */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold">Demo Module</h1>
             <p className="text-gray-400 text-sm mt-1">
-              <Link to="/courses" className="hover:text-white transition">Yaksh Demo Course</Link> / 
+              <Link to="/courses" className="hover:text-white transition">Yaksh Demo Course</Link> /
               <span className="text-white"> Demo Module</span>
             </p>
           </div>
@@ -56,9 +56,9 @@ const CourseModule = () => {
                   </div>
                 </div>
               </div>
-              
-              <Link 
-                to="/quiz" 
+
+              <Link
+                to="/quiz"
                 className="w-full bg-indigo-600 text-white py-3 rounded-xl font-semibold hover:bg-indigo-700 transition flex items-center justify-center gap-2"
               >
                 Start Quiz
@@ -86,9 +86,9 @@ const CourseModule = () => {
                   </div>
                 </div>
               </div>
-              
-              <Link 
-                to="/lesson" 
+
+              <Link
+                to="/lesson"
                 className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition flex items-center justify-center gap-2"
               >
                 Continue Learning

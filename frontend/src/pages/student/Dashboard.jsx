@@ -2,9 +2,9 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { FaCheckCircle, FaBolt, FaChartLine, FaClock, FaArrowRight } from 'react-icons/fa';
 import { AiOutlineCheck, AiOutlineTrophy, AiOutlineMessage, AiOutlineFire } from 'react-icons/ai';
-import Sidebar from '../components/layout/Sidebar';
-import Header from '../components/layout/Header';
-import { useStore } from '../store/useStore';
+import Sidebar from '../../components/layout/Sidebar';
+import Header from '../../components/layout/Header';
+import { useStore } from '../../store/useStore';
 
 const Dashboard = () => {
   const { user, courses, stats, activities } = useStore();
@@ -12,10 +12,10 @@ const Dashboard = () => {
   return (
     <div className="flex min-h-screen relative grid-texture">
       <Sidebar />
-      
+
       <main className="flex-1">
         <Header isAuth />
-        
+
         <div className="p-8">
           {/* Heading */}
           <div className="mb-8">

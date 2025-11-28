@@ -1,8 +1,8 @@
 import React from 'react';
 import { FaStar, FaCheckCircle, FaFire, FaBolt } from 'react-icons/fa';
-import Sidebar from '../components/layout/Sidebar';
-import Header from '../components/layout/Header';
-import { useStore } from '../store/useStore';
+import Sidebar from '../../components/layout/Sidebar';
+import Header from '../../components/layout/Header';
+import { useStore } from '../../store/useStore';
 
 const Insights = () => {
   const { badges } = useStore();
@@ -17,10 +17,10 @@ const Insights = () => {
   return (
     <div className="flex min-h-screen relative grid-texture">
       <Sidebar />
-      
+
       <main className="flex-1">
         <Header isAuth />
-        
+
         <div className="p-8">
           {/* Heading */}
           <div className="mb-8">
@@ -68,7 +68,7 @@ const Insights = () => {
                   </div>
                   <h3 className="font-bold text-lg mb-2">{badge.name}</h3>
                   <p className="text-sm muted mb-4">{badge.description}</p>
-                  
+
                   <div className="mb-3">
                     <div className="w-full bg-white/10 rounded-full h-2">
                       <div className="bg-indigo-500 h-2 rounded-full" style={{ width: `${badge.progress}%` }}></div>
@@ -89,7 +89,7 @@ const Insights = () => {
                 </div>
                 <h3 className="font-bold text-lg mb-2">Night Owl</h3>
                 <p className="text-sm muted mb-4">Complete 10 late-night sessions</p>
-                
+
                 <div className="mb-3">
                   <div className="w-full bg-white/10 rounded-full h-2">
                     <div className="bg-indigo-500 h-2 rounded-full" style={{ width: '50%' }}></div>
@@ -106,7 +106,7 @@ const Insights = () => {
                 </div>
                 <h3 className="font-bold text-lg mb-2">Bug Hunter</h3>
                 <p className="text-sm muted mb-4">Find and report 5 bugs</p>
-                
+
                 <div className="mb-3">
                   <div className="w-full bg-white/10 rounded-full h-2">
                     <div className="bg-indigo-500 h-2 rounded-full" style={{ width: '20%' }}></div>
@@ -123,7 +123,7 @@ const Insights = () => {
                 </div>
                 <h3 className="font-bold text-lg mb-2">Polyglot</h3>
                 <p className="text-sm muted mb-4">Learn 3 programming languages</p>
-                
+
                 <div className="mb-3">
                   <div className="w-full bg-white/10 rounded-full h-2">
                     <div className="bg-indigo-500 h-2 rounded-full" style={{ width: '66%' }}></div>

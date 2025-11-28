@@ -5,15 +5,44 @@
 @tailwind utilities;
 
 :root {
-  --bg-1: #0b0b11;
-  --bg-2: #0c0c13;
+  /* Default Dark Mode */
+  --bg-primary: #0b0b11;
+  --bg-secondary: #0c0c13;
   --surface: #111118;
   --surface-2: #14141c;
-  --muted: rgba(255, 255, 255, 0.52);
-  --soft: rgba(255, 255, 255, 0.78);
+
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.78);
+  --text-muted: rgba(255, 255, 255, 0.52);
+
+  --border-color: rgba(255, 255, 255, 0.1);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+
+  --input-bg: rgba(255, 255, 255, 0.03);
+
+  --bg-footer: #000000;
+
   --grad-1: #7b2ff7;
   --grad-2: #ff4da6;
   --grad-3: #ff914d;
+}
+
+[data-theme='light'] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --surface: #ffffff;
+  --surface-2: #f1f5f9;
+
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+
+  --border-color: #e2e8f0;
+  --border-subtle: #cbd5e1;
+
+  --input-bg: #f1f5f9;
+
+  --bg-footer: #f8fafc;
 }
 
 @layer base {
@@ -24,8 +53,8 @@
   body {
     @apply min-h-screen;
     font-family: 'Inter', sans-serif;
-    background: linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 100%);
-    color: #fff;
+    background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+    color: var(--text-primary);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -33,9 +62,9 @@
   input,
   textarea,
   select {
-    background: rgba(255, 255, 255, 0.03) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #fff !important;
+    background: var(--input-bg) !important;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary) !important;
     border-radius: 8px;
   }
 
@@ -44,17 +73,17 @@
   select:focus {
     outline: none;
     border-color: rgba(99, 102, 241, 0.5);
-    background: rgba(255, 255, 255, 0.05) !important;
+    background: var(--input-bg) !important;
   }
 
   input::placeholder,
   textarea::placeholder {
-    color: rgba(255, 255, 255, 0.3) !important;
+    color: var(--text-muted) !important;
   }
 
   select option {
-    background: var(--bg-2) !important;
-    color: #fff !important;
+    background: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
   }
 }
 
@@ -93,7 +122,7 @@
 
   .card {
     background: var(--surface);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border-subtle);
     border-radius: 12px;
     transition: transform 0.18s ease;
   }
@@ -104,7 +133,7 @@
 
   .card-strong {
     background: var(--surface-2);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-subtle);
     border-radius: 12px;
   }
 
@@ -113,16 +142,16 @@
   }
 
   .icon-circle {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.03);
+    background: var(--input-bg);
+    border: 1px solid var(--border-subtle);
   }
 
   .muted {
-    color: var(--muted);
+    color: var(--text-muted);
   }
 
   .soft {
-    color: var(--soft);
+    color: var(--text-secondary);
   }
 
   .neon-text {
@@ -136,7 +165,7 @@
   .hero-bg {
     background:
       radial-gradient(circle at 50% -20%, rgba(123, 47, 247, 0.25), transparent 60%),
-      linear-gradient(to bottom, #0b0b11 0%, #0c0c13 60%, #0b0b11 100%);
+      linear-gradient(to bottom, var(--bg-primary) 0%, var(--bg-secondary) 60%, var(--bg-primary) 100%);
     position: relative;
     overflow: hidden;
   }
@@ -146,8 +175,8 @@
     position: absolute;
     inset: 0;
     background-image:
-      linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+      linear-gradient(var(--border-subtle) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border-subtle) 1px, transparent 1px);
     background-size: 45px 45px;
     opacity: 0.25;
   }
@@ -156,7 +185,7 @@
   .cta-bg {
     background:
       radial-gradient(circle at 80% 160%, rgba(255, 77, 166, 0.18), transparent 70%),
-      linear-gradient(145deg, #0f0f15 0%, #12121a 100%);
+      linear-gradient(145deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
     position: relative;
     overflow: hidden;
   }
@@ -174,26 +203,26 @@
 
   /* Social Button */
   .social-btn {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
     transition: all 0.2s;
   }
 
   .social-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--border-subtle);
     border-color: rgba(99, 102, 241, 0.3);
   }
 
   /* Sidebar */
   .app-sidebar {
-    background: linear-gradient(180deg, #0e0e14 0%, #0b0b11 100%);
-    border-right: 1px solid rgba(255, 255, 255, 0.04);
+    background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+    border-right: 1px solid var(--border-subtle);
   }
 
   /* Glow Card */
   .glow-card {
     background: var(--surface-2);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border-subtle);
     transition: 0.25s ease;
   }
 
@@ -204,14 +233,14 @@
   /* Question Button States */
   .question-btn {
     background: var(--surface);
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    color: var(--soft);
+    border: 2px solid var(--border-color);
+    color: var(--text-secondary);
     transition: all 0.2s;
   }
 
   .question-btn:hover {
     border-color: rgba(123, 47, 247, 0.5);
-    color: white;
+    color: var(--text-primary);
   }
 
   .question-btn.current {

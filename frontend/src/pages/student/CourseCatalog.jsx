@@ -1,8 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { FaStar, FaUsers, FaClock, FaCode } from 'react-icons/fa';
-import Sidebar from '../components/layout/Sidebar';
-import Header from '../components/layout/Header';
+import Sidebar from '../../components/layout/Sidebar';
+import Header from '../../components/layout/Header';
 
 const CourseCatalog = () => {
   const courses = [
@@ -63,10 +63,10 @@ const CourseCatalog = () => {
   return (
     <div className="flex min-h-screen relative grid-texture">
       <Sidebar />
-      
+
       <main className="flex-1">
         <Header isAuth />
-        
+
         <div className="p-8">
           {/* Heading */}
           <div className="mb-8">
@@ -130,9 +130,9 @@ const CourseCatalog = () => {
               {/* Course Cards Grid */}
               <div className="grid lg:grid-cols-2 gap-6">
                 {courses.map((course) => (
-                  <Link 
+                  <Link
                     key={course.id}
-                    to="/module" 
+                    to="/module"
                     className="card overflow-hidden transition hover:scale-[1.01] block"
                   >
                     {/* Minimal Dark Header */}
@@ -157,7 +157,7 @@ const CourseCatalog = () => {
                         {course.icon === 'java' && (
                           <>
                             <svg className={`w-20 h-20 text-${course.color}-400 mx-auto mb-2`} viewBox="0 0 50 50" fill="currentColor">
-                              <path d="M25 10 L15 40 L35 40 Z M20 30 L25 20 L30 30 Z"/>
+                              <path d="M25 10 L15 40 L35 40 Z M20 30 L25 20 L30 30 Z" />
                             </svg>
                             <p className="text-xs text-white/80 font-medium">Java Full-Stack</p>
                             <p className={`text-xs text-${course.color}-200`}>Enterprise Development</p>
