@@ -1,0 +1,43 @@
+# Production requirements for Render deployment (without Celery)
+# Code server requirements
+pytest
+python-decouple
+requests
+tornado==4.5.3
+psutil
+nose==1.3.7
+
+# Django and core packages
+invoke==0.21.0
+django==3.1.7
+django-taggit==1.2.0
+pytz==2019.3
+requests-oauthlib>=0.6.1
+social-auth-app-django==3.1.0
+selenium==2.53.6
+coverage
+ruamel.yaml==0.16.10
+pyyaml==5.3.1
+markdown==2.6.9
+pygments==2.2.0
+
+# Redis client (but no Celery)
+redis==3.4.1
+
+# Django packages
+notifications-plugin==0.1.2
+djangorestframework==3.11.2
+django-cors-headers==3.1.0
+Pillow
+pandas
+qrcode
+more-itertools==8.4.0
+django-storages==1.11.1
+boto3==1.17.17
+
+# Production-specific packages
+gunicorn==21.2.0
+whitenoise==6.6.0
+psycopg2-binary==2.9.9
+dj-database-url==0.5.0
+

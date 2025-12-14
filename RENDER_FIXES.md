@@ -19,6 +19,12 @@
 - Updated render.yaml to use `requirements-production.txt` directly
 - Ensures all packages install in correct order
 
+### 5. **Fixed Celery 4.4.2 Installation Issue**
+- Celery 4.4.2 has invalid metadata that fails with pip >= 24.1
+- Created separate `requirements-render.txt` that excludes Celery
+- This file includes all necessary packages EXCEPT Celery and Celery-related packages
+- Since we're not using Celery worker, we don't need it installed
+
 ---
 
 ## 🚀 What To Do Now:
