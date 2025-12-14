@@ -21,10 +21,7 @@ services:
       - key: DATABASE_URL
         sync: false
       - key: REDIS_URL
-        fromService:
-          name: yaksh-redis
-          type: redis
-          property: connectionString
+        sync: false
   
   # Celery Worker
   - type: worker
@@ -46,12 +43,5 @@ services:
       - key: DATABASE_URL
         sync: false
       - key: REDIS_URL
-        fromService:
-          name: yaksh-redis
-          type: redis
-          property: connectionString
-
-databases:
-  - name: yaksh-redis
-    plan: free
+        sync: false
 

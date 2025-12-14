@@ -43,17 +43,31 @@ git push -u origin main
 7. Wait 5-10 minutes for deployment
 
 This will create:
-- Redis instance (`yaksh-redis`)
 - Web service (`yaksh-backend`)
 - Celery worker (`yaksh-celery`)
 
-**Note:** You're using Neon DB for PostgreSQL (external), so no database is created on Render.
+**Note:** Redis and PostgreSQL need to be added manually (see Step 3b below).
+
+---
+
+### Step 3b: Create Redis Manually
+
+Before adding environment variables, create a Redis instance:
+
+1. In Render Dashboard, click **"New +"** → **"Redis"**
+2. Name: `yaksh-redis`
+3. Plan: **Free**
+4. Region: Same as your services (Oregon recommended)
+5. Click **"Create Redis"**
+6. Once created, copy the **Internal Redis URL** (starts with `redis://`)
 
 ---
 
 ### Step 4: Configure Environment Variables
 
-After deployment completes:
+After Redis is created and Blueprint deployment completes:
+
+#### For Web Service (`yaksh-backend`):
 
 1. Go to your web service (`yaksh-backend`)
 2. Click **Environment** tab
@@ -61,18 +75,25 @@ After deployment completes:
 
 ```
 DATABASE_URL=postgresql://neondb_owner:npg_9HAJz7WwSEiC@ep-long-tree-ad7bfusc-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require
+REDIS_URL=redis://your-internal-redis-url:6379
 ALLOWED_HOSTS=yaksh-backend.onrender.com
 DOMAIN_HOST=https://yaksh-backend.onrender.com
 CORS_ALLOWED_ORIGINS=https://your-frontend.vercel.app
 ```
 
-4. **Also add to Celery Worker:**
-   - Go to `yaksh-celery` service
-   - Add the same `DATABASE_URL` variable
+#### For Celery Worker (`yaksh-celery`):
 
-5. Click **Save Changes** on both services (triggers redeploy)
+4. Go to `yaksh-celery` service → **Environment** tab
+5. Add these variables:
 
-**⚠️ Important:** The `DATABASE_URL` must be added to BOTH the web service and celery worker!
+```
+DATABASE_URL=postgresql://neondb_owner:npg_9HAJz7WwSEiC@ep-long-tree-ad7bfusc-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require
+REDIS_URL=redis://your-internal-redis-url:6379
+```
+
+6. Click **Save Changes** on both services (triggers redeploy)
+
+**⚠️ Important:** Both services need `DATABASE_URL` and `REDIS_URL`!
 
 See `RENDER_ENV_VARS.md` for more details.
 
