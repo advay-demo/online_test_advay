@@ -34,7 +34,11 @@ except ImportError:
     from io import BytesIO as string_io
 import re
 # Local imports.
-from online_test.celery_settings import app
+try:
+    from online_test.celery_settings import app
+except (ImportError, ModuleNotFoundError):
+    # Celery not available, set app to None
+    app = None
 from yaksh.code_server import get_result as get_result_from_code_server
 from yaksh.models import (
     Answer, AnswerPaper, AssignmentUpload, Course, FileUpload, FloatTestCase,

@@ -310,7 +310,8 @@ if not DEBUG:
     MIDDLEWARE = list(MIDDLEWARE)
     MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
     MIDDLEWARE = tuple(MIDDLEWARE)
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    # Use basic WhiteNoise storage (not compressed) to avoid CSS parsing issues
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
     
     # Database Configuration from Render
     DATABASES['default'] = dj_database_url.config(
