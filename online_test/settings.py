@@ -300,7 +300,10 @@ if not DEBUG:
     SECURE_HSTS_PRELOAD = True
     
     # Static Files with WhiteNoise
+    # Convert MIDDLEWARE tuple to list, insert WhiteNoise, convert back to tuple
+    MIDDLEWARE = list(MIDDLEWARE)
     MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+    MIDDLEWARE = tuple(MIDDLEWARE)
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
     
     # Database Configuration from Render
