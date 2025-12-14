@@ -43,10 +43,11 @@ git push -u origin main
 7. Wait 5-10 minutes for deployment
 
 This will create:
-- PostgreSQL database (`yaksh-db`)
 - Redis instance (`yaksh-redis`)
 - Web service (`yaksh-backend`)
 - Celery worker (`yaksh-celery`)
+
+**Note:** You're using Neon DB for PostgreSQL (external), so no database is created on Render.
 
 ---
 
@@ -59,12 +60,19 @@ After deployment completes:
 3. Add these variables:
 
 ```
+DATABASE_URL=postgresql://neondb_owner:npg_9HAJz7WwSEiC@ep-long-tree-ad7bfusc-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require
 ALLOWED_HOSTS=yaksh-backend.onrender.com
 DOMAIN_HOST=https://yaksh-backend.onrender.com
 CORS_ALLOWED_ORIGINS=https://your-frontend.vercel.app
 ```
 
-4. Click **Save Changes** (triggers redeploy)
+4. **Also add to Celery Worker:**
+   - Go to `yaksh-celery` service
+   - Add the same `DATABASE_URL` variable
+
+5. Click **Save Changes** on both services (triggers redeploy)
+
+**⚠️ Important:** The `DATABASE_URL` must be added to BOTH the web service and celery worker!
 
 See `RENDER_ENV_VARS.md` for more details.
 
@@ -126,16 +134,17 @@ Code execution requires a separate server with Docker. Can be added later.
 
 ## 💰 Costs
 
-**Starter Plan (Production):**
-- PostgreSQL: $7/month
-- Redis: $10/month
-- Web Service: $7/month
-- Celery Worker: $7/month
-- **Total: $31/month**
+**With Neon DB (Your Setup):**
+- Neon DB PostgreSQL: **FREE** (up to 0.5GB storage, 3GB transfer/month)
+- Render Redis: $10/month
+- Render Web Service: $7/month
+- Render Celery Worker: $7/month
+- **Total: $24/month** (saved $7 by using Neon DB!)
 
 **Free Tier (Testing):**
-- Services sleep after 15min inactivity
+- Render services sleep after 15min inactivity
 - Limited to 750 hours/month
+- Neon DB free tier is always active (no sleep)
 
 ---
 
