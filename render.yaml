@@ -52,5 +52,4 @@ services:
 databases:
   - name: yaksh-redis
     plan: starter
-    maxmemoryPolicy: allkeys-lru
 
