@@ -134,17 +134,22 @@ Code execution requires a separate server with Docker. Can be added later.
 
 ## 💰 Costs
 
-**With Neon DB (Your Setup):**
-- Neon DB PostgreSQL: **FREE** (up to 0.5GB storage, 3GB transfer/month)
-- Render Redis: $10/month
-- Render Web Service: $7/month
-- Render Celery Worker: $7/month
-- **Total: $24/month** (saved $7 by using Neon DB!)
+**Your Setup (FREE TIER):**
+- Neon DB PostgreSQL: **FREE** ✅ (up to 0.5GB storage, 3GB transfer/month)
+- Render Redis: **FREE** ✅
+- Render Web Service: **FREE** ✅
+- Render Celery Worker: **FREE** ✅
+- **Total: $0/month** 🎉 **Completely FREE!**
 
-**Free Tier (Testing):**
-- Render services sleep after 15min inactivity
-- Limited to 750 hours/month
+**Free Tier Limitations:**
+- Render services sleep after 15min inactivity (wake up in ~30 seconds)
+- Limited to 750 hours/month total across all services
+- Shared resources (slower performance)
 - Neon DB free tier is always active (no sleep)
+
+**To Upgrade Later (Production):**
+- Change `plan: free` to `plan: starter` in render.yaml
+- Cost would be: $24/month (Redis $10 + Web $7 + Worker $7)
 
 ---
 

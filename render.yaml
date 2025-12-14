@@ -3,6 +3,7 @@ services:
   - type: web
     name: yaksh-backend
     env: python
+    plan: free
     buildCommand: |
       pip install --upgrade pip
       pip install -r requirements/requirements-common.txt
@@ -29,6 +30,7 @@ services:
   - type: worker
     name: yaksh-celery
     env: python
+    plan: free
     buildCommand: |
       pip install --upgrade pip
       pip install -r requirements/requirements-common.txt
@@ -51,5 +53,5 @@ services:
 
 databases:
   - name: yaksh-redis
-    plan: starter
+    plan: free
 
