@@ -288,6 +288,12 @@ DEBUG = config('DEBUG', default=True, cast=bool)
 if not DEBUG:
     print("Running in PRODUCTION mode")
     
+    # Remove Celery-related apps from INSTALLED_APPS (not using Celery worker)
+    INSTALLED_APPS = tuple(
+        app for app in INSTALLED_APPS 
+        if app not in ('django_celery_beat', 'django_celery_results')
+    )
+    
     # Security Settings
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
