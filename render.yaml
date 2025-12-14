@@ -6,8 +6,7 @@ services:
     plan: free
     buildCommand: |
       pip install --upgrade pip
-      pip install -r requirements/requirements-common.txt
-      pip install gunicorn whitenoise psycopg2-binary dj-database-url
+      pip install -r requirements/requirements-production.txt
       python manage.py collectstatic --no-input
       python manage.py migrate
     startCommand: gunicorn online_test.wsgi:application --bind 0.0.0.0:$PORT --workers 4
@@ -16,28 +15,6 @@ services:
         value: 3.9.0
       - key: SECRET_KEY
         generateValue: true
-      - key: DEBUG
-        value: False
-      - key: DATABASE_URL
-        sync: false
-      - key: REDIS_URL
-        sync: false
-  
-  # Celery Worker
-  - type: worker
-    name: yaksh-celery
-    env: python
-    plan: free
-    buildCommand: |
-      pip install --upgrade pip
-      pip install -r requirements/requirements-common.txt
-      pip install psycopg2-binary dj-database-url
-    startCommand: celery -A online_test worker -B --loglevel=info
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.9.0
-      - key: SECRET_KEY
-        sync: false
       - key: DEBUG
         value: False
       - key: DATABASE_URL
