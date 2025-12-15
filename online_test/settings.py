@@ -309,13 +309,6 @@ if not DEBUG:
     # Convert MIDDLEWARE tuple to list, insert WhiteNoise, convert back to tuple
     MIDDLEWARE = list(MIDDLEWARE)
     MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
-    
-    # Ensure CorsMiddleware is positioned correctly (should be early, after WhiteNoise)
-    # Remove it from its current position and insert it right after WhiteNoise
-    if 'corsheaders.middleware.CorsMiddleware' in MIDDLEWARE:
-        MIDDLEWARE.remove('corsheaders.middleware.CorsMiddleware')
-        MIDDLEWARE.insert(2, 'corsheaders.middleware.CorsMiddleware')
-    
     MIDDLEWARE = tuple(MIDDLEWARE)
     # Use basic WhiteNoise storage (not compressed) to avoid CSS parsing issues
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
@@ -326,36 +319,12 @@ if not DEBUG:
         conn_max_age=600,
     )
     
-    # CORS Configuration for Vercel Frontend
+    # CORS Configuration for Vercel Frontend (Hardcoded)
     CORS_ORIGIN_ALLOW_ALL = False
     CORS_ALLOWED_ORIGINS = [
-        origin.strip() 
-        for origin in config('CORS_ALLOWED_ORIGINS', default='').split(',')
-        if origin.strip()
+        'https://yaksh-test.vercel.app',
     ]
     CORS_ALLOW_CREDENTIALS = True
-    
-    # Explicit CORS headers for better compatibility
-    CORS_ALLOW_METHODS = [
-        'DELETE',
-        'GET',
-        'OPTIONS',
-        'PATCH',
-        'POST',
-        'PUT',
-    ]
-    
-    CORS_ALLOW_HEADERS = [
-        'accept',
-        'accept-encoding',
-        'authorization',
-        'content-type',
-        'dnt',
-        'origin',
-        'user-agent',
-        'x-csrftoken',
-        'x-requested-with',
-    ]
     
     # Allowed Hosts
     ALLOWED_HOSTS = [
@@ -383,15 +352,7 @@ if not DEBUG:
     # EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
     # EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
     
-    # Debug logging for production configuration
-    print("=" * 60)
-    print("🚀 PRODUCTION CONFIGURATION")
-    print("=" * 60)
     print(f"ALLOWED_HOSTS: {ALLOWED_HOSTS}")
     print(f"DATABASE: {DATABASES['default']['NAME']}")
-    print(f"CORS_ORIGIN_ALLOW_ALL: {CORS_ORIGIN_ALLOW_ALL}")
     print(f"CORS_ALLOWED_ORIGINS: {CORS_ALLOWED_ORIGINS}")
-    print(f"CORS_ALLOW_CREDENTIALS: {CORS_ALLOW_CREDENTIALS}")
-    print(f"CORS_ALLOW_METHODS: {CORS_ALLOW_METHODS}")
-    print("=" * 60)
 
