@@ -319,11 +319,8 @@ if not DEBUG:
         conn_max_age=600,
     )
     
-    # CORS Configuration for Vercel Frontend (Hardcoded)
-    CORS_ORIGIN_ALLOW_ALL = False
-    CORS_ALLOWED_ORIGINS = [
-        'https://yaksh-test.vercel.app',
-    ]
+    # CORS Configuration - Temporarily allow all origins for debugging
+    CORS_ORIGIN_ALLOW_ALL = True
     CORS_ALLOW_CREDENTIALS = True
     
     # Allowed Hosts
