@@ -15,6 +15,8 @@ import DashboardTeachers from './pages/teacher/DashboardTeachers';
 import AddCourse from './pages/teacher/AddCourse';
 import Courses from './pages/teacher/Courses';
 import ManageCourse from './pages/teacher/ManageCourse';
+import Questions from './pages/teacher/Questions';
+import AddQuestion from './pages/teacher/AddQuestion';
 import PrivateRoute from './components/auth/PrivateRoute';
 
 import ThemeController from './components/layout/ThemeController';
@@ -32,19 +34,32 @@ function App() {
         <Route element={<PrivateRoute />}>
           <Route path="/dashboard" element={<DashboardHome />} />
           <Route path="/courses" element={<CourseCatalog />} />
+          <Route path="/courses/:courseId/modules" element={<CourseModule />} />
+          <Route path="/courses/:courseId/modules/:moduleId" element={<CourseModule />} />
+          <Route path="/lessons/:lessonId" element={<Lesson />} />
+          <Route path="/courses/:courseId/quizzes/:quizId" element={<Quiz />} />
+          <Route path="/quizzes/:quizId" element={<Quiz />} />
+          <Route path="/answerpapers/:answerpaperId/submission" element={<Submission />} />
+          <Route path="/insights" element={<Insights />} />
+          <Route path="/profile" element={<Profile />} />
+          {/* Legacy routes for backward compatibility */}
           <Route path="/module" element={<CourseModule />} />
           <Route path="/quiz" element={<Quiz />} />
           <Route path="/lesson" element={<Lesson />} />
-          <Route path="/insights" element={<Insights />} />
-          <Route path="/profile" element={<Profile />} />
           <Route path="/submission" element={<Submission />} />
         </Route>
 
         {/* Teacher Routes */}
-        <Route path="/teacher/dashboard" element={<DashboardTeachers />} />
-        <Route path="/teacher/add-course" element={<AddCourse />} />
-        <Route path="/teacher/courses" element={<Courses />} />
-        <Route path="/teacher/manage-course" element={<ManageCourse />} />
+        <Route element={<PrivateRoute />}>
+          <Route path="/teacher/dashboard" element={<DashboardTeachers />} />
+          <Route path="/teacher/add-course" element={<AddCourse />} />
+          <Route path="/teacher/courses/:courseId/edit" element={<AddCourse />} />
+          <Route path="/teacher/courses" element={<Courses />} />
+          <Route path="/teacher/courses/:courseId/manage" element={<ManageCourse />} />
+          <Route path="/teacher/questions" element={<Questions />} />
+          <Route path="/teacher/questions/create" element={<AddQuestion />} />
+          <Route path="/teacher/questions/:questionId/edit" element={<AddQuestion />} />
+        </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

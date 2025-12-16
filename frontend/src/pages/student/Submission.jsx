@@ -1,25 +1,93 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { FaCheck, FaTimes, FaExclamationTriangle } from 'react-icons/fa';
 import Logo from '../../components/ui/Logo';
+import { getQuizSubmissionStatus, quitQuiz } from '../../api/api';
 
 const Submission = () => {
-  const questions = [
-    { id: 1, title: 'Find value of n', attempted: true },
-    { id: 2, title: 'Print Output in Python2.x', attempted: true },
-    { id: 3, title: 'Adding decimals', attempted: true },
-    { id: 4, title: 'Check Palindrome', attempted: false },
-    { id: 5, title: 'For Loop over String', attempted: false },
-    { id: 6, title: 'Add 3 numbers', attempted: false },
-    { id: 7, title: 'Hello World in File', attempted: false },
-    { id: 8, title: 'Reverse a string', attempted: false },
-    { id: 9, title: 'Arrange code to convert km to miles', attempted: false },
-    { id: 10, title: 'Print Hello, World!', attempted: false },
-    { id: 11, title: 'Square of two numbers', attempted: false },
-  ];
+  const { answerpaperId } = useParams();
+  const navigate = useNavigate();
+  const [submission, setSubmission] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [quitting, setQuitting] = useState(false);
 
-  const attemptedCount = questions.filter(q => q.attempted).length;
-  const notAttemptedCount = questions.filter(q => !q.attempted).length;
+  useEffect(() => {
+    if (answerpaperId) {
+      loadSubmissionStatus();
+    }
+  }, [answerpaperId]);
+
+  const loadSubmissionStatus = async () => {
+    try {
+      setLoading(true);
+      const data = await getQuizSubmissionStatus(answerpaperId);
+      setSubmission(data);
+      setError(null);
+    } catch (err) {
+      console.error('Failed to load submission status:', err);
+      setError('Failed to load submission status');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleQuit = async () => {
+    try {
+      setQuitting(true);
+      await quitQuiz(answerpaperId);
+      // Reload status
+      await loadSubmissionStatus();
+    } catch (err) {
+      console.error('Failed to quit quiz:', err);
+      alert('Failed to quit quiz');
+    } finally {
+      setQuitting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col relative grid-texture bg-gradient-to-b from-[var(--bg-1)] to-[var(--bg-2)]">
+        <header className="px-8 py-4 border-b border-white/6 bg-gradient-to-b from-white/[0.01] to-transparent">
+          <div className="flex items-center justify-between">
+            <Logo />
+          </div>
+        </header>
+        <main className="flex-1 flex items-center justify-center p-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mx-auto mb-4"></div>
+            <p className="text-gray-400">Loading submission status...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (error || !submission) {
+    return (
+      <div className="min-h-screen flex flex-col relative grid-texture bg-gradient-to-b from-[var(--bg-1)] to-[var(--bg-2)]">
+        <header className="px-8 py-4 border-b border-white/6 bg-gradient-to-b from-white/[0.01] to-transparent">
+          <div className="flex items-center justify-between">
+            <Logo />
+          </div>
+        </header>
+        <main className="flex-1 flex items-center justify-center p-8">
+          <div className="text-center">
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-red-300 mb-4">
+              {error || 'Submission not found'}
+            </div>
+            <Link to="/courses" className="text-indigo-400 hover:text-indigo-300">
+              Back to Courses
+            </Link>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  const attemptedCount = submission.attempted_count || 0;
+  const notAttemptedCount = submission.not_attempted_count || 0;
 
   return (
     <div className="min-h-screen flex flex-col relative grid-texture bg-gradient-to-b from-[var(--bg-1)] to-[var(--bg-2)]">
@@ -54,10 +122,10 @@ const Submission = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {questions.map((question, index) => (
+                  {submission.questions && submission.questions.map((question, index) => (
                     <tr
                       key={question.id}
-                      className={`border-b border-white/5 hover:bg-white/[0.03] transition-colors ${index === questions.length - 1 ? 'border-b-0' : ''
+                      className={`border-b border-white/5 hover:bg-white/[0.03] transition-colors ${index === submission.questions.length - 1 ? 'border-b-0' : ''
                         }`}
                     >
                       <td className="px-6 py-4 soft">{question.title}</td>
@@ -103,22 +171,38 @@ const Submission = () => {
             <p className="text-xl font-semibold text-white mb-2">Are you sure you wish to quit exam?</p>
             <p className="text-base muted mb-8">Be sure, as you won't be able to restart this exam.</p>
 
-            <div className="flex justify-center gap-4 flex-wrap">
-              <Link
-                to="/module"
-                className="bg-green-600 text-white px-10 py-3 rounded-xl font-semibold hover:bg-green-700 transition text-lg flex items-center gap-2"
-              >
-                <FaCheck className="w-5 h-5" />
-                Yes, Quit
-              </Link>
-              <Link
-                to="/quiz"
-                className="bg-red-600 text-white px-10 py-3 rounded-xl font-semibold hover:bg-red-700 transition text-lg flex items-center gap-2"
-              >
-                <FaTimes className="w-5 h-5" />
-                No, Continue
-              </Link>
-            </div>
+            {submission.status === 'completed' ? (
+              <div className="text-center">
+                <p className="text-lg text-green-400 mb-4">Quiz has been completed.</p>
+                {submission.percent !== undefined && (
+                  <p className="text-2xl font-bold mb-4">Score: {submission.percent}%</p>
+                )}
+                <Link
+                  to="/courses"
+                  className="bg-indigo-600 text-white px-10 py-3 rounded-xl font-semibold hover:bg-indigo-700 transition text-lg inline-flex items-center gap-2"
+                >
+                  Back to Courses
+                </Link>
+              </div>
+            ) : (
+              <div className="flex justify-center gap-4 flex-wrap">
+                <button
+                  onClick={handleQuit}
+                  disabled={quitting}
+                  className="bg-green-600 text-white px-10 py-3 rounded-xl font-semibold hover:bg-green-700 transition text-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <FaCheck className="w-5 h-5" />
+                  {quitting ? 'Quitting...' : 'Yes, Quit'}
+                </button>
+                <button
+                  onClick={() => window.history.back()}
+                  className="bg-red-600 text-white px-10 py-3 rounded-xl font-semibold hover:bg-red-700 transition text-lg flex items-center gap-2"
+                >
+                  <FaTimes className="w-5 h-5" />
+                  No, Continue
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </main>

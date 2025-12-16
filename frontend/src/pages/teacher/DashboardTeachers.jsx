@@ -1,9 +1,73 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import TeacherSidebar from '../../components/layout/TeacherSidebar';
 import Header from '../../components/layout/Header';
+import { fetchTeacherDashboard } from '../../api/api';
 
 const DashboardTeachers = () => {
+    const [dashboardData, setDashboardData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        loadDashboard();
+    }, []);
+
+    const loadDashboard = async () => {
+        try {
+            setLoading(true);
+            const data = await fetchTeacherDashboard();
+            setDashboardData(data);
+            setError(null);
+        } catch (err) {
+            console.error('Failed to load dashboard:', err);
+            setError('Failed to load dashboard data');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="flex min-h-screen relative grid-texture">
+                <TeacherSidebar />
+                <main className="flex-1">
+                    <Header isAuth />
+                    <div className="p-8 flex items-center justify-center min-h-[400px]">
+                        <div className="text-center">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                            <p className="text-gray-400">Loading dashboard...</p>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        );
+    }
+
+    if (error || !dashboardData) {
+        return (
+            <div className="flex min-h-screen relative grid-texture">
+                <TeacherSidebar />
+                <main className="flex-1">
+                    <Header isAuth />
+                    <div className="p-8 flex items-center justify-center min-h-[400px]">
+                        <div className="text-center">
+                            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-red-300 mb-4">
+                                {error || 'Failed to load dashboard'}
+                            </div>
+                            <button
+                                onClick={loadDashboard}
+                                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
+                            >
+                                Retry
+                            </button>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        );
+    }
+
     return (
         <div className="flex min-h-screen relative grid-texture">
             <TeacherSidebar />
@@ -68,8 +132,8 @@ const DashboardTeachers = () => {
                             <div className="flex justify-between items-start mb-4">
                                 <div>
                                     <p className="muted text-sm mb-1">Total Courses</p>
-                                    <p className="text-3xl font-bold">2,543</p>
-                                    <p className="text-sm text-green-400 mt-1">+12.5%</p>
+                                    <p className="text-3xl font-bold">{dashboardData.total_courses || 0}</p>
+                                    <p className="text-sm text-green-400 mt-1">{dashboardData.active_courses || 0} active</p>
                                 </div>
                                 <div
                                     className="w-12 h-12 rounded-xl flex items-center justify-center"
@@ -99,9 +163,9 @@ const DashboardTeachers = () => {
                         <div className="card p-6">
                             <div className="flex justify-between items-start mb-4">
                                 <div>
-                                    <p className="muted text-sm mb-1">Active Events</p>
-                                    <p className="text-3xl font-bold">2,543</p>
-                                    <p className="text-sm text-green-400 mt-1">+12.5%</p>
+                                    <p className="muted text-sm mb-1">Active Courses</p>
+                                    <p className="text-3xl font-bold">{dashboardData.active_courses || 0}</p>
+                                    <p className="text-sm text-green-400 mt-1">Currently active</p>
                                 </div>
                                 <div
                                     className="w-12 h-12 rounded-xl flex items-center justify-center"
@@ -132,8 +196,8 @@ const DashboardTeachers = () => {
                             <div className="flex justify-between items-start mb-4">
                                 <div>
                                     <p className="muted text-sm mb-1">Students</p>
-                                    <p className="text-3xl font-bold">2,543</p>
-                                    <p className="text-sm text-green-400 mt-1">+12.5%</p>
+                                    <p className="text-3xl font-bold">{dashboardData.total_students || 0}</p>
+                                    <p className="text-sm text-green-400 mt-1">Total enrolled</p>
                                 </div>
                                 <div
                                     className="w-12 h-12 rounded-xl flex items-center justify-center"
@@ -164,8 +228,8 @@ const DashboardTeachers = () => {
                             <div className="flex justify-between items-start mb-4">
                                 <div>
                                     <p className="muted text-sm mb-1">Avg. Completion</p>
-                                    <p className="text-3xl font-bold">2,543</p>
-                                    <p className="text-sm text-red-400 mt-1">-12.5%</p>
+                                    <p className="text-3xl font-bold">{dashboardData.avg_completion || 0}%</p>
+                                    <p className="text-sm text-green-400 mt-1">Completion rate</p>
                                 </div>
                                 <div
                                     className="w-12 h-12 rounded-xl flex items-center justify-center"
@@ -204,39 +268,20 @@ const DashboardTeachers = () => {
                             </div>
 
                             <div className="space-y-4">
-                                {/* Event 1 */}
-                                <div className="card p-5">
-                                    <div className="flex justify-between items-start">
-                                        <div className="flex gap-4 flex-1">
-                                            <div
-                                                className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-                                                style={{
-                                                    background: 'rgba(34,197,94,0.15)',
-                                                    border: '1px solid rgba(34,197,94,0.2)',
-                                                }}
-                                            >
-                                                <svg
-                                                    className="w-6 h-6 text-green-400"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    viewBox="0 0 24 24"
-                                                    strokeWidth="1.5"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                                    />
-                                                </svg>
-                                            </div>
-                                            <div className="flex-1">
-                                                <h3 className="font-semibold text-lg mb-1">
-                                                    Science Mid-term Quiz
-                                                </h3>
-                                                <div className="flex items-center gap-4 text-sm muted">
-                                                    <div className="flex items-center gap-1">
+                                {dashboardData.upcoming_quizzes && dashboardData.upcoming_quizzes.length > 0 ? (
+                                    dashboardData.upcoming_quizzes.map((quiz, index) => (
+                                        <div key={index} className="card p-5">
+                                            <div className="flex justify-between items-start">
+                                                <div className="flex gap-4 flex-1">
+                                                    <div
+                                                        className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                                                        style={{
+                                                            background: 'rgba(34,197,94,0.15)',
+                                                            border: '1px solid rgba(34,197,94,0.2)',
+                                                        }}
+                                                    >
                                                         <svg
-                                                            className="w-4 h-4"
+                                                            className="w-6 h-6 text-green-400"
                                                             fill="none"
                                                             stroke="currentColor"
                                                             viewBox="0 0 24 24"
@@ -245,177 +290,64 @@ const DashboardTeachers = () => {
                                                             <path
                                                                 strokeLinecap="round"
                                                                 strokeLinejoin="round"
-                                                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                                                             />
                                                         </svg>
-                                                        Today, 2:30 PM
                                                     </div>
-                                                    <div className="flex items-center gap-1">
-                                                        <svg
-                                                            className="w-4 h-4"
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            viewBox="0 0 24 24"
-                                                            strokeWidth="1.5"
-                                                        >
-                                                            <path
-                                                                strokeLinecap="round"
-                                                                strokeLinejoin="round"
-                                                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857"
-                                                            />
-                                                        </svg>
-                                                        32 participants
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <button className="bg-blue-600 px-5 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition">
-                                            View Live
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Event 2 */}
-                                <div className="card p-5">
-                                    <div className="flex justify-between items-start">
-                                        <div className="flex gap-4 flex-1">
-                                            <div
-                                                className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-                                                style={{
-                                                    background: 'rgba(34,197,94,0.15)',
-                                                    border: '1px solid rgba(34,197,94,0.2)',
-                                                }}
-                                            >
-                                                <svg
-                                                    className="w-6 h-6 text-green-400"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    viewBox="0 0 24 24"
-                                                    strokeWidth="1.5"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                                    />
-                                                </svg>
-                                            </div>
-                                            <div className="flex-1">
-                                                <h3 className="font-semibold text-lg mb-1">
-                                                    Mathematics Weekly Test
-                                                </h3>
-                                                <div className="flex items-center gap-4 text-sm muted">
-                                                    <div className="flex items-center gap-1">
-                                                        <svg
-                                                            className="w-4 h-4"
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            viewBox="0 0 24 24"
-                                                            strokeWidth="1.5"
-                                                        >
-                                                            <path
-                                                                strokeLinecap="round"
-                                                                strokeLinejoin="round"
-                                                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                                                            />
-                                                        </svg>
-                                                        Tomorrow, 10:00 AM
-                                                    </div>
-                                                    <div className="flex items-center gap-1">
-                                                        <svg
-                                                            className="w-4 h-4"
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            viewBox="0 0 24 24"
-                                                            strokeWidth="1.5"
-                                                        >
-                                                            <path
-                                                                strokeLinecap="round"
-                                                                strokeLinejoin="round"
-                                                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857"
-                                                            />
-                                                        </svg>
-                                                        28 participants
+                                                    <div className="flex-1">
+                                                        <h3 className="font-semibold text-lg mb-1">
+                                                            {quiz.name}
+                                                        </h3>
+                                                        <div className="flex items-center gap-4 text-sm muted">
+                                                            <div className="flex items-center gap-1">
+                                                                <svg
+                                                                    className="w-4 h-4"
+                                                                    fill="none"
+                                                                    stroke="currentColor"
+                                                                    viewBox="0 0 24 24"
+                                                                    strokeWidth="1.5"
+                                                                >
+                                                                    <path
+                                                                        strokeLinecap="round"
+                                                                        strokeLinejoin="round"
+                                                                        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                                                                    />
+                                                                </svg>
+                                                                {quiz.course_name}
+                                                            </div>
+                                                            <div className="flex items-center gap-1">
+                                                                <svg
+                                                                    className="w-4 h-4"
+                                                                    fill="none"
+                                                                    stroke="currentColor"
+                                                                    viewBox="0 0 24 24"
+                                                                    strokeWidth="1.5"
+                                                                >
+                                                                    <path
+                                                                        strokeLinecap="round"
+                                                                        strokeLinejoin="round"
+                                                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                                                    />
+                                                                </svg>
+                                                                {quiz.module_name}
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        </div>
-                                        <button className="border border-white/10 px-5 py-2 rounded-lg text-sm font-semibold hover:bg-white/5 transition">
-                                            Manage
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Event 3 */}
-                                <div className="card p-5">
-                                    <div className="flex justify-between items-start">
-                                        <div className="flex gap-4 flex-1">
-                                            <div
-                                                className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-                                                style={{
-                                                    background: 'rgba(34,197,94,0.15)',
-                                                    border: '1px solid rgba(34,197,94,0.2)',
-                                                }}
-                                            >
-                                                <svg
-                                                    className="w-6 h-6 text-green-400"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    viewBox="0 0 24 24"
-                                                    strokeWidth="1.5"
+                                                <Link
+                                                    to={`/teacher/courses/${quiz.id}/manage`}
+                                                    className="border border-white/10 px-5 py-2 rounded-lg text-sm font-semibold hover:bg-white/5 transition"
                                                 >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                                    />
-                                                </svg>
-                                            </div>
-                                            <div className="flex-1">
-                                                <h3 className="font-semibold text-lg mb-1">
-                                                    History Final Exam
-                                                </h3>
-                                                <div className="flex items-center gap-4 text-sm muted">
-                                                    <div className="flex items-center gap-1">
-                                                        <svg
-                                                            className="w-4 h-4"
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            viewBox="0 0 24 24"
-                                                            strokeWidth="1.5"
-                                                        >
-                                                            <path
-                                                                strokeLinecap="round"
-                                                                strokeLinejoin="round"
-                                                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                                                            />
-                                                        </svg>
-                                                        May 20, 9:00 AM
-                                                    </div>
-                                                    <div className="flex items-center gap-1">
-                                                        <svg
-                                                            className="w-4 h-4"
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            viewBox="0 0 24 24"
-                                                            strokeWidth="1.5"
-                                                        >
-                                                            <path
-                                                                strokeLinecap="round"
-                                                                strokeLinejoin="round"
-                                                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857"
-                                                            />
-                                                        </svg>
-                                                        45 participants
-                                                    </div>
-                                                </div>
+                                                    Manage
+                                                </Link>
                                             </div>
                                         </div>
-                                        <button className="border border-white/10 px-5 py-2 rounded-lg text-sm font-semibold hover:bg-white/5 transition">
-                                            Manage
-                                        </button>
+                                    ))
+                                ) : (
+                                    <div className="card p-5 text-center text-muted">
+                                        <p>No upcoming quizzes</p>
                                     </div>
-                                </div>
+                                )}
                             </div>
                         </div>
 
@@ -538,221 +470,71 @@ const DashboardTeachers = () => {
                         </div>
 
                         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                            {/* Course Card 1 */}
-                            <div className="card p-6 hover:scale-[1.02] transition-all duration-200">
-                                <div className="flex justify-between items-start mb-4">
-                                    <h3 className="font-bold text-lg">Introduction to Biology</h3>
-                                    <button className="border border-white/10 px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-white/5 transition flex items-center gap-1">
-                                        Manage
-                                        <svg
-                                            className="w-4 h-4"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                            strokeWidth="2"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                d="M9 5l7 7-7 7"
-                                            />
-                                        </svg>
-                                    </button>
-                                </div>
+                            {dashboardData.recent_courses && dashboardData.recent_courses.length > 0 ? (
+                                dashboardData.recent_courses.map((course) => (
+                                    <Link
+                                        key={course.id}
+                                        to={`/teacher/courses/${course.id}/manage`}
+                                        className="card p-6 hover:scale-[1.02] transition-all duration-200"
+                                    >
+                                        <div className="flex justify-between items-start mb-4">
+                                            <h3 className="font-bold text-lg">{course.name}</h3>
+                                            <div className={`px-2 py-1 rounded text-xs font-semibold ${
+                                                course.active 
+                                                    ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
+                                                    : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
+                                            }`}>
+                                                {course.active ? 'Active' : 'Inactive'}
+                                            </div>
+                                        </div>
 
-                                <div className="flex items-center gap-4 text-sm muted mb-4">
-                                    <div className="flex items-center gap-1">
-                                        <svg
-                                            className="w-4 h-4"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                            strokeWidth="1.5"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                            />
-                                        </svg>
-                                        15 questions
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                        <svg
-                                            className="w-4 h-4"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                            strokeWidth="1.5"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857"
-                                            />
-                                        </svg>
-                                        28 completions
-                                    </div>
+                                        <div className="flex items-center gap-4 text-sm muted mb-4">
+                                            <div className="flex items-center gap-1">
+                                                <svg
+                                                    className="w-4 h-4"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                    strokeWidth="1.5"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                                    />
+                                                </svg>
+                                                {course.modules_count} modules
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <svg
+                                                    className="w-4 h-4"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                    strokeWidth="1.5"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857"
+                                                    />
+                                                </svg>
+                                                {course.students_count} students
+                                            </div>
+                                        </div>
+                                    </Link>
+                                ))
+                            ) : (
+                                <div className="col-span-4 card p-6 text-center text-muted">
+                                    <p>No courses yet. Create your first course!</p>
                                 </div>
-
-                                <div className="mb-2">
-                                    <div className="flex justify-between text-sm mb-2">
-                                        <span className="muted">Completion Rate</span>
-                                        <span className="font-semibold">75%</span>
-                                    </div>
-                                    <div className="w-full bg-white/10 rounded-full h-2">
-                                        <div
-                                            className="h-2 rounded-full bg-cyan-500"
-                                            style={{ width: '75%' }}
-                                        ></div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Course Card 2 */}
-                            <div className="card p-6 hover:scale-[1.02] transition-all duration-200">
-                                <div className="flex justify-between items-start mb-4">
-                                    <h3 className="font-bold text-lg">Introduction to Biology</h3>
-                                    <button className="border border-white/10 px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-white/5 transition flex items-center gap-1">
-                                        Manage
-                                        <svg
-                                            className="w-4 h-4"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                            strokeWidth="2"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                d="M9 5l7 7-7 7"
-                                            />
-                                        </svg>
-                                    </button>
-                                </div>
-
-                                <div className="flex items-center gap-4 text-sm muted mb-4">
-                                    <div className="flex items-center gap-1">
-                                        <svg
-                                            className="w-4 h-4"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                            strokeWidth="1.5"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                            />
-                                        </svg>
-                                        15 questions
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                        <svg
-                                            className="w-4 h-4"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                            strokeWidth="1.5"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857"
-                                            />
-                                        </svg>
-                                        28 completions
-                                    </div>
-                                </div>
-
-                                <div className="mb-2">
-                                    <div className="flex justify-between text-sm mb-2">
-                                        <span className="muted">Completion Rate</span>
-                                        <span className="font-semibold">75%</span>
-                                    </div>
-                                    <div className="w-full bg-white/10 rounded-full h-2">
-                                        <div
-                                            className="h-2 rounded-full bg-cyan-500"
-                                            style={{ width: '75%' }}
-                                        ></div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Course Card 3 */}
-                            <div className="card p-6 hover:scale-[1.02] transition-all duration-200">
-                                <div className="flex justify-between items-start mb-4">
-                                    <h3 className="font-bold text-lg">Introduction to Biology</h3>
-                                    <button className="border border-white/10 px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-white/5 transition flex items-center gap-1">
-                                        Manage
-                                        <svg
-                                            className="w-4 h-4"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                            strokeWidth="2"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                d="M9 5l7 7-7 7"
-                                            />
-                                        </svg>
-                                    </button>
-                                </div>
-
-                                <div className="flex items-center gap-4 text-sm muted mb-4">
-                                    <div className="flex items-center gap-1">
-                                        <svg
-                                            className="w-4 h-4"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                            strokeWidth="1.5"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                            />
-                                        </svg>
-                                        15 questions
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                        <svg
-                                            className="w-4 h-4"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                            strokeWidth="1.5"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857"
-                                            />
-                                        </svg>
-                                        28 completions
-                                    </div>
-                                </div>
-
-                                <div className="mb-2">
-                                    <div className="flex justify-between text-sm mb-2">
-                                        <span className="muted">Completion Rate</span>
-                                        <span className="font-semibold">76%</span>
-                                    </div>
-                                    <div className="w-full bg-white/10 rounded-full h-2">
-                                        <div
-                                            className="h-2 rounded-full bg-cyan-500"
-                                            style={{ width: '76%' }}
-                                        ></div>
-                                    </div>
-                                </div>
-                            </div>
+                            )}
 
                             {/* Create New Course Card */}
-                            <div className="card p-6 hover:scale-[1.02] transition-all duration-200 flex flex-col items-center justify-center text-center min-h-[200px] cursor-pointer">
+                            <Link
+                                to="/teacher/add-course"
+                                className="card p-6 hover:scale-[1.02] transition-all duration-200 flex flex-col items-center justify-center text-center min-h-[200px] cursor-pointer"
+                            >
                                 <div className="w-16 h-16 rounded-full bg-white/5 border-2 border-dashed border-white/20 flex items-center justify-center mb-4">
                                     <svg
                                         className="w-8 h-8 text-gray-400"
@@ -770,7 +552,7 @@ const DashboardTeachers = () => {
                                 </div>
                                 <h3 className="font-bold text-lg mb-2">Create New Course</h3>
                                 <p className="text-sm muted">Add details, set time limits and more</p>
-                            </div>
+                            </Link>
                         </div>
                     </div>
                 </div>

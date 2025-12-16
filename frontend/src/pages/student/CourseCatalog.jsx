@@ -1,64 +1,70 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { FaStar, FaUsers, FaClock, FaCode } from 'react-icons/fa';
 import Sidebar from '../../components/layout/Sidebar';
 import Header from '../../components/layout/Header';
+import { fetchCourseCatalog, enrollInCourse } from '../../api/api';
+import { useAuthStore } from '../../store/authStore';
 
 const CourseCatalog = () => {
-  const courses = [
-    {
-      id: 1,
-      title: 'Python Fundamentals',
-      subtitle: 'Data Structures & Algorithms',
-      instructor: 'Prof. Sarah Chen',
-      level: 'Advanced',
-      rating: 4.8,
-      students: 5200,
-      duration: '40 hours',
-      progress: 72,
-      color: 'cyan',
-      icon: 'code'
-    },
-    {
-      id: 2,
-      title: 'Web Development Basics',
-      subtitle: 'HTML/CSS/JavaScript',
-      instructor: 'Prof. Emma Johnson',
-      level: 'Intermediate',
-      rating: 4.6,
-      students: 3800,
-      duration: '35 hours',
-      progress: 45,
-      color: 'blue',
-      icon: 'html'
-    },
-    {
-      id: 3,
-      title: 'Java Full-Stack Development',
-      subtitle: 'Enterprise Development',
-      instructor: 'Dr. Michael Wong',
-      level: 'Advanced',
-      rating: 4.9,
-      students: 6400,
-      duration: '52 hours',
-      progress: 28,
-      color: 'orange',
-      icon: 'java'
-    },
-    {
-      id: 4,
-      title: 'C Programming Basics',
-      subtitle: 'Foundation Course',
-      instructor: 'Prof. David Lee',
-      level: 'Beginner',
-      rating: 4.7,
-      students: 4200,
-      duration: '30 hours',
-      progress: 60,
-      color: 'green',
-      icon: 'c'
+  const { user } = useAuthStore();
+  const navigate = useNavigate();
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [enrollmentStatus, setEnrollmentStatus] = useState('all');
+  const [enrollingCourseId, setEnrollingCourseId] = useState(null);
+
+  useEffect(() => {
+    loadCourses();
+  }, [enrollmentStatus]);
+
+  const loadCourses = async () => {
+    try {
+      setLoading(true);
+      const data = await fetchCourseCatalog({ enrollment_status: enrollmentStatus });
+      setCourses(data);
+      setError(null);
+    } catch (err) {
+      console.error('Failed to load courses:', err);
+      setError('Failed to load courses');
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  const handleEnroll = async (courseId) => {
+    try {
+      setEnrollingCourseId(courseId);
+      await enrollInCourse(courseId);
+      // Reload courses to update enrollment status
+      await loadCourses();
+      // Navigate to course modules
+      navigate(`/courses/${courseId}/modules`);
+    } catch (err) {
+      console.error('Failed to enroll:', err);
+      alert('Failed to enroll in course');
+    } finally {
+      setEnrollingCourseId(null);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen relative grid-texture">
+        <Sidebar />
+        <main className="flex-1">
+          <Header isAuth />
+          <div className="p-8 flex items-center justify-center h-96">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mx-auto mb-4"></div>
+              <p className="text-gray-400">Loading courses...</p>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen relative grid-texture">
@@ -73,6 +79,12 @@ const CourseCatalog = () => {
             <h1 className="text-3xl font-bold">Course Catalog</h1>
             <p className="text-gray-400 text-sm mt-1">Browse, enroll, and manage your learning courses</p>
           </div>
+
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-red-300 mb-6">
+              {error}
+            </div>
+          )}
 
           <div className="flex gap-6">
             {/* Filter Sidebar */}
@@ -116,98 +128,102 @@ const CourseCatalog = () => {
             <div className="flex-1">
               {/* Tabs */}
               <div className="inline-flex gap-2 mb-6 p-1 bg-transparent">
-                <button className="bg-gradient-to-r from-[var(--grad-1)] to-[var(--grad-2)] text-white px-6 py-2 rounded-full font-semibold">
+                <button 
+                  onClick={() => setEnrollmentStatus('all')}
+                  className={enrollmentStatus === 'all' ? "bg-gradient-to-r from-[var(--grad-1)] to-[var(--grad-2)] text-white px-6 py-2 rounded-full font-semibold" : "bg-white/[0.02] text-soft px-5 py-2 rounded-full hover:bg-white/[0.05] transition"}
+                >
                   All Courses
                 </button>
-                <button className="bg-white/[0.02] text-soft px-5 py-2 rounded-full hover:bg-white/[0.05] transition">
+                <button 
+                  onClick={() => setEnrollmentStatus('enrolled')}
+                  className={enrollmentStatus === 'enrolled' ? "bg-gradient-to-r from-[var(--grad-1)] to-[var(--grad-2)] text-white px-6 py-2 rounded-full font-semibold" : "bg-white/[0.02] text-soft px-5 py-2 rounded-full hover:bg-white/[0.05] transition"}
+                >
                   Enrolled
                 </button>
-                <button className="bg-white/[0.02] text-soft px-5 py-2 rounded-full hover:bg-white/[0.05] transition">
+                <button 
+                  onClick={() => setEnrollmentStatus('completed')}
+                  className={enrollmentStatus === 'completed' ? "bg-gradient-to-r from-[var(--grad-1)] to-[var(--grad-2)] text-white px-6 py-2 rounded-full font-semibold" : "bg-white/[0.02] text-soft px-5 py-2 rounded-full hover:bg-white/[0.05] transition"}
+                >
                   Completed
                 </button>
               </div>
 
               {/* Course Cards Grid */}
               <div className="grid lg:grid-cols-2 gap-6">
-                {courses.map((course) => (
-                  <Link
-                    key={course.id}
-                    to="/module"
-                    className="card overflow-hidden transition hover:scale-[1.01] block"
-                  >
-                    {/* Minimal Dark Header */}
-                    <div className="bg-gradient-to-b from-white/[0.02] to-black/[0.06] border-b border-white/[0.03] h-44 flex items-center justify-center relative">
-                      <div className="absolute top-4 right-4 bg-white/[0.06] text-white px-3 py-1 rounded-full text-xs font-semibold">
-                        {course.level}
+                {courses && courses.length > 0 ? (
+                  courses.map((course) => (
+                    <div
+                      key={course.id}
+                      className="card overflow-hidden transition hover:scale-[1.01] block"
+                    >
+                      {/* Minimal Dark Header */}
+                      <div className="bg-gradient-to-b from-white/[0.02] to-black/[0.06] border-b border-white/[0.03] h-44 flex items-center justify-center relative">
+                        <div className="absolute top-4 right-4 bg-white/[0.06] text-white px-3 py-1 rounded-full text-xs font-semibold">
+                          {course.level}
+                        </div>
+                        <div className="text-center">
+                          <FaCode className="w-20 h-20 text-indigo-400 mx-auto mb-2" />
+                          <p className="text-xs text-white/80 font-medium truncate max-w-xs px-4">{course.name}</p>
+                        </div>
                       </div>
-                      <div className="text-center">
-                        {course.icon === 'code' && (
-                          <>
-                            <FaCode className={`w-20 h-20 text-${course.color}-400 mx-auto mb-2`} />
-                            <p className="text-xs text-white/80 font-medium">{course.title}</p>
-                            <p className={`text-xs text-${course.color}-200`}>{course.subtitle}</p>
-                          </>
-                        )}
-                        {course.icon === 'html' && (
-                          <>
-                            <div className="text-white text-5xl font-bold mb-2">HTML/5</div>
-                            <p className="text-xs text-white/80 font-medium">Web Development</p>
-                          </>
-                        )}
-                        {course.icon === 'java' && (
-                          <>
-                            <svg className={`w-20 h-20 text-${course.color}-400 mx-auto mb-2`} viewBox="0 0 50 50" fill="currentColor">
-                              <path d="M25 10 L15 40 L35 40 Z M20 30 L25 20 L30 30 Z" />
-                            </svg>
-                            <p className="text-xs text-white/80 font-medium">Java Full-Stack</p>
-                            <p className={`text-xs text-${course.color}-200`}>Enterprise Development</p>
-                          </>
-                        )}
-                        {course.icon === 'c' && (
-                          <>
-                            <div className={`w-20 h-20 rounded-xl border-2 border-${course.color}-400 flex items-center justify-center mx-auto mb-2`}>
-                              <span className={`text-4xl font-bold text-${course.color}-400`}>C</span>
+
+                      <div className="p-6">
+                        <h3 className="font-bold text-lg mb-2 text-white">{course.name}</h3>
+                        <p className="muted text-sm mb-4">{course.instructor}</p>
+
+                        <div className="flex items-center gap-4 mb-4 text-sm flex-wrap">
+                          <div className="flex items-center gap-1">
+                            <FaStar className="w-4 h-4 text-yellow-400" />
+                            <span className="font-semibold">{course.rating}</span>
+                          </div>
+
+                          <div className="flex items-center gap-1 muted">
+                            <FaUsers className="w-4 h-4" />
+                            <span>{course.students_count}</span>
+                          </div>
+
+                          <div className="flex items-center gap-1 muted">
+                            <FaClock className="w-4 h-4" />
+                            <span>{course.duration}</span>
+                          </div>
+                        </div>
+
+                        {course.is_enrolled && (
+                          <div className="mb-4">
+                            <div className="flex justify-between text-sm mb-1">
+                              <span className="muted">Progress</span>
+                              <span className="font-semibold">{course.progress}%</span>
                             </div>
-                            <p className="text-xs text-white/80 font-medium">C Programming</p>
-                            <p className={`text-xs text-${course.color}-200`}>Foundation Course</p>
-                          </>
+                            <div className="w-full bg-white/6 rounded-full h-2">
+                              <div className="h-2 rounded-full bg-gradient-to-r from-indigo-500 to-cyan-500" style={{ width: `${course.progress}%` }}></div>
+                            </div>
+                          </div>
+                        )}
+
+                        {course.is_enrolled ? (
+                          <Link
+                            to={`/courses/${course.id}/modules`}
+                            className="w-full bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition flex items-center justify-center gap-2"
+                          >
+                            View Course
+                          </Link>
+                        ) : (
+                          <button
+                            onClick={() => handleEnroll(course.id)}
+                            disabled={enrollingCourseId === course.id}
+                            className="w-full bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {enrollingCourseId === course.id ? 'Enrolling...' : 'Enroll Now'}
+                          </button>
                         )}
                       </div>
                     </div>
-
-                    <div className="p-6">
-                      <h3 className="font-bold text-lg mb-2 text-white">{course.title}</h3>
-                      <p className="muted text-sm mb-4">{course.instructor}</p>
-
-                      <div className="flex items-center gap-4 mb-4 text-sm">
-                        <div className="flex items-center gap-1">
-                          <FaStar className="w-4 h-4 text-yellow-400" />
-                          <span className="font-semibold">{course.rating}</span>
-                        </div>
-
-                        <div className="flex items-center gap-1 muted">
-                          <FaUsers className="w-4 h-4" />
-                          <span>{course.students.toLocaleString()}</span>
-                        </div>
-
-                        <div className="flex items-center gap-1 muted">
-                          <FaClock className="w-4 h-4" />
-                          <span>{course.duration}</span>
-                        </div>
-                      </div>
-
-                      <div className="mb-2">
-                        <div className="flex justify-between text-sm mb-1">
-                          <span className="muted">Progress</span>
-                          <span className="font-semibold">{course.progress}%</span>
-                        </div>
-                        <div className="w-full bg-white/6 rounded-full h-2">
-                          <div className={`h-2 rounded-full bg-${course.color}-500`} style={{ width: `${course.progress}%` }}></div>
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
+                  ))
+                ) : (
+                  <div className="col-span-2 text-center py-12 text-gray-400">
+                    <p>No courses found</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

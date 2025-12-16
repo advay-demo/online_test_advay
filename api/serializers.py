@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from yaksh.models import (
     Question, Quiz, QuestionPaper, AnswerPaper, Course,
-    LearningModule, LearningUnit, Lesson
+    LearningModule, LearningUnit, Lesson, CourseStatus,
+    Badge, UserBadge, BadgeProgress, UserStats, DailyActivity, UserActivity
 )
 
 
@@ -77,3 +78,361 @@ class CourseSerializer(serializers.ModelSerializer):
             'grading_system',
             'view_grade',
         )
+
+
+###############################################################################
+# Badge & Achievement Serializers
+###############################################################################
+
+class BadgeSerializer(serializers.ModelSerializer):
+    """Serializer for Badge model"""
+    class Meta:
+        model = Badge
+        fields = ['id', 'name', 'description', 'icon', 'color', 'badge_type', 
+                 'criteria_type', 'criteria_value']
+
+
+class UserBadgeSerializer(serializers.ModelSerializer):
+    """Serializer for earned badges with badge details"""
+    badge = BadgeSerializer(read_only=True)
+    earned_date = serializers.DateTimeField(format="%b %d, %Y")
+    
+    class Meta:
+        model = UserBadge
+        fields = ['id', 'badge', 'earned_date']
+
+
+class BadgeProgressSerializer(serializers.ModelSerializer):
+    """Serializer for badge progress tracking"""
+    badge = BadgeSerializer(read_only=True)
+    progress_percentage = serializers.SerializerMethodField()
+    steps = serializers.SerializerMethodField()
+    
+    def get_progress_percentage(self, obj):
+        return obj.progress_percentage()
+    
+    def get_steps(self, obj):
+        return {
+            'completed': obj.current_progress,
+            'total': obj.badge.criteria_value
+        }
+    
+    class Meta:
+        model = BadgeProgress
+        fields = ['id', 'badge', 'current_progress', 'progress_percentage', 'steps']
+
+
+###############################################################################
+# Stats & Activity Serializers
+###############################################################################
+
+class UserStatsSerializer(serializers.ModelSerializer):
+    """Serializer for user statistics"""
+    learning_hours = serializers.SerializerMethodField()
+    
+    def get_learning_hours(self, obj):
+        hours = int(obj.total_learning_hours)
+        minutes = int((obj.total_learning_hours - hours) * 60)
+        return f"{hours}h {minutes}m"
+    
+    class Meta:
+        model = UserStats
+        fields = ['total_challenges_solved', 'challenges_this_week', 
+                 'challenges_this_month', 'current_streak', 'longest_streak',
+                 'learning_hours', 'last_activity_date']
+
+
+class UserActivitySerializer(serializers.ModelSerializer):
+    """Serializer for user activity feed"""
+    time = serializers.SerializerMethodField()
+    
+    def get_time(self, obj):
+        from django.utils import timezone
+        now = timezone.now()
+        diff = now - obj.timestamp
+        
+        if diff.days > 0:
+            return f"{diff.days}d ago"
+        elif diff.seconds >= 3600:
+            hours = diff.seconds // 3600
+            return f"{hours}h ago"
+        elif diff.seconds >= 60:
+            minutes = diff.seconds // 60
+            return f"{minutes}m ago"
+        else:
+            return "Just now"
+    
+    class Meta:
+        model = UserActivity
+        fields = ['id', 'activity_type', 'title', 'description', 'icon', 
+                 'color', 'badge_name', 'time', 'timestamp']
+
+
+###############################################################################
+# Enhanced Course Serializers for Student Dashboard
+###############################################################################
+
+class CourseProgressSerializer(serializers.ModelSerializer):
+    """Enhanced course serializer with student progress"""
+    progress = serializers.SerializerMethodField()
+    lessons = serializers.SerializerMethodField()
+    instructor = serializers.SerializerMethodField()
+    color = serializers.SerializerMethodField()
+    next_lesson = serializers.SerializerMethodField()
+    is_enrolled = serializers.SerializerMethodField()
+    
+    def get_progress(self, obj):
+        user = self.context.get('user')
+        if not user:
+            return 0
+        
+        try:
+            course_status = CourseStatus.objects.get(user=user, course=obj)
+            total_units = obj.learning_module.aggregate(
+                total=serializers.models.Count('learning_unit')
+            )['total'] or 0
+            
+            if total_units == 0:
+                return 0
+            
+            completed_units = course_status.completed_units.count()
+            return int((completed_units / total_units) * 100)
+        except CourseStatus.DoesNotExist:
+            return 0
+    
+    def get_lessons(self, obj):
+        total = 0
+        completed = 0
+        
+        user = self.context.get('user')
+        if user:
+            try:
+                course_status = CourseStatus.objects.get(user=user, course=obj)
+                completed = course_status.completed_units.filter(type='lesson').count()
+            except CourseStatus.DoesNotExist:
+                pass
+        
+        for module in obj.learning_module.all():
+            total += module.learning_unit.filter(type='lesson').count()
+        
+        return {'completed': completed, 'total': total}
+    
+    def get_instructor(self, obj):
+        creator = obj.creator
+        return f"{creator.first_name} {creator.last_name}" if creator.first_name else creator.username
+    
+    def get_color(self, obj):
+        # Assign colors based on course id for variety
+        colors = ['indigo', 'blue', 'purple', 'pink', 'cyan', 'green', 'orange']
+        return colors[obj.id % len(colors)]
+    
+    def get_next_lesson(self, obj):
+        user = self.context.get('user')
+        if not user:
+            return None
+        
+        try:
+            course_status = CourseStatus.objects.get(user=user, course=obj)
+            if course_status.current_unit and course_status.current_unit.type == 'lesson':
+                return course_status.current_unit.lesson.name
+        except (CourseStatus.DoesNotExist, AttributeError):
+            pass
+        
+        # Get first lesson
+        for module in obj.learning_module.order_by('order'):
+            first_lesson = module.learning_unit.filter(type='lesson').order_by('order').first()
+            if first_lesson:
+                return first_lesson.lesson.name
+        
+        return None
+    
+    def get_is_enrolled(self, obj):
+        user = self.context.get('user')
+        if not user:
+            return False
+        return obj.students.filter(id=user.id).exists()
+    
+    class Meta:
+        model = Course
+        fields = ['id', 'name', 'progress', 'lessons', 'instructor', 'color', 
+                 'next_lesson', 'is_enrolled', 'code', 'created_on']
+
+
+class CourseCatalogSerializer(serializers.ModelSerializer):
+    """Serializer for course catalog with enrollment info"""
+    instructor = serializers.SerializerMethodField()
+    level = serializers.SerializerMethodField()
+    rating = serializers.SerializerMethodField()
+    students_count = serializers.SerializerMethodField()
+    duration = serializers.SerializerMethodField()
+    progress = serializers.SerializerMethodField()
+    color = serializers.SerializerMethodField()
+    is_enrolled = serializers.SerializerMethodField()
+    
+    def get_instructor(self, obj):
+        creator = obj.creator
+        return f"Prof. {creator.first_name} {creator.last_name}" if creator.first_name else f"Prof. {creator.username}"
+    
+    def get_level(self, obj):
+        # You can add a level field to Course model or compute it
+        return "Intermediate"
+    
+    def get_rating(self, obj):
+        # Placeholder - implement rating system later
+        return 4.5
+    
+    def get_students_count(self, obj):
+        return obj.students.count()
+    
+    def get_duration(self, obj):
+        # Estimate based on modules/lessons
+        total_lessons = 0
+        for module in obj.learning_module.all():
+            total_lessons += module.learning_unit.filter(type='lesson').count()
+        hours = total_lessons * 2  # Estimate 2 hours per lesson
+        return f"{hours} hours"
+    
+    def get_progress(self, obj):
+        user = self.context.get('user')
+        if not user:
+            return 0
+        
+        try:
+            course_status = CourseStatus.objects.get(user=user, course=obj)
+            total_units = sum(module.learning_unit.count() for module in obj.learning_module.all())
+            
+            if total_units == 0:
+                return 0
+            
+            completed_units = course_status.completed_units.count()
+            return int((completed_units / total_units) * 100)
+        except CourseStatus.DoesNotExist:
+            return 0
+    
+    def get_color(self, obj):
+        colors = ['cyan', 'blue', 'orange', 'green', 'purple', 'indigo', 'pink']
+        return colors[obj.id % len(colors)]
+    
+    def get_is_enrolled(self, obj):
+        user = self.context.get('user')
+        if not user:
+            return False
+        return obj.students.filter(id=user.id).exists()
+    
+    class Meta:
+        model = Course
+        fields = ['id', 'name', 'instructor', 'level', 'rating', 'students_count',
+                 'duration', 'progress', 'color', 'is_enrolled', 'code']
+
+
+###############################################################################
+# Enhanced Lesson & Module Serializers
+###############################################################################
+
+class LessonDetailSerializer(serializers.ModelSerializer):
+    """Detailed lesson serializer with video and files"""
+    video_url = serializers.SerializerMethodField()
+    files = serializers.SerializerMethodField()
+    is_completed = serializers.SerializerMethodField()
+    
+    def get_video_url(self, obj):
+        if obj.video_path:
+            return obj.video_path
+        return None
+    
+    def get_files(self, obj):
+        files = obj.get_files()
+        return [{'id': f.id, 'name': f.file.name} for f in files]
+    
+    def get_is_completed(self, obj):
+        user = self.context.get('user')
+        course_id = self.context.get('course_id')
+        
+        if not user or not course_id:
+            return False
+        
+        try:
+            course_status = CourseStatus.objects.get(user=user, course_id=course_id)
+            # Find the learning unit for this lesson
+            learning_unit = LearningUnit.objects.filter(
+                lesson=obj,
+                learning_unit__course__id=course_id
+            ).first()
+            
+            if learning_unit:
+                return course_status.completed_units.filter(id=learning_unit.id).exists()
+        except CourseStatus.DoesNotExist:
+            pass
+        
+        return False
+    
+    class Meta:
+        model = Lesson
+        fields = ['id', 'name', 'description', 'html_data', 'video_url', 
+                 'video_file', 'files', 'is_completed', 'active']
+
+
+class LearningUnitDetailSerializer(serializers.ModelSerializer):
+    """Detailed learning unit with quiz or lesson data"""
+    lesson = LessonDetailSerializer(read_only=True)
+    quiz = QuizSerializer(read_only=True)
+    status = serializers.SerializerMethodField()
+    
+    def get_status(self, obj):
+        user = self.context.get('user')
+        course_id = self.context.get('course_id')
+        
+        if not user or not course_id:
+            return "not_attempted"
+        
+        try:
+            from yaksh.models import Course
+            course = Course.objects.get(id=course_id)
+            return obj.get_completion_status(user, course)
+        except:
+            return "not_attempted"
+    
+    class Meta:
+        model = LearningUnit
+        fields = ['id', 'order', 'type', 'lesson', 'quiz', 'status', 'check_prerequisite']
+
+
+class LearningModuleDetailSerializer(serializers.ModelSerializer):
+    """Detailed module serializer with units and progress"""
+    units = serializers.SerializerMethodField()
+    progress = serializers.SerializerMethodField()
+    
+    def get_units(self, obj):
+        units = obj.get_learning_units()
+        serializer = LearningUnitDetailSerializer(
+            units, many=True, context=self.context
+        )
+        return serializer.data
+    
+    def get_progress(self, obj):
+        user = self.context.get('user')
+        course_id = self.context.get('course_id')
+        
+        if not user or not course_id:
+            return 0
+        
+        try:
+            course_status = CourseStatus.objects.get(user=user, course_id=course_id)
+            total_units = obj.learning_unit.count()
+            
+            if total_units == 0:
+                return 0
+            
+            completed_units = 0
+            for unit in obj.learning_unit.all():
+                if course_status.completed_units.filter(id=unit.id).exists():
+                    completed_units += 1
+            
+            return int((completed_units / total_units) * 100)
+        except CourseStatus.DoesNotExist:
+            return 0
+    
+    class Meta:
+        model = LearningModule
+        fields = ['id', 'name', 'description', 'order', 'units', 'progress', 
+                 'check_prerequisite', 'active']

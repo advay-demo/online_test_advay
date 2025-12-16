@@ -3392,3 +3392,261 @@ class QRcodeHandler(models.Model):
 
     def can_use(self):
         return self.answerpaper.is_attempt_inprogress()
+
+
+###############################################################################
+class Badge(models.Model):
+    """Represents an achievement badge that can be earned by users"""
+    name = models.CharField(max_length=100)
+    description = models.TextField()
+    icon = models.CharField(max_length=50, default='trophy',
+                           help_text="Icon identifier (e.g., 'trophy', 'fire', 'star')")
+    color = models.CharField(max_length=20, default='blue',
+                            help_text="Color theme (e.g., 'blue', 'green', 'purple')")
+    badge_type = models.CharField(max_length=50,
+                                 help_text="Type of badge (e.g., 'streak', 'challenge', 'course')")
+    criteria_type = models.CharField(max_length=50,
+                                    help_text="Criteria evaluation type")
+    criteria_value = models.IntegerField(default=1,
+                                        help_text="Target value for criteria")
+    active = models.BooleanField(default=True)
+    created_on = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+    def check_criteria(self, user):
+        """Check if user meets the criteria for this badge"""
+        try:
+            user_stats = UserStats.objects.get(user=user)
+        except UserStats.DoesNotExist:
+            return False
+
+        if self.criteria_type == 'challenges_solved':
+            return user_stats.total_challenges_solved >= self.criteria_value
+        elif self.criteria_type == 'streak_days':
+            return user_stats.current_streak >= self.criteria_value
+        elif self.criteria_type == 'courses_completed':
+            completed = CourseStatus.objects.filter(
+                user=user, grade__isnull=False
+            ).count()
+            return completed >= self.criteria_value
+        elif self.criteria_type == 'perfect_score':
+            # Check if user has at least one quiz with 100% score
+            perfect_papers = AnswerPaper.objects.filter(
+                user=user, status='completed', percent=100
+            )
+            return perfect_papers.count() >= self.criteria_value
+        return False
+
+
+###############################################################################
+class UserBadge(models.Model):
+    """Tracks badges earned by users"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE,
+                            related_name='earned_badges')
+    badge = models.ForeignKey(Badge, on_delete=models.CASCADE)
+    earned_date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'badge')
+        ordering = ['-earned_date']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.badge.name}"
+
+
+###############################################################################
+class BadgeProgress(models.Model):
+    """Tracks user progress toward earning badges"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE,
+                            related_name='badge_progress')
+    badge = models.ForeignKey(Badge, on_delete=models.CASCADE)
+    current_progress = models.IntegerField(default=0)
+    last_updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('user', 'badge')
+
+    def __str__(self):
+        return f"{self.user.username} - {self.badge.name} ({self.current_progress}/{self.badge.criteria_value})"
+
+    def progress_percentage(self):
+        """Calculate progress as a percentage"""
+        if self.badge.criteria_value == 0:
+            return 0
+        return min(100, int((self.current_progress / self.badge.criteria_value) * 100))
+
+    def update_progress(self):
+        """Update progress based on current user stats"""
+        try:
+            user_stats = UserStats.objects.get(user=self.user)
+        except UserStats.DoesNotExist:
+            return
+
+        if self.badge.criteria_type == 'challenges_solved':
+            self.current_progress = user_stats.total_challenges_solved
+        elif self.badge.criteria_type == 'streak_days':
+            self.current_progress = user_stats.current_streak
+        elif self.badge.criteria_type == 'courses_completed':
+            self.current_progress = CourseStatus.objects.filter(
+                user=self.user, grade__isnull=False
+            ).count()
+        elif self.badge.criteria_type == 'perfect_score':
+            self.current_progress = AnswerPaper.objects.filter(
+                user=self.user, status='completed', percent=100
+            ).count()
+        self.save()
+
+
+###############################################################################
+class UserStats(models.Model):
+    """Stores computed statistics for a user"""
+    user = models.OneToOneField(User, on_delete=models.CASCADE,
+                               related_name='user_stats')
+    total_challenges_solved = models.IntegerField(default=0)
+    challenges_this_week = models.IntegerField(default=0)
+    challenges_this_month = models.IntegerField(default=0)
+    current_streak = models.IntegerField(default=0)
+    longest_streak = models.IntegerField(default=0)
+    total_learning_hours = models.FloatField(default=0.0,
+                                            help_text="Total learning hours")
+    last_activity_date = models.DateField(null=True, blank=True)
+    weekly_reset_date = models.DateField(null=True, blank=True)
+    monthly_reset_date = models.DateField(null=True, blank=True)
+    updated_on = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = "User Stats"
+
+    def __str__(self):
+        return f"{self.user.username} - Stats"
+
+    def update_streak(self):
+        """Calculate and update user streak based on activity"""
+        today = timezone.now().date()
+        
+        if not self.last_activity_date:
+            self.current_streak = 1
+            self.last_activity_date = today
+        else:
+            days_diff = (today - self.last_activity_date).days
+            
+            if days_diff == 0:
+                # Same day, no change
+                pass
+            elif days_diff == 1:
+                # Consecutive day, increment streak
+                self.current_streak += 1
+                self.last_activity_date = today
+            else:
+                # Streak broken, reset
+                self.current_streak = 1
+                self.last_activity_date = today
+        
+        # Update longest streak
+        if self.current_streak > self.longest_streak:
+            self.longest_streak = self.current_streak
+        
+        self.save()
+
+    def reset_weekly_stats(self):
+        """Reset weekly statistics"""
+        today = timezone.now().date()
+        if not self.weekly_reset_date or (today - self.weekly_reset_date).days >= 7:
+            self.challenges_this_week = 0
+            self.weekly_reset_date = today
+            self.save()
+
+    def reset_monthly_stats(self):
+        """Reset monthly statistics"""
+        today = timezone.now().date()
+        if not self.monthly_reset_date or today.month != self.monthly_reset_date.month:
+            self.challenges_this_month = 0
+            self.monthly_reset_date = today
+            self.save()
+
+    def increment_challenges(self):
+        """Increment challenge counters"""
+        self.total_challenges_solved += 1
+        self.challenges_this_week += 1
+        self.challenges_this_month += 1
+        self.save()
+
+    def add_learning_time(self, hours):
+        """Add learning time in hours"""
+        self.total_learning_hours += hours
+        self.save()
+
+
+###############################################################################
+class DailyActivity(models.Model):
+    """Tracks daily learning activity for a user"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE,
+                            related_name='daily_activities')
+    date = models.DateField()
+    challenges_solved = models.IntegerField(default=0)
+    time_spent = models.FloatField(default=0.0, help_text="Time in hours")
+    courses_accessed = models.ManyToManyField(Course, blank=True)
+    created_on = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'date')
+        ordering = ['-date']
+        verbose_name_plural = "Daily Activities"
+
+    def __str__(self):
+        return f"{self.user.username} - {self.date}"
+
+
+###############################################################################
+class UserActivity(models.Model):
+    """Tracks recent user activities for the activity feed"""
+    ACTIVITY_TYPES = (
+        ('lesson_completed', 'Lesson Completed'),
+        ('quiz_completed', 'Quiz Completed'),
+        ('badge_earned', 'Badge Earned'),
+        ('streak_milestone', 'Streak Milestone'),
+        ('course_enrolled', 'Course Enrolled'),
+        ('course_completed', 'Course Completed'),
+        ('comment_posted', 'Comment Posted'),
+    )
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE,
+                            related_name='activities')
+    activity_type = models.CharField(max_length=50, choices=ACTIVITY_TYPES)
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    icon = models.CharField(max_length=50, default='check',
+                           help_text="Icon identifier")
+    color = models.CharField(max_length=20, default='blue',
+                            help_text="Color theme")
+    badge_name = models.CharField(max_length=100, blank=True, null=True,
+                                 help_text="Badge name if activity is badge_earned")
+    related_course_id = models.IntegerField(null=True, blank=True)
+    related_lesson_id = models.IntegerField(null=True, blank=True)
+    related_quiz_id = models.IntegerField(null=True, blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+        verbose_name_plural = "User Activities"
+
+    def __str__(self):
+        return f"{self.user.username} - {self.activity_type} - {self.title}"
+
+    @staticmethod
+    def create_activity(user, activity_type, title, **kwargs):
+        """Helper method to create an activity"""
+        return UserActivity.objects.create(
+            user=user,
+            activity_type=activity_type,
+            title=title,
+            description=kwargs.get('description', ''),
+            icon=kwargs.get('icon', 'check'),
+            color=kwargs.get('color', 'blue'),
+            badge_name=kwargs.get('badge_name'),
+            related_course_id=kwargs.get('course_id'),
+            related_lesson_id=kwargs.get('lesson_id'),
+            related_quiz_id=kwargs.get('quiz_id')
+        )

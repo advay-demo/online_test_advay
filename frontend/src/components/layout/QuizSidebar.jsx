@@ -3,13 +3,19 @@ import { Link } from 'react-router-dom';
 import { FaHome, FaChevronRight } from 'react-icons/fa';
 import Logo from '../ui/Logo';
 
-const QuizSidebar = ({ currentQuestion = 1, totalQuestions = 11, attemptedQuestions = [5] }) => {
+const QuizSidebar = ({ currentQuestion = 1, totalQuestions = 11, attemptedQuestions = [], onQuestionClick }) => {
   const questions = Array.from({ length: totalQuestions }, (_, i) => i + 1);
   
   const getQuestionClass = (q) => {
     if (q === currentQuestion) return 'question-btn current';
     if (attemptedQuestions.includes(q)) return 'question-btn attempted';
     return 'question-btn';
+  };
+
+  const handleQuestionClick = (index) => {
+    if (onQuestionClick) {
+      onQuestionClick(index);
+    }
   };
 
   return (
@@ -30,10 +36,11 @@ const QuizSidebar = ({ currentQuestion = 1, totalQuestions = 11, attemptedQuesti
 
         {/* Question Grid */}
         <div className="grid grid-cols-4 gap-3 mb-6">
-          {questions.map((q) => (
+          {questions.map((q, index) => (
             <button
               key={q}
-              className={`${getQuestionClass(q)} w-full aspect-square rounded-lg font-semibold text-lg`}
+              onClick={() => handleQuestionClick(index)}
+              className={`${getQuestionClass(q)} w-full aspect-square rounded-lg font-semibold text-lg cursor-pointer hover:opacity-80 transition`}
             >
               {q}
             </button>
@@ -59,7 +66,7 @@ const QuizSidebar = ({ currentQuestion = 1, totalQuestions = 11, attemptedQuesti
         {/* Stats */}
         <div className="card p-4">
           <p className="text-sm font-semibold mb-4">
-            Question(s) left: <span className="text-white">{totalQuestions}</span>
+            Question(s) left: <span className="text-white">{totalQuestions - attemptedQuestions.length}</span>
           </p>
           
           <table className="w-full text-sm">
