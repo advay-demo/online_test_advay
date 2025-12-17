@@ -169,15 +169,21 @@ const Home = () => {
             Join thousands of students and professionals learning new skills and advancing their careers
           </p>
 
-          <div className="flex justify-center gap-4 flex-wrap">
-            <Link to="/signup" className="bg-[var(--text-primary)] text-[var(--bg-primary)] px-10 py-4 rounded-xl font-semibold hover:bg-[var(--text-secondary)] transition text-lg shadow-xl inline-block">
-              Start Learning Now →
-            </Link>
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-4 px-4">
+  <Link 
+    to="/signup" 
+    className="w-full sm:w-auto btn-grad text-white px-8 sm:px-10 py-3.5 sm:py-4 rounded-xl font-semibold hover:brightness-110 active:scale-95 transition-all duration-200 text-base sm:text-lg shadow-xl text-center"
+  >
+    Start Learning Now
+  </Link>
 
-            <Link to="/courses" className="border-2 border-[var(--text-primary)] text-[var(--text-primary)] px-10 py-4 rounded-xl font-semibold hover:bg-[var(--text-primary)]/10 transition text-lg shadow-lg inline-block">
-              Explore Courses
-            </Link>
-          </div>
+  <Link 
+    to="/courses" 
+    className="w-full sm:w-auto border-2 border-[var(--text-primary)] text-[var(--text-primary)] px-8 sm:px-10 py-3.5 sm:py-4 rounded-xl font-semibold hover:bg-[var(--text-primary)]/10 active:scale-95 transition-all duration-200 text-base sm:text-lg shadow-lg text-center backdrop-blur-sm"
+  >
+    Explore Courses
+  </Link>
+</div>
         </div>
       </section>
 
