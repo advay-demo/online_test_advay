@@ -2038,6 +2038,63 @@ def teacher_delete_lesson(request, module_id, lesson_id):
         )
 
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def teacher_get_lesson(request, module_id, lesson_id):
+    """Get lesson details for editing"""
+    user = request.user
+    
+    if not _check_teacher_permission(user):
+        return Response(
+            {'error': 'You are not authorized'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    try:
+        module = LearningModule.objects.get(id=module_id)
+        lesson = Lesson.objects.get(id=lesson_id)
+        
+        # Verify ownership
+        if module.creator != user or lesson.creator != user:
+            return Response(
+                {'error': 'You do not have permission to access this lesson'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Verify lesson belongs to module
+        unit = module.learning_unit.filter(type='lesson', lesson=lesson).first()
+        if not unit:
+            return Response(
+                {'error': 'Lesson does not belong to this module'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        return Response({
+            'id': lesson.id,
+            'name': lesson.name,
+            'description': lesson.description or '',
+            'video_path': lesson.video_path or '',
+            'active': lesson.active,
+            'order': unit.order
+        }, status=status.HTTP_200_OK)
+        
+    except LearningModule.DoesNotExist:
+        return Response(
+            {'error': 'Module not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Lesson.DoesNotExist:
+        return Response(
+            {'error': 'Lesson not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {'error': 'Failed to get lesson', 'details': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def teacher_upload_lesson_files(request, lesson_id):
@@ -2326,6 +2383,69 @@ def teacher_delete_quiz(request, module_id, quiz_id):
     except Exception as e:
         return Response(
             {'error': 'Failed to delete quiz', 'details': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def teacher_get_quiz(request, module_id, quiz_id):
+    """Get quiz details for editing"""
+    user = request.user
+    
+    if not _check_teacher_permission(user):
+        return Response(
+            {'error': 'You are not authorized'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    try:
+        module = LearningModule.objects.get(id=module_id)
+        quiz = Quiz.objects.get(id=quiz_id)
+        
+        # Verify ownership
+        if module.creator != user or quiz.creator != user:
+            return Response(
+                {'error': 'You do not have permission to access this quiz'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Verify quiz belongs to module
+        unit = module.learning_unit.filter(type='quiz', quiz=quiz).first()
+        if not unit:
+            return Response(
+                {'error': 'Quiz does not belong to this module'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        return Response({
+            'id': quiz.id,
+            'description': quiz.description,
+            'instructions': quiz.instructions or '',
+            'duration': quiz.duration,
+            'attempts_allowed': quiz.attempts_allowed,
+            'time_between_attempts': quiz.time_between_attempts,
+            'pass_criteria': quiz.pass_criteria,
+            'weightage': quiz.weightage,
+            'allow_skip': quiz.allow_skip,
+            'is_exercise': quiz.is_exercise,
+            'active': quiz.active,
+            'order': unit.order
+        }, status=status.HTTP_200_OK)
+        
+    except LearningModule.DoesNotExist:
+        return Response(
+            {'error': 'Module not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Quiz.DoesNotExist:
+        return Response(
+            {'error': 'Quiz not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {'error': 'Failed to get quiz', 'details': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
@@ -2808,22 +2928,39 @@ def teacher_get_quiz_questions(request, quiz_id):
         
         # Get fixed questions in order
         fixed_questions = []
+        all_fixed_questions = list(question_paper.fixed_questions.all())
+        
         if question_paper.fixed_question_order:
-            question_ids = question_paper.fixed_question_order.split(',')
+            # Use order if available
+            question_ids = [qid.strip() for qid in question_paper.fixed_question_order.split(',') if qid.strip()]
+            question_map = {str(q.id): q for q in all_fixed_questions}
+            
+            # Add questions in order
             for qid in question_ids:
-                try:
-                    q = question_paper.fixed_questions.get(id=qid)
+                if qid in question_map:
+                    q = question_map[qid]
                     fixed_questions.append({
                         'id': q.id,
                         'summary': q.summary,
                         'type': q.type,
                         'points': q.points,
-                        'order': question_ids.index(str(q.id)) + 1
+                        'order': len(fixed_questions) + 1
                     })
-                except Question.DoesNotExist:
-                    continue
+            
+            # Add any questions not in the order string (shouldn't happen, but safety check)
+            ordered_ids = set(question_ids)
+            for q in all_fixed_questions:
+                if str(q.id) not in ordered_ids:
+                    fixed_questions.append({
+                        'id': q.id,
+                        'summary': q.summary,
+                        'type': q.type,
+                        'points': q.points,
+                        'order': len(fixed_questions) + 1
+                    })
         else:
-            for q in question_paper.fixed_questions.all():
+            # No order specified, use all questions in their current order
+            for q in all_fixed_questions:
                 fixed_questions.append({
                     'id': q.id,
                     'summary': q.summary,

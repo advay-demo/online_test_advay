@@ -15,7 +15,8 @@ import {
 import TeacherSidebar from '../../components/layout/TeacherSidebar';
 import Header from '../../components/layout/Header';
 import CourseAnalytics from '../../components/teacher/CourseAnalytics';
-import { getTeacherCourse, getCourseModules, createModule, updateModule, deleteModule, createLesson, updateLesson, deleteLesson, createQuiz, updateQuiz, deleteQuiz, getCourseEnrollments, approveEnrollment, rejectEnrollment, removeEnrollment, reorderCourseModules, reorderModuleUnits, getCourseAnalytics } from '../../api/api';
+import QuizQuestionManager from '../../components/teacher/QuizQuestionManager';
+import { getTeacherCourse, getCourseModules, createModule, updateModule, deleteModule, createLesson, updateLesson, deleteLesson, createQuiz, updateQuiz, deleteQuiz, getCourseEnrollments, approveEnrollment, rejectEnrollment, removeEnrollment, reorderCourseModules, reorderModuleUnits, getCourseAnalytics, getTeacherLesson, getTeacherQuiz } from '../../api/api';
 
 const ManageCourse = () => {
     const { courseId } = useParams();
@@ -405,17 +406,33 @@ const ManageCourse = () => {
         setShowLessonForm(true);
     };
 
-    const openEditLesson = (module, unit) => {
+    const openEditLesson = async (module, unit) => {
         setSelectedModule(module);
         setEditingLesson(unit);
-        setLessonFormData({
-            name: unit.name || '',
-            description: '', // Would need to fetch full lesson data
-            video_path: '',
-            active: true,
-            order: unit.order,
-        });
-        setShowLessonForm(true);
+        try {
+            // Fetch full lesson data
+            const lessonData = await getTeacherLesson(module.id, unit.lesson_id);
+            setLessonFormData({
+                name: lessonData.name || '',
+                description: lessonData.description || '',
+                video_path: lessonData.video_path || '',
+                active: lessonData.active !== undefined ? lessonData.active : true,
+                order: lessonData.order || unit.order,
+            });
+            setShowLessonForm(true);
+        } catch (err) {
+            console.error('Failed to load lesson data:', err);
+            alert('Failed to load lesson data: ' + (err.response?.data?.error || err.message));
+            // Fallback to basic data
+            setLessonFormData({
+                name: unit.name || '',
+                description: '',
+                video_path: '',
+                active: true,
+                order: unit.order,
+            });
+            setShowLessonForm(true);
+        }
     };
 
     const handleCreateLesson = async (e) => {
@@ -466,23 +483,45 @@ const ManageCourse = () => {
         setShowQuizForm(true);
     };
 
-    const openEditQuiz = (module, unit) => {
+    const openEditQuiz = async (module, unit) => {
         setSelectedModule(module);
         setEditingQuiz(unit);
-        setQuizFormData({
-            description: unit.name || '',
-            instructions: '',
-            duration: 20,
-            attempts_allowed: 1,
-            time_between_attempts: 0.0,
-            pass_criteria: 40.0,
-            weightage: 100.0,
-            allow_skip: true,
-            is_exercise: false,
-            active: true,
-            order: unit.order,
-        });
-        setShowQuizForm(true);
+        try {
+            // Fetch full quiz data
+            const quizData = await getTeacherQuiz(module.id, unit.quiz_id);
+            setQuizFormData({
+                description: quizData.description || '',
+                instructions: quizData.instructions || '',
+                duration: quizData.duration || 20,
+                attempts_allowed: quizData.attempts_allowed || 1,
+                time_between_attempts: quizData.time_between_attempts || 0.0,
+                pass_criteria: quizData.pass_criteria || 40.0,
+                weightage: quizData.weightage || 100.0,
+                allow_skip: quizData.allow_skip !== undefined ? quizData.allow_skip : true,
+                is_exercise: quizData.is_exercise !== undefined ? quizData.is_exercise : false,
+                active: quizData.active !== undefined ? quizData.active : true,
+                order: quizData.order || unit.order,
+            });
+            setShowQuizForm(true);
+        } catch (err) {
+            console.error('Failed to load quiz data:', err);
+            alert('Failed to load quiz data: ' + (err.response?.data?.error || err.message));
+            // Fallback to basic data
+            setQuizFormData({
+                description: unit.name || '',
+                instructions: '',
+                duration: 20,
+                attempts_allowed: 1,
+                time_between_attempts: 0.0,
+                pass_criteria: 40.0,
+                weightage: 100.0,
+                allow_skip: true,
+                is_exercise: false,
+                active: true,
+                order: unit.order,
+            });
+            setShowQuizForm(true);
+        }
     };
 
     const handleCreateQuiz = async (e) => {
@@ -1153,8 +1192,8 @@ const ManageCourse = () => {
                                     {/* Modules List */}
                                     {modules.length > 0 ? (
                                         modules.map((module) => (
-                                            <div key={module.id} className="bg-white/5 rounded-xl border border-white/10 overflow-hidden">
-                                        <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/5">
+                                            <div key={module.id} className="card rounded-xl overflow-hidden">
+                                        <div className="p-4 border-b border-white/10 flex items-center justify-between">
                                                     <div className="flex-1">
                                                         <div className="flex items-center gap-3">
                                                             <h3 className="font-bold text-lg">{module.name}</h3>
@@ -1206,7 +1245,7 @@ const ManageCourse = () => {
                                                         module.units.map((unit) => (
                                                             <div
                                                                 key={unit.id}
-                                                                className="flex items-center justify-between p-3 rounded-lg bg-black/20 border border-white/5 hover:bg-white/5 transition group"
+                                                                className="flex items-center justify-between p-3 rounded-lg bg-[var(--surface-2)] border border-white/10 hover:bg-[var(--surface)] transition group"
                                                             >
                                                 <div className="flex items-center gap-4">
                                                                     <div className={`w-8 h-8 rounded flex items-center justify-center ${
