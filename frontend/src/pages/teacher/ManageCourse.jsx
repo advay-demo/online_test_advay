@@ -14,7 +14,8 @@ import {
 } from 'react-icons/fa';
 import TeacherSidebar from '../../components/layout/TeacherSidebar';
 import Header from '../../components/layout/Header';
-import { getTeacherCourse, getCourseModules, createModule, updateModule, deleteModule, createLesson, updateLesson, deleteLesson, createQuiz, updateQuiz, deleteQuiz, getCourseEnrollments, approveEnrollment, rejectEnrollment, removeEnrollment, reorderCourseModules, reorderModuleUnits } from '../../api/api';
+import CourseAnalytics from '../../components/teacher/CourseAnalytics';
+import { getTeacherCourse, getCourseModules, createModule, updateModule, deleteModule, createLesson, updateLesson, deleteLesson, createQuiz, updateQuiz, deleteQuiz, getCourseEnrollments, approveEnrollment, rejectEnrollment, removeEnrollment, reorderCourseModules, reorderModuleUnits, getCourseAnalytics } from '../../api/api';
 
 const ManageCourse = () => {
     const { courseId } = useParams();
@@ -30,6 +31,13 @@ const ManageCourse = () => {
         rejected: []
     });
     const [loadingEnrollments, setLoadingEnrollments] = useState(false);
+    const [analytics, setAnalytics] = useState(null);
+    const [loadingAnalytics, setLoadingAnalytics] = useState(false);
+    const [showQuizQuestionManager, setShowQuizQuestionManager] = useState(false);
+    const [selectedQuizId, setSelectedQuizId] = useState(null);
+    const [moduleOrder, setModuleOrder] = useState([]);
+    const [unitOrders, setUnitOrders] = useState({}); // { moduleId: [{unit_id, order}] }
+    const [savingOrder, setSavingOrder] = useState(false);
     const [showModuleForm, setShowModuleForm] = useState(false);
     const [editingModule, setEditingModule] = useState(null);
     const [showLessonForm, setShowLessonForm] = useState(false);
@@ -233,16 +241,49 @@ const ManageCourse = () => {
     const loadCourseData = async () => {
         try {
             setLoading(true);
-            const [courseData, modulesData] = await Promise.all([
-                getTeacherCourse(courseId),
-                getCourseModules(courseId)
-            ]);
-            setCourse(courseData);
-            setModules(modulesData);
             setError(null);
+            
+            console.log('Loading course data for courseId:', courseId);
+            
+            // teacher_get_course already includes modules in the response
+            const courseData = await getTeacherCourse(courseId);
+            
+            console.log('Course data received:', courseData);
+            
+            if (!courseData) {
+                throw new Error('Course data not found');
+            }
+            
+            // Check if response has error
+            if (courseData.error) {
+                throw new Error(courseData.error);
+            }
+            
+            setCourse(courseData);
+            
+            // Extract modules from course data if available, otherwise fetch separately
+            if (courseData.modules && Array.isArray(courseData.modules)) {
+                console.log('Using modules from course data:', courseData.modules.length);
+                setModules(courseData.modules);
+            } else {
+                console.log('Modules not in course data, fetching separately...');
+                // Fallback: fetch modules separately if not included
+                try {
+                    const modulesData = await getCourseModules(courseId);
+                    console.log('Modules fetched separately:', modulesData);
+                    setModules(Array.isArray(modulesData) ? modulesData : []);
+                } catch (moduleErr) {
+                    console.error('Failed to load modules separately:', moduleErr);
+                    // Set empty array if modules can't be loaded (course might not have modules yet)
+                    setModules([]);
+                }
+            }
         } catch (err) {
             console.error('Failed to load course data:', err);
-            setError('Failed to load course data');
+            console.error('Error details:', err.response?.data);
+            const errorMessage = err.response?.data?.error || err.message || 'Failed to load course data';
+            setError(errorMessage);
+            setCourse(null);
         } finally {
             setLoading(false);
         }
@@ -554,10 +595,10 @@ const ManageCourse = () => {
                                 </Link>
                                 <div>
                                     <h2 className="text-xl font-bold mb-1">
-                                        {course.name}
+                                        {course?.name || 'Course'}
                                     </h2>
                                     <p className="text-sm muted">
-                                        {course.instructions || 'Course management'}
+                                        {course?.instructions || 'Course management'}
                                     </p>
                                 </div>
                             </div>
@@ -738,7 +779,7 @@ const ManageCourse = () => {
                                                 </h3>
                                                 <form onSubmit={editingModule ? handleUpdateModule : handleCreateModule}>
                                                     <div className="space-y-4">
-                                                        <div>
+                                            <div>
                                                             <label className="block text-sm font-semibold mb-2">
                                                                 Module Name *
                                                             </label>
@@ -751,7 +792,7 @@ const ManageCourse = () => {
                                                                 className="w-full px-4 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50"
                                                                 placeholder="Enter module name"
                                                             />
-                                                        </div>
+                                            </div>
                                                         <div>
                                                             <label className="block text-sm font-semibold mb-2">
                                                                 Description
@@ -821,9 +862,9 @@ const ManageCourse = () => {
                                                         >
                                                             {editingModule ? 'Update' : 'Create'}
                                                 </button>
-                                                    </div>
-                                                </form>
                                             </div>
+                                                </form>
+                                        </div>
                                         </div>
                                     )}
 
@@ -849,8 +890,8 @@ const ManageCourse = () => {
                                                                 className="w-full px-4 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50"
                                                                 placeholder="Enter lesson name"
                                                             />
-                                                        </div>
-                                                        <div>
+                                                    </div>
+                                                    <div>
                                                             <label className="block text-sm font-semibold mb-2">
                                                                 Description
                                                             </label>
@@ -862,7 +903,7 @@ const ManageCourse = () => {
                                                                 className="w-full px-4 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50 resize-none"
                                                                 placeholder="Enter lesson description (markdown supported)"
                                                             />
-                                                    </div>
+                                                        </div>
                                                     <div>
                                                             <label className="block text-sm font-semibold mb-2">
                                                                 Video URL/Path
@@ -889,7 +930,7 @@ const ManageCourse = () => {
                                                                     onChange={handleLessonFormChange}
                                                                     className="w-full px-4 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50"
                                                                 />
-                                                            </div>
+                                                    </div>
                                                             <div className="flex items-center pt-8">
                                                                 <label className="flex items-center gap-2 cursor-pointer">
                                                                     <input
@@ -901,7 +942,7 @@ const ManageCourse = () => {
                                                                     />
                                                                     <span className="text-sm">Active</span>
                                                                 </label>
-                                                            </div>
+                                                </div>
                                                         </div>
                                                     </div>
                                                     <div className="flex justify-end gap-3 mt-6">
@@ -921,8 +962,8 @@ const ManageCourse = () => {
                                                             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
                                                         >
                                                             {editingLesson ? 'Update' : 'Create'}
-                                                        </button>
-                                                </div>
+                                                </button>
+                                            </div>
                                                 </form>
                                             </div>
                                         </div>
@@ -978,7 +1019,7 @@ const ManageCourse = () => {
                                                                     min="1"
                                                                     className="w-full px-4 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50"
                                                                 />
-                                                            </div>
+                                                        </div>
                                                             <div>
                                                                 <label className="block text-sm font-semibold mb-2">
                                                                     Attempts Allowed
@@ -992,8 +1033,8 @@ const ManageCourse = () => {
                                                                     className="w-full px-4 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50"
                                                                 />
                                                                 <p className="text-xs muted mt-1">-1 for unlimited</p>
-                                                            </div>
-                                                        </div>
+                                                    </div>
+                                                </div>
                                                         <div className="grid grid-cols-2 gap-4">
                                                             <div>
                                                                 <label className="block text-sm font-semibold mb-2">
@@ -1008,7 +1049,7 @@ const ManageCourse = () => {
                                                                     step="0.5"
                                                                     className="w-full px-4 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50"
                                                                 />
-                                                            </div>
+                                            </div>
                                                             <div>
                                                                 <label className="block text-sm font-semibold mb-2">
                                                                     Pass Criteria (%)
@@ -1025,7 +1066,7 @@ const ManageCourse = () => {
                                                     </div>
                                                 </div>
                                                         <div className="grid grid-cols-2 gap-4">
-                                                            <div>
+                                                    <div>
                                                                 <label className="block text-sm font-semibold mb-2">
                                                                     Weightage (%)
                                                                 </label>
@@ -1038,7 +1079,7 @@ const ManageCourse = () => {
                                                                     max="100"
                                                                     className="w-full px-4 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50"
                                                                 />
-                                                    </div>
+                                                        </div>
                                                     <div>
                                                                 <label className="block text-sm font-semibold mb-2">
                                                                     Order
@@ -1050,8 +1091,8 @@ const ManageCourse = () => {
                                                                     onChange={handleQuizFormChange}
                                                                     className="w-full px-4 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50"
                                                                 />
-                                                            </div>
                                                         </div>
+                                                    </div>
                                                         <div className="space-y-2">
                                                             <label className="flex items-center gap-2 cursor-pointer">
                                                                 <input
@@ -1083,7 +1124,7 @@ const ManageCourse = () => {
                                                                 />
                                                                 <span className="text-sm">Active</span>
                                                             </label>
-                                                        </div>
+                                                </div>
                                                     </div>
                                                     <div className="flex justify-end gap-3 mt-6">
                                                         <button
@@ -1102,11 +1143,11 @@ const ManageCourse = () => {
                                                             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
                                                         >
                                                             {editingQuiz ? 'Update' : 'Create'}
-                                                        </button>
-                                                </div>
-                                                </form>
+                                                </button>
                                             </div>
+                                                </form>
                                         </div>
+                                    </div>
                                     )}
 
                                     {/* Modules List */}
@@ -1197,13 +1238,13 @@ const ManageCourse = () => {
                                                                                 className="px-3 py-1 border border-white/10 rounded text-xs hover:bg-white/10 transition"
                                                                             >
                                                                                 Edit
-                                                                            </button>
+                                                </button>
                                                                             <button
                                                                                 onClick={() => handleDeleteLesson(module, unit)}
                                                                                 className="px-3 py-1 border border-red-500/30 text-red-400 rounded text-xs hover:bg-red-500/20 transition"
                                                                             >
                                                                                 Delete
-                                                                            </button>
+                                                </button>
                                                                         </>
                                                                     ) : (
                                                                         <>
@@ -1227,7 +1268,7 @@ const ManageCourse = () => {
                                                                             </button>
                                                                         </>
                                                                     )}
-                                                        </div>
+                                            </div>
                                                     </div>
                                                         ))
                                                     ) : (
@@ -1235,13 +1276,13 @@ const ManageCourse = () => {
                                                             No learning units yet. Add a lesson or quiz to get started.
                                                         </div>
                                                     )}
-                                                </div>
-                                            </div>
+                                                        </div>
+                                                    </div>
                                         ))
                                     ) : (
                                         <div className="text-center py-12 text-muted">
                                             <p>No modules yet. Create your first module!</p>
-                                        </div>
+                                                </div>
                                     )}
                                 </div>
                             )}
@@ -1255,7 +1296,7 @@ const ManageCourse = () => {
                                     {modules.length === 0 ? (
                                         <div className="text-center py-12 text-muted">
                                             <p>No modules found. Add modules first to reorder them.</p>
-                                        </div>
+                                            </div>
                                     ) : (
                                         <div className="space-y-6">
                                             {/* Module Reordering */}
@@ -1282,7 +1323,7 @@ const ManageCourse = () => {
                                                                 <div className="flex items-center gap-4 flex-1">
                                                                     <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400 font-bold text-sm">
                                                                         {index + 1}
-                                                                    </div>
+                                            </div>
                                                                     <div className="flex-1">
                                                                         <h4 className="font-semibold">{module.name}</h4>
                                                                         <p className="text-xs muted">{module.units_count || 0} learning units</p>
@@ -1296,7 +1337,7 @@ const ManageCourse = () => {
                                                                         title="Move up"
                                                                     >
                                                                         <FaChevronUp className="w-4 h-4" />
-                                                                    </button>
+                                                </button>
                                                                     <button
                                                                         onClick={() => moveModule(moduleId, 'down')}
                                                                         disabled={index === moduleOrder.length - 1}
@@ -1304,12 +1345,12 @@ const ManageCourse = () => {
                                                                         title="Move down"
                                                                     >
                                                                         <FaChevronDown className="w-4 h-4" />
-                                                                    </button>
-                                                                </div>
-                                                            </div>
+                                                    </button>
+                                                </div>
+                                            </div>
                                                         );
                                                     })}
-                                                </div>
+                                        </div>
                                             </div>
 
                                             {/* Unit Reordering per Module */}
@@ -1329,7 +1370,7 @@ const ManageCourse = () => {
                                                             >
                                                                 {savingOrder ? 'Saving...' : 'Save Unit Order'}
                                                             </button>
-                                                        </div>
+                                                </div>
                                                         <div className="space-y-2">
                                                             {units.map((unit, index) => {
                                                                 const unitData = module.units.find(u => (u.lesson_id || u.quiz_id) === unit.unit_id);
@@ -1347,7 +1388,7 @@ const ManageCourse = () => {
                                                                                     : 'bg-green-500/20 border border-green-500/30 text-green-400'
                                                                             }`}>
                                                                                 {index + 1}
-                                                                            </div>
+                                                    </div>
                                                                             <div className="flex-1">
                                                                                 <div className="flex items-center gap-2">
                                                                                     {isLesson ? (
@@ -1363,8 +1404,8 @@ const ManageCourse = () => {
                                                                                     }`}>
                                                                                         {isLesson ? 'Lesson' : 'Quiz'}
                                                                                     </span>
-                                                                                </div>
-                                                                            </div>
+                                                </div>
+                                            </div>
                                                                         </div>
                                                                         <div className="flex items-center gap-2">
                                                                             <button
@@ -1374,7 +1415,7 @@ const ManageCourse = () => {
                                                                                 title="Move up"
                                                                             >
                                                                                 <FaChevronUp className="w-3 h-3" />
-                                                                            </button>
+                                                </button>
                                                                             <button
                                                                                 onClick={() => moveUnit(moduleId, unit.unit_id, 'down')}
                                                                                 disabled={index === units.length - 1}
@@ -1382,18 +1423,18 @@ const ManageCourse = () => {
                                                                                 title="Move down"
                                                                             >
                                                                                 <FaChevronDown className="w-3 h-3" />
-                                                                            </button>
-                                                                        </div>
-                                                                    </div>
+                                                    </button>
+                                                </div>
+                                            </div>
                                                                 );
                                                             })}
-                                                        </div>
-                                                    </div>
+                                        </div>
+                                    </div>
                                                 );
                                             })}
-                                        </div>
-                                    )}
                                 </div>
+                            )}
+                        </div>
                             )}
 
                             {activeTab === 'Analytics' && (

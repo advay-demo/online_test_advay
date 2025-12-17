@@ -712,7 +712,7 @@ def student_dashboard(request):
     active_courses = Course.objects.filter(
         students=user, 
         active=True
-    ).order_by('-created_on')[:3]
+    ).prefetch_related('learning_module', 'learning_module__learning_unit', 'creator').order_by('-created_on')[:3]
     
     courses_serializer = CourseProgressSerializer(
         active_courses, many=True, context={'user': user}
@@ -757,7 +757,9 @@ def course_catalog(request):
     enrollment_status = request.GET.get('enrollment_status', 'all')
     
     # Base query - active courses only
-    courses = Course.objects.filter(active=True, hidden=False)
+    courses = Course.objects.filter(active=True, hidden=False).prefetch_related(
+        'learning_module', 'learning_module__learning_unit', 'creator', 'students'
+    )
     
     # Filter by enrollment status
     if enrollment_status == 'enrolled':
@@ -1326,6 +1328,7 @@ def teacher_create_course(request):
             instructions=instructions,
             view_grade=view_grade,
             active=active,
+            hidden=False,  # Make courses visible by default for students
             creator=user
         )
         
@@ -1555,7 +1558,7 @@ def teacher_get_course_modules(request, course_id):
         course = Course.objects.get(id=course_id)
         
         # Verify ownership
-        if not course.is_creator(user) and not course.is_teacher(user):
+        if course.creator != user and user not in course.teachers.all():
             return Response(
                 {'error': 'You do not have permission to access this course'},
                 status=status.HTTP_403_FORBIDDEN
@@ -3319,8 +3322,8 @@ def teacher_reorder_module_units(request, module_id):
     try:
         module = LearningModule.objects.get(id=module_id)
         
-        # Verify teacher owns the course
-        course = module.course_set.first()
+        # Verify teacher owns the course - find course that contains this module
+        course = Course.objects.filter(learning_module=module).first()
         if not course or (course.creator != user and user not in course.teachers.all()):
             return Response(
                 {'error': 'You do not have permission to modify this module'},
@@ -3417,7 +3420,7 @@ def teacher_reorder_course_modules(request, course_id):
             try:
                 module = LearningModule.objects.get(id=module_id)
                 # Verify module belongs to course
-                if course in module.course_set.all():
+                if module in course.learning_module.all():
                     module.order = order
                     module.save()
             except LearningModule.DoesNotExist:
@@ -3485,7 +3488,8 @@ def teacher_get_course_analytics(request, course_id):
         modules = course.get_learning_modules()
         module_stats = []
         for module in modules:
-            module_units = LearningUnit.objects.filter(learning_module=module)
+            # Get units from the module (reverse relationship)
+            module_units = module.learning_unit.all()
             total_units = module_units.count()
             
             if total_units == 0:
@@ -3493,11 +3497,15 @@ def teacher_get_course_analytics(request, course_id):
             
             # Count students who completed all units in this module
             students_completed = 0
+            # Get all unit IDs for this module
+            module_unit_ids = list(module.learning_unit.values_list('id', flat=True))
+            
             for student in enrolled_students:
                 try:
                     cs = CourseStatus.objects.get(course=course, user=student)
-                    completed_units = cs.completed_units.filter(learning_module=module).count()
-                    if completed_units == total_units:
+                    # Filter completed units that belong to this module
+                    completed_units_count = cs.completed_units.filter(id__in=module_unit_ids).count()
+                    if completed_units_count == total_units:
                         students_completed += 1
                 except CourseStatus.DoesNotExist:
                     continue
@@ -3612,19 +3620,17 @@ def teacher_get_course_analytics(request, course_id):
                 continue
         
         # Enrollment trends (last 30 days)
+        # Note: Since ManyToManyField doesn't track enrollment dates by default,
+        # we'll show the total enrolled count for each day (simplified)
         enrollment_trends = []
         today = timezone.now().date()
+        total_enrolled = course.students.count()
         for i in range(29, -1, -1):
             date = today - timedelta(days=i)
-            # Count students enrolled on or before this date
-            enrolled_by_date = course.students.filter(
-                course__created_on__lte=timezone.make_aware(
-                    datetime.combine(date, datetime.min.time())
-                )
-            ).count()
+            # For now, show total enrolled (can be enhanced with enrollment tracking later)
             enrollment_trends.append({
                 'date': date.isoformat(),
-                'enrolled': enrolled_by_date
+                'enrolled': total_enrolled
             })
         
         return Response({

@@ -23,10 +23,13 @@ const CourseCatalog = () => {
     try {
       setLoading(true);
       const data = await fetchCourseCatalog({ enrollment_status: enrollmentStatus });
-      setCourses(data);
+      console.log('Course catalog data received:', data);
+      console.log('Number of courses:', data?.length || 0);
+      setCourses(data || []);
       setError(null);
     } catch (err) {
       console.error('Failed to load courses:', err);
+      console.error('Error details:', err.response?.data || err.message);
       setError('Failed to load courses');
     } finally {
       setLoading(false);

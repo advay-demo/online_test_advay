@@ -188,9 +188,10 @@ class CourseProgressSerializer(serializers.ModelSerializer):
         
         try:
             course_status = CourseStatus.objects.get(user=user, course=obj)
-            total_units = obj.learning_module.aggregate(
-                total=serializers.models.Count('learning_unit')
-            )['total'] or 0
+            # Count total learning units across all modules
+            total_units = 0
+            for module in obj.learning_module.all():
+                total_units += module.learning_unit.count()
             
             if total_units == 0:
                 return 0

@@ -20,12 +20,17 @@ const Dashboard = () => {
       try {
         setLoading(true);
         const data = await fetchDashboardData();
-        setStats(data.stats);
-        setCourses(data.activeCourses);
-        setActivities(data.recentActivities);
+        console.log('Dashboard data received:', data);
+        console.log('Stats:', data.stats);
+        console.log('Courses:', data.activeCourses);
+        console.log('Activities:', data.recentActivities);
+        setStats(data.stats || null);
+        setCourses(data.activeCourses || []);
+        setActivities(data.recentActivities || []);
         setError(null);
       } catch (err) {
         console.error('Failed to load dashboard data:', err);
+        console.error('Error details:', err.response?.data || err.message);
         setError('Failed to load dashboard data');
       } finally {
         setLoading(false);
