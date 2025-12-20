@@ -32,6 +32,9 @@ function App() {
 
         {/* Protected Routes */}
         <Route element={<PrivateRoute />}>
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/settings" element={<div className="p-8">Settings Page - Coming Soon</div>} />
+
           <Route path="/dashboard" element={<DashboardHome />} />
           <Route path="/courses" element={<CourseCatalog />} />
           <Route path="/courses/:courseId/modules" element={<CourseModule />} />
@@ -41,7 +44,7 @@ function App() {
           <Route path="/quizzes/:quizId" element={<Quiz />} />
           <Route path="/answerpapers/:answerpaperId/submission" element={<Submission />} />
           <Route path="/insights" element={<Insights />} />
-          <Route path="/profile" element={<Profile />} />
+          
           {/* Legacy routes for backward compatibility */}
           <Route path="/module" element={<CourseModule />} />
           <Route path="/quiz" element={<Quiz />} />

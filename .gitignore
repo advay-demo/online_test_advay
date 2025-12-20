@@ -46,3 +46,4 @@ _build/
 yaksh_data/yaksh
 venv/
 .venv/
+.env

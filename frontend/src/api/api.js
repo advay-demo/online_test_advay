@@ -381,5 +381,15 @@ export const getCourseAnalytics = async (courseId) => {
   return response.data;
 };
 
+export const getTeacherLesson = async (lessonId) => {
+  const response = await api.get(`/api/teacher/lessons/${lessonId}/`);
+  return response.data;
+};
+
+export const getTeacherQuiz = async (quizId) => {
+  const response = await api.get(`/api/teacher/quizzes/${quizId}/`);
+  return response.data;
+};
+
 
 export default api;
