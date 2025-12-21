@@ -91,6 +91,9 @@ urlpatterns = [
     url(r'teacher/modules/(?P<module_id>[0-9]+)/units/reorder/$', views.teacher_reorder_module_units, name='teacher_reorder_module_units'),
     url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/reorder/$', views.teacher_reorder_course_modules, name='teacher_reorder_course_modules'),
     url(r'teacher/courses/(?P<course_id>[0-9]+)/analytics/$', views.teacher_get_course_analytics, name='teacher_get_course_analytics'),
+
+    url(r'^teacher/grading-systems/$', views.GradingSystemListCreateView.as_view(), name='grading-system-list-create'),
+    url(r'^teacher/grading-systems/(?P<pk>[0-9]+)/$', views.GradingSystemDetailView.as_view(), name='grading-system-detail'),
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)

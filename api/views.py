@@ -43,6 +43,10 @@ from api.serializers import (
     LessonDetailSerializer, LearningModuleDetailSerializer, LearningUnitDetailSerializer
 )
 
+from rest_framework import generics, permissions
+from grades.models import GradingSystem
+from .serializers import GradingSystemSerializer
+
 import json
 
 
@@ -3850,3 +3854,18 @@ def teacher_get_course_analytics(request, course_id):
             {'error': 'Failed to get analytics', 'details': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+
+
+class GradingSystemListCreateView(generics.ListCreateAPIView):
+    queryset = GradingSystem.objects.all()
+    serializer_class = GradingSystemSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(creator=self.request.user)
+
+class GradingSystemDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = GradingSystem.objects.all()
+    serializer_class = GradingSystemSerializer
+    permission_classes = [permissions.IsAuthenticated]

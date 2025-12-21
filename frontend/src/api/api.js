@@ -391,6 +391,31 @@ export const getCourseAnalytics = async (courseId) => {
   return response.data;
 };
 
+// Grading System APIs (using axios)
+export const fetchGradingSystems = async () => {
+  const response = await api.get('/api/teacher/grading-systems/');
+  return response.data;
+};
+
+export const fetchGradingSystem = async (id) => {
+  const response = await api.get(`/api/teacher/grading-systems/${id}/`);
+  return response.data;
+};
+
+export const createGradingSystem = async (data) => {
+  const response = await api.post('/api/teacher/grading-systems/', data);
+  return response.data;
+};
+
+export const updateGradingSystem = async (id, data) => {
+  const response = await api.put(`/api/teacher/grading-systems/${id}/`, data);
+  return response.data;
+};
+
+export const deleteGradingSystem = async (id) => {
+  const response = await api.delete(`/api/teacher/grading-systems/${id}/`);
+  return response.data;
+};
 
 
 export default api;
