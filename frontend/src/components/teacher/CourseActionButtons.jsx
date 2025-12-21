@@ -15,7 +15,7 @@ const CourseActionButtons = ({ activeButton = null }) => {
       ),
     },
     {
-      label: 'Create Grading System',
+      label: 'Grading System',
       shortLabel: 'Grading',
       path: '/teacher/grading-systems',
       type: 'grading',

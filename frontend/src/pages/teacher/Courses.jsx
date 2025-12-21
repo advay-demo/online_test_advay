@@ -132,9 +132,9 @@ const Courses = () => {
                                             key={course.id}
                                             className="card p-4 sm:p-5 hover:bg-white/[0.02] transition-all duration-200 group"
                                         >
-                                            <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
+                                            <div className="flex flex-row flex-wrap items-center gap-3 sm:gap-4">
                                                 {/* Icon */}
-                                                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-blue-500/10 flex items-center justify-center flex-shrink-0 border border-blue-500/20 group-hover:border-blue-500/30 transition-all duration-200">
+                                                <div className="w-12 h-12 sm:w-14 sm:h-14 -mt-10 sm:-mt-5 rounded-xl bg-blue-500/10 flex items-center justify-center flex-shrink-0 border border-blue-500/20 group-hover:border-blue-500/30 transition-all duration-200">
                                                     <FaBook className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
                                                 </div>
                                                 {/* Content */}
