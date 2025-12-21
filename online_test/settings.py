@@ -323,12 +323,24 @@ if not DEBUG:
     CORS_ORIGIN_ALLOW_ALL = True
     CORS_ALLOW_CREDENTIALS = True
     
+    # Trust X-Forwarded-Proto headers from Render's load balancer
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
     # Allowed Hosts
-    ALLOWED_HOSTS = [
-        host.strip() 
-        for host in config('ALLOWED_HOSTS', default='').split(',')
-        if host.strip()
-    ]
+    ALLOWED_HOSTS = []
+    
+    # Add RENDER_EXTERNAL_HOSTNAME if present
+    if 'RENDER_EXTERNAL_HOSTNAME' in os.environ:
+        ALLOWED_HOSTS.append(os.environ['RENDER_EXTERNAL_HOSTNAME'])
+        
+    # Add manually configured hosts
+    config_hosts = config('ALLOWED_HOSTS', default='')
+    if config_hosts:
+        ALLOWED_HOSTS.extend([
+            host.strip() 
+            for host in config_hosts.split(',')
+            if host.strip()
+        ])
     
     # Domain Host for Emails and Links
     DOMAIN_HOST = config('DOMAIN_HOST', default='https://your-app.onrender.com')
