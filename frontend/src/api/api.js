@@ -93,11 +93,11 @@ export const fetchUserStats = async () => {
 
 export const fetchCourseCatalog = async (filters = {}) => {
   const params = new URLSearchParams();
-  
+
   if (filters.level) params.append('level', filters.level);
   if (filters.category) params.append('category', filters.category);
   if (filters.enrollment_status) params.append('enrollment_status', filters.enrollment_status);
-  
+
   const response = await api.get(`/api/student/courses/catalog/?${params.toString()}`);
   return response.data;
 };
@@ -391,15 +391,6 @@ export const getCourseAnalytics = async (courseId) => {
   return response.data;
 };
 
-export const getTeacherLesson = async (lessonId) => {
-  const response = await api.get(`/api/teacher/lessons/${lessonId}/`);
-  return response.data;
-};
-
-export const getTeacherQuiz = async (quizId) => {
-  const response = await api.get(`/api/teacher/quizzes/${quizId}/`);
-  return response.data;
-};
 
 
 export default api;
