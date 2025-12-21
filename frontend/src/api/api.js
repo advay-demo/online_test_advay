@@ -243,6 +243,11 @@ export const createLesson = async (moduleId, lessonData) => {
   return response.data;
 };
 
+export const getTeacherLesson = async (moduleId, lessonId) => {
+  const response = await api.get(`/api/teacher/modules/${moduleId}/lessons/${lessonId}/`);
+  return response.data;
+};
+
 export const updateLesson = async (moduleId, lessonId, lessonData) => {
   const response = await api.put(`/api/teacher/modules/${moduleId}/lessons/${lessonId}/update/`, lessonData);
   return response.data;
@@ -267,6 +272,11 @@ export const uploadLessonFiles = async (lessonId, files) => {
 };
 
 // Quiz APIs
+export const getTeacherQuiz = async (moduleId, quizId) => {
+  const response = await api.get(`/api/teacher/modules/${moduleId}/quizzes/${quizId}/`);
+  return response.data;
+};
+
 export const createQuiz = async (moduleId, quizData) => {
   const response = await api.post(`/api/teacher/modules/${moduleId}/quizzes/create/`, quizData);
   return response.data;

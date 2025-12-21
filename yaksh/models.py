@@ -534,6 +534,14 @@ class Quiz(models.Model):
 
     creator = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
 
+    question_paper = models.OneToOneField(
+        'QuestionPaper',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='quiz_direct'
+    )
+
     objects = QuizManager()
 
     class Meta:

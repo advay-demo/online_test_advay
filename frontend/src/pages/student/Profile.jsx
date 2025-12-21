@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FaLinkedin, FaGithub, FaUpload, FaPlus, FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaGraduationCap } from 'react-icons/fa';
+import { FaLinkedin, FaGithub, FaUpload, FaPlus, FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaGraduationCap, FaArrowLeft } from 'react-icons/fa';
 import Logo from '../../components/ui/Logo';
 import { useUserStore } from '../../store/userStore';
 import { useAuthStore } from '../../store/authStore';
@@ -154,16 +154,15 @@ const Profile = () => {
     <div className="min-h-screen relative grid-texture">
       {/* Main Content */}
       <main className="flex-1">
-        <header className="px-8 flex justify-between py-4 border-b border-white/6">
-          <div className="flex items-center gap-4">
-            <Logo />
-            <Link
-              to="/dashboard"
-              className="text-white hover:text-gray-300 transition text-sm"
-            >
-              ← Back to Dashboard
-            </Link>
-          </div>
+        <header className="px-8 flex justify-between items-center py-4 border-b border-white/6">
+          <Logo />
+          <Link
+            to="/dashboard"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-gray-300 hover:text-white hover:bg-white/10 transition"
+          >
+            <FaArrowLeft className="text-xs" />
+            <span>Back to Dashboard</span>
+          </Link>
         </header>
 
         <div className="p-8">
@@ -175,8 +174,8 @@ const Profile = () => {
           {/* Edit Message */}
           {editMessage && (
             <div className={`mb-4 p-3 rounded-lg ${editMessage.includes('successfully')
-                ? 'bg-green-500/20 border-green-500/50 text-green-200'
-                : 'bg-red-500/20 border-red-500/50 text-red-200'
+              ? 'bg-green-500/20 border-green-500/50 text-green-200'
+              : 'bg-red-500/20 border-red-500/50 text-red-200'
               }`}>
               <p className="text-sm">{editMessage}</p>
             </div>

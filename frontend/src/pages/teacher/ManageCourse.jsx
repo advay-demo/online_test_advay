@@ -111,7 +111,7 @@ const ManageCourse = () => {
         // Initialize module order
         const orderedModules = [...modules].sort((a, b) => (a.order || 0) - (b.order || 0));
         setModuleOrder(orderedModules.map(m => m.id));
-        
+
         // Initialize unit orders for each module
         const orders = {};
         modules.forEach(module => {
@@ -179,10 +179,10 @@ const ManageCourse = () => {
     const moveModule = (moduleId, direction) => {
         const currentIndex = moduleOrder.indexOf(moduleId);
         if (currentIndex === -1) return;
-        
+
         const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
         if (newIndex < 0 || newIndex >= moduleOrder.length) return;
-        
+
         const newOrder = [...moduleOrder];
         [newOrder[currentIndex], newOrder[newIndex]] = [newOrder[newIndex], newOrder[currentIndex]];
         setModuleOrder(newOrder);
@@ -211,10 +211,10 @@ const ManageCourse = () => {
         const units = unitOrders[moduleId] || [];
         const currentIndex = units.findIndex(u => u.unit_id === unitId);
         if (currentIndex === -1) return;
-        
+
         const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
         if (newIndex < 0 || newIndex >= units.length) return;
-        
+
         const newUnits = [...units];
         [newUnits[currentIndex], newUnits[newIndex]] = [newUnits[newIndex], newUnits[currentIndex]];
         setUnitOrders({ ...unitOrders, [moduleId]: newUnits });
@@ -243,25 +243,25 @@ const ManageCourse = () => {
         try {
             setLoading(true);
             setError(null);
-            
+
             console.log('Loading course data for courseId:', courseId);
-            
+
             // teacher_get_course already includes modules in the response
             const courseData = await getTeacherCourse(courseId);
-            
+
             console.log('Course data received:', courseData);
-            
+
             if (!courseData) {
                 throw new Error('Course data not found');
             }
-            
+
             // Check if response has error
             if (courseData.error) {
                 throw new Error(courseData.error);
             }
-            
+
             setCourse(courseData);
-            
+
             // Extract modules from course data if available, otherwise fetch separately
             if (courseData.modules && Array.isArray(courseData.modules)) {
                 console.log('Using modules from course data:', courseData.modules.length);
@@ -393,8 +393,8 @@ const ManageCourse = () => {
     const openCreateLesson = (module) => {
         setSelectedModule(module);
         setEditingLesson(null);
-        const lastUnit = module.units && module.units.length > 0 
-            ? Math.max(...module.units.map(u => u.order)) 
+        const lastUnit = module.units && module.units.length > 0
+            ? Math.max(...module.units.map(u => u.order))
             : 0;
         setLessonFormData({
             name: '',
@@ -464,8 +464,8 @@ const ManageCourse = () => {
     const openCreateQuiz = (module) => {
         setSelectedModule(module);
         setEditingQuiz(null);
-        const lastUnit = module.units && module.units.length > 0 
-            ? Math.max(...module.units.map(u => u.order)) 
+        const lastUnit = module.units && module.units.length > 0
+            ? Math.max(...module.units.map(u => u.order))
             : 0;
         setQuizFormData({
             description: '',
@@ -604,7 +604,6 @@ const ManageCourse = () => {
         'Analytics',
         'Appearance',
         'Privacy',
-        'Billing',
     ];
 
     return (
@@ -668,8 +667,8 @@ const ManageCourse = () => {
                                     key={tab}
                                     onClick={() => setActiveTab(tab)}
                                     className={`px-4 py-2 rounded-md text-sm font-medium transition ${activeTab === tab
-                                            ? 'bg-blue-600 text-white'
-                                            : 'text-muted hover:text-white hover:bg-white/5'
+                                        ? 'bg-blue-600 text-white'
+                                        : 'text-muted hover:text-white hover:bg-white/5'
                                         }`}
                                 >
                                     {tab}
@@ -791,13 +790,13 @@ const ManageCourse = () => {
                                                 </div>
                                             )}
 
-                                            {enrollments.pending_requests.length === 0 && 
-                                             enrollments.enrolled.length === 0 && 
-                                             enrollments.rejected.length === 0 && (
-                                                <div className="text-center py-12 text-muted">
-                                                    <p>No enrollment requests or enrolled students</p>
-                                                </div>
-                                            )}
+                                            {enrollments.pending_requests.length === 0 &&
+                                                enrollments.enrolled.length === 0 &&
+                                                enrollments.rejected.length === 0 && (
+                                                    <div className="text-center py-12 text-muted">
+                                                        <p>No enrollment requests or enrolled students</p>
+                                                    </div>
+                                                )}
                                         </div>
                                     )}
                                 </div>
@@ -811,14 +810,14 @@ const ManageCourse = () => {
 
                                     {/* Module Form Modal */}
                                     {showModuleForm && (
-                                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                                            <div className="bg-[var(--bg-1)] border border-white/10 rounded-xl p-6 max-w-2xl w-full mx-4">
+                                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+                                            <div className="card-strong rounded-xl p-6 max-w-2xl w-full mx-4 shadow-2xl">
                                                 <h3 className="text-xl font-bold mb-4">
                                                     {editingModule ? 'Edit Module' : 'Create New Module'}
                                                 </h3>
                                                 <form onSubmit={editingModule ? handleUpdateModule : handleCreateModule}>
                                                     <div className="space-y-4">
-                                            <div>
+                                                        <div>
                                                             <label className="block text-sm font-semibold mb-2">
                                                                 Module Name *
                                                             </label>
@@ -831,7 +830,7 @@ const ManageCourse = () => {
                                                                 className="w-full px-4 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50"
                                                                 placeholder="Enter module name"
                                                             />
-                                            </div>
+                                                        </div>
                                                         <div>
                                                             <label className="block text-sm font-semibold mb-2">
                                                                 Description
@@ -871,7 +870,7 @@ const ManageCourse = () => {
                                                                 </label>
                                                             </div>
                                                         </div>
-                                            <div>
+                                                        <div>
                                                             <label className="flex items-center gap-2 cursor-pointer">
                                                                 <input
                                                                     type="checkbox"
@@ -883,7 +882,7 @@ const ManageCourse = () => {
                                                                 <span className="text-sm">Check Prerequisite</span>
                                                             </label>
                                                         </div>
-                                            </div>
+                                                    </div>
                                                     <div className="flex justify-end gap-3 mt-6">
                                                         <button
                                                             type="button"
@@ -894,23 +893,23 @@ const ManageCourse = () => {
                                                             className="px-4 py-2 border border-white/10 rounded-lg hover:bg-white/5 transition"
                                                         >
                                                             Cancel
-                                                </button>
+                                                        </button>
                                                         <button
                                                             type="submit"
                                                             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
                                                         >
                                                             {editingModule ? 'Update' : 'Create'}
-                                                </button>
-                                            </div>
+                                                        </button>
+                                                    </div>
                                                 </form>
-                                        </div>
+                                            </div>
                                         </div>
                                     )}
 
                                     {/* Lesson Form Modal */}
                                     {showLessonForm && (
-                                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                                            <div className="bg-[var(--bg-1)] border border-white/10 rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+                                            <div className="card-strong rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto shadow-2xl">
                                                 <h3 className="text-xl font-bold mb-4">
                                                     {editingLesson ? 'Edit Lesson' : 'Create New Lesson'}
                                                 </h3>
@@ -929,8 +928,8 @@ const ManageCourse = () => {
                                                                 className="w-full px-4 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50"
                                                                 placeholder="Enter lesson name"
                                                             />
-                                                    </div>
-                                                    <div>
+                                                        </div>
+                                                        <div>
                                                             <label className="block text-sm font-semibold mb-2">
                                                                 Description
                                                             </label>
@@ -943,7 +942,7 @@ const ManageCourse = () => {
                                                                 placeholder="Enter lesson description (markdown supported)"
                                                             />
                                                         </div>
-                                                    <div>
+                                                        <div>
                                                             <label className="block text-sm font-semibold mb-2">
                                                                 Video URL/Path
                                                             </label>
@@ -969,7 +968,7 @@ const ManageCourse = () => {
                                                                     onChange={handleLessonFormChange}
                                                                     className="w-full px-4 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50"
                                                                 />
-                                                    </div>
+                                                            </div>
                                                             <div className="flex items-center pt-8">
                                                                 <label className="flex items-center gap-2 cursor-pointer">
                                                                     <input
@@ -981,7 +980,7 @@ const ManageCourse = () => {
                                                                     />
                                                                     <span className="text-sm">Active</span>
                                                                 </label>
-                                                </div>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                     <div className="flex justify-end gap-3 mt-6">
@@ -1001,8 +1000,8 @@ const ManageCourse = () => {
                                                             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
                                                         >
                                                             {editingLesson ? 'Update' : 'Create'}
-                                                </button>
-                                            </div>
+                                                        </button>
+                                                    </div>
                                                 </form>
                                             </div>
                                         </div>
@@ -1010,8 +1009,8 @@ const ManageCourse = () => {
 
                                     {/* Quiz Form Modal */}
                                     {showQuizForm && (
-                                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                                            <div className="bg-[var(--bg-1)] border border-white/10 rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+                                            <div className="card-strong rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto shadow-2xl">
                                                 <h3 className="text-xl font-bold mb-4">
                                                     {editingQuiz ? 'Edit Quiz' : 'Create New Quiz'}
                                                 </h3>
@@ -1030,8 +1029,8 @@ const ManageCourse = () => {
                                                                 className="w-full px-4 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50"
                                                                 placeholder="Enter quiz name/description"
                                                             />
-                                                    </div>
-                                                    <div>
+                                                        </div>
+                                                        <div>
                                                             <label className="block text-sm font-semibold mb-2">
                                                                 Instructions
                                                             </label>
@@ -1058,7 +1057,7 @@ const ManageCourse = () => {
                                                                     min="1"
                                                                     className="w-full px-4 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50"
                                                                 />
-                                                        </div>
+                                                            </div>
                                                             <div>
                                                                 <label className="block text-sm font-semibold mb-2">
                                                                     Attempts Allowed
@@ -1072,8 +1071,8 @@ const ManageCourse = () => {
                                                                     className="w-full px-4 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50"
                                                                 />
                                                                 <p className="text-xs muted mt-1">-1 for unlimited</p>
-                                                    </div>
-                                                </div>
+                                                            </div>
+                                                        </div>
                                                         <div className="grid grid-cols-2 gap-4">
                                                             <div>
                                                                 <label className="block text-sm font-semibold mb-2">
@@ -1088,7 +1087,7 @@ const ManageCourse = () => {
                                                                     step="0.5"
                                                                     className="w-full px-4 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50"
                                                                 />
-                                            </div>
+                                                            </div>
                                                             <div>
                                                                 <label className="block text-sm font-semibold mb-2">
                                                                     Pass Criteria (%)
@@ -1102,10 +1101,10 @@ const ManageCourse = () => {
                                                                     max="100"
                                                                     className="w-full px-4 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50"
                                                                 />
-                                                    </div>
-                                                </div>
+                                                            </div>
+                                                        </div>
                                                         <div className="grid grid-cols-2 gap-4">
-                                                    <div>
+                                                            <div>
                                                                 <label className="block text-sm font-semibold mb-2">
                                                                     Weightage (%)
                                                                 </label>
@@ -1118,8 +1117,8 @@ const ManageCourse = () => {
                                                                     max="100"
                                                                     className="w-full px-4 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50"
                                                                 />
-                                                        </div>
-                                                    <div>
+                                                            </div>
+                                                            <div>
                                                                 <label className="block text-sm font-semibold mb-2">
                                                                     Order
                                                                 </label>
@@ -1130,8 +1129,8 @@ const ManageCourse = () => {
                                                                     onChange={handleQuizFormChange}
                                                                     className="w-full px-4 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50"
                                                                 />
+                                                            </div>
                                                         </div>
-                                                    </div>
                                                         <div className="space-y-2">
                                                             <label className="flex items-center gap-2 cursor-pointer">
                                                                 <input
@@ -1163,7 +1162,7 @@ const ManageCourse = () => {
                                                                 />
                                                                 <span className="text-sm">Active</span>
                                                             </label>
-                                                </div>
+                                                        </div>
                                                     </div>
                                                     <div className="flex justify-end gap-3 mt-6">
                                                         <button
@@ -1182,18 +1181,18 @@ const ManageCourse = () => {
                                                             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
                                                         >
                                                             {editingQuiz ? 'Update' : 'Create'}
-                                                </button>
-                                            </div>
+                                                        </button>
+                                                    </div>
                                                 </form>
+                                            </div>
                                         </div>
-                                    </div>
                                     )}
 
                                     {/* Modules List */}
                                     {modules.length > 0 ? (
                                         modules.map((module) => (
-                                            <div key={module.id} className="card rounded-xl overflow-hidden">
-                                        <div className="p-4 border-b border-white/10 flex items-center justify-between">
+                                            <div key={module.id} className="bg-white/5 rounded-xl border border-white/10 overflow-hidden">
+                                                <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/5">
                                                     <div className="flex-1">
                                                         <div className="flex items-center gap-3">
                                                             <h3 className="font-bold text-lg">{module.name}</h3>
@@ -1208,67 +1207,66 @@ const ManageCourse = () => {
                                                                 {module.description}
                                                             </p>
                                                         )}
-                                                <p className="text-xs muted mt-1">
+                                                        <p className="text-xs muted mt-1">
                                                             {module.units_count} learning unit{module.units_count !== 1 ? 's' : ''}
-                                                </p>
-                                            </div>
+                                                        </p>
+                                                    </div>
                                                     <div className="flex items-center gap-2 flex-wrap">
                                                         <button
                                                             onClick={() => openCreateLesson(module)}
                                                             className="px-3 py-1.5 bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded text-xs font-bold hover:bg-cyan-500/30 transition flex items-center gap-1"
                                                         >
-                                                    <FaPlus className="w-2 h-2" /> Add Lesson
-                                                </button>
+                                                            <FaPlus className="w-2 h-2" /> Add Lesson
+                                                        </button>
                                                         <button
                                                             onClick={() => openCreateQuiz(module)}
                                                             className="px-3 py-1.5 bg-green-500/20 text-green-400 border border-green-500/30 rounded text-xs font-bold hover:bg-green-500/30 transition flex items-center gap-1"
                                                         >
-                                                    <FaPlus className="w-2 h-2" /> Add Quiz
-                                                </button>
+                                                            <FaPlus className="w-2 h-2" /> Add Quiz
+                                                        </button>
                                                         <button
                                                             onClick={() => openEditModule(module)}
                                                             className="px-3 py-1.5 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded text-xs font-bold hover:bg-blue-500/30 transition flex items-center gap-1"
                                                         >
                                                             <FaEdit className="w-3 h-3" /> Edit
-                                                </button>
+                                                        </button>
                                                         <button
                                                             onClick={() => handleDeleteModule(module.id)}
                                                             className="px-3 py-1.5 bg-red-500/20 text-red-400 border border-red-500/30 rounded text-xs font-bold hover:bg-red-500/30 transition flex items-center gap-1"
                                                         >
                                                             <FaTrash className="w-3 h-3" /> Delete
-                                                </button>
-                                            </div>
-                                        </div>
+                                                        </button>
+                                                    </div>
+                                                </div>
 
-                                        <div className="p-2 space-y-2">
+                                                <div className="p-2 space-y-2">
                                                     {module.units && module.units.length > 0 ? (
                                                         module.units.map((unit) => (
                                                             <div
                                                                 key={unit.id}
-                                                                className="flex items-center justify-between p-3 rounded-lg bg-[var(--surface-2)] border border-white/10 hover:bg-[var(--surface)] transition group"
+                                                                className="flex items-center justify-between p-3 rounded-lg bg-black/20 border border-white/10 hover:bg-black/20 border border-white/5 hover:bg-white/5 transition group"
                                                             >
-                                                <div className="flex items-center gap-4">
-                                                                    <div className={`w-8 h-8 rounded flex items-center justify-center ${
-                                                                        unit.type === 'lesson' 
-                                                                            ? 'bg-cyan-500/10 text-cyan-400' 
-                                                                            : 'bg-green-500/10 text-green-400'
-                                                                    }`}>
+                                                                <div className="flex items-center gap-4">
+                                                                    <div className={`w-8 h-8 rounded flex items-center justify-center ${unit.type === 'lesson'
+                                                                        ? 'bg-cyan-500/10 text-cyan-400'
+                                                                        : 'bg-green-500/10 text-green-400'
+                                                                        }`}>
                                                                         {unit.type === 'lesson' ? (
                                                                             <FaBook className="w-4 h-4" />
                                                                         ) : (
-                                                        <FaCalendarAlt className="w-4 h-4" />
+                                                                            <FaCalendarAlt className="w-4 h-4" />
                                                                         )}
-                                                    </div>
-                                                    <div>
-                                                        <div className="font-medium text-sm">
+                                                                    </div>
+                                                                    <div>
+                                                                        <div className="font-medium text-sm">
                                                                             {unit.name || `${unit.type} #${unit.id}`}
-                                                        </div>
-                                                        <div className="text-xs muted flex items-center gap-3 mt-0.5">
+                                                                        </div>
+                                                                        <div className="text-xs muted flex items-center gap-3 mt-0.5">
                                                                             <span className="uppercase">{unit.type}</span>
                                                                             <span>Order: {unit.order}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
                                                                 <div className="flex items-center gap-2">
                                                                     {unit.type === 'lesson' ? (
                                                                         <>
@@ -1277,13 +1275,13 @@ const ManageCourse = () => {
                                                                                 className="px-3 py-1 border border-white/10 rounded text-xs hover:bg-white/10 transition"
                                                                             >
                                                                                 Edit
-                                                </button>
+                                                                            </button>
                                                                             <button
                                                                                 onClick={() => handleDeleteLesson(module, unit)}
                                                                                 className="px-3 py-1 border border-red-500/30 text-red-400 rounded text-xs hover:bg-red-500/20 transition"
                                                                             >
                                                                                 Delete
-                                                </button>
+                                                                            </button>
                                                                         </>
                                                                     ) : (
                                                                         <>
@@ -1307,21 +1305,21 @@ const ManageCourse = () => {
                                                                             </button>
                                                                         </>
                                                                     )}
-                                            </div>
-                                                    </div>
+                                                                </div>
+                                                            </div>
                                                         ))
                                                     ) : (
                                                         <div className="p-4 text-center text-muted text-sm">
                                                             No learning units yet. Add a lesson or quiz to get started.
                                                         </div>
                                                     )}
-                                                        </div>
-                                                    </div>
+                                                </div>
+                                            </div>
                                         ))
                                     ) : (
                                         <div className="text-center py-12 text-muted">
                                             <p>No modules yet. Create your first module!</p>
-                                                </div>
+                                        </div>
                                     )}
                                 </div>
                             )}
@@ -1335,7 +1333,7 @@ const ManageCourse = () => {
                                     {modules.length === 0 ? (
                                         <div className="text-center py-12 text-muted">
                                             <p>No modules found. Add modules first to reorder them.</p>
-                                            </div>
+                                        </div>
                                     ) : (
                                         <div className="space-y-6">
                                             {/* Module Reordering */}
@@ -1362,7 +1360,7 @@ const ManageCourse = () => {
                                                                 <div className="flex items-center gap-4 flex-1">
                                                                     <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400 font-bold text-sm">
                                                                         {index + 1}
-                                            </div>
+                                                                    </div>
                                                                     <div className="flex-1">
                                                                         <h4 className="font-semibold">{module.name}</h4>
                                                                         <p className="text-xs muted">{module.units_count || 0} learning units</p>
@@ -1376,7 +1374,7 @@ const ManageCourse = () => {
                                                                         title="Move up"
                                                                     >
                                                                         <FaChevronUp className="w-4 h-4" />
-                                                </button>
+                                                                    </button>
                                                                     <button
                                                                         onClick={() => moveModule(moduleId, 'down')}
                                                                         disabled={index === moduleOrder.length - 1}
@@ -1384,19 +1382,19 @@ const ManageCourse = () => {
                                                                         title="Move down"
                                                                     >
                                                                         <FaChevronDown className="w-4 h-4" />
-                                                    </button>
-                                                </div>
-                                            </div>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
                                                         );
                                                     })}
-                                        </div>
+                                                </div>
                                             </div>
 
                                             {/* Unit Reordering per Module */}
                                             {moduleOrder.map((moduleId) => {
                                                 const module = modules.find(m => m.id === moduleId);
                                                 if (!module || !module.units || module.units.length === 0) return null;
-                                                
+
                                                 const units = unitOrders[moduleId] || [];
                                                 return (
                                                     <div key={moduleId} className="card-strong p-6">
@@ -1409,7 +1407,7 @@ const ManageCourse = () => {
                                                             >
                                                                 {savingOrder ? 'Saving...' : 'Save Unit Order'}
                                                             </button>
-                                                </div>
+                                                        </div>
                                                         <div className="space-y-2">
                                                             {units.map((unit, index) => {
                                                                 const unitData = module.units.find(u => (u.lesson_id || u.quiz_id) === unit.unit_id);
@@ -1421,13 +1419,12 @@ const ManageCourse = () => {
                                                                         className="card p-3 flex items-center justify-between"
                                                                     >
                                                                         <div className="flex items-center gap-4 flex-1">
-                                                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${
-                                                                                isLesson 
-                                                                                    ? 'bg-cyan-500/20 border border-cyan-500/30 text-cyan-400' 
-                                                                                    : 'bg-green-500/20 border border-green-500/30 text-green-400'
-                                                                            }`}>
+                                                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${isLesson
+                                                                                ? 'bg-cyan-500/20 border border-cyan-500/30 text-cyan-400'
+                                                                                : 'bg-green-500/20 border border-green-500/30 text-green-400'
+                                                                                }`}>
                                                                                 {index + 1}
-                                                    </div>
+                                                                            </div>
                                                                             <div className="flex-1">
                                                                                 <div className="flex items-center gap-2">
                                                                                     {isLesson ? (
@@ -1436,15 +1433,14 @@ const ManageCourse = () => {
                                                                                         <span className="text-green-400 font-bold">Q</span>
                                                                                     )}
                                                                                     <h4 className="font-semibold">{unitData.name}</h4>
-                                                                                    <span className={`text-xs px-2 py-0.5 rounded ${
-                                                                                        isLesson 
-                                                                                            ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' 
-                                                                                            : 'bg-green-500/20 text-green-400 border border-green-500/30'
-                                                                                    }`}>
+                                                                                    <span className={`text-xs px-2 py-0.5 rounded ${isLesson
+                                                                                        ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                                                                                        : 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                                                                        }`}>
                                                                                         {isLesson ? 'Lesson' : 'Quiz'}
                                                                                     </span>
-                                                </div>
-                                            </div>
+                                                                                </div>
+                                                                            </div>
                                                                         </div>
                                                                         <div className="flex items-center gap-2">
                                                                             <button
@@ -1454,7 +1450,7 @@ const ManageCourse = () => {
                                                                                 title="Move up"
                                                                             >
                                                                                 <FaChevronUp className="w-3 h-3" />
-                                                </button>
+                                                                            </button>
                                                                             <button
                                                                                 onClick={() => moveUnit(moduleId, unit.unit_id, 'down')}
                                                                                 disabled={index === units.length - 1}
@@ -1462,18 +1458,18 @@ const ManageCourse = () => {
                                                                                 title="Move down"
                                                                             >
                                                                                 <FaChevronDown className="w-3 h-3" />
-                                                    </button>
-                                                </div>
-                                            </div>
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
                                                                 );
                                                             })}
-                                        </div>
-                                    </div>
+                                                        </div>
+                                                    </div>
                                                 );
                                             })}
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
                             )}
 
                             {activeTab === 'Analytics' && (

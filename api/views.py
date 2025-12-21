@@ -37,7 +37,7 @@ from yaksh.settings import SERVER_POOL_PORT, SERVER_HOST_NAME
 
 from api.serializers import (
     QuestionSerializer, QuizSerializer, QuestionPaperSerializer,
-    AnswerPaperSerializer, CourseSerializer, BadgeSerializer,
+    QuestionPaperDetailSerializer, AnswerPaperSerializer, CourseSerializer, BadgeSerializer,
     UserBadgeSerializer, BadgeProgressSerializer, UserStatsSerializer,
     UserActivitySerializer, CourseProgressSerializer, CourseCatalogSerializer,
     LessonDetailSerializer, LearningModuleDetailSerializer, LearningUnitDetailSerializer
@@ -1204,12 +1204,50 @@ def teacher_dashboard(request):
                         'course_name': course.name,
                         'module_name': module.name
                     })
+
+    # Top Students Logic
+    top_students = []
+    try:
+        # Get all answer papers for courses managed by this teacher
+        from django.db.models import Sum
+        
+        top_performers = AnswerPaper.objects.filter(
+            status='completed',
+            course__in=courses
+        ).values('user__id', 'user__first_name', 'user__last_name', 'user__username') \
+        .annotate(total_score=Sum('marks_obtained')) \
+        .order_by('-total_score')[:5]
+        
+        for student in top_performers:
+            # Get the subject (course) where they scored the most or just the latest one
+            last_paper = AnswerPaper.objects.filter(
+                user__id=student['user__id'],
+                course__in=courses
+            ).order_by('-start_time').first()
+            
+            subject = last_paper.course.name if last_paper else 'General'
+            
+            name = f"{student['user__first_name']} {student['user__last_name']}".strip()
+            if not name:
+                name = student['user__username']
+                
+            top_students.append({
+                'id': student['user__id'],
+                'name': name,
+                'subject': subject,
+                'score': student['total_score'] or 0
+            })
+            
+    except Exception as e:
+        print(f"Error calculating top students: {e}")
+
     
     return Response({
         'total_courses': total_courses,
         'active_courses': active_courses,
         'total_students': total_students,
         'avg_completion': round(avg_completion, 1),
+        'top_students': top_students,
         'recent_courses': [
             {
                 'id': course.id,
@@ -2214,6 +2252,17 @@ def teacher_create_quiz(request, module_id):
             creator=user
         )
         
+        # Create empty question paper and link to quiz
+        # Ensure no previous paper exists (defensive)
+        if hasattr(quiz, 'question_paper') and quiz.question_paper:
+             quiz.question_paper.delete()
+
+        question_paper = QuestionPaper.objects.create(quiz=quiz)
+        question_paper.fixed_questions.clear()
+        question_paper.random_questions.clear()
+        quiz.question_paper = question_paper
+        quiz.save()
+        
         # Create learning unit and add to module
         unit = LearningUnit.objects.create(
             type='quiz',
@@ -2232,6 +2281,7 @@ def teacher_create_quiz(request, module_id):
             'active': quiz.active,
             'unit_id': unit.id,
             'order': order,
+            'question_paper_id': question_paper.id,
             'message': 'Quiz created successfully'
         }, status=status.HTTP_201_CREATED)
         
@@ -2473,7 +2523,8 @@ def teacher_questions_list(request):
     active = request.GET.get('active', None)
     
     # Base query - questions created by user
-    questions = Question.objects.filter(user=user, is_trial=False)
+    # Base query - questions created by user
+    questions = Question.objects.filter(user=user)
     
     # Apply filters
     if question_type:
@@ -2493,7 +2544,12 @@ def teacher_questions_list(request):
     # Serialize questions
     questions_data = []
     for question in questions:
-        test_cases = question.get_test_cases_as_dict()
+        try:
+            test_cases = question.get_test_cases_as_dict()
+            if test_cases is None:
+                test_cases = []
+        except Exception:
+            test_cases = []
         questions_data.append({
             'id': question.id,
             'summary': question.summary,

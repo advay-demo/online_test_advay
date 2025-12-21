@@ -32,7 +32,7 @@ urlpatterns = [
     url(r'student/insights/achievements/$', views.user_achievements, name='user_achievements'),
     
     # Existing endpoints
-    url(r'questions/$', views.QuestionList.as_view(), name='questions'),
+    url(r'^questions/$', views.QuestionList.as_view(), name='questions'),
     url(r'questions/(?P<pk>[0-9]+)/$', views.QuestionDetail.as_view(),
         name='question'),
     url(r'get_courses/$', views.CourseList.as_view(), name='get_courses'),
@@ -70,17 +70,18 @@ urlpatterns = [
     url(r'teacher/modules/(?P<module_id>[0-9]+)/lessons/create/$', views.teacher_create_lesson, name='teacher_create_lesson'),
     url(r'teacher/modules/(?P<module_id>[0-9]+)/lessons/(?P<lesson_id>[0-9]+)/update/$', views.teacher_update_lesson, name='teacher_update_lesson'),
     url(r'teacher/modules/(?P<module_id>[0-9]+)/lessons/(?P<lesson_id>[0-9]+)/delete/$', views.teacher_delete_lesson, name='teacher_delete_lesson'),
+    url(r'teacher/modules/(?P<module_id>[0-9]+)/lessons/(?P<lesson_id>[0-9]+)/$', views.teacher_get_lesson, name='teacher_get_lesson'),
     url(r'teacher/lessons/(?P<lesson_id>[0-9]+)/files/upload/$', views.teacher_upload_lesson_files, name='teacher_upload_lesson_files'),
-    url(r'teacher/modules/(?P<module_id>[0-9]+)/quizzes/create/$', views.teacher_create_quiz, name='teacher_create_quiz'),
+    url(r'teacher/modules/(?P<module_id>[0-9]+)/quizzes/create/$', views.teacher_create_quiz, name='teacher_create_quiz'), #have to check if this is correct
     url(r'teacher/modules/(?P<module_id>[0-9]+)/quizzes/(?P<quiz_id>[0-9]+)/update/$', views.teacher_update_quiz, name='teacher_update_quiz'),
     url(r'teacher/modules/(?P<module_id>[0-9]+)/quizzes/(?P<quiz_id>[0-9]+)/delete/$', views.teacher_delete_quiz, name='teacher_delete_quiz'),
     url(r'teacher/questions/$', views.teacher_questions_list, name='teacher_questions_list'),
     url(r'teacher/questions/(?P<question_id>[0-9]+)/$', views.teacher_get_question, name='teacher_get_question'),
-    url(r'teacher/questions/create/$', views.teacher_create_question, name='teacher_create_question'),
+    url(r'teacher/questions/create/$', views.teacher_create_question, name='teacher_create_question'), #have to check if this is correct
     url(r'teacher/questions/(?P<question_id>[0-9]+)/update/$', views.teacher_update_question, name='teacher_update_question'),
     url(r'teacher/questions/(?P<question_id>[0-9]+)/delete/$', views.teacher_delete_question, name='teacher_delete_question'),
-    url(r'teacher/quizzes/(?P<quiz_id>[0-9]+)/questions/$', views.teacher_get_quiz_questions, name='teacher_get_quiz_questions'),
-    url(r'teacher/quizzes/(?P<quiz_id>[0-9]+)/questions/add/$', views.teacher_add_question_to_quiz, name='teacher_add_question_to_quiz'),
+    url(r'teacher/quizzes/(?P<quiz_id>[0-9]+)/questions/$', views.teacher_get_quiz_questions, name='teacher_get_quiz_questions'), #have to check if this is correct
+    url(r'teacher/quizzes/(?P<quiz_id>[0-9]+)/questions/add/$', views.teacher_add_question_to_quiz, name='teacher_add_question_to_quiz'), #have to check if this is correct
     url(r'teacher/quizzes/(?P<quiz_id>[0-9]+)/questions/(?P<question_id>[0-9]+)/remove/$', views.teacher_remove_question_from_quiz, name='teacher_remove_question_from_quiz'),
     url(r'teacher/quizzes/(?P<quiz_id>[0-9]+)/questions/reorder/$', views.teacher_reorder_quiz_questions, name='teacher_reorder_quiz_questions'),
     url(r'teacher/courses/(?P<course_id>[0-9]+)/enrollments/$', views.teacher_get_course_enrollments, name='teacher_get_course_enrollments'),

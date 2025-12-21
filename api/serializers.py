@@ -10,8 +10,11 @@ class QuestionSerializer(serializers.ModelSerializer):
     test_cases = serializers.SerializerMethodField()
 
     def get_test_cases(self, obj):
-        test_cases = obj.get_test_cases_as_dict()
-        return test_cases
+        try:
+            test_cases = obj.get_test_cases_as_dict()
+            return test_cases
+        except Exception:
+            return []
 
     class Meta:
         model = Question
@@ -25,6 +28,14 @@ class QuizSerializer(serializers.ModelSerializer):
 
 
 class QuestionPaperSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = QuestionPaper
+        fields = '__all__'
+
+
+class QuestionPaperDetailSerializer(serializers.ModelSerializer):
+    fixed_questions = QuestionSerializer(many=True, read_only=True)
+
     class Meta:
         model = QuestionPaper
         fields = '__all__'
@@ -357,7 +368,7 @@ class LessonDetailSerializer(serializers.ModelSerializer):
             # Find the learning unit for this lesson
             learning_unit = LearningUnit.objects.filter(
                 lesson=obj,
-                learning_unit__course__id=course_id
+                learning_unit__learning_module__id=course_id
             ).first()
             
             if learning_unit:

@@ -359,105 +359,32 @@ const DashboardTeachers = () => {
                             </div>
 
                             <div className="space-y-4">
-                                {/* Student 1 */}
-                                <div className="flex items-center gap-3">
-                                    <div className="text-lg font-bold muted w-6">1</div>
-                                    <img
-                                        src="https://ui-avatars.com/api/?name=Alex+John&background=4f46e5&color=fff&size=128"
-                                        className="w-10 h-10 rounded-full"
-                                        alt="Alex John"
-                                    />
-                                    <div className="flex-1">
-                                        <div className="font-semibold">Alex John</div>
-                                        <div className="text-xs muted">Science</div>
+                                {dashboardData.top_students && dashboardData.top_students.length > 0 ? (
+                                    dashboardData.top_students.map((student, index) => (
+                                        <div key={student.id} className="flex items-center gap-3">
+                                            <div className="text-lg font-bold muted w-6">{index + 1}</div>
+                                            <img
+                                                src={`https://ui-avatars.com/api/?name=${student.name}&background=random&color=fff&size=128`}
+                                                className="w-10 h-10 rounded-full"
+                                                alt={student.name}
+                                            />
+                                            <div className="flex-1">
+                                                <div className="font-semibold">{student.name}</div>
+                                                <div className="text-xs muted">{student.subject}</div>
+                                            </div>
+                                            <div className="flex items-center gap-1 text-orange-400 font-bold">
+                                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                                </svg>
+                                                {student.score}
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="text-center text-muted py-4">
+                                        No student data available
                                     </div>
-                                    <div className="flex items-center gap-1 text-orange-400 font-bold">
-                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                        </svg>
-                                        950
-                                    </div>
-                                </div>
-
-                                {/* Student 2 */}
-                                <div className="flex items-center gap-3">
-                                    <div className="text-lg font-bold muted w-6">2</div>
-                                    <img
-                                        src="https://ui-avatars.com/api/?name=Emma+Watson&background=ec4899&color=fff&size=128"
-                                        className="w-10 h-10 rounded-full"
-                                        alt="Emma Watson"
-                                    />
-                                    <div className="flex-1">
-                                        <div className="font-semibold">Emma Watson</div>
-                                        <div className="text-xs muted">Mathematics</div>
-                                    </div>
-                                    <div className="flex items-center gap-1 text-orange-400 font-bold">
-                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                        </svg>
-                                        920
-                                    </div>
-                                </div>
-
-                                {/* Student 3 */}
-                                <div className="flex items-center gap-3">
-                                    <div className="text-lg font-bold muted w-6">3</div>
-                                    <img
-                                        src="https://ui-avatars.com/api/?name=Michael+Clark&background=8b5cf6&color=fff&size=128"
-                                        className="w-10 h-10 rounded-full"
-                                        alt="Michael Clark"
-                                    />
-                                    <div className="flex-1">
-                                        <div className="font-semibold">Michael Clark</div>
-                                        <div className="text-xs muted">Physics</div>
-                                    </div>
-                                    <div className="flex items-center gap-1 text-orange-400 font-bold">
-                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                        </svg>
-                                        980
-                                    </div>
-                                </div>
-
-                                {/* Student 4 */}
-                                <div className="flex items-center gap-3">
-                                    <div className="text-lg font-bold muted w-6">4</div>
-                                    <img
-                                        src="https://ui-avatars.com/api/?name=Sophia+Green&background=10b981&color=fff&size=128"
-                                        className="w-10 h-10 rounded-full"
-                                        alt="Sophia Green"
-                                    />
-                                    <div className="flex-1">
-                                        <div className="font-semibold">Sophia Green</div>
-                                        <div className="text-xs muted">English</div>
-                                    </div>
-                                    <div className="flex items-center gap-1 text-orange-400 font-bold">
-                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                        </svg>
-                                        890
-                                    </div>
-                                </div>
-
-                                {/* Student 5 */}
-                                <div className="flex items-center gap-3">
-                                    <div className="text-lg font-bold muted w-6">5</div>
-                                    <img
-                                        src="https://ui-avatars.com/api/?name=Lucia+Wilde&background=f59e0b&color=fff&size=128"
-                                        className="w-10 h-10 rounded-full"
-                                        alt="Lucia Wilde"
-                                    />
-                                    <div className="flex-1">
-                                        <div className="font-semibold">Lucia Wilde</div>
-                                        <div className="text-xs muted">Science</div>
-                                    </div>
-                                    <div className="flex items-center gap-1 text-orange-400 font-bold">
-                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                        </svg>
-                                        870
-                                    </div>
-                                </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -479,11 +406,10 @@ const DashboardTeachers = () => {
                                     >
                                         <div className="flex justify-between items-start mb-4">
                                             <h3 className="font-bold text-lg">{course.name}</h3>
-                                            <div className={`px-2 py-1 rounded text-xs font-semibold ${
-                                                course.active 
-                                                    ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
+                                            <div className={`px-2 py-1 rounded text-xs font-semibold ${course.active
+                                                    ? 'bg-green-500/20 text-green-400 border border-green-500/30'
                                                     : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
-                                            }`}>
+                                                }`}>
                                                 {course.active ? 'Active' : 'Inactive'}
                                             </div>
                                         </div>

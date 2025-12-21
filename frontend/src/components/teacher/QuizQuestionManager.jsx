@@ -29,39 +29,12 @@ const QuizQuestionManager = ({ quizId, onClose, onUpdate }) => {
             console.log('Loading quiz questions for quizId:', quizId);
             const data = await getQuizQuestions(quizId);
             console.log('Raw API response:', JSON.stringify(data, null, 2));
-            console.log('Quiz questions loaded:', data);
             console.log('Type of data:', typeof data);
             console.log('Is data an object?', data && typeof data === 'object');
-            console.log('Fixed questions:', data?.fixed_questions);
-            console.log('Fixed questions type:', typeof data?.fixed_questions);
-            console.log('Is fixed_questions an array?', Array.isArray(data?.fixed_questions));
-            console.log('Fixed questions length:', data?.fixed_questions?.length);
-            console.log('Total marks:', data?.total_marks);
-            
-            // Ensure fixed_questions is always an array
-            if (!data) {
-                console.error('No data received from API');
-                setQuizQuestions({ fixed_questions: [], total_marks: 0 });
-                return;
-            }
-            
-            if (!Array.isArray(data.fixed_questions)) {
-                console.warn('fixed_questions is not an array, setting to empty array');
-                console.warn('Current value:', data.fixed_questions);
-                data.fixed_questions = [];
-            }
-            
-            console.log('Setting quizQuestions with:', {
-                fixed_questions: data.fixed_questions,
-                total_marks: data.total_marks,
-                quiz_id: data.quiz_id
-            });
-            
             setQuizQuestions(data);
         } catch (err) {
             console.error('Failed to load quiz questions:', err);
             console.error('Error response:', err.response);
-            console.error('Error details:', err.response?.data);
             console.error('Error message:', err.message);
             alert('Failed to load quiz questions: ' + (err.response?.data?.error || err.message));
             // Set empty state on error
@@ -75,25 +48,13 @@ const QuizQuestionManager = ({ quizId, onClose, onUpdate }) => {
         try {
             setLoadingQuestions(true);
             const questions = await fetchTeacherQuestions({ search: searchTerm });
-            console.log('Available questions loaded:', questions);
             console.log('Current selectedQuestions:', selectedQuestions);
-            
-            // Show ALL questions, don't filter them out
-            // Questions already in quiz will be marked as selected
+
+            //Filter out questions already in quiz (safely handle null quizQuestioins)
+            //Filter out questions already in quiz (safely handle null quizQuestioins)
+            // const existingIds = (quizQuestions?.fixed_questions || []).map(q => q.id);
+            // const filtered = questions.filter(q => !existingIds.includes(q.id));
             setAvailableQuestions(questions);
-            
-            // Ensure questions already in quiz remain selected (don't overwrite user selections)
-            if (quizQuestions?.fixed_questions && quizQuestions.fixed_questions.length > 0) {
-                const existingIds = quizQuestions.fixed_questions.map(q => q.id);
-                console.log('Existing question IDs in quiz:', existingIds);
-                
-                // Merge existing IDs with current selections, avoiding duplicates
-                setSelectedQuestions(prev => {
-                    const merged = [...new Set([...prev, ...existingIds])];
-                    console.log('Merged selected questions:', merged);
-                    return merged;
-                });
-            }
         } catch (err) {
             console.error('Failed to load available questions:', err);
             alert('Failed to load available questions: ' + (err.response?.data?.error || err.message));
@@ -107,11 +68,6 @@ const QuizQuestionManager = ({ quizId, onClose, onUpdate }) => {
         // Only load questions if quizQuestions has been loaded and Add Questions panel is open
         // Also ensure we're not still loading quiz questions
         if (showAddQuestions && quizQuestions && !loading) {
-            // Initialize selectedQuestions with existing question IDs when opening Add Questions
-            const existingIds = (quizQuestions?.fixed_questions || []).map(q => q.id);
-            console.log('Initializing selected questions with existing IDs:', existingIds);
-            setSelectedQuestions(existingIds);
-            
             if (searchTerm) {
                 const timeoutId = setTimeout(() => {
                     loadAvailableQuestions();
@@ -120,37 +76,41 @@ const QuizQuestionManager = ({ quizId, onClose, onUpdate }) => {
             } else {
                 loadAvailableQuestions();
             }
-        } else if (!showAddQuestions) {
-            // Reset when closing Add Questions panel
-            setSelectedQuestions([]);
-            setSearchTerm('');
         }
     }, [showAddQuestions, searchTerm, quizQuestions, loading]);
 
-    const handleAddQuestions = async () => {
+    const handleUpdateQuestions = async () => {
         try {
             setSaving(true);
-            // Get existing question IDs to avoid adding duplicates
+
             const existingIds = (quizQuestions?.fixed_questions || []).map(q => q.id);
-            // Only add questions that aren't already in the quiz
-            const newQuestionIds = selectedQuestions.filter(id => !existingIds.includes(id));
-            
-            if (newQuestionIds.length === 0) {
-                alert('All selected questions are already in the quiz.');
-                setSaving(false);
+            const currentIds = selectedQuestions || [];
+
+            // Calculate differences
+            const toAdd = currentIds.filter(id => !existingIds.includes(id));
+            const toRemove = existingIds.filter(id => !currentIds.includes(id));
+
+            if (toAdd.length === 0 && toRemove.length === 0) {
+                alert('No changes to save.');
                 return;
             }
-            
-            for (const questionId of newQuestionIds) {
+
+            // Execute additions
+            for (const questionId of toAdd) {
                 await addQuestionToQuiz(quizId, questionId, true);
             }
-            setSelectedQuestions([]);
+
+            // Execute removals
+            for (const questionId of toRemove) {
+                await removeQuestionFromQuiz(quizId, questionId);
+            }
+
             setShowAddQuestions(false);
             await loadQuizQuestions();
             if (onUpdate) onUpdate();
         } catch (err) {
-            console.error('Failed to add questions:', err);
-            alert('Failed to add questions: ' + (err.response?.data?.error || err.message));
+            console.error('Failed to update questions:', err);
+            alert('Failed to update questions: ' + (err.response?.data?.error || err.message));
         } finally {
             setSaving(false);
         }
@@ -208,8 +168,8 @@ const QuizQuestionManager = ({ quizId, onClose, onUpdate }) => {
 
     if (loading) {
         return (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                <div className="bg-[var(--bg-1)] border border-white/10 rounded-xl p-6 max-w-4xl w-full mx-4">
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+                <div className="card-strong rounded-xl p-6 max-w-4xl w-full mx-4 shadow-2xl">
                     <div className="flex items-center justify-center py-12">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                     </div>
@@ -225,8 +185,8 @@ const QuizQuestionManager = ({ quizId, onClose, onUpdate }) => {
     console.log('Length:', quizQuestions?.fixed_questions?.length);
 
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto">
-            <div className="bg-[var(--bg-1)] border border-white/10 rounded-xl p-6 max-w-6xl w-full mx-4 my-8">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 overflow-y-auto">
+            <div className="card-strong rounded-xl p-6 max-w-6xl w-full mx-4 my-8 shadow-2xl">
                 <div className="flex justify-between items-center mb-6">
                     <div>
                         <h2 className="text-2xl font-bold">Manage Quiz Questions</h2>
@@ -248,7 +208,12 @@ const QuizQuestionManager = ({ quizId, onClose, onUpdate }) => {
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="text-lg font-bold">Current Questions</h3>
                             <button
-                                onClick={() => setShowAddQuestions(!showAddQuestions)}
+                                onClick={() => {
+                                    setShowAddQuestions(!showAddQuestions);
+                                    // Initialize selected questions with questions already in the quiz
+                                    const existingIds = (quizQuestions?.fixed_questions || []).map(q => q.id);
+                                    setSelectedQuestions(existingIds);
+                                }}
                                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 text-sm font-medium"
                             >
                                 <FaPlus className="w-3 h-3" />
@@ -256,7 +221,7 @@ const QuizQuestionManager = ({ quizId, onClose, onUpdate }) => {
                             </button>
                         </div>
 
-                        {quizQuestions && Array.isArray(quizQuestions.fixed_questions) && quizQuestions.fixed_questions.length > 0 ? (
+                        {quizQuestions?.fixed_questions?.length > 0 ? (
                             <div className="space-y-2">
                                 {quizQuestions.fixed_questions.map((question, index) => (
                                     <div
@@ -335,46 +300,35 @@ const QuizQuestionManager = ({ quizId, onClose, onUpdate }) => {
                                 </div>
                             ) : availableQuestions.length > 0 ? (
                                 <div className="space-y-2 max-h-64 overflow-y-auto mb-4">
-                                    {availableQuestions.map((question) => {
-                                        const isAlreadyInQuiz = (quizQuestions?.fixed_questions || []).some(q => q.id === question.id);
-                                        const isSelected = selectedQuestions.includes(question.id);
-                                        return (
-                                            <div
-                                                key={question.id}
-                                                className={`card p-3 cursor-pointer transition ${
-                                                    isSelected
-                                                        ? 'bg-blue-500/20 border-blue-500/50'
-                                                        : 'hover:bg-white/5'
+                                    {availableQuestions.map((question) => (
+                                        <div
+                                            key={question.id}
+                                            className={`card p-3 cursor-pointer transition ${selectedQuestions.includes(question.id)
+                                                ? 'bg-blue-500/20 border-blue-500/50'
+                                                : 'hover:bg-white/5'
                                                 }`}
-                                                onClick={() => toggleQuestionSelection(question.id)}
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={isSelected}
-                                                        onChange={() => toggleQuestionSelection(question.id)}
-                                                        className="toggle-checkbox"
-                                                    />
-                                                    <div className="flex-1">
-                                                        <div className="flex items-center gap-2">
-                                                            <h4 className="font-semibold text-sm">{question.summary}</h4>
-                                                            {isAlreadyInQuiz && (
-                                                                <span className="px-2 py-0.5 rounded bg-green-500/20 border border-green-500/30 text-green-400 text-xs">
-                                                                    Already in quiz
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                        <div className="flex items-center gap-2 mt-1 text-xs muted">
-                                                            <span className="px-2 py-0.5 rounded bg-gray-500/20 border border-gray-500/30 uppercase">
-                                                                {question.type}
-                                                            </span>
-                                                            <span>{question.points} points</span>
-                                                        </div>
+                                            onClick={() => toggleQuestionSelection(question.id)}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedQuestions.includes(question.id)}
+                                                    onChange={() => toggleQuestionSelection(question.id)}
+                                                    className="toggle-checkbox"
+                                                />
+                                                <div className="flex-1">
+                                                    <h4 className="font-semibold text-sm">{question.summary}</h4>
+                                                    <div className="flex items-center gap-2 mt-1 text-xs muted">
+                                                        <span className="px-2 py-0.5 rounded bg-gray-500/20 border border-gray-500/30 uppercase">
+                                                            {question.type}
+                                                        </span>
+                                                        <span>{question.points} points</span>
                                                     </div>
                                                 </div>
                                             </div>
-                                        );
-                                    })}
+                                        </div>
+                                    ))}
+
                                 </div>
                             ) : (
                                 <div className="text-center py-8 text-muted">
@@ -394,11 +348,31 @@ const QuizQuestionManager = ({ quizId, onClose, onUpdate }) => {
                                     Cancel
                                 </button>
                                 <button
-                                    onClick={handleAddQuestions}
-                                    disabled={selectedQuestions.length === 0 || saving}
+                                    onClick={handleUpdateQuestions}
+                                    disabled={(() => {
+                                        const existingIds = (quizQuestions?.fixed_questions || []).map(q => q.id);
+                                        const currentIds = selectedQuestions || [];
+                                        const toAdd = currentIds.filter(id => !existingIds.includes(id));
+                                        const toRemove = existingIds.filter(id => !currentIds.includes(id));
+                                        return (toAdd.length === 0 && toRemove.length === 0) || saving;
+                                    })()}
                                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    {saving ? 'Adding...' : `Add ${selectedQuestions.length} Question${selectedQuestions.length !== 1 ? 's' : ''}`}
+                                    {(() => {
+                                        const existingIds = (quizQuestions?.fixed_questions || []).map(q => q.id);
+                                        const currentIds = selectedQuestions || [];
+                                        const toAdd = currentIds.filter(id => !existingIds.includes(id));
+                                        const toRemove = existingIds.filter(id => !currentIds.includes(id));
+
+                                        if (saving) return 'Saving...';
+
+                                        const parts = [];
+                                        if (toAdd.length > 0) parts.push(`Add ${toAdd.length}`);
+                                        if (toRemove.length > 0) parts.push(`Remove ${toRemove.length}`);
+
+                                        if (parts.length === 0) return 'No Changes';
+                                        return parts.join(', ');
+                                    })()}
                                 </button>
                             </div>
                         </div>
