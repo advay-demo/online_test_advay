@@ -47,6 +47,11 @@ from rest_framework import generics, permissions
 from grades.models import GradingSystem
 from .serializers import GradingSystemSerializer
 
+from yaksh.models import Post, Comment, Course, Lesson
+from api.serializers import PostSerializer, CommentSerializer
+from rest_framework import generics, permissions
+from django.contrib.contenttypes.models import ContentType
+
 import json
 
 
@@ -3869,3 +3874,91 @@ class GradingSystemDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = GradingSystem.objects.all()
     serializer_class = GradingSystemSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+
+
+
+
+# --- Course Forum Views  ---
+
+class ForumPostListCreateView(generics.ListCreateAPIView):
+    serializer_class = PostSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        course_id = self.kwargs['course_id']
+        return Post.objects.filter(target_id=course_id, active=True).order_by('-modified_at')
+
+    def perform_create(self, serializer):
+        course_id = self.kwargs['course_id']
+        serializer.save(creator=self.request.user, target_id=course_id)
+
+class ForumPostDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = PostSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        course_id = self.kwargs['course_id']
+        return Post.objects.filter(target_id=course_id, active=True)
+
+class ForumCommentListCreateView(generics.ListCreateAPIView):
+    serializer_class = CommentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        post_id = self.kwargs['post_id']
+        return Comment.objects.filter(post_id=post_id, active=True).order_by('created_at')
+
+    def perform_create(self, serializer):
+        post_id = self.kwargs['post_id']
+        serializer.save(creator=self.request.user, post_id=post_id)
+
+class ForumCommentDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = CommentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Comment.objects.filter(active=True)
+
+# --- Lesson Forum Views ---
+class LessonForumPostListCreateView(generics.ListCreateAPIView):
+    serializer_class = PostSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        lesson_id = self.kwargs['lesson_id']
+        lesson_ct = ContentType.objects.get_for_model(Lesson)
+        return Post.objects.filter(target_ct=lesson_ct, target_id=lesson_id, active=True).order_by('-modified_at')
+
+    def perform_create(self, serializer):
+        lesson_id = self.kwargs['lesson_id']
+        lesson_ct = ContentType.objects.get_for_model(Lesson)
+        serializer.save(creator=self.request.user, target_id=lesson_id, target_ct=lesson_ct)
+
+class LessonForumPostDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = PostSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        lesson_id = self.kwargs['lesson_id']
+        lesson_ct = ContentType.objects.get_for_model(Lesson)
+        return Post.objects.filter(target_ct=lesson_ct, target_id=lesson_id, active=True)
+
+class LessonForumCommentListCreateView(generics.ListCreateAPIView):
+    serializer_class = CommentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        post_id = self.kwargs['post_id']
+        return Comment.objects.filter(post_id=post_id, active=True).order_by('created_at')
+
+    def perform_create(self, serializer):
+        post_id = self.kwargs['post_id']
+        serializer.save(creator=self.request.user, post_id=post_id)
+
+class LessonForumCommentDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = CommentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Comment.objects.filter(active=True)

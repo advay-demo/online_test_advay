@@ -16,6 +16,7 @@ import TeacherSidebar from '../../components/layout/TeacherSidebar';
 import Header from '../../components/layout/Header';
 import CourseAnalytics from '../../components/teacher/CourseAnalytics';
 import QuizQuestionManager from '../../components/teacher/QuizQuestionManager';
+import CourseDiscussionsTab from '../../components/teacher/CourseDiscussion';
 import { getTeacherCourse, getCourseModules, createModule, updateModule, deleteModule, createLesson, updateLesson, deleteLesson, createQuiz, updateQuiz, deleteQuiz, getCourseEnrollments, approveEnrollment, rejectEnrollment, removeEnrollment, reorderCourseModules, reorderModuleUnits, getCourseAnalytics, getTeacherLesson, getTeacherQuiz } from '../../api/api';
 
 const ManageCourse = () => {
@@ -602,6 +603,7 @@ const ManageCourse = () => {
         'Modules',
         'Design Course',
         'Analytics',
+        'Discussions',
         'Appearance',
         'Privacy',
     ];
@@ -1480,6 +1482,12 @@ const ManageCourse = () => {
                                     <CourseAnalytics analytics={analytics} loading={loadingAnalytics} />
                                 </div>
                             )}
+
+                            {activeTab === 'Discussions' && course && (
+                                <CourseDiscussionsTab courseId={course.id} />
+                            )}
+
+
                         </div>
                     </div>
                 </div>

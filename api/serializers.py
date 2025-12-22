@@ -2,7 +2,7 @@ from rest_framework import serializers
 from yaksh.models import (
     Question, Quiz, QuestionPaper, AnswerPaper, Course,
     LearningModule, LearningUnit, Lesson, CourseStatus,
-    Badge, UserBadge, BadgeProgress, UserStats, DailyActivity, UserActivity
+    Badge, UserBadge, BadgeProgress, UserStats, DailyActivity, UserActivity, Post, Comment
 )
 from grades.models import GradingSystem, GradeRange
 
@@ -40,6 +40,16 @@ class GradingSystemSerializer(serializers.ModelSerializer):
             for gr in grade_ranges_data:
                 GradeRange.objects.create(system=instance, **gr)
         return instance
+
+class PostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Post
+        fields = '__all__'
+
+class CommentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = '__all__'
 
 
 

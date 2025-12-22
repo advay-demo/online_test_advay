@@ -56,7 +56,23 @@ urlpatterns = [
         name="quit_quiz"),
     url(r'student/answerpapers/(?P<answerpaper_id>[0-9]+)/submission/$', views.quiz_submission_status,
         name='quiz_submission_status'),
+
+
+    # Forum API endpoints
+    url(r'^forum/courses/(?P<course_id>\d+)/posts/$', views.ForumPostListCreateView.as_view(), name='api_forum_post_list_create'),
+    url(r'^forum/courses/(?P<course_id>\d+)/posts/(?P<post_id>\d+)/$', views.ForumPostDetailView.as_view(), name='api_forum_post_detail'),
+    url(r'^forum/courses/(?P<course_id>\d+)/posts/(?P<post_id>\d+)/comments/$', views.ForumCommentListCreateView.as_view(), name='api_forum_comment_list_create'),
+    url(r'^forum/courses/(?P<course_id>\d+)/comments/(?P<comment_id>\d+)/$', views.ForumCommentDetailView.as_view(), name='api_forum_comment_detail'),
+
+    # For lessons forum
+    url(r'^forum/lessons/(?P<lesson_id>\d+)/posts/$', views.LessonForumPostListCreateView.as_view(), name='api_lesson_forum_post_list_create'),
+    url(r'^forum/lessons/(?P<lesson_id>\d+)/posts/(?P<post_id>\d+)/$', views.LessonForumPostDetailView.as_view(), name='api_lesson_forum_post_detail'),
+    url(r'^forum/lessons/(?P<lesson_id>\d+)/posts/(?P<post_id>\d+)/comments/$', views.LessonForumCommentListCreateView.as_view(), name='api_lesson_forum_comment_list_create'),
+    url(r'^forum/lessons/(?P<lesson_id>\d+)/comments/(?P<comment_id>\d+)/$', views.LessonForumCommentDetailView.as_view(), name='api_lesson_forum_comment_detail'),   
     
+
+
+
     # Teacher APIs
     url(r'teacher/dashboard/$', views.teacher_dashboard, name='teacher_dashboard'),
     url(r'teacher/courses/$', views.teacher_courses_list, name='teacher_courses_list'),
