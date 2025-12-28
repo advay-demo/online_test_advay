@@ -82,6 +82,8 @@ urlpatterns = [
     url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/$', views.teacher_get_course_modules, name='teacher_get_course_modules'),
     url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/create/$', views.teacher_create_module, name='teacher_create_module'),
     url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/(?P<module_id>[0-9]+)/update/$', views.teacher_update_module, name='teacher_update_module'),
+
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/(?P<module_id>[0-9]+)/update/$', views.teacher_update_module, name='teacher_update_module'),
     url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/(?P<module_id>[0-9]+)/delete/$', views.teacher_delete_module, name='teacher_delete_module'),
     url(r'teacher/modules/(?P<module_id>[0-9]+)/lessons/create/$', views.teacher_create_lesson, name='teacher_create_lesson'),
     url(r'teacher/modules/(?P<module_id>[0-9]+)/lessons/(?P<lesson_id>[0-9]+)/update/$', views.teacher_update_lesson, name='teacher_update_lesson'),

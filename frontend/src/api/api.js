@@ -222,6 +222,7 @@ export const getCourseModules = async (courseId) => {
   return response.data;
 };
 
+
 export const createModule = async (courseId, moduleData) => {
   const response = await api.post(`/api/teacher/courses/${courseId}/modules/create/`, moduleData);
   return response.data;
@@ -232,10 +233,13 @@ export const updateModule = async (courseId, moduleId, moduleData) => {
   return response.data;
 };
 
+// not reqd
 export const deleteModule = async (courseId, moduleId) => {
   const response = await api.delete(`/api/teacher/courses/${courseId}/modules/${moduleId}/delete/`);
   return response.data;
 };
+// not reqd 
+
 
 // Lesson APIs
 export const createLesson = async (moduleId, lessonData) => {

@@ -498,3 +498,10 @@ class LearningModuleDetailSerializer(serializers.ModelSerializer):
         model = LearningModule
         fields = ['id', 'name', 'description', 'order', 'units', 'progress', 
                  'check_prerequisite', 'active']
+
+
+
+    class LearningModuleSerializer(serializers.ModelSerializer):
+        class Meta:
+            model = LearningModule
+            fields = '__all__'            

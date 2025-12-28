@@ -1730,42 +1730,44 @@ def teacher_create_module(request, course_id):
         )
 
 
+from api.serializers import LearningModuleSerializer
+
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 def teacher_update_module(request, course_id, module_id):
     """Update an existing module"""
     user = request.user
-    
+
     if not _check_teacher_permission(user):
         return Response(
             {'error': 'You are not authorized'},
             status=status.HTTP_403_FORBIDDEN
         )
-    
+
     try:
         course = Course.objects.get(id=course_id)
         module = LearningModule.objects.get(id=module_id)
-        
+
         # Verify ownership
         if not course.is_creator(user) and not course.is_teacher(user):
             return Response(
                 {'error': 'You do not have permission to modify this course'},
                 status=status.HTTP_403_FORBIDDEN
             )
-        
+
         if module.creator != user and not course.is_creator(user) and not course.is_teacher(user):
             return Response(
                 {'error': 'You do not have permission to modify this module'},
                 status=status.HTTP_403_FORBIDDEN
             )
-        
+
         # Verify module belongs to course
         if module not in course.learning_module.all():
             return Response(
                 {'error': 'Module does not belong to this course'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         # Update fields
         if 'name' in request.data:
             module.name = request.data['name']
@@ -1778,18 +1780,12 @@ def teacher_update_module(request, course_id, module_id):
             module.check_prerequisite = request.data['check_prerequisite']
         if 'active' in request.data:
             module.active = request.data['active']
-        
+
         module.save()
-        
-        return Response({
-            'id': module.id,
-            'name': module.name,
-            'description': module.description,
-            'order': module.order,
-            'active': module.active,
-            'message': 'Module updated successfully'
-        }, status=status.HTTP_200_OK)
-        
+
+        serializer = LearningModuleSerializer(module)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
     except Course.DoesNotExist:
         return Response(
             {'error': 'Course not found'},
