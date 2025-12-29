@@ -227,6 +227,7 @@ export const getCourseModules = async (courseId) => {
   return response.data;
 };
 
+
 export const createModule = async (courseId, moduleData) => {
   const response = await api.post(`/api/teacher/courses/${courseId}/modules/create/`, moduleData);
   return response.data;
@@ -237,10 +238,13 @@ export const updateModule = async (courseId, moduleId, moduleData) => {
   return response.data;
 };
 
+// not reqd
 export const deleteModule = async (courseId, moduleId) => {
   const response = await api.delete(`/api/teacher/courses/${courseId}/modules/${moduleId}/delete/`);
   return response.data;
 };
+// not reqd 
+
 
 // Lesson APIs
 export const createLesson = async (moduleId, lessonData) => {
@@ -396,6 +400,84 @@ export const getCourseAnalytics = async (courseId) => {
   return response.data;
 };
 
+// Grading System APIs (using axios)
+export const fetchGradingSystems = async () => {
+  const response = await api.get('/api/teacher/grading-systems/');
+  return response.data;
+};
 
+export const fetchGradingSystem = async (id) => {
+  const response = await api.get(`/api/teacher/grading-systems/${id}/`);
+  return response.data;
+};
+
+export const createGradingSystem = async (data) => {
+  const response = await api.post('/api/teacher/grading-systems/', data);
+  return response.data;
+};
+
+export const updateGradingSystem = async (id, data) => {
+  const response = await api.put(`/api/teacher/grading-systems/${id}/`, data);
+  return response.data;
+};
+
+export const deleteGradingSystem = async (id) => {
+  const response = await api.delete(`/api/teacher/grading-systems/${id}/`);
+  return response.data;
+};
+
+
+// COURSE FORUM APIs
+
+// Get all posts for a course
+export const getCourseForumPosts = async (courseId) => {
+  const response = await api.get(`/api/forum/courses/${courseId}/posts/`);
+  return response.data;
+};
+
+// Create a new post for a course
+export const createCourseForumPost = async (courseId, postData) => {
+  const response = await api.post(`/api/forum/courses/${courseId}/posts/`, postData);
+  return response.data;
+};
+
+// Get all comments for a post
+export const getForumPostComments = async (courseId, postId) => {
+  const response = await api.get(`/api/forum/courses/${courseId}/posts/${postId}/comments/`);
+  return response.data;
+};
+
+// Create a new comment for a post
+export const createForumPostComment = async (courseId, postId, commentData) => {
+  const response = await api.post(`/api/forum/courses/${courseId}/posts/${postId}/comments/`, commentData);
+  return response.data;
+};
+
+
+// LESSON FORUM APIs
+
+// Get all posts for a lesson
+export const getLessonForumPosts = async (lessonId) => {
+  const response = await api.get(`/api/forum/lessons/${lessonId}/posts/`);
+  return response.data;
+};
+
+// Create a new post for a lesson
+export const createLessonForumPost = async (lessonId, postData) => {
+  const response = await api.post(`/api/forum/lessons/${lessonId}/posts/`, postData);
+  return response.data;
+};
+
+// Get all comments for a lesson post
+export const getLessonForumPostComments = async (lessonId, postId) => {
+  const response = await api.get(`/api/forum/lessons/${lessonId}/posts/${postId}/comments/`);
+  return response.data;
+};
+
+// Create a new comment for a lesson post
+export const createLessonForumPostComment = async (lessonId, postId, commentData) => {
+  const response = await api.post(`/api/forum/lessons/${lessonId}/posts/${postId}/comments/`, commentData);
+  return response.data;
+};
 
 export default api;

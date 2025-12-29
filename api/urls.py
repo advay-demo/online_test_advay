@@ -56,7 +56,23 @@ urlpatterns = [
         name="quit_quiz"),
     url(r'student/answerpapers/(?P<answerpaper_id>[0-9]+)/submission/$', views.quiz_submission_status,
         name='quiz_submission_status'),
+
+
+    # Forum API endpoints
+    url(r'^forum/courses/(?P<course_id>\d+)/posts/$', views.ForumPostListCreateView.as_view(), name='api_forum_post_list_create'),
+    url(r'^forum/courses/(?P<course_id>\d+)/posts/(?P<post_id>\d+)/$', views.ForumPostDetailView.as_view(), name='api_forum_post_detail'),
+    url(r'^forum/courses/(?P<course_id>\d+)/posts/(?P<post_id>\d+)/comments/$', views.ForumCommentListCreateView.as_view(), name='api_forum_comment_list_create'),
+    url(r'^forum/courses/(?P<course_id>\d+)/comments/(?P<comment_id>\d+)/$', views.ForumCommentDetailView.as_view(), name='api_forum_comment_detail'),
+
+    # For lessons forum
+    url(r'^forum/lessons/(?P<lesson_id>\d+)/posts/$', views.LessonForumPostListCreateView.as_view(), name='api_lesson_forum_post_list_create'),
+    url(r'^forum/lessons/(?P<lesson_id>\d+)/posts/(?P<post_id>\d+)/$', views.LessonForumPostDetailView.as_view(), name='api_lesson_forum_post_detail'),
+    url(r'^forum/lessons/(?P<lesson_id>\d+)/posts/(?P<post_id>\d+)/comments/$', views.LessonForumCommentListCreateView.as_view(), name='api_lesson_forum_comment_list_create'),
+    url(r'^forum/lessons/(?P<lesson_id>\d+)/comments/(?P<comment_id>\d+)/$', views.LessonForumCommentDetailView.as_view(), name='api_lesson_forum_comment_detail'),   
     
+
+
+
     # Teacher APIs
     url(r'teacher/dashboard/$', views.teacher_dashboard, name='teacher_dashboard'),
     url(r'teacher/courses/$', views.teacher_courses_list, name='teacher_courses_list'),
@@ -65,6 +81,8 @@ urlpatterns = [
     url(r'teacher/courses/(?P<course_id>[0-9]+)/update/$', views.teacher_update_course, name='teacher_update_course'),
     url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/$', views.teacher_get_course_modules, name='teacher_get_course_modules'),
     url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/create/$', views.teacher_create_module, name='teacher_create_module'),
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/(?P<module_id>[0-9]+)/update/$', views.teacher_update_module, name='teacher_update_module'),
+
     url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/(?P<module_id>[0-9]+)/update/$', views.teacher_update_module, name='teacher_update_module'),
     url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/(?P<module_id>[0-9]+)/delete/$', views.teacher_delete_module, name='teacher_delete_module'),
     url(r'teacher/modules/(?P<module_id>[0-9]+)/lessons/create/$', views.teacher_create_lesson, name='teacher_create_lesson'),
@@ -92,6 +110,9 @@ urlpatterns = [
     url(r'teacher/modules/(?P<module_id>[0-9]+)/units/reorder/$', views.teacher_reorder_module_units, name='teacher_reorder_module_units'),
     url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/reorder/$', views.teacher_reorder_course_modules, name='teacher_reorder_course_modules'),
     url(r'teacher/courses/(?P<course_id>[0-9]+)/analytics/$', views.teacher_get_course_analytics, name='teacher_get_course_analytics'),
+
+    url(r'^teacher/grading-systems/$', views.GradingSystemListCreateView.as_view(), name='grading-system-list-create'),
+    url(r'^teacher/grading-systems/(?P<pk>[0-9]+)/$', views.GradingSystemDetailView.as_view(), name='grading-system-detail'),
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)

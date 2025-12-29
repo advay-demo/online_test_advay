@@ -2,9 +2,59 @@ from rest_framework import serializers
 from yaksh.models import (
     Question, Quiz, QuestionPaper, AnswerPaper, Course,
     LearningModule, LearningUnit, Lesson, CourseStatus,
-    Badge, UserBadge, BadgeProgress, UserStats, DailyActivity, UserActivity
+    Badge, UserBadge, BadgeProgress, UserStats, DailyActivity, UserActivity, Post, Comment
 )
+from grades.models import GradingSystem, GradeRange
 
+
+class GradeRangeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GradeRange
+        fields = ['id', 'lower_limit', 'upper_limit', 'grade', 'description']
+        read_only_fields = ['id']
+
+
+
+class GradingSystemSerializer(serializers.ModelSerializer):
+    grade_ranges = GradeRangeSerializer(many=True, source='graderange_set')
+
+    class Meta:
+        model = GradingSystem
+        fields = ['id', 'name', 'description', 'grade_ranges', 'creator']
+        read_only_fields = ['id', 'creator']
+
+    def create(self, validated_data):
+        grade_ranges_data = validated_data.pop('graderange_set')
+        grading_system = GradingSystem.objects.create(**validated_data)
+        for gr in grade_ranges_data:
+            GradeRange.objects.create(system=grading_system, **gr)
+        return grading_system
+
+    def update(self, instance, validated_data):
+        grade_ranges_data = validated_data.pop('graderange_set', None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        if grade_ranges_data is not None:
+            instance.graderange_set.all().delete()
+            for gr in grade_ranges_data:
+                GradeRange.objects.create(system=instance, **gr)
+        return instance
+
+class PostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Post
+        fields = '__all__'
+
+class CommentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = '__all__'
+
+
+
+
+        
 
 class QuestionSerializer(serializers.ModelSerializer):
     test_cases = serializers.SerializerMethodField()
@@ -448,3 +498,10 @@ class LearningModuleDetailSerializer(serializers.ModelSerializer):
         model = LearningModule
         fields = ['id', 'name', 'description', 'order', 'units', 'progress', 
                  'check_prerequisite', 'active']
+
+
+
+    class LearningModuleSerializer(serializers.ModelSerializer):
+        class Meta:
+            model = LearningModule
+            fields = '__all__'            

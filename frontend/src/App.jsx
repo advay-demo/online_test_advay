@@ -19,6 +19,7 @@ import TeacherQuizzes from './pages/teacher/TeacherQuizzes';
 import Questions from './pages/teacher/Questions';
 import AddQuestion from './pages/teacher/AddQuestion';
 import PrivateRoute from './components/auth/PrivateRoute';
+import GradingSystems from './pages/teacher/GradingSystems';
 
 import ThemeController from './components/layout/ThemeController';
 
@@ -57,10 +58,15 @@ function App() {
         <Route element={<PrivateRoute />}>
           <Route path="/teacher/dashboard" element={<DashboardTeachers />} />
           <Route path="/teacher/add-course" element={<AddCourse />} />
-          <Route path="/teacher/courses/:courseId/edit" element={<AddCourse />} />
+          <Route path="/teacher/grading-systems" element={<GradingSystems />} />
           <Route path="/teacher/courses" element={<Courses />} />
           <Route path="/teacher/quizzes" element={<TeacherQuizzes />} />
           <Route path="/teacher/courses/:courseId/manage" element={<ManageCourse />} />
+
+
+          <Route path="/teacher/courses/:courseId/edit" element={<AddCourse />} />
+          
+          
           <Route path="/teacher/questions" element={<Questions />} />
           <Route path="/teacher/questions/create" element={<AddQuestion />} />
           <Route path="/teacher/questions/:questionId/edit" element={<AddQuestion />} />
