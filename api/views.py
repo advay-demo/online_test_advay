@@ -3951,11 +3951,12 @@ class ForumPostListCreateView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         course_id = self.kwargs['course_id']
-        serializer.save(creator=self.request.user, target_id=course_id)
+        serializer.save(creator=self.request.user, target_id=course_id, active=True)
 
 class ForumPostDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = PostSerializer
     permission_classes = [permissions.IsAuthenticated]
+    lookup_field = 'id'
 
     def get_queryset(self):
         course_id = self.kwargs['course_id']
@@ -3967,15 +3968,17 @@ class ForumCommentListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         post_id = self.kwargs['post_id']
-        return Comment.objects.filter(post_id=post_id, active=True).order_by('created_at')
+        return Comment.objects.filter(post_field_id=post_id, active=True).order_by('created_at')
 
     def perform_create(self, serializer):
         post_id = self.kwargs['post_id']
-        serializer.save(creator=self.request.user, post_id=post_id)
+        serializer.save(creator=self.request.user, post_field_id=post_id)
 
 class ForumCommentDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = CommentSerializer
     permission_classes = [permissions.IsAuthenticated]
+    lookup_field = 'id'
+    lookup_url_kwarg = 'comment_id'
 
     def get_queryset(self):
         return Comment.objects.filter(active=True)

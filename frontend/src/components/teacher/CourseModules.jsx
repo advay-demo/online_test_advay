@@ -22,7 +22,7 @@ const CourseModules = () => {
                  COURSE MODULES &rarr;
             </div>
 
-            {/* Add Module pop up */}
+            
             {showModuleForm && (
             <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm px-2">
                 <div className="card-strong w-full max-w-full sm:max-w-2xl p-4 sm:p-6 relative rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">

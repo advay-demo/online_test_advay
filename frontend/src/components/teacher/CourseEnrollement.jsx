@@ -10,6 +10,7 @@ const CourseEnrollment = () => {
         handleRemoveEnrollment,
     } = useManageCourseStore();
 
+    
     return (
         <div>
             <div className="text-cyan-400 text-sm sm:text-base font-medium mb-6 flex items-center gap-2">

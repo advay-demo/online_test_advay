@@ -60,7 +60,7 @@ urlpatterns = [
 
     # Forum API endpoints
     url(r'^forum/courses/(?P<course_id>\d+)/posts/$', views.ForumPostListCreateView.as_view(), name='api_forum_post_list_create'),
-    url(r'^forum/courses/(?P<course_id>\d+)/posts/(?P<post_id>\d+)/$', views.ForumPostDetailView.as_view(), name='api_forum_post_detail'),
+    url(r'^forum/courses/(?P<course_id>\d+)/posts/(?P<id>\d+)/$', views.ForumPostDetailView.as_view(), name='api_forum_post_detail'),
     url(r'^forum/courses/(?P<course_id>\d+)/posts/(?P<post_id>\d+)/comments/$', views.ForumCommentListCreateView.as_view(), name='api_forum_comment_list_create'),
     url(r'^forum/courses/(?P<course_id>\d+)/comments/(?P<comment_id>\d+)/$', views.ForumCommentDetailView.as_view(), name='api_forum_comment_detail'),
 
