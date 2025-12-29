@@ -254,11 +254,17 @@ def render_template(template_path, data=None):
 
 
 def validate_image(image):
-    file_size = image.file.size
+    # Try to get the file size in a robust way
+    if hasattr(image.file, 'size'):
+        file_size = image.file.size
+    elif hasattr(image.file, 'getbuffer'):
+        file_size = image.file.getbuffer().nbytes
+    else:
+        file_size = 0  # fallback, or raise an error if you want
+
     limit_mb = 30
     if file_size > limit_mb * 1024 * 1024:
         raise ValidationError("Max size of file is {0} MB".format(limit_mb))
-
 
 def get_image_dir(instance, filename):
     return os.sep.join((

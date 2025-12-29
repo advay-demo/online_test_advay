@@ -31,6 +31,11 @@ const ManageCourse = () => {
         handleApproveEnrollment, handleRejectEnrollment, handleRemoveEnrollment, openQuizQuestionManager, handleQuizQuestionsUpdate
     } = useManageCourseStore();
 
+
+    const [showAddPostModal, setShowAddPostModal] = useState(false);
+    const openCreatePost = () => setShowAddPostModal(true);
+    const closeCreatePost = () => setShowAddPostModal(false);
+
     useEffect(() => {
         if (courseId) {
             loadCourseData(courseId);
@@ -154,6 +159,16 @@ const ManageCourse = () => {
                                     <span className="hidden sm:inline">Add Module</span>
                                 </button>
                                 )}
+
+                                {activeTab === 'Discussions' && (
+                                <button
+                                    onClick={openCreatePost}
+                                    className="bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-700 transition flex items-center gap-2"
+                                >
+                                    <FaPlus className="w-3 h-3" />
+                                    <span className="hidden sm:inline">New Post</span>
+                                </button>
+                                )}
                             </div>
                         </div>
 
@@ -190,7 +205,12 @@ const ManageCourse = () => {
                                 </div>
                             )}
                             {activeTab === 'Discussions' && course && (
-                                <CourseDiscussionsTab courseId={course.id} />
+                            <CourseDiscussionsTab
+                                courseId={course.id}
+                                showAddPostModal={showAddPostModal}
+                                setShowAddPostModal={setShowAddPostModal}
+                                closeCreatePost={closeCreatePost}
+                            />
                             )}
                         </div>
                     </div>

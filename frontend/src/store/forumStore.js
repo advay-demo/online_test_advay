@@ -2,12 +2,14 @@ import { create } from 'zustand';
 import {
   getCourseForumPosts,
   createCourseForumPost,
+  deleteCourseForumPost,
   getForumPostComments,
   createForumPostComment,
   getLessonForumPosts,
   createLessonForumPost,
   getLessonForumPostComments,
   createLessonForumPostComment,
+  deleteForumPostComment,
 } from '../api/api';
 
 const useForumStore = create((set, get) => ({
@@ -46,6 +48,17 @@ const useForumStore = create((set, get) => ({
     }
   },
 
+  deleteCoursePost: async (courseId, postId) => {
+    set({ loading: true, error: null });
+    try {
+      await deleteCourseForumPost(courseId, postId);
+      await get().loadCoursePosts(courseId); // Refresh posts after deletion
+      set({ loading: false });
+    } catch (error) {
+      set({ error: 'Failed to delete course post', loading: false });
+    }
+  },
+
   loadCourseComments: async (courseId, postId) => {
     set({ loading: true, error: null });
     try {
@@ -66,6 +79,19 @@ const useForumStore = create((set, get) => ({
       set({ error: 'Failed to add comment', loading: false });
     }
   },
+   
+  deleteCourseComment: async (courseId, postId, commentId) => {
+    set({ loading: true, error: null });
+    try {
+      await deleteForumPostComment(courseId, commentId);
+      await get().loadCourseComments(courseId, postId);
+      set({ loading: false });
+    } catch (error) {
+      set({ error: 'Failed to delete comment', loading: false });
+    }
+  },
+
+
 
   // Lesson forum
   loadLessonPosts: async (lessonId) => {

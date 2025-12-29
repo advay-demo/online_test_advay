@@ -432,13 +432,28 @@ export const getCourseForumPosts = async (courseId) => {
 
 // Create a new post for a course
 export const createCourseForumPost = async (courseId, postData) => {
-  const response = await api.post(`/api/forum/courses/${courseId}/posts/`, postData);
+  const response = await api.post(`/api/forum/courses/${courseId}/posts/`, 
+    postData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }
+  );
   return response.data;
 };
+
+// Delete a course forum post
+export const deleteCourseForumPost = async (courseId, postId) => {
+  const response = await api.delete(`/api/forum/courses/${courseId}/posts/${postId}/`);
+  return response.data;
+};
+
 
 // Get all comments for a post
 export const getForumPostComments = async (courseId, postId) => {
   const response = await api.get(`/api/forum/courses/${courseId}/posts/${postId}/comments/`);
+  console.log('getForumPostComments response:', response.data); // Debug log
   return response.data;
 };
 
@@ -447,6 +462,13 @@ export const createForumPostComment = async (courseId, postId, commentData) => {
   const response = await api.post(`/api/forum/courses/${courseId}/posts/${postId}/comments/`, commentData);
   return response.data;
 };
+
+// Delete a comment for a course forum post
+export const deleteForumPostComment = async (courseId, commentId) => {
+  const response = await api.delete(`/api/forum/courses/${courseId}/comments/${commentId}/`);
+  return response.data;
+};
+
 
 
 // LESSON FORUM APIs

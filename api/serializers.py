@@ -42,14 +42,21 @@ class GradingSystemSerializer(serializers.ModelSerializer):
         return instance
 
 class PostSerializer(serializers.ModelSerializer):
+    author = serializers.CharField(source='creator.username', read_only=True)
+
     class Meta:
         model = Post
         fields = '__all__'
+        read_only_fields = ['creator']
+        
 
 class CommentSerializer(serializers.ModelSerializer):
+    author = serializers.CharField(source='creator.username', read_only=True)
+    # or use 'get_full_name' if you want full name
+
     class Meta:
         model = Comment
-        fields = '__all__'
+        fields = ['id', 'description', 'created_at', 'modified_at', 'author']
 
 
 
