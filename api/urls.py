@@ -84,6 +84,7 @@ urlpatterns = [
     url(r'teacher/quizzes/(?P<quiz_id>[0-9]+)/questions/add/$', views.teacher_add_question_to_quiz, name='teacher_add_question_to_quiz'), #have to check if this is correct
     url(r'teacher/quizzes/(?P<quiz_id>[0-9]+)/questions/(?P<question_id>[0-9]+)/remove/$', views.teacher_remove_question_from_quiz, name='teacher_remove_question_from_quiz'),
     url(r'teacher/quizzes/(?P<quiz_id>[0-9]+)/questions/reorder/$', views.teacher_reorder_quiz_questions, name='teacher_reorder_quiz_questions'),
+    url(r'teacher/quizzes/grouped/$', views.teacher_quizzes_grouped, name='teacher_quizzes_grouped'),
     url(r'teacher/courses/(?P<course_id>[0-9]+)/enrollments/$', views.teacher_get_course_enrollments, name='teacher_get_course_enrollments'),
     url(r'teacher/courses/(?P<course_id>[0-9]+)/enrollments/(?P<user_id>[0-9]+)/approve/$', views.teacher_approve_enrollment, name='teacher_approve_enrollment'),
     url(r'teacher/courses/(?P<course_id>[0-9]+)/enrollments/(?P<user_id>[0-9]+)/reject/$', views.teacher_reject_enrollment, name='teacher_reject_enrollment'),

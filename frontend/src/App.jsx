@@ -15,6 +15,7 @@ import DashboardTeachers from './pages/teacher/DashboardTeachers';
 import AddCourse from './pages/teacher/AddCourse';
 import Courses from './pages/teacher/Courses';
 import ManageCourse from './pages/teacher/ManageCourse';
+import TeacherQuizzes from './pages/teacher/TeacherQuizzes';
 import Questions from './pages/teacher/Questions';
 import AddQuestion from './pages/teacher/AddQuestion';
 import PrivateRoute from './components/auth/PrivateRoute';
@@ -44,7 +45,7 @@ function App() {
           <Route path="/quizzes/:quizId" element={<Quiz />} />
           <Route path="/answerpapers/:answerpaperId/submission" element={<Submission />} />
           <Route path="/insights" element={<Insights />} />
-          
+
           {/* Legacy routes for backward compatibility */}
           <Route path="/module" element={<CourseModule />} />
           <Route path="/quiz" element={<Quiz />} />
@@ -58,6 +59,7 @@ function App() {
           <Route path="/teacher/add-course" element={<AddCourse />} />
           <Route path="/teacher/courses/:courseId/edit" element={<AddCourse />} />
           <Route path="/teacher/courses" element={<Courses />} />
+          <Route path="/teacher/quizzes" element={<TeacherQuizzes />} />
           <Route path="/teacher/courses/:courseId/manage" element={<ManageCourse />} />
           <Route path="/teacher/questions" element={<Questions />} />
           <Route path="/teacher/questions/create" element={<AddQuestion />} />

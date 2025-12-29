@@ -75,11 +75,10 @@ const TeacherSidebar = () => {
                                 key={item.path}
                                 to={item.path}
                                 onClick={handleLinkClick}
-                                className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition ${
-                                    isActive(item.path)
-                                        ? 'bg-blue-600 text-white'
-                                        : 'text-soft hover:bg-white/3'
-                                }`}
+                                className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition ${isActive(item.path)
+                                    ? 'bg-blue-600 text-white'
+                                    : 'text-soft hover:bg-white/3'
+                                    }`}
                             >
                                 <Icon className="w-5 h-5" />
                                 {item.label}
@@ -88,10 +87,6 @@ const TeacherSidebar = () => {
                     })}
                 </nav>
 
-                {/* Footer */}
-                <div className="p-4 sm:p-6 lg:p-8 border-t border-white/6 flex-shrink-0">
-                    <p className="text-xs text-muted text-center">© 2025 Yaksh</p>
-                </div>
             </aside>
 
             {/* Mobile Menu Toggle Button - Floating */}

@@ -216,6 +216,11 @@ export const updateCourse = async (courseId, courseData) => {
   return response.data;
 };
 
+export const fetchTeacherQuizzesGrouped = async () => {
+  const response = await api.get('/api/teacher/quizzes/grouped/');
+  return response.data;
+};
+
 // Module APIs
 export const getCourseModules = async (courseId) => {
   const response = await api.get(`/api/teacher/courses/${courseId}/modules/`);

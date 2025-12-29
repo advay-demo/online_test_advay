@@ -54,14 +54,14 @@ const Quiz = () => {
       const data = await startQuiz(courseId, quizId);
       setAnswerPaper(data.answerpaper);
       setTimeLeft(data.time_left || 0);
-      
+
       // Initialize answers object
       const initialAnswers = {};
       data.answerpaper.questions.forEach((q) => {
         initialAnswers[q.id] = '';
       });
       setAnswers(initialAnswers);
-      
+
       setError(null);
     } catch (err) {
       console.error('Failed to start quiz:', err);
@@ -101,10 +101,10 @@ const Quiz = () => {
     try {
       setSubmitting(true);
       const result = await submitAnswer(answerPaper.id, questionId, [answer]);
-      
+
       // Mark question as attempted
       setAttemptedQuestions((prev) => new Set([...prev, questionId]));
-      
+
       // Show feedback if available
       if (result.success) {
         // Answer is correct
@@ -135,6 +135,11 @@ const Quiz = () => {
     setCurrentQuestionIndex(index);
   };
 
+  const handleErrorModalClose = () => {
+    // Navigate back to the modules list
+    navigate(`/courses/${courseId}/modules`);
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-screen relative grid-texture">
@@ -148,17 +153,28 @@ const Quiz = () => {
     );
   }
 
+  // Error Modal
   if (error || !answerPaper) {
     return (
       <div className="flex min-h-screen relative grid-texture">
-        <div className="flex-1 flex items-center justify-center p-8">
-          <div className="text-center">
-            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-red-300 mb-4">
-              {error || 'Quiz not found'}
+        {/* Modal Overlay */}
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-900 border border-white/10 rounded-2xl p-8 max-w-md w-full shadow-2xl transform scale-100 transition-all">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <AiOutlineWarning className="w-8 h-8 text-red-500" />
+              </div>
+              <h3 className="text-2xl font-bold mb-2">Unavailable</h3>
+              <p className="text-gray-400 mb-8">
+                {error || 'This quiz is currently unavailable.'}
+              </p>
+              <button
+                onClick={handleErrorModalClose}
+                className="w-full bg-white text-black py-3 rounded-xl font-bold hover:bg-gray-200 transition"
+              >
+                Back to Modules
+              </button>
             </div>
-            <Link to="/courses" className="text-indigo-400 hover:text-indigo-300">
-              Back to Courses
-            </Link>
           </div>
         </div>
       </div>
@@ -185,7 +201,7 @@ const Quiz = () => {
             onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
           />
         );
-      
+
       case 'mcq':
         return (
           <div className="space-y-3">
@@ -204,7 +220,7 @@ const Quiz = () => {
             ))}
           </div>
         );
-      
+
       case 'mcc':
         return (
           <div className="space-y-3">
@@ -227,7 +243,7 @@ const Quiz = () => {
             ))}
           </div>
         );
-      
+
       case 'code':
         return (
           <textarea
@@ -237,7 +253,7 @@ const Quiz = () => {
             onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
           />
         );
-      
+
       default:
         return (
           <textarea
@@ -333,12 +349,12 @@ const Quiz = () => {
                 <div className="card p-8 mb-6">
                   <label className="block text-sm font-semibold mb-4 soft">
                     {currentQuestion.type === 'integer' ? 'Enter Integer:' :
-                     currentQuestion.type === 'float' ? 'Enter Float:' :
-                     currentQuestion.type === 'string' ? 'Enter String:' :
-                     currentQuestion.type === 'code' ? 'Write Your Code:' :
-                     currentQuestion.type === 'mcq' ? 'Select One Answer:' :
-                     currentQuestion.type === 'mcc' ? 'Select All Correct Answers:' :
-                     'Enter Your Answer:'}
+                      currentQuestion.type === 'float' ? 'Enter Float:' :
+                        currentQuestion.type === 'string' ? 'Enter String:' :
+                          currentQuestion.type === 'code' ? 'Write Your Code:' :
+                            currentQuestion.type === 'mcq' ? 'Select One Answer:' :
+                              currentQuestion.type === 'mcc' ? 'Select All Correct Answers:' :
+                                'Enter Your Answer:'}
                   </label>
                   {renderQuestionInput()}
                 </div>

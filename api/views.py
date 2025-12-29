@@ -3850,3 +3850,67 @@ def teacher_get_course_analytics(request, course_id):
             {'error': 'Failed to get analytics', 'details': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def teacher_quizzes_grouped(request):
+    """Get all quizzes grouped by course for the teacher"""
+    user = request.user
+    
+    if not _check_teacher_permission(user):
+        return Response(
+            {'error': 'You are not authorized'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    # Get all courses created by or where user is a teacher
+    courses = Course.objects.filter(
+        Q(creator=user) | Q(teachers=user),
+        is_trial=False
+    ).distinct().order_by('-created_on')
+    
+    response_data = []
+    
+    for course in courses:
+        # Get all quizzes for this course
+        # Structure: Course -> LearningModule -> LearningUnit(quiz)
+        quizzes_data = []
+        
+        modules = course.learning_module.all().order_by('order')
+        for module in modules:
+            # Filter for quiz units
+            quiz_units = module.learning_unit.filter(type='quiz').order_by('order')
+            
+            for unit in quiz_units:
+                if unit.quiz:
+                    quiz = unit.quiz
+                    
+                    # Calculate stats for the quiz
+                    # Total attempts (unique students)
+                    total_attempts = AnswerPaper.objects.filter(
+                        question_paper__quiz=quiz,
+                        course=course
+                    ).values('user').distinct().count()
+                    
+                    quizzes_data.append({
+                        'id': quiz.id,
+                        'name': quiz.description or f"Quiz {quiz.id}",
+                        'module_id': module.id,
+                        'module_name': module.name,
+                        'unit_order': unit.order,
+                        'duration': quiz.duration,
+                        'attempts': total_attempts,
+                        'start_date': quiz.start_date_time,
+                        'active': quiz.active,
+                        'created_at': quiz.start_date_time # Using start time as proxy for creation or relevance
+                    })
+        
+        if quizzes_data:
+            response_data.append({
+                'course_id': course.id,
+                'course_name': course.name,
+                'course_code': course.code,
+                'quizzes': quizzes_data
+            })
+            
+    return Response(response_data, status=status.HTTP_200_OK)
