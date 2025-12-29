@@ -25,7 +25,7 @@ from yaksh.models import (
     ArrangeTestCase
 )
 from yaksh.models import get_model_class
-from yaksh.views import is_moderator, get_html_text
+from yaksh.views import is_moderator, get_html_text, prof_manage
 from django.db.models import Q, Count, Avg, Sum, F, FloatField
 from django.utils import timezone
 from datetime import datetime, timedelta
@@ -4025,3 +4025,20 @@ class LessonForumCommentDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         return Comment.objects.filter(active=True)
+
+
+class CreateDemoCourseAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        """API endpoint to create a demo course for the user."""
+        user = request.user
+        if not is_moderator(user):
+            return Response({"detail": "You are not allowed to view this page"}, status=status.HTTP_403_FORBIDDEN)
+        demo_course = Course()
+        success = demo_course.create_demo(user)
+        if success:
+            msg = "Created Demo course successfully"
+        else:
+            msg = "Demo course already created"
+        return Response({"message": msg}, status=status.HTTP_200_OK)        
