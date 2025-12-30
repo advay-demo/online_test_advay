@@ -40,42 +40,42 @@ from api.serializers import (
     QuestionPaperDetailSerializer, AnswerPaperSerializer, CourseSerializer, BadgeSerializer,
     UserBadgeSerializer, BadgeProgressSerializer, UserStatsSerializer,
     UserActivitySerializer, CourseProgressSerializer, CourseCatalogSerializer,
-    LessonDetailSerializer, LearningModuleDetailSerializer, LearningUnitDetailSerializer
+    LessonDetailSerializer, LearningModuleDetailSerializer, LearningUnitDetailSerializer, MinimalLearningUnitSerializer
 )
 
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, status
 from grades.models import GradingSystem
 from .serializers import GradingSystemSerializer
 
-from yaksh.models import Post, Comment, Course, Lesson
+from yaksh.forms import LessonForm, LessonFileForm, ExerciseForm
+from yaksh.views import get_html_text, is_moderator
+from django.shortcuts import get_object_or_404
+
+from yaksh.models import Post, Comment, Course, Lesson, TableOfContents, Quiz
 from api.serializers import PostSerializer, CommentSerializer
 from rest_framework import generics, permissions
 from django.contrib.contenttypes.models import ContentType
 
 import json
+import os
+import ruamel.yaml
 
 
-# ============================================================
-#  OLD LOGIN ENDPOINT — COMMENTED OUT AS REQUESTED
-# ============================================================
-# @api_view(['POST'])
-# @authentication_classes(())
-# @permission_classes(())
-# def login(request):
-#     data = {}
-#     if request.method == "POST":
-#         username = request.data.get('username')
-#         password = request.data.get('password')
-#         user = authenticate(username=username, password=password)
-#         if user is not None and user.is_authenticated:
-#             token, created = Token.objects.get_or_create(user=user)
-#             data = {'token': token.key}
-#     return Response(data, status=status.HTTP_201_CREATED)
-
-
-# ============================================================
-#  NEW AUTH SYSTEM (REGISTER / LOGIN / LOGOUT / PROFILE)
-# ============================================================
+def get_quiz_les_display_name(item):
+    typ, obj_id = item
+    if typ == "quiz":
+        try:
+            obj = Quiz.objects.get(id=obj_id)
+            return f"{obj.description} (quiz)"
+        except Quiz.DoesNotExist:
+            return f"Quiz {obj_id} (quiz)"
+    elif typ == "lesson":
+        try:
+            obj = Lesson.objects.get(id=obj_id)
+            return f"{obj.name} (lesson)"
+        except Lesson.DoesNotExist:
+            return f"Lesson {obj_id} (lesson)"
+    return ""
 
 @api_view(['POST'])
 @authentication_classes([])
@@ -1870,6 +1870,104 @@ def teacher_delete_module(request, course_id, module_id):
 #  LESSON MANAGEMENT APIs
 # ============================================================
 
+
+@api_view(['GET', 'POST', 'PUT', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def api_lesson_handler(request, course_id, module_id, lesson_id=None):
+    user = request.user
+
+    # Permission check (replace with your is_moderator logic if needed)
+    from yaksh.views import is_moderator
+    if not is_moderator(user):
+        return Response({'error': 'Not allowed'}, status=status.HTTP_403_FORBIDDEN)
+
+    course = get_object_or_404(Course, id=course_id)
+    if not course.is_creator(user) and not course.is_teacher(user):
+        return Response({'error': 'This Lesson does not belong to you'}, status=status.HTTP_403_FORBIDDEN)
+    module = get_object_or_404(LearningModule, id=module_id)
+
+    # GET (retrieve lesson)
+    if request.method == "GET":
+        if not lesson_id:
+            return Response({'error': 'lesson_id required'}, status=status.HTTP_400_BAD_REQUEST)
+        lesson = get_object_or_404(Lesson, id=lesson_id)
+        if lesson.creator != user:
+            return Response({'error': 'This Lesson does not belong to you'}, status=status.HTTP_403_FORBIDDEN)
+        lesson_files = LessonFile.objects.filter(lesson=lesson)
+        return Response({
+            'id': lesson.id,
+            'name': lesson.name,
+            'description': lesson.description,
+            'video_path': lesson.video_path,
+            'active': lesson.active,
+            'files': [{'id': f.id, 'name': f.file.name} for f in lesson_files]
+        })
+
+    # POST (create or update lesson)
+    if request.method == "POST":
+        data = request.data
+        files = request.FILES.getlist('Lesson_files')
+        lesson = None
+        if lesson_id:
+            lesson = get_object_or_404(Lesson, id=lesson_id)
+            if lesson.creator != user:
+                return Response({'error': 'This Lesson does not belong to you'}, status=status.HTTP_403_FORBIDDEN)
+            form = LessonForm(data, request.FILES, instance=lesson)
+        else:
+            form = LessonForm(data, request.FILES)
+        if form.is_valid():
+            lesson = form.save(commit=False)
+            lesson.creator = user
+            lesson.html_data = get_html_text(lesson.description)
+            lesson.save()
+            # Add files
+            for les_file in files:
+                LessonFile.objects.get_or_create(lesson=lesson, file=les_file)
+            # Add to module if new
+            if not lesson_id:
+                last_unit = module.get_learning_units().last()
+                order = last_unit.order + 1 if last_unit else 1
+                unit, created = LearningUnit.objects.get_or_create(
+                    type="lesson", lesson=lesson, order=order
+                )
+                if created:
+                    module.learning_unit.add(unit.id)
+            return Response({'message': 'Lesson saved', 'lesson_id': lesson.id})
+        else:
+            return Response({'error': form.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+    # PUT (update lesson)
+    if request.method == "PUT":
+        if not lesson_id:
+            return Response({'error': 'lesson_id required'}, status=status.HTTP_400_BAD_REQUEST)
+        lesson = get_object_or_404(Lesson, id=lesson_id)
+        if lesson.creator != user:
+            return Response({'error': 'This Lesson does not belong to you'}, status=status.HTTP_403_FORBIDDEN)
+        form = LessonForm(request.data, request.FILES, instance=lesson)
+        if form.is_valid():
+            lesson = form.save(commit=False)
+            lesson.html_data = get_html_text(lesson.description)
+            lesson.save()
+            return Response({'message': 'Lesson updated', 'lesson_id': lesson.id})
+        else:
+            return Response({'error': form.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+    # DELETE (delete lesson)
+    if request.method == "DELETE":
+        if not lesson_id:
+            return Response({'error': 'lesson_id required'}, status=status.HTTP_400_BAD_REQUEST)
+        lesson = get_object_or_404(Lesson, id=lesson_id)
+        if lesson.creator != user:
+            return Response({'error': 'This Lesson does not belong to you'}, status=status.HTTP_403_FORBIDDEN)
+        lesson.delete()
+        return Response({'message': 'Lesson deleted'})
+
+    return Response({'error': 'Invalid request'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+## not reqd
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def teacher_create_lesson(request, module_id):
@@ -2190,15 +2288,209 @@ def teacher_upload_lesson_files(request, lesson_id):
             {'error': 'Failed to upload files', 'details': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+## not reqd
+
+#===========================================================
+# DESIGN MODULE APIs
+#===========================================================
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def api_design_module(request, module_id, course_id=None):
+    user = request.user
+    if not is_moderator(user):
+        return Response({'error': 'Not allowed'}, status=status.HTTP_403_FORBIDDEN)
+
+    # Get course if course_id is provided
+    course = None
+    if course_id:
+        course = Course.objects.get(id=course_id)
+        if not course.is_creator(user) and not course.is_teacher(user):
+            return Response({'error': 'This course does not belong to you'}, status=status.HTTP_403_FORBIDDEN)
+
+    learning_module = LearningModule.objects.get(id=module_id)
+
+    # GET: Return current module design info
+    if request.method == "GET":
+        units = learning_module.get_learning_units()
+        quizzes = Quiz.objects.filter(creator=user, is_trial=False)
+        lessons = Lesson.objects.filter(creator=user)
+        added_quiz_lesson = learning_module.get_added_quiz_lesson()
+        quiz_les_list = list(set([("quiz", q.id) for q in quizzes] + [("lesson", l.id) for l in lessons]) - set(added_quiz_lesson))
+        quiz_les_display = [
+            {
+                "type": typ,
+                "id": obj_id,
+                "display_name": get_quiz_les_display_name((typ, obj_id))
+            }
+            for typ, obj_id in quiz_les_list
+        ]
+        return Response({
+            'learning_units': MinimalLearningUnitSerializer(units, many=True).data,
+            'quiz_les_list': quiz_les_display,
+        })
+
+    # POST: Handle add, change, remove, change_prerequisite
+    if request.method == "POST":
+        action = request.data.get("action")
+        if action == "add":
+            add_values = request.data.get("chosen_list", [])
+            to_add_list = []
+            if add_values:
+                ordered_units = learning_module.get_learning_units()
+                start_val = ordered_units.last().order + 1 if ordered_units.exists() else 1
+                for order, value in enumerate(add_values, start_val):
+                    learning_id, type_ = value.split(":")
+                    if type_ == "quiz":
+                        unit, _ = LearningUnit.objects.get_or_create(
+                            order=order, quiz_id=learning_id, type=type_
+                        )
+                    else:
+                        unit, _ = LearningUnit.objects.get_or_create(
+                            order=order, lesson_id=learning_id, type=type_
+                        )
+                    to_add_list.append(unit)
+                learning_module.learning_unit.add(*to_add_list)
+                return Response({'message': "Lesson/Quiz added successfully"})
+            else:
+                return Response({'error': "Please select a lesson/quiz to add"}, status=400)
+
+        elif action == "change":
+            order_list = request.data.get("ordered_list", [])
+            if order_list:
+                for order in order_list:
+                    learning_unit_id, learning_order = order.split(":")
+                    if learning_order:
+                        learning_unit = learning_module.learning_unit.get(id=learning_unit_id)
+                        learning_unit.order = learning_order
+                        learning_unit.save()
+                return Response({'message': "Order changed successfully"})
+            else:
+                return Response({'error': "Please select a lesson/quiz to change"}, status=400)
+
+        elif action == "remove":
+            remove_values = request.data.get("delete_list", [])
+            if remove_values:
+                learning_module.learning_unit.remove(*remove_values)
+                LearningUnit.objects.filter(id__in=remove_values).delete()
+                return Response({'message': "Lessons/quizzes deleted successfully"})
+            else:
+                return Response({'error': "Please select a lesson/quiz to remove"}, status=400)
+
+        elif action == "change_prerequisite":
+            unit_list = request.data.get("check_prereq", [])
+            if unit_list:
+                for unit in unit_list:
+                    learning_unit = learning_module.learning_unit.get(id=unit)
+                    learning_unit.toggle_check_prerequisite()
+                    learning_unit.save()
+                return Response({'message': "Changed prerequisite status successfully"})
+            else:
+                return Response({'error': "Please select a lesson/quiz to change prerequisite"}, status=400)
+
+        return Response({'error': "Invalid action"}, status=400)
+
+
+#=============================================================
+# Exercise APIs
+#=============================================================
+
+@api_view(['GET', 'POST', 'PUT', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def api_exercise_handler(request, course_id, module_id, quiz_id=None):
+    user = request.user
+    if not is_moderator(user):
+        return Response({'error': 'Not allowed'}, status=status.HTTP_403_FORBIDDEN)
+
+    course = get_object_or_404(Course, pk=course_id)
+    if not course.is_creator(user) and not course.is_teacher(user):
+        return Response({'error': 'This Course does not belong to you'}, status=status.HTTP_403_FORBIDDEN)
+    module = get_object_or_404(LearningModule, id=module_id)
+
+    # GET: Retrieve exercise details
+    if request.method == "GET":
+        if not quiz_id:
+            return Response({'error': 'quiz_id required'}, status=400)
+        quiz = get_object_or_404(Quiz, pk=quiz_id)
+        if quiz.creator != user:
+            return Response({'error': 'This quiz does not belong to you'}, status=403)
+        # Return quiz details (customize as needed)
+        serializer = QuizSerializer(quiz)
+        return Response(serializer.data)
+
+    # POST: Create or update exercise
+    if request.method == "POST":
+        data = request.data
+        quiz = None
+        if quiz_id:
+            quiz = get_object_or_404(Quiz, pk=quiz_id)
+            if quiz.creator != user:
+                return Response({'error': 'This quiz does not belong to you'}, status=403)
+            form = ExerciseForm(data, instance=quiz)
+        else:
+            form = ExerciseForm(data)
+        if form.is_valid():
+            quiz = form.save(commit=False)
+            quiz.is_exercise = True
+            quiz.time_between_attempts = 0
+            quiz.weightage = 0
+            quiz.allow_skip = False
+            quiz.attempts_allowed = -1
+            quiz.duration = 1000
+            quiz.pass_criteria = 0
+            quiz.creator = user
+            quiz.save()
+            # Add to module if new
+            if not quiz_id:
+                last_unit = module.get_learning_units().last()
+                order = last_unit.order + 1 if last_unit else 1
+                unit, created = LearningUnit.objects.get_or_create(
+                    type="quiz", quiz=quiz, order=order
+                )
+                if created:
+                    module.learning_unit.add(unit.id)
+            return Response({'message': 'Exercise saved', 'quiz_id': quiz.id})
+        else:
+            return Response({'error': form.errors}, status=400)
+
+    # PUT: Update exercise
+    if request.method == "PUT":
+        if not quiz_id:
+            return Response({'error': 'quiz_id required'}, status=400)
+        quiz = get_object_or_404(Quiz, pk=quiz_id)
+        if quiz.creator != user:
+            return Response({'error': 'This quiz does not belong to you'}, status=403)
+        form = ExerciseForm(request.data, instance=quiz)
+        if form.is_valid():
+            quiz = form.save(commit=False)
+            quiz.save()
+            return Response({'message': 'Exercise updated', 'quiz_id': quiz.id})
+        else:
+            return Response({'error': form.errors}, status=400)
+
+    # DELETE: Delete exercise
+    if request.method == "DELETE":
+        if not quiz_id:
+            return Response({'error': 'quiz_id required'}, status=400)
+        quiz = get_object_or_404(Quiz, pk=quiz_id)
+        if quiz.creator != user:
+            return Response({'error': 'This quiz does not belong to you'}, status=403)
+        quiz.delete()
+        return Response({'message': 'Exercise deleted'})
+
+    return Response({'error': 'Invalid request'}, status=400)
+
+
 
 
 # ============================================================
-#  QUIZ MANAGEMENT APIs
+#  QUIZ APIs
 # ============================================================
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def teacher_create_quiz(request, module_id):
+def teacher_create_quiz(request, course_id, module_id):
     """Create a new quiz in a module"""
     user = request.user
     
@@ -2304,7 +2596,7 @@ def teacher_create_quiz(request, module_id):
 
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
-def teacher_update_quiz(request, module_id, quiz_id):
+def teacher_update_quiz(request, course_id, module_id, quiz_id):
     """Update an existing quiz"""
     user = request.user
     
@@ -4042,3 +4334,100 @@ class CreateDemoCourseAPIView(APIView):
         else:
             msg = "Demo course already created"
         return Response({"message": msg}, status=status.HTTP_200_OK)        
+
+
+
+# ============================================================
+# DESIGN COURSE TAB APIs
+# ============================================================
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def api_design_course(request, course_id):
+    user = request.user
+    try:
+        course = Course.objects.get(id=course_id)
+    except Course.DoesNotExist:
+        return Response({'error': 'Course not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if not is_moderator(user):
+        return Response({'error': 'Not allowed'}, status=status.HTTP_403_FORBIDDEN)
+    if not course.is_creator(user) and not course.is_teacher(user):
+        return Response({'error': 'This course does not belong to you'}, status=status.HTTP_403_FORBIDDEN)
+
+    if request.method == "POST":
+        action = request.data.get("action")
+        if action == "add":
+            add_values = request.data.get("module_list", [])
+            to_add_list = []
+            if add_values:
+                ordered_modules = course.get_learning_modules()
+                start_val = ordered_modules.last().order + 1 if ordered_modules.exists() else 1
+                for order, value in enumerate(add_values, start_val):
+                    module, created = LearningModule.objects.get_or_create(id=int(value))
+                    module.order = order
+                    module.save()
+                    to_add_list.append(module)
+                course.learning_module.add(*to_add_list)
+                return Response({'message': "Modules added successfully"})
+            else:
+                return Response({'error': "Please select at least one module"}, status=400)
+
+        elif action == "change":
+            order_list = request.data.get("ordered_list", "")
+            if order_list:
+                order_list = order_list.split(",")
+                for order in order_list:
+                    learning_unit, learning_order = order.split(":")
+                    if learning_order:
+                        learning_module = course.learning_module.get(id=learning_unit)
+                        learning_module.order = learning_order
+                        learning_module.save()
+                return Response({'message': "Changed order successfully"})
+            else:
+                return Response({'error': "Please select at least one module"}, status=400)
+
+        elif action == "remove":
+            remove_values = request.data.get("delete_list", [])
+            if remove_values:
+                course.learning_module.remove(*remove_values)
+                return Response({'message': "Modules removed successfully"})
+            else:
+                return Response({'error': "Please select at least one module"}, status=400)
+
+        elif action == "change_prerequisite_completion":
+            unit_list = request.data.get("check_prereq", [])
+            if unit_list:
+                for unit in unit_list:
+                    learning_module = course.learning_module.get(id=unit)
+                    learning_module.toggle_check_prerequisite()
+                    learning_module.save()
+                return Response({'message': "Changed prerequisite check successfully"})
+            else:
+                return Response({'error': "Please select at least one module"}, status=400)
+
+        elif action == "change_prerequisite_passing":
+            unit_list = request.data.get("check_prereq_passes", [])
+            if unit_list:
+                for unit in unit_list:
+                    learning_module = course.learning_module.get(id=unit)
+                    learning_module.toggle_check_prerequisite_passes()
+                    learning_module.save()
+                return Response({'message': "Changed prerequisite check successfully"})
+            else:
+                return Response({'error': "Please select at least one module"}, status=400)
+
+        return Response({'error': "Invalid action"}, status=400)
+
+    # GET: Return current course design info
+    added_learning_modules = course.get_learning_modules()
+    all_learning_modules = LearningModule.objects.filter(creator=user, is_trial=False)
+    learning_modules = set(all_learning_modules) - set(added_learning_modules)
+    # You can serialize these as needed, e.g.:
+    from api.serializers import LearningModuleSerializer
+    return Response({
+        'added_learning_modules': LearningModuleSerializer(added_learning_modules, many=True).data,
+        'learning_modules': LearningModuleSerializer(list(learning_modules), many=True).data,
+        'course': course.id,
+        'is_design_course': True
+    })

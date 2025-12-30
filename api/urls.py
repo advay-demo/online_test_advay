@@ -79,12 +79,30 @@ urlpatterns = [
     url(r'teacher/courses/create/$', views.teacher_create_course, name='teacher_create_course'),
     url(r'teacher/courses/(?P<course_id>[0-9]+)/$', views.teacher_get_course, name='teacher_get_course'),
     url(r'teacher/courses/(?P<course_id>[0-9]+)/update/$', views.teacher_update_course, name='teacher_update_course'),
+    url(r'teacher/courses/create_demo_course/$', views.CreateDemoCourseAPIView.as_view(), name="api_create_demo_course"),
+
+
     url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/$', views.teacher_get_course_modules, name='teacher_get_course_modules'),
     url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/create/$', views.teacher_create_module, name='teacher_create_module'),
     url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/(?P<module_id>[0-9]+)/update/$', views.teacher_update_module, name='teacher_update_module'),
-    url(r'teacher/courses/create_demo_course/$', views.CreateDemoCourseAPIView.as_view(), name="api_create_demo_course"),
+    
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/(?P<module_id>[0-9]+)/lessons/$', views.api_lesson_handler, name='api_lesson_handler'),
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/(?P<module_id>[0-9]+)/lessons/(?P<lesson_id>[0-9]+)/$', views.api_lesson_handler, name='api_lesson_handler'),
 
-    url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/(?P<module_id>[0-9]+)/update/$', views.teacher_update_module, name='teacher_update_module'),
+    url(r'teacher/modules/(?P<module_id>[0-9]+)/design/$', views.api_design_module, name='api_design_module'),
+    url(r'teacher/modules/(?P<module_id>[0-9]+)/design/(?P<course_id>[0-9]+)/$', views.api_design_module, name='api_design_module'),
+
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/(?P<module_id>[0-9]+)/exercises/$', views.api_exercise_handler, name='api_exercise_handler'),
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/(?P<module_id>[0-9]+)/exercises/(?P<quiz_id>[0-9]+)/$', views.api_exercise_handler, name='api_exercise_handler'),
+
+    url(r'teacher/courses/(?P<course_id>\d+)/modules/(?P<module_id>\d+)/quizzes/$', views.teacher_create_quiz, name='teacher_create_quiz_handler'),
+    url(r'teacher/courses/(?P<course_id>\d+)/modules/(?P<module_id>\d+)/quizzes/(?P<quiz_id>\d+)/$', views.teacher_update_quiz, name='teacher_update_quiz_handler'),
+
+
+    url(r'teacher/courses/(?P<course_id>\d+)/designcourse/$', views.api_design_course, name='api_design_course'),
+
+
+    
     url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/(?P<module_id>[0-9]+)/delete/$', views.teacher_delete_module, name='teacher_delete_module'),
     url(r'teacher/modules/(?P<module_id>[0-9]+)/lessons/create/$', views.teacher_create_lesson, name='teacher_create_lesson'),
     url(r'teacher/modules/(?P<module_id>[0-9]+)/lessons/(?P<lesson_id>[0-9]+)/update/$', views.teacher_update_lesson, name='teacher_update_lesson'),
@@ -92,7 +110,8 @@ urlpatterns = [
     url(r'teacher/modules/(?P<module_id>[0-9]+)/lessons/(?P<lesson_id>[0-9]+)/$', views.teacher_get_lesson, name='teacher_get_lesson'),
     url(r'teacher/lessons/(?P<lesson_id>[0-9]+)/files/upload/$', views.teacher_upload_lesson_files, name='teacher_upload_lesson_files'),
     url(r'teacher/modules/(?P<module_id>[0-9]+)/quizzes/create/$', views.teacher_create_quiz, name='teacher_create_quiz'), #have to check if this is correct
-    url(r'teacher/modules/(?P<module_id>[0-9]+)/quizzes/(?P<quiz_id>[0-9]+)/update/$', views.teacher_update_quiz, name='teacher_update_quiz'),
+    url(r'teacher/modules/(?P<module_id>[0-9]+)/quizzes/(?P<quiz_id>[0-9]+)/update/$', views.teacher_update_quiz, name='teacher_update_quiz'), #///////// done till here
+
     url(r'teacher/modules/(?P<module_id>[0-9]+)/quizzes/(?P<quiz_id>[0-9]+)/delete/$', views.teacher_delete_quiz, name='teacher_delete_quiz'),
     url(r'teacher/questions/$', views.teacher_questions_list, name='teacher_questions_list'),
     url(r'teacher/questions/(?P<question_id>[0-9]+)/$', views.teacher_get_question, name='teacher_get_question'),

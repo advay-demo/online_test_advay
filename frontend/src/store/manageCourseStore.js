@@ -87,7 +87,7 @@ const useManageCourseStore = create((set, get) => ({
         }
     },
 
-    // Analytics
+    // Analytics tab ============================================================
     loadAnalytics: async (courseId) => {
         set({ loadingAnalytics: true });
         try {
@@ -100,7 +100,11 @@ const useManageCourseStore = create((set, get) => ({
         }
     },
 
-    // Enrollments
+    //============================================================
+
+
+    // Enrollments tab ============================================================
+
     loadEnrollments: async (courseId) => {
         set({ loadingEnrollments: true });
         try {
@@ -131,7 +135,8 @@ const useManageCourseStore = create((set, get) => ({
         get().loadEnrollments(courseId);
     },
 
-    // Module/Unit ordering
+    // Module ordering ============================================================
+
     initializeOrdering: () => {
         const modules = get().modules;
         const orderedModules = [...modules].sort((a, b) => (a.order || 0) - (b.order || 0));
@@ -244,6 +249,8 @@ const useManageCourseStore = create((set, get) => ({
             showModuleForm: true
         });
     },
+
+    // 
 
     // Lesson CRUD
     setShowLessonForm: (val) => set({ showLessonForm: val }),

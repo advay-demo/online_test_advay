@@ -71,6 +71,9 @@ export const updateUserProfile = async (username, profileData) => {
   return response.data;
 };
 
+// ============================================================
+// ===========================================================
+
 
 // ============================================================
 // STUDENT DASHBOARD & STATS APIs
@@ -226,7 +229,12 @@ export const fetchTeacherQuizzesGrouped = async () => {
   return response.data;
 };
 
-// Module APIs
+// ============================================================
+// MODULE TAB APIs : Modules, Lessons, Quizzes, Design, Exercise
+// ============================================================
+
+// Module APIs ============================================================
+
 export const getCourseModules = async (courseId) => {
   const response = await api.get(`/api/teacher/courses/${courseId}/modules/`);
   return response.data;
@@ -251,14 +259,13 @@ export const deleteModule = async (courseId, moduleId) => {
 // not reqd 
 
 
-// Lesson APIs
+
+// Lesson APIs ============================================================
+
+
+// not reqd 
 export const createLesson = async (moduleId, lessonData) => {
   const response = await api.post(`/api/teacher/modules/${moduleId}/lessons/create/`, lessonData);
-  return response.data;
-};
-
-export const getTeacherLesson = async (moduleId, lessonId) => {
-  const response = await api.get(`/api/teacher/modules/${moduleId}/lessons/${lessonId}/`);
   return response.data;
 };
 
@@ -284,8 +291,150 @@ export const uploadLessonFiles = async (lessonId, files) => {
   });
   return response.data;
 };
+// not reqd 
 
-// Quiz APIs
+export const createTeacherLesson = async (courseId, moduleId, lessonData) => {
+  const response = await api.post(
+    `/api/teacher/courses/${courseId}/modules/${moduleId}/lessons/`,
+    lessonData
+  );
+  return response.data;
+};
+
+// Get a particular lesson 
+
+export const getTeacherLesson = async (courseId, moduleId, lessonId) => {
+  const response = await api.get(
+    `/api/teacher/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/`
+  );
+  return response.data;
+};
+
+// Update a particular lesson 
+
+export const updateTeacherLesson = async (courseId, moduleId, lessonId, lessonData) => {
+  const response = await api.put(
+    `/api/teacher/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/`,
+    lessonData
+  );
+  return response.data;
+};
+
+// Delete a lesson 
+
+export const deleteTeacherLesson = async (courseId, moduleId, lessonId) => {
+  const response = await api.delete(
+    `/api/teacher/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/`
+  );
+  return response.data;
+};
+
+
+
+// DESIGN MODULE APIS ============================================================
+
+export const getModuleDesign = async (moduleId, courseId = null) => {
+  let url = `/api/teacher/modules/${moduleId}/design/`;
+  if (courseId) {
+    url = `/api/teacher/modules/${moduleId}/design/${courseId}/`;
+  }
+  const response = await api.get(url);
+  return response.data;
+};
+
+
+export const addUnitsToModule = async (moduleId, chosenList, courseId = null) => {
+  let url = `/api/teacher/modules/${moduleId}/design/`;
+  if (courseId) {
+    url = `/api/teacher/modules/${moduleId}/design/${courseId}/`;
+  }
+  const response = await api.post(url, {
+    action: "add",
+    chosen_list: chosenList, // array of "id:type" strings, e.g. ["5:lesson", "7:quiz"]
+  });
+  return response.data;
+};
+
+
+export const changeModuleUnitOrder = async (moduleId, orderedList, courseId = null) => {
+  let url = `/api/teacher/modules/${moduleId}/design/`;
+  if (courseId) {
+    url = `/api/teacher/modules/${moduleId}/design/${courseId}/`;
+  }
+  const response = await api.post(url, {
+    action: "change",
+    ordered_list: orderedList, // array of "unitId:order" strings, e.g. ["12:1", "13:2"]
+  });
+  return response.data;
+};
+
+
+export const removeUnitsFromModule = async (moduleId, deleteList, courseId = null) => {
+  let url = `/api/teacher/modules/${moduleId}/design/`;
+  if (courseId) {
+    url = `/api/teacher/modules/${moduleId}/design/${courseId}/`;
+  }
+  const response = await api.post(url, {
+    action: "remove",
+    delete_list: deleteList, // array of unit IDs to remove
+  });
+  return response.data;
+};
+
+
+export const changeModuleUnitPrerequisite = async (moduleId, checkPrereqList, courseId = null) => {
+  let url = `/api/teacher/modules/${moduleId}/design/`;
+  if (courseId) {
+    url = `/api/teacher/modules/${moduleId}/design/${courseId}/`;
+  }
+  const response = await api.post(url, {
+    action: "change_prerequisite",
+    check_prereq: checkPrereqList, // array of unit IDs to toggle prerequisite
+  });
+  return response.data;
+};
+
+
+
+// Exerise APIs ============================================================
+
+export const createTeacherExercise = async (courseId, moduleId, exerciseData) => {
+  const response = await api.post(
+    `/api/teacher/courses/${courseId}/modules/${moduleId}/exercises/`,
+    exerciseData
+  );
+  return response.data;
+};
+
+// Get a specific exercise (quiz) in a module
+export const getTeacherExercise = async (courseId, moduleId, quizId) => {
+  const response = await api.get(
+    `/api/teacher/courses/${courseId}/modules/${moduleId}/exercises/${quizId}/`
+  );
+  return response.data;
+};
+
+// Update a specific exercise (quiz) in a module
+export const updateTeacherExercise = async (courseId, moduleId, quizId, exerciseData) => {
+  const response = await api.put(
+    `/api/teacher/courses/${courseId}/modules/${moduleId}/exercises/${quizId}/`,
+    exerciseData
+  );
+  return response.data;
+};
+
+// Delete a specific exercise (quiz) in a module
+export const deleteTeacherExercise = async (courseId, moduleId, quizId) => {
+  const response = await api.delete(
+    `/api/teacher/courses/${courseId}/modules/${moduleId}/exercises/${quizId}/`
+  );
+  return response.data;
+};
+
+
+
+// Quiz APIs ============================================================
+
 export const getTeacherQuiz = async (moduleId, quizId) => {
   const response = await api.get(`/api/teacher/modules/${moduleId}/quizzes/${quizId}/`);
   return response.data;
@@ -305,6 +454,13 @@ export const deleteQuiz = async (moduleId, quizId) => {
   const response = await api.delete(`/api/teacher/modules/${moduleId}/quizzes/${quizId}/delete/`);
   return response.data;
 };
+
+
+
+
+
+
+
 
 // Question APIs
 export const fetchTeacherQuestions = async (filters = {}) => {
@@ -405,7 +561,12 @@ export const getCourseAnalytics = async (courseId) => {
   return response.data;
 };
 
-// Grading System APIs (using axios)
+
+// ============================================================
+// GRADING SYSTEM APIs 
+// ============================================================
+
+
 export const fetchGradingSystems = async () => {
   const response = await api.get('/api/teacher/grading-systems/');
   return response.data;
@@ -431,8 +592,80 @@ export const deleteGradingSystem = async (id) => {
   return response.data;
 };
 
+// ============================================================
+// ============================================================
 
-// COURSE FORUM APIs
+
+// ============================================================
+// DESIGN COURSE TAB APIs
+// ============================================================
+
+
+export const getCourseDesign = async (courseId) => {
+  const response = await api.get(`/api/teacher/courses/${courseId}/designcourse/`);
+  return response.data;
+};
+
+// Add modules to course
+export const addModulesToCourse = async (courseId, moduleList) => {
+  const response = await api.post(`/api/teacher/courses/${courseId}/designcourse/`, {
+    action: "add",
+    module_list: moduleList, // array of module IDs
+  });
+  return response.data;
+};
+
+// Change module order in course
+export const changeCourseModuleOrder = async (courseId, orderedList) => {
+  // orderedList: array of "moduleId:order" strings, e.g. ["12:1", "13:2"]
+  const response = await api.post(`/api/teacher/courses/${courseId}/designcourse/`, {
+    action: "change",
+    ordered_list: orderedList.join(","),
+  });
+  return response.data;
+};
+
+// Remove modules from course
+export const removeModulesFromCourse = async (courseId, deleteList) => {
+  // deleteList: array of module IDs to remove
+  const response = await api.post(`/api/teacher/courses/${courseId}/designcourse/`, {
+    action: "remove",
+    delete_list: deleteList,
+  });
+  return response.data;
+};
+
+// Toggle prerequisite completion for modules
+export const changeCourseModulePrerequisiteCompletion = async (courseId, checkPrereqList) => {
+  // checkPrereqList: array of module IDs
+  const response = await api.post(`/api/teacher/courses/${courseId}/designcourse/`, {
+    action: "change_prerequisite_completion",
+    check_prereq: checkPrereqList,
+  });
+  return response.data;
+};
+
+// Toggle prerequisite passing for modules
+export const changeCourseModulePrerequisitePassing = async (courseId, checkPrereqPassesList) => {
+  // checkPrereqPassesList: array of module IDs
+  const response = await api.post(`/api/teacher/courses/${courseId}/designcourse/`, {
+    action: "change_prerequisite_passing",
+    check_prereq_passes: checkPrereqPassesList,
+  });
+  return response.data;
+};
+
+// ============================================================
+// ============================================================
+
+
+
+// ============================================================
+// DISCUSSION FORUM APIs
+// ============================================================
+
+
+// COURSE FORUM APIs ==========================================================
 
 // Get all posts for a course
 export const getCourseForumPosts = async (courseId) => {
@@ -481,7 +714,7 @@ export const deleteForumPostComment = async (courseId, commentId) => {
 
 
 
-// LESSON FORUM APIs
+// LESSON FORUM APIs ============================================================
 
 // Get all posts for a lesson
 export const getLessonForumPosts = async (lessonId) => {
@@ -506,5 +739,14 @@ export const createLessonForumPostComment = async (lessonId, postId, commentData
   const response = await api.post(`/api/forum/lessons/${lessonId}/posts/${postId}/comments/`, commentData);
   return response.data;
 };
+
+//=======================================================================
+//======================================================================
+
+
+
+
+
+
 
 export default api;
