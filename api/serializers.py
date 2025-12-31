@@ -81,7 +81,7 @@ class QuestionSerializer(serializers.ModelSerializer):
 class QuizSerializer(serializers.ModelSerializer):
     class Meta:
         model = Quiz
-        exclude = ('view_answerpaper', )
+        fields = '__all__'
 
 
 class QuestionPaperSerializer(serializers.ModelSerializer):
@@ -508,7 +508,23 @@ class LearningModuleDetailSerializer(serializers.ModelSerializer):
 
 
 
-    class LearningModuleSerializer(serializers.ModelSerializer):
-        class Meta:
-            model = LearningModule
-            fields = '__all__'            
+class LearningModuleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LearningModule
+        fields = '__all__' 
+
+
+class MinimalLearningUnitSerializer(serializers.ModelSerializer):
+    display_name = serializers.SerializerMethodField()
+    check_prerequisite = serializers.BooleanField()
+
+    def get_display_name(self, obj):
+        if obj.type == "quiz" and obj.quiz:
+            return f"{obj.quiz.description} (quiz)"
+        elif obj.type == "lesson" and obj.lesson:
+            return f"{obj.lesson.name} (lesson)"
+        return ""
+
+    class Meta:
+        model = LearningUnit
+        fields = ['id', 'type', 'order', 'display_name', 'check_prerequisite']                   

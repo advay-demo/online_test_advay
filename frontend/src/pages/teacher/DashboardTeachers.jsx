@@ -10,11 +10,21 @@ const DashboardTeachers = () => {
     loading,
     error,
     loadDashboard,
+    createDemoCourse,
+    message,
+    clearMessage,
   } = useTeacherDashboardStore();
 
   useEffect(() => {
     loadDashboard();
   }, [loadDashboard]);
+
+  useEffect(() => {
+    if (message) {
+      alert(message);
+      clearMessage();
+    }
+  }, [message, clearMessage]);
 
   // Stats config for UI
   const stats = [
@@ -127,7 +137,10 @@ const DashboardTeachers = () => {
               </p>
             </div>
             <div className="grid grid-cols-2 sm:flex sm:flex-row items-stretch sm:items-center gap-3">
-              <button className="px-3 sm:px-5 py-2.5 rounded-lg border border-[var(--border-color)] text-sm font-medium hover:bg-[var(--input-bg)] transition flex items-center justify-center gap-2">
+              <button
+                className="px-3 sm:px-5 py-2.5 rounded-lg border border-[var(--border-color)] text-sm font-medium hover:bg-[var(--input-bg)] transition flex items-center justify-center gap-2"
+                onClick={createDemoCourse}
+              >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                 </svg>

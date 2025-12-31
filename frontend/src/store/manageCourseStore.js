@@ -3,7 +3,9 @@ import {
     getTeacherCourse, getCourseModules, createModule, updateModule, deleteModule,
     createLesson, updateLesson, deleteLesson, createQuiz, updateQuiz, deleteQuiz,
     getCourseEnrollments, approveEnrollment, rejectEnrollment, removeEnrollment,
-    reorderCourseModules, reorderModuleUnits, getCourseAnalytics, getTeacherLesson, getTeacherQuiz
+    reorderCourseModules, reorderModuleUnits, getCourseAnalytics, getTeacherLesson,
+    getTeacherQuiz, getCourseDesign, addModulesToCourse, changeCourseModuleOrder, removeModulesFromCourse,
+    changeCourseModulePrerequisiteCompletion, changeCourseModulePrerequisitePassing
 } from '../api/api';
 
 const initialModuleForm = {
@@ -41,8 +43,7 @@ const useManageCourseStore = create((set, get) => ({
     modules: [],
     loading: true,
     error: null,
-    enrollments: { enrolled: [], pending_requests: [], rejected: [] },
-    loadingEnrollments: false,
+    
     analytics: null,
     loadingAnalytics: false,
     showQuizQuestionManager: false,
@@ -87,7 +88,7 @@ const useManageCourseStore = create((set, get) => ({
         }
     },
 
-    // Analytics
+    // Analytics tab ============================================================
     loadAnalytics: async (courseId) => {
         set({ loadingAnalytics: true });
         try {
@@ -100,7 +101,16 @@ const useManageCourseStore = create((set, get) => ({
         }
     },
 
-    // Enrollments
+    //============================================================
+
+
+    // Enrollments tab ============================================================
+
+    enrollments: { enrolled: [], pending_requests: [], rejected: [] },
+    loadingEnrollments: false,
+
+
+
     loadEnrollments: async (courseId) => {
         set({ loadingEnrollments: true });
         try {
@@ -131,7 +141,100 @@ const useManageCourseStore = create((set, get) => ({
         get().loadEnrollments(courseId);
     },
 
-    // Module/Unit ordering
+    //============================================================
+
+
+
+    // DESIGN COURSE TAB ============================================================
+
+    designCourse: null,
+    loadingDesignCourse: false,
+    designCourseError: null,
+
+    loadDesignCourse: async (courseId) => {
+        set({ loadingDesignCourse: true, designCourseError: null });
+        try {
+            const data = await getCourseDesign(courseId);
+            set({ designCourse: data });
+        } catch (err) {
+            set({ designCourseError: err.message, designCourse: null });
+        } finally {
+            set({ loadingDesignCourse: false });
+        }
+    },
+
+    handleAddModulesToCourse: async (courseId, moduleList) => {
+        set({ loadingDesignCourse: true });
+        try {
+            await addModulesToCourse(courseId, moduleList);
+            await get().loadDesignCourse(courseId);
+            await get().loadCourseData(courseId); // keep modules in sync
+        } catch (err) {
+            set({ designCourseError: err.message });
+        } finally {
+            set({ loadingDesignCourse: false });
+        }
+    },
+
+    handleChangeCourseModuleOrder: async (courseId, orderedList) => {
+        set({ loadingDesignCourse: true });
+        try {
+            await changeCourseModuleOrder(courseId, orderedList);
+            await get().loadDesignCourse(courseId);
+            await get().loadCourseData(courseId);
+        } catch (err) {
+            set({ designCourseError: err.message });
+        } finally {
+            set({ loadingDesignCourse: false });
+        }
+    },
+
+    handleRemoveModulesFromCourse: async (courseId, deleteList) => {
+        set({ loadingDesignCourse: true });
+        try {
+            await removeModulesFromCourse(courseId, deleteList);
+            await get().loadDesignCourse(courseId);
+            await get().loadCourseData(courseId);
+        } catch (err) {
+            set({ designCourseError: err.message });
+        } finally {
+            set({ loadingDesignCourse: false });
+        }
+    },
+
+    handleChangeCourseModulePrerequisiteCompletion: async (courseId, checkPrereqList) => {
+        set({ loadingDesignCourse: true });
+        try {
+            await changeCourseModulePrerequisiteCompletion(courseId, checkPrereqList);
+            await get().loadDesignCourse(courseId);
+        } catch (err) {
+            set({ designCourseError: err.message });
+        } finally {
+            set({ loadingDesignCourse: false });
+        }
+    },
+
+    handleChangeCourseModulePrerequisitePassing: async (courseId, checkPrereqPassesList) => {
+        set({ loadingDesignCourse: true });
+        try {
+            await changeCourseModulePrerequisitePassing(courseId, checkPrereqPassesList);
+            await get().loadDesignCourse(courseId);
+        } catch (err) {
+            set({ designCourseError: err.message });
+        } finally {
+            set({ loadingDesignCourse: false });
+        }
+    },
+
+    //============================================================
+
+
+
+
+
+
+    // Module tab ============================================================
+
     initializeOrdering: () => {
         const modules = get().modules;
         const orderedModules = [...modules].sort((a, b) => (a.order || 0) - (b.order || 0));
@@ -244,6 +347,8 @@ const useManageCourseStore = create((set, get) => ({
             showModuleForm: true
         });
     },
+
+    // 
 
     // Lesson CRUD
     setShowLessonForm: (val) => set({ showLessonForm: val }),
@@ -379,6 +484,12 @@ const useManageCourseStore = create((set, get) => ({
         await deleteQuiz(moduleId, quizId);
         await get().loadCourseData(get().course.id);
     },
+
+
+
+
+
+
 
     // Quiz Question Manager
     openQuizQuestionManager: (quizId) => set({ selectedQuizId: quizId, showQuizQuestionManager: true }),
