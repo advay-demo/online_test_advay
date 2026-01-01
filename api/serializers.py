@@ -2,7 +2,7 @@ from rest_framework import serializers
 from yaksh.models import (
     Question, Quiz, QuestionPaper, AnswerPaper, Course,
     LearningModule, LearningUnit, Lesson, CourseStatus,
-    Badge, UserBadge, BadgeProgress, UserStats, DailyActivity, UserActivity, Post, Comment
+    Badge, UserBadge, BadgeProgress, UserStats, DailyActivity, UserActivity, Post, Comment, User
 )
 from grades.models import GradingSystem, GradeRange
 
@@ -528,3 +528,10 @@ class MinimalLearningUnitSerializer(serializers.ModelSerializer):
     class Meta:
         model = LearningUnit
         fields = ['id', 'type', 'order', 'display_name', 'check_prerequisite']                   
+
+
+
+class SimpleUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'first_name', 'last_name']

@@ -229,6 +229,43 @@ export const fetchTeacherQuizzesGrouped = async () => {
   return response.data;
 };
 
+
+// ============================================================
+// GRADING SYSTEM APIs 
+// ============================================================
+
+
+export const fetchGradingSystems = async () => {
+  const response = await api.get('/api/teacher/grading-systems/');
+  return response.data;
+};
+
+export const fetchGradingSystem = async (id) => {
+  const response = await api.get(`/api/teacher/grading-systems/${id}/`);
+  return response.data;
+};
+
+export const createGradingSystem = async (data) => {
+  const response = await api.post('/api/teacher/grading-systems/', data);
+  return response.data;
+};
+
+export const updateGradingSystem = async (id, data) => {
+  const response = await api.put(`/api/teacher/grading-systems/${id}/`, data);
+  return response.data;
+};
+
+export const deleteGradingSystem = async (id) => {
+  const response = await api.delete(`/api/teacher/grading-systems/${id}/`);
+  return response.data;
+};
+
+// ============================================================
+// ============================================================
+
+
+
+
 // ============================================================
 // MODULE TAB APIs : Modules, Lessons, Quizzes, Design, Exercise
 // ============================================================
@@ -519,26 +556,50 @@ export const reorderQuizQuestions = async (quizId, questionOrder) => {
   return response.data;
 };
 
-// Enrollment Management APIs
+// ===============================
+//  ENROLLMENT TAB APIs
+// ===============================
+
+// Get all enrollments (enrolled, requested, rejected) for a course
 export const getCourseEnrollments = async (courseId) => {
   const response = await api.get(`/api/teacher/courses/${courseId}/enrollments/`);
   return response.data;
 };
 
-export const approveEnrollment = async (courseId, userId) => {
-  const response = await api.post(`/api/teacher/courses/${courseId}/enrollments/${userId}/approve/`);
+// Approve enrollments (single or bulk, from requested or rejected)
+export const approveEnrollment = async (courseId, userIds, wasRejected = false) => {
+  // userIds: array of user IDs (can be single or multiple)
+  // wasRejected: true if approving from rejected list
+  const response = await api.post(`/api/teacher/courses/${courseId}/enrollments/`, {
+    user_ids: Array.isArray(userIds) ? userIds : [userIds],
+    was_rejected: wasRejected,
+  });
   return response.data;
 };
 
-export const rejectEnrollment = async (courseId, userId) => {
-  const response = await api.post(`/api/teacher/courses/${courseId}/enrollments/${userId}/reject/`);
+// Reject enrollments (single or bulk, from requested or enrolled)
+export const rejectEnrollment = async (courseId, userIds, wasEnrolled = false) => {
+  // userIds: array of user IDs (can be single or multiple)
+  // wasEnrolled: true if rejecting from enrolled list
+  const response = await api.post(`/api/teacher/courses/${courseId}/enrollments/reject/`, {
+    user_ids: Array.isArray(userIds) ? userIds : [userIds],
+    was_enrolled: wasEnrolled,
+  });
   return response.data;
 };
 
-export const removeEnrollment = async (courseId, userId) => {
-  const response = await api.delete(`/api/teacher/courses/${courseId}/enrollments/${userId}/remove/`);
+// Remove enrollments (single or bulk, from enrolled)
+export const removeEnrollment = async (courseId, userIds) => {
+  // userIds: array of user IDs (can be single or multiple)
+  const response = await api.post(`/api/teacher/courses/${courseId}/enrollments/remove/`, {
+    user_ids: Array.isArray(userIds) ? userIds : [userIds],
+  });
   return response.data;
 };
+
+// ============================================================
+// ============================================================
+
 
 // Unit Ordering APIs
 export const reorderModuleUnits = async (moduleId, unitOrders) => {
@@ -555,40 +616,12 @@ export const reorderCourseModules = async (courseId, moduleOrders) => {
   return response.data;
 };
 
-// Course Analytics API
+// ============================================================
+// ANALYTICS TAB APIs
+// ============================================================
+
 export const getCourseAnalytics = async (courseId) => {
   const response = await api.get(`/api/teacher/courses/${courseId}/analytics/`);
-  return response.data;
-};
-
-
-// ============================================================
-// GRADING SYSTEM APIs 
-// ============================================================
-
-
-export const fetchGradingSystems = async () => {
-  const response = await api.get('/api/teacher/grading-systems/');
-  return response.data;
-};
-
-export const fetchGradingSystem = async (id) => {
-  const response = await api.get(`/api/teacher/grading-systems/${id}/`);
-  return response.data;
-};
-
-export const createGradingSystem = async (data) => {
-  const response = await api.post('/api/teacher/grading-systems/', data);
-  return response.data;
-};
-
-export const updateGradingSystem = async (id, data) => {
-  const response = await api.put(`/api/teacher/grading-systems/${id}/`, data);
-  return response.data;
-};
-
-export const deleteGradingSystem = async (id) => {
-  const response = await api.delete(`/api/teacher/grading-systems/${id}/`);
   return response.data;
 };
 

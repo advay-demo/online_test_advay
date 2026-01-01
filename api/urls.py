@@ -80,6 +80,13 @@ urlpatterns = [
     url(r'teacher/courses/(?P<course_id>[0-9]+)/$', views.teacher_get_course, name='teacher_get_course'),
     url(r'teacher/courses/(?P<course_id>[0-9]+)/update/$', views.teacher_update_course, name='teacher_update_course'),
     url(r'teacher/courses/create_demo_course/$', views.CreateDemoCourseAPIView.as_view(), name="api_create_demo_course"),
+    url(r'^teacher/grading-systems/$', views.GradingSystemListCreateView.as_view(), name='grading-system-list-create'),
+    url(r'^teacher/grading-systems/(?P<pk>[0-9]+)/$', views.GradingSystemDetailView.as_view(), name='grading-system-detail'),
+
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/enrollments/$', views.teacher_get_course_enrollments, name='teacher_get_course_enrollments'),
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/enrollments/(?P<user_id>[0-9]+)/approve/$', views.teacher_approve_enrollment, name='teacher_approve_enrollment'),
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/enrollments/(?P<user_id>[0-9]+)/reject/$', views.teacher_reject_enrollment, name='teacher_reject_enrollment'),
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/enrollments/(?P<user_id>[0-9]+)/remove/$', views.teacher_remove_enrollment, name='teacher_remove_enrollment'),
 
 
     url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/$', views.teacher_get_course_modules, name='teacher_get_course_modules'),
@@ -100,6 +107,9 @@ urlpatterns = [
 
 
     url(r'teacher/courses/(?P<course_id>\d+)/designcourse/$', views.api_design_course, name='api_design_course'),
+
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/analytics/$', views.teacher_get_course_analytics, name='teacher_get_course_analytics'),
+
 
 
     
@@ -123,16 +133,12 @@ urlpatterns = [
     url(r'teacher/quizzes/(?P<quiz_id>[0-9]+)/questions/(?P<question_id>[0-9]+)/remove/$', views.teacher_remove_question_from_quiz, name='teacher_remove_question_from_quiz'),
     url(r'teacher/quizzes/(?P<quiz_id>[0-9]+)/questions/reorder/$', views.teacher_reorder_quiz_questions, name='teacher_reorder_quiz_questions'),
     url(r'teacher/quizzes/grouped/$', views.teacher_quizzes_grouped, name='teacher_quizzes_grouped'),
-    url(r'teacher/courses/(?P<course_id>[0-9]+)/enrollments/$', views.teacher_get_course_enrollments, name='teacher_get_course_enrollments'),
-    url(r'teacher/courses/(?P<course_id>[0-9]+)/enrollments/(?P<user_id>[0-9]+)/approve/$', views.teacher_approve_enrollment, name='teacher_approve_enrollment'),
-    url(r'teacher/courses/(?P<course_id>[0-9]+)/enrollments/(?P<user_id>[0-9]+)/reject/$', views.teacher_reject_enrollment, name='teacher_reject_enrollment'),
-    url(r'teacher/courses/(?P<course_id>[0-9]+)/enrollments/(?P<user_id>[0-9]+)/remove/$', views.teacher_remove_enrollment, name='teacher_remove_enrollment'),
+    
     url(r'teacher/modules/(?P<module_id>[0-9]+)/units/reorder/$', views.teacher_reorder_module_units, name='teacher_reorder_module_units'),
     url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/reorder/$', views.teacher_reorder_course_modules, name='teacher_reorder_course_modules'),
-    url(r'teacher/courses/(?P<course_id>[0-9]+)/analytics/$', views.teacher_get_course_analytics, name='teacher_get_course_analytics'),
+    
 
-    url(r'^teacher/grading-systems/$', views.GradingSystemListCreateView.as_view(), name='grading-system-list-create'),
-    url(r'^teacher/grading-systems/(?P<pk>[0-9]+)/$', views.GradingSystemDetailView.as_view(), name='grading-system-detail'),
+    
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)

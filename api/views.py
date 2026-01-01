@@ -40,7 +40,8 @@ from api.serializers import (
     QuestionPaperDetailSerializer, AnswerPaperSerializer, CourseSerializer, BadgeSerializer,
     UserBadgeSerializer, BadgeProgressSerializer, UserStatsSerializer,
     UserActivitySerializer, CourseProgressSerializer, CourseCatalogSerializer,
-    LessonDetailSerializer, LearningModuleDetailSerializer, LearningUnitDetailSerializer, MinimalLearningUnitSerializer
+    LessonDetailSerializer, LearningModuleDetailSerializer, LearningUnitDetailSerializer, MinimalLearningUnitSerializer,
+    SimpleUserSerializer
 )
 
 from rest_framework import generics, permissions, status
@@ -51,7 +52,7 @@ from yaksh.forms import LessonForm, LessonFileForm, ExerciseForm
 from yaksh.views import get_html_text, is_moderator
 from django.shortcuts import get_object_or_404
 
-from yaksh.models import Post, Comment, Course, Lesson, TableOfContents, Quiz
+from yaksh.models import Post, Comment, Course, Lesson, TableOfContents, Quiz, User, CourseStatus
 from api.serializers import PostSerializer, CommentSerializer
 from rest_framework import generics, permissions
 from django.contrib.contenttypes.models import ContentType
@@ -3576,221 +3577,120 @@ def teacher_reorder_quiz_questions(request, quiz_id):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def teacher_get_course_enrollments(request, course_id):
-    """Get all enrollments for a course (enrolled, pending, rejected)"""
+    """Get all enrollments for a course (enrolled, pending, rejected) with user details."""
     user = request.user
-    
-    if not _check_teacher_permission(user):
-        return Response(
-            {'error': 'You are not authorized'},
-            status=status.HTTP_403_FORBIDDEN
-        )
-    
     try:
         course = Course.objects.get(id=course_id)
-        
-        # Verify teacher owns the course
-        if course.creator != user and user not in course.teachers.all():
-            return Response(
-                {'error': 'You do not have permission to access this course'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        # Get enrolled students
-        enrolled_students = []
-        for student in course.students.all():
-            # Get course status for progress
-            try:
-                course_status = CourseStatus.objects.get(course=course, user=student)
-                progress = course_status.percent_completed
-                grade = course_status.grade
-            except CourseStatus.DoesNotExist:
-                progress = 0
-                grade = None
-            
-            enrolled_students.append({
-                'user_id': student.id,
-                'username': student.username,
-                'email': student.email,
-                'first_name': student.first_name,
-                'last_name': student.last_name,
-                'progress': progress,
-                'grade': grade
-            })
-        
-        # Get pending requests
-        pending_requests = []
-        for student in course.requests.all():
-            pending_requests.append({
-                'user_id': student.id,
-                'username': student.username,
-                'email': student.email,
-                'first_name': student.first_name,
-                'last_name': student.last_name
-            })
-        
-        # Get rejected students
-        rejected_students = []
-        for student in course.rejected.all():
-            rejected_students.append({
-                'user_id': student.id,
-                'username': student.username,
-                'email': student.email,
-                'first_name': student.first_name,
-                'last_name': student.last_name
-            })
-        
-        return Response({
-            'course_id': course.id,
-            'course_name': course.name,
-            'enrolled': enrolled_students,
-            'pending_requests': pending_requests,
-            'rejected': rejected_students
-        }, status=status.HTTP_200_OK)
-        
     except Course.DoesNotExist:
-        return Response(
-            {'error': 'Course not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
+        return Response({'error': 'Course not found'}, status=status.HTTP_404_NOT_FOUND)
+    if not course.is_creator(user) and not course.is_teacher(user):
+        return Response({'error': 'Not allowed'}, status=status.HTTP_403_FORBIDDEN)
 
+    # Enrolled students with progress/grade
+    enrolled = []
+    for student in course.get_enrolled():
+        try:
+            cs = CourseStatus.objects.get(course=course, user=student)
+            progress = cs.percent_completed
+            grade = cs.grade
+        except CourseStatus.DoesNotExist:
+            progress = 0
+            grade = None
+        data = SimpleUserSerializer(student).data
+        data['progress'] = progress
+        data['grade'] = grade
+        enrolled.append(data)
+
+    # Pending requests
+    requested = [SimpleUserSerializer(u).data for u in course.get_requests()]
+
+    # Rejected students
+    rejected = [SimpleUserSerializer(u).data for u in course.get_rejected()]
+
+    return Response({
+        'course_id': course.id,
+        'course_name': course.name,
+        'enrolled': enrolled,
+        'pending_requests': requested,
+        'rejected': rejected,
+    }, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def teacher_approve_enrollment(request, course_id, user_id):
-    """Approve a student enrollment request"""
+def teacher_approve_enrollment(request, course_id):
+    """
+    Approve one or more users (from requested or rejected) for enrollment.
+    Accepts: { "user_ids": [1,2,3] }
+    """
     user = request.user
-    
-    if not _check_teacher_permission(user):
-        return Response(
-            {'error': 'You are not authorized'},
-            status=status.HTTP_403_FORBIDDEN
-        )
-    
     try:
         course = Course.objects.get(id=course_id)
-        student = User.objects.get(id=user_id)
-        
-        # Verify teacher owns the course
-        if course.creator != user and user not in course.teachers.all():
-            return Response(
-                {'error': 'You do not have permission to modify this course'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        # Remove from requests/rejected and add to enrolled
+    except Course.DoesNotExist:
+        return Response({'error': 'Course not found'}, status=status.HTTP_404_NOT_FOUND)
+    if not course.is_creator(user) and not course.is_teacher(user):
+        return Response({'error': 'Not allowed'}, status=status.HTTP_403_FORBIDDEN)
+    user_ids = request.data.get('user_ids', [])
+    if not user_ids:
+        return Response({'error': 'No user_ids provided'}, status=status.HTTP_400_BAD_REQUEST)
+    users = User.objects.filter(id__in=user_ids)
+    enrolled_users = []
+    for student in users:
         course.requests.remove(student)
         course.rejected.remove(student)
         course.students.add(student)
-        
-        # Create CourseStatus if it doesn't exist
         CourseStatus.objects.get_or_create(course=course, user=student)
-        
-        return Response({
-            'message': 'Enrollment approved successfully',
-            'user_id': user_id,
-            'username': student.username
-        }, status=status.HTTP_200_OK)
-        
-    except Course.DoesNotExist:
-        return Response(
-            {'error': 'Course not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    except User.DoesNotExist:
-        return Response(
-            {'error': 'User not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-
+        enrolled_users.append(SimpleUserSerializer(student).data)
+    return Response({'success': True, 'enrolled': enrolled_users}, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def teacher_reject_enrollment(request, course_id, user_id):
-    """Reject a student enrollment request"""
+def teacher_reject_enrollment(request, course_id):
+    """
+    Reject one or more users (from requested or enrolled).
+    Accepts: { "user_ids": [1,2,3] }
+    """
     user = request.user
-    
-    if not _check_teacher_permission(user):
-        return Response(
-            {'error': 'You are not authorized'},
-            status=status.HTTP_403_FORBIDDEN
-        )
-    
     try:
         course = Course.objects.get(id=course_id)
-        student = User.objects.get(id=user_id)
-        
-        # Verify teacher owns the course
-        if course.creator != user and user not in course.teachers.all():
-            return Response(
-                {'error': 'You do not have permission to modify this course'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        # Remove from requests/enrolled and add to rejected
+    except Course.DoesNotExist:
+        return Response({'error': 'Course not found'}, status=status.HTTP_404_NOT_FOUND)
+    if not course.is_creator(user) and not course.is_teacher(user):
+        return Response({'error': 'Not allowed'}, status=status.HTTP_403_FORBIDDEN)
+    user_ids = request.data.get('user_ids', [])
+    if not user_ids:
+        return Response({'error': 'No user_ids provided'}, status=status.HTTP_400_BAD_REQUEST)
+    users = User.objects.filter(id__in=user_ids)
+    rejected_users = []
+    for student in users:
         course.requests.remove(student)
         course.students.remove(student)
         course.rejected.add(student)
-        
-        return Response({
-            'message': 'Enrollment rejected successfully',
-            'user_id': user_id,
-            'username': student.username
-        }, status=status.HTTP_200_OK)
-        
-    except Course.DoesNotExist:
-        return Response(
-            {'error': 'Course not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    except User.DoesNotExist:
-        return Response(
-            {'error': 'User not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
+        rejected_users.append(SimpleUserSerializer(student).data)
+    return Response({'success': True, 'rejected': rejected_users}, status=status.HTTP_200_OK)
 
-
-@api_view(['DELETE'])
+@api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def teacher_remove_enrollment(request, course_id, user_id):
-    """Remove an enrolled student from course"""
+def teacher_remove_enrollment(request, course_id):
+    """
+    Remove one or more users from enrolled list.
+    Accepts: { "user_ids": [1,2,3] }
+    """
     user = request.user
-    
-    if not _check_teacher_permission(user):
-        return Response(
-            {'error': 'You are not authorized'},
-            status=status.HTTP_403_FORBIDDEN
-        )
-    
     try:
         course = Course.objects.get(id=course_id)
-        student = User.objects.get(id=user_id)
-        
-        # Verify teacher owns the course
-        if course.creator != user and user not in course.teachers.all():
-            return Response(
-                {'error': 'You do not have permission to modify this course'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        # Remove from enrolled
-        course.students.remove(student)
-        
-        return Response({
-            'message': 'Student removed from course successfully',
-            'user_id': user_id,
-            'username': student.username
-        }, status=status.HTTP_200_OK)
-        
     except Course.DoesNotExist:
-        return Response(
-            {'error': 'Course not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    except User.DoesNotExist:
-        return Response(
-            {'error': 'User not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
+        return Response({'error': 'Course not found'}, status=status.HTTP_404_NOT_FOUND)
+    if not course.is_creator(user) and not course.is_teacher(user):
+        return Response({'error': 'Not allowed'}, status=status.HTTP_403_FORBIDDEN)
+    user_ids = request.data.get('user_ids', [])
+    if not user_ids:
+        return Response({'error': 'No user_ids provided'}, status=status.HTTP_400_BAD_REQUEST)
+    users = User.objects.filter(id__in=user_ids)
+    removed_users = []
+    for student in users:
+        course.students.remove(student)
+        removed_users.append(SimpleUserSerializer(student).data)
+    return Response({'success': True, 'removed': removed_users}, status=status.HTTP_200_OK)
 
 
 # ============================================================
