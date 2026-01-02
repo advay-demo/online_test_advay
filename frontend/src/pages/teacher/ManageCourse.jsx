@@ -193,7 +193,7 @@ const ManageCourse = () => {
 
                         {/* Tab Content */}
                         <div className="min-h-[200px] sm:min-h-[400px]">
-                            {activeTab === 'Enrollment' && <CourseEnrollment />}
+                            {activeTab === 'Enrollment' && <CourseEnrollment courseId={course.id} />}
                             {activeTab === 'Modules' && <CourseModules />}
                             {activeTab === 'Design Course' && <CourseDesign />}
                             {activeTab === 'Analytics' && (

@@ -84,9 +84,9 @@ urlpatterns = [
     url(r'^teacher/grading-systems/(?P<pk>[0-9]+)/$', views.GradingSystemDetailView.as_view(), name='grading-system-detail'),
 
     url(r'teacher/courses/(?P<course_id>[0-9]+)/enrollments/$', views.teacher_get_course_enrollments, name='teacher_get_course_enrollments'),
-    url(r'teacher/courses/(?P<course_id>[0-9]+)/enrollments/(?P<user_id>[0-9]+)/approve/$', views.teacher_approve_enrollment, name='teacher_approve_enrollment'),
-    url(r'teacher/courses/(?P<course_id>[0-9]+)/enrollments/(?P<user_id>[0-9]+)/reject/$', views.teacher_reject_enrollment, name='teacher_reject_enrollment'),
-    url(r'teacher/courses/(?P<course_id>[0-9]+)/enrollments/(?P<user_id>[0-9]+)/remove/$', views.teacher_remove_enrollment, name='teacher_remove_enrollment'),
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/enrollments/approve/$', views.teacher_approve_enrollment, name='teacher_approve_enrollment'),
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/enrollments/reject/$', views.teacher_reject_enrollment, name='teacher_reject_enrollment'),
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/enrollments/remove/$', views.teacher_remove_enrollment, name='teacher_remove_enrollment'),
 
 
     url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/$', views.teacher_get_course_modules, name='teacher_get_course_modules'),
