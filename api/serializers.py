@@ -65,17 +65,72 @@ class CommentSerializer(serializers.ModelSerializer):
 
 class QuestionSerializer(serializers.ModelSerializer):
     test_cases = serializers.SerializerMethodField()
+    files = serializers.SerializerMethodField()
+
+    def to_bool(self, val):
+        if isinstance(val, bool):
+            return val
+        if isinstance(val, str):
+            return val.lower() == "true"
+        return bool(val)  
 
     def get_test_cases(self, obj):
         try:
-            test_cases = obj.get_test_cases_as_dict()
-            return test_cases
+            return obj.get_test_cases_as_dict()
         except Exception:
             return []
 
+    def get_files(self, obj):  
+        import os
+        from yaksh.models import FileUpload
+        files = []
+        request = self.context.get('request')  # Get request from context
+        for f in FileUpload.objects.filter(question=obj):
+            # Build absolute URL if request is available
+            if request and hasattr(f.file, 'url'):
+                file_url = request.build_absolute_uri(f.file.url)
+            else:
+                file_url = f.file.url if hasattr(f.file, "url") else ""
+            
+            files.append({
+                "id": f.id,
+                "name": os.path.basename(f.file.name),
+                "url": file_url,
+                "extract": f.extract,
+                "hide": f.hide,
+            })
+        return files
+
+    def update(self, instance, validated_data):
+        # Update Question fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        # Update FileUpload extract/hide if files data is present
+        files_data = self.initial_data.get("files")
+        if files_data:
+            from yaksh.models import FileUpload
+            for file_data in files_data:
+                file_id = file_data.get("id")
+                if file_id is not None:
+                    try:
+                        file_obj = FileUpload.objects.get(id=file_id, question=instance)
+                        # Coerce to bool in case frontend sends as string
+                        extract = file_data.get("extract")
+                        hide = file_data.get("hide")
+                        if extract is not None:
+                            file_obj.extract = str(extract).lower() == "true" if isinstance(extract, str) else bool(extract)
+                        if hide is not None:
+                            file_obj.hide = str(hide).lower() == "true" if isinstance(hide, str) else bool(hide)
+                        file_obj.save()
+                    except FileUpload.DoesNotExist:
+                        continue
+        return instance    
+
     class Meta:
         model = Question
-        exclude = ('partial_grading', )
+        fields = '__all__'
 
 
 class QuizSerializer(serializers.ModelSerializer):

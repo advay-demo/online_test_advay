@@ -111,8 +111,23 @@ urlpatterns = [
     url(r'teacher/courses/(?P<course_id>[0-9]+)/analytics/$', views.teacher_get_course_analytics, name='teacher_get_course_analytics'),
 
 
+    url(r'teacher/questions/$', views.teacher_questions_list, name='teacher_questions_list'), #ok 
+    url(r'teacher/questions/(?P<question_id>[0-9]+)/$', views.teacher_get_question, name='teacher_get_question'),#ok
+    url(r'teacher/questions/files/(?P<file_id>[0-9]+)/delete/$', views.delete_question_file, name='delete_question_file'), #ok
+    url(r'teacher/questions/(?P<question_id>[0-9]+)/files/upload/$', views.upload_question_file, name='upload_question_file'), #ok 
+    url(r'teacher/questions/(?P<question_id>[0-9]+)/update/$', views.teacher_update_question, name='teacher_update_question'), #ok
+    url(r'teacher/questions/(?P<question_id>[0-9]+)/delete/$', views.teacher_delete_question, name='teacher_delete_question'), #ok
+    url(r'teacher/questions/create/$', views.teacher_create_question, name='teacher_create_question'), #ok
+    
+    url(r'teacher/questions/bulk-upload/$', views.bulk_upload_questions, name='bulk_upload_questions'),
+    url(r'teacher/questions/template/$', views.download_question_template, name='download_question_template'),
+
 
     
+
+
+
+
     url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/(?P<module_id>[0-9]+)/delete/$', views.teacher_delete_module, name='teacher_delete_module'),
     url(r'teacher/modules/(?P<module_id>[0-9]+)/lessons/create/$', views.teacher_create_lesson, name='teacher_create_lesson'),
     url(r'teacher/modules/(?P<module_id>[0-9]+)/lessons/(?P<lesson_id>[0-9]+)/update/$', views.teacher_update_lesson, name='teacher_update_lesson'),
@@ -123,11 +138,7 @@ urlpatterns = [
     url(r'teacher/modules/(?P<module_id>[0-9]+)/quizzes/(?P<quiz_id>[0-9]+)/update/$', views.teacher_update_quiz, name='teacher_update_quiz'), #///////// done till here
 
     url(r'teacher/modules/(?P<module_id>[0-9]+)/quizzes/(?P<quiz_id>[0-9]+)/delete/$', views.teacher_delete_quiz, name='teacher_delete_quiz'),
-    url(r'teacher/questions/$', views.teacher_questions_list, name='teacher_questions_list'),
-    url(r'teacher/questions/(?P<question_id>[0-9]+)/$', views.teacher_get_question, name='teacher_get_question'),
-    url(r'teacher/questions/create/$', views.teacher_create_question, name='teacher_create_question'), #have to check if this is correct
-    url(r'teacher/questions/(?P<question_id>[0-9]+)/update/$', views.teacher_update_question, name='teacher_update_question'),
-    url(r'teacher/questions/(?P<question_id>[0-9]+)/delete/$', views.teacher_delete_question, name='teacher_delete_question'),
+    
     url(r'teacher/quizzes/(?P<quiz_id>[0-9]+)/questions/$', views.teacher_get_quiz_questions, name='teacher_get_quiz_questions'), #have to check if this is correct
     url(r'teacher/quizzes/(?P<quiz_id>[0-9]+)/questions/add/$', views.teacher_add_question_to_quiz, name='teacher_add_question_to_quiz'), #have to check if this is correct
     url(r'teacher/quizzes/(?P<quiz_id>[0-9]+)/questions/(?P<question_id>[0-9]+)/remove/$', views.teacher_remove_question_from_quiz, name='teacher_remove_question_from_quiz'),

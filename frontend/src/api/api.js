@@ -499,36 +499,6 @@ export const deleteQuiz = async (moduleId, quizId) => {
 
 
 
-// Question APIs
-export const fetchTeacherQuestions = async (filters = {}) => {
-  const params = new URLSearchParams();
-  if (filters.type) params.append('type', filters.type);
-  if (filters.language) params.append('language', filters.language);
-  if (filters.search) params.append('search', filters.search);
-  if (filters.active !== undefined) params.append('active', filters.active);
-  const response = await api.get(`/api/teacher/questions/?${params.toString()}`);
-  return response.data;
-};
-
-export const getTeacherQuestion = async (questionId) => {
-  const response = await api.get(`/api/teacher/questions/${questionId}/`);
-  return response.data;
-};
-
-export const createQuestion = async (questionData) => {
-  const response = await api.post('/api/teacher/questions/create/', questionData);
-  return response.data;
-};
-
-export const updateQuestion = async (questionId, questionData) => {
-  const response = await api.put(`/api/teacher/questions/${questionId}/update/`, questionData);
-  return response.data;
-};
-
-export const deleteQuestion = async (questionId) => {
-  const response = await api.delete(`/api/teacher/questions/${questionId}/delete/`);
-  return response.data;
-};
 
 // Quiz Question Management APIs
 export const getQuizQuestions = async (quizId) => {
@@ -778,6 +748,100 @@ export const createLessonForumPostComment = async (lessonId, postId, commentData
 
 
 
+
+// ====================================================================
+// =====================================================================
+// QUESTION MENU : Question Library, , Upload Question , Create question 
+// =====================================================================
+// ===================================================================== 
+
+
+// ===========================================
+// QUESTION LIBRARY APIs 
+// ===========================================
+
+export const fetchTeacherQuestions = async (filters = {}) => {
+  const params = new URLSearchParams();
+  if (filters.type) params.append('type', filters.type);
+  if (filters.language) params.append('language', filters.language);
+  if (filters.search) params.append('search', filters.search);
+  if (filters.active !== undefined) params.append('active', filters.active);
+  const response = await api.get(`/api/teacher/questions/?${params.toString()}`);
+  return response.data;
+};
+
+export const getTeacherQuestion = async (questionId) => {
+  const response = await api.get(`/api/teacher/questions/${questionId}/`);
+  return response.data;
+};
+
+export const deleteQuestionFile = async (fileId) => {
+  const response = await api.delete(`/api/teacher/questions/files/${fileId}/delete/`);
+  return response.data;
+};
+
+export const uploadQuestionFile = async (questionId, file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await api.post(
+    `/api/teacher/questions/${questionId}/files/upload/`,
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }
+  );
+  return response.data;
+};
+
+
+export const updateQuestion = async (questionId, questionData) => {
+  const response = await api.put(`/api/teacher/questions/${questionId}/update/`, questionData);
+  return response.data;
+};
+
+export const deleteQuestion = async (questionId) => {
+  const response = await api.delete(`/api/teacher/questions/${questionId}/delete/`);
+  return response.data;
+};
+
+// Question Bulk Upload APIs
+export const bulkUploadQuestions = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  const response = await api.post('/api/teacher/questions/bulk-upload/', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data;
+};
+
+export const downloadQuestionTemplate = async () => {
+  const response = await api.get('/api/teacher/questions/template/', {
+    responseType: 'blob',
+  });
+  
+  // Create download link
+  const url = window.URL.createObjectURL(new Blob([response.data]));
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', 'questions_dump.yaml');
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+};
+
+
+
+
+export const createQuestion = async (questionData) => {
+  const response = await api.post('/api/teacher/questions/create/', questionData);
+  return response.data;
+};
 
 
 

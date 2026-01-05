@@ -15,6 +15,8 @@ from rest_framework.decorators import (
     api_view, authentication_classes, permission_classes
 )
 
+from rest_framework.parsers import MultiPartParser, FormParser
+
 from yaksh.models import (
     Question, Quiz, QuestionPaper, QuestionSet,
     AnswerPaper, Course, Answer, Profile, CourseStatus,
@@ -22,7 +24,7 @@ from yaksh.models import (
     DailyActivity, Lesson, LearningModule, LearningUnit, LessonFile,
     TestCase, McqTestCase, StdIOBasedTestCase, StandardTestCase,
     HookTestCase, IntegerTestCase, StringTestCase, FloatTestCase,
-    ArrangeTestCase
+    ArrangeTestCase, FileUpload
 )
 from yaksh.models import get_model_class
 from yaksh.views import is_moderator, get_html_text, prof_manage
@@ -2867,28 +2869,42 @@ def teacher_questions_list(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def teacher_get_question(request, question_id):
-    """Get question details with test cases"""
+    """Get question details with test cases and files"""
     user = request.user
-    
+
     if not _check_teacher_permission(user):
         return Response(
             {'error': 'You are not authorized'},
             status=status.HTTP_403_FORBIDDEN
         )
-    
+
     try:
         question = Question.objects.get(id=question_id)
-        
+
         # Verify ownership
         if question.user != user:
             return Response(
                 {'error': 'You do not have permission to access this question'},
                 status=status.HTTP_403_FORBIDDEN
             )
-        
+
         # Get test cases
         test_cases = question.get_test_cases_as_dict()
-        
+
+        # Get files
+        from yaksh.models import FileUpload
+        files = []
+        for f in FileUpload.objects.filter(question=question):
+            # Build absolute URL for the file
+            file_url = request.build_absolute_uri(f.file.url) if hasattr(f.file, "url") else ""
+            files.append({
+                "id": f.id,
+                "name": os.path.basename(f.file.name),
+                "url": file_url,  # Full URL with domain
+                "extract": f.extract,
+                "hide": f.hide,
+            })
+
         return Response({
             'id': question.id,
             'summary': question.summary,
@@ -2901,15 +2917,57 @@ def teacher_get_question(request, question_id):
             'snippet': question.snippet,
             'solution': question.solution,
             'partial_grading': question.partial_grading,
+            'grade_assignment_upload': question.grade_assignment_upload,
             'min_time': question.min_time,
-            'test_cases': test_cases
+            'test_cases': test_cases,
+            'files': files  
         }, status=status.HTTP_200_OK)
-        
+
     except Question.DoesNotExist:
         return Response(
             {'error': 'Question not found'},
             status=status.HTTP_404_NOT_FOUND
         )
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_question_file(request, file_id):
+    try:
+        file_obj = FileUpload.objects.get(id=file_id)
+        # Optional: check ownership/permissions here
+        file_obj.delete()
+        return Response({'message': 'File deleted successfully'}, status=status.HTTP_200_OK)
+    except FileUpload.DoesNotExist:
+        return Response({'error': 'File not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def upload_question_file(request, question_id):
+    import os
+    from yaksh.models import FileUpload, Question
+    question = get_object_or_404(Question, id=question_id, user=request.user)
+    uploaded_file = request.FILES.get('file')
+    if not uploaded_file:
+        return Response({'error': 'No file provided'}, status=400)
+    file_obj = FileUpload.objects.create(
+        question=question,
+        file=uploaded_file,
+        extract=False,
+        hide=False
+    )
+    # Extract just the filename, not the full path
+    file_name = os.path.basename(file_obj.file.name)
+    # Build absolute URL
+    file_url = request.build_absolute_uri(file_obj.file.url)
+    return Response({
+        'id': file_obj.id,
+        'name': file_name,
+        'url': file_url,  # Full URL with domain
+        'extract': file_obj.extract,
+        'hide': file_obj.hide,
+    }, status=201)
 
 
 @api_view(['POST'])
@@ -3113,90 +3171,195 @@ def teacher_update_question(request, question_id):
             question.partial_grading = request.data['partial_grading']
         if 'min_time' in request.data:
             question.min_time = request.data['min_time']
-        
+        if 'grade_assignment_upload' in request.data:
+            question.grade_assignment_upload = request.data['grade_assignment_upload']
+
         question.save()
+
+        # Update file extract/hide flags if provided
+        if 'files' in request.data:
+            from yaksh.models import FileUpload
+            files_data = request.data['files']
+            for file_data in files_data:
+                file_id = file_data.get('id')
+                if file_id is not None:
+                    try:
+                        file_obj = FileUpload.objects.get(id=file_id, question=question)
+                        # Update extract and hide flags
+                        if 'extract' in file_data:
+                            extract = file_data['extract']
+                            file_obj.extract = str(extract).lower() == 'true' if isinstance(extract, str) else bool(extract)
+                        if 'hide' in file_data:
+                            hide = file_data['hide']
+                            file_obj.hide = str(hide).lower() == 'true' if isinstance(hide, str) else bool(hide)
+                        file_obj.save()
+                    except FileUpload.DoesNotExist:
+                        continue
+
         
-        # Update test cases if provided
+                # Update test cases if provided
         if 'test_cases' in request.data:
-            # Delete existing test cases
-            question.testcase_set.all().delete()
-            
-            # Create new test cases (same logic as create)
             test_cases_data = request.data['test_cases']
+            
+            # Get IDs of incoming test cases
+            incoming_tc_ids = set()
+            for tc_data in test_cases_data:
+                tc_id = tc_data.get('id')
+                if tc_id:
+                    incoming_tc_ids.add(int(tc_id))
+            
+            # Get existing test case IDs
+            existing_testcases = question.testcase_set.all()
+            existing_tc_ids = {tc.id for tc in existing_testcases}
+            
+            # Delete test cases that are no longer in the incoming data
+            testcases_to_delete = existing_tc_ids - incoming_tc_ids
+            if testcases_to_delete:
+                from yaksh.models import TestCase
+                TestCase.objects.filter(id__in=testcases_to_delete).delete()
+            
+            # Update or create test cases
             for tc_data in test_cases_data:
                 tc_type = tc_data.get('type') or tc_data.get('test_case_type')
                 if not tc_type:
                     continue
                 
+                tc_id = tc_data.get('id')
+                
                 try:
                     model_class = get_model_class(tc_type)
                     
-                    if tc_type == 'mcqtestcase':
-                        options = tc_data.get('options', '')
-                        if isinstance(options, list):
-                            options = json.dumps(options)
-                        model_class.objects.create(
-                            question=question,
-                            options=options,
-                            correct=tc_data.get('correct', False),
-                            type=tc_type
-                        )
-                    elif tc_type == 'stdiobasedtestcase':
-                        model_class.objects.create(
-                            question=question,
-                            expected_input=tc_data.get('expected_input', ''),
-                            expected_output=tc_data.get('expected_output', ''),
-                            weight=tc_data.get('weight', 1.0),
-                            hidden=tc_data.get('hidden', False),
-                            type=tc_type
-                        )
-                    elif tc_type == 'standardtestcase':
-                        model_class.objects.create(
-                            question=question,
-                            test_case=tc_data.get('test_case', ''),
-                            weight=tc_data.get('weight', 1.0),
-                            hidden=tc_data.get('hidden', False),
-                            test_case_args=tc_data.get('test_case_args', ''),
-                            type=tc_type
-                        )
-                    elif tc_type == 'integertestcase':
-                        model_class.objects.create(
-                            question=question,
-                            correct=tc_data.get('correct'),
-                            type=tc_type
-                        )
-                    elif tc_type == 'stringtestcase':
-                        model_class.objects.create(
-                            question=question,
-                            correct=tc_data.get('correct', ''),
-                            string_check=tc_data.get('string_check', 'lower'),
-                            type=tc_type
-                        )
-                    elif tc_type == 'floattestcase':
-                        model_class.objects.create(
-                            question=question,
-                            correct=tc_data.get('correct'),
-                            error_margin=tc_data.get('error_margin', 0.0),
-                            type=tc_type
-                        )
-                    elif tc_type == 'arrangetestcase':
-                        options = tc_data.get('options', '')
-                        if isinstance(options, list):
-                            options = json.dumps(options)
-                        model_class.objects.create(
-                            question=question,
-                            options=options,
-                            type=tc_type
-                        )
+                    # Check if we're updating or creating
+                    if tc_id and int(tc_id) in incoming_tc_ids:
+                        # UPDATE existing test case
+                        try:
+                            tc_instance = model_class.objects.get(id=tc_id, question=question)
+                            
+                            if tc_type == 'mcqtestcase':
+                                options = tc_data.get('options', '')
+                                if isinstance(options, list):
+                                    options = json.dumps(options)
+                                tc_instance.options = options
+                                
+                                # Handle correct field
+                                correct = tc_data.get('correct')
+                                if correct is not None:
+                                    if isinstance(correct, list):
+                                        tc_instance.correct = json.dumps(correct)
+                                    else:
+                                        tc_instance.correct = correct
+                            
+                            elif tc_type == 'stdiobasedtestcase':
+                                tc_instance.expected_input = tc_data.get('expected_input', '')
+                                tc_instance.expected_output = tc_data.get('expected_output', '')
+                                tc_instance.weight = float(tc_data.get('weight', 1.0))
+                                tc_instance.hidden = tc_data.get('hidden', False)
+                            
+                            elif tc_type == 'standardtestcase':
+                                tc_instance.test_case = tc_data.get('test_case', '')
+                                tc_instance.weight = float(tc_data.get('weight', 1.0))
+                                tc_instance.hidden = tc_data.get('hidden', False)
+                                tc_instance.test_case_args = tc_data.get('test_case_args', '')
+                            
+                            elif tc_type == 'integertestcase':
+                                tc_instance.correct = tc_data.get('correct')
+                            
+                            elif tc_type == 'stringtestcase':
+                                tc_instance.correct = tc_data.get('correct', '')
+                                tc_instance.string_check = tc_data.get('string_check', 'lower')
+                            
+                            elif tc_type == 'floattestcase':
+                                tc_instance.correct = tc_data.get('correct')
+                                tc_instance.error_margin = tc_data.get('error_margin', 0.0)
+                            
+                            elif tc_type == 'arrangetestcase':
+                                options = tc_data.get('options', '')
+                                if isinstance(options, list):
+                                    options = json.dumps(options)
+                                tc_instance.options = options
+                            
+                            elif tc_type == 'uploadtestcase':
+                                tc_instance.description = tc_data.get('description', '')
+                                tc_instance.required = tc_data.get('required', True)
+                            
+                            tc_instance.save()
+                            
+                        except model_class.DoesNotExist:
+                            print(f"Test case with id {tc_id} not found, will create new one")
+                            tc_id = None  # Force creation
+                    
+                    # CREATE new test case if no ID or ID not found
+                    if not tc_id or int(tc_id) not in incoming_tc_ids:
+                        create_data = {'question': question, 'type': tc_type}
+                        
+                        if tc_type == 'mcqtestcase':
+                            options = tc_data.get('options', '')
+                            if isinstance(options, list):
+                                options = json.dumps(options)
+                            create_data['options'] = options
+                            
+                            correct = tc_data.get('correct')
+                            if correct is not None:
+                                if isinstance(correct, list):
+                                    create_data['correct'] = json.dumps(correct)
+                                else:
+                                    create_data['correct'] = correct
+                        
+                        elif tc_type == 'stdiobasedtestcase':
+                            create_data.update({
+                                'expected_input': tc_data.get('expected_input', ''),
+                                'expected_output': tc_data.get('expected_output', ''),
+                                'weight': float(tc_data.get('weight', 1.0)),
+                                'hidden': tc_data.get('hidden', False)
+                            })
+                        
+                        elif tc_type == 'standardtestcase':
+                            create_data.update({
+                                'test_case': tc_data.get('test_case', ''),
+                                'weight': float(tc_data.get('weight', 1.0)),
+                                'hidden': tc_data.get('hidden', False),
+                                'test_case_args': tc_data.get('test_case_args', '')
+                            })
+                        
+                        elif tc_type == 'integertestcase':
+                            create_data['correct'] = tc_data.get('correct')
+                        
+                        elif tc_type == 'stringtestcase':
+                            create_data.update({
+                                'correct': tc_data.get('correct', ''),
+                                'string_check': tc_data.get('string_check', 'lower')
+                            })
+                        
+                        elif tc_type == 'floattestcase':
+                            create_data.update({
+                                'correct': tc_data.get('correct'),
+                                'error_margin': tc_data.get('error_margin', 0.0)
+                            })
+                        
+                        elif tc_type == 'arrangetestcase':
+                            options = tc_data.get('options', '')
+                            if isinstance(options, list):
+                                options = json.dumps(options)
+                            create_data['options'] = options
+                        
+                        elif tc_type == 'uploadtestcase':
+                            create_data.update({
+                                'description': tc_data.get('description', ''),
+                                'required': tc_data.get('required', True)
+                            })
+                        
+                        model_class.objects.create(**create_data)
+                        
                 except Exception as e:
-                    print(f"Error updating test case: {e}")
+                    print(f"Error updating/creating test case: {e}")
+                    import traceback
+                    traceback.print_exc()
                     continue
         
-        return Response({
-            'id': question.id,
-            'summary': question.summary,
-            'message': 'Question updated successfully'
-        }, status=status.HTTP_200_OK)
+        # Reload question to get updated test cases
+        question.refresh_from_db()
+        serializer = QuestionSerializer(question, context={'request': request})
+        return Response(serializer.data)
         
     except Question.DoesNotExist:
         return Response(
@@ -3249,6 +3412,102 @@ def teacher_delete_question(request, question_id):
             {'error': 'Failed to delete question', 'details': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+from yaksh.file_utils import extract_files
+from django.http import HttpResponse
+import zipfile
+import os
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def bulk_upload_questions(request):
+    """Bulk upload questions from YAML or ZIP file"""
+    user = request.user
+    
+    if not is_moderator(user):
+        return Response(
+            {'error': 'You are not allowed to upload questions'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    if 'file' not in request.FILES:
+        return Response(
+            {'error': 'No file provided'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    questions_file = request.FILES['file']
+    file_extension = questions_file.name.split('.')[-1].lower()
+    
+    try:
+        ques = Question()
+        
+        if file_extension == "zip":
+            # Handle ZIP file with YAML and associated files
+            files, extract_path = extract_files(questions_file)
+            message = ques.read_yaml(extract_path, user, files)
+        elif file_extension in ["yaml", "yml"]:
+            # Handle standalone YAML file
+            questions = questions_file.read()
+            message = ques.load_questions(questions, user)
+        else:
+            return Response(
+                {'error': 'Please upload a ZIP file or YAML file'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        return Response({
+            'success': True,
+            'message': message
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def download_question_template(request):
+    """Download YAML template for question format"""
+    user = request.user
+    
+    if not is_moderator(user):
+        return Response(
+            {'error': 'You are not allowed to access this resource'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    try:
+        template_path = os.path.join(
+            os.path.dirname(__file__), 
+            "..", 
+            "yaksh", 
+            "fixtures",
+            "demo_questions.zip"
+        )
+        
+        if not os.path.exists(template_path):
+            return Response(
+                {'error': 'Template file not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        yaml_file = zipfile.ZipFile(template_path, 'r')
+        template_yaml = yaml_file.open('questions_dump.yaml', 'r')
+        
+        response = HttpResponse(template_yaml, content_type='text/yaml')
+        response['Content-Disposition'] = 'attachment; filename="questions_dump.yaml"'
+        return response
+        
+    except Exception as e:
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )        
+
 
 
 # ============================================================

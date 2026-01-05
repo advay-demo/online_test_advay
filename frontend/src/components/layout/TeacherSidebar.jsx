@@ -25,6 +25,15 @@ const TeacherSidebar = () => {
                 location.pathname === '/teacher/grading-systems'
             );
         }
+
+        if (path === '/teacher/questions') {
+            return (
+                location.pathname === path ||
+                location.pathname.startsWith('/teacher/question/') ||
+                location.pathname === '/teacher/add-question' ||
+                location.pathname === '/teacher/upload-question'
+            );
+        }
         // For other paths, exact match or starts with
         return location.pathname === path || location.pathname.startsWith(path + '/');
     };
