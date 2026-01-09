@@ -156,9 +156,107 @@ export const fetchAchievements = async () => {
 };
 
 
+
 // ============================================================
-// QUIZ APIs
 // ============================================================
+// QUIZ INTERACTION APIs (For Taking Quizzes)
+// ============================================================
+// ============================================================
+
+
+export const apiStartQuiz = async (questionpaperId, moduleId, courseId, attemptNum = null, data = null) => {
+  let url;
+  
+  if (attemptNum) {
+    url = `/api/quiz/start/${attemptNum}/${moduleId}/${questionpaperId}/${courseId}/`;
+  } else {
+    url = `/api/quiz/start/${questionpaperId}/${moduleId}/${courseId}/`;
+  }
+  
+  if (data) {
+    const response = await api.post(url, data);
+    return response.data;
+  } else {
+    const response = await api.get(url);
+    return response.data;
+  }
+};
+
+/**
+ * Quit/abandon a quiz
+ */
+export const apiQuitQuiz = async (attemptNum, moduleId, questionpaperId, courseId, reason = null) => {
+  const url = `/api/quiz/quit/${attemptNum}/${moduleId}/${questionpaperId}/${courseId}/`;
+  
+  if (reason !== null) {
+    const response = await api.post(url, { reason });
+    return response.data;
+  } else {
+    const response = await api.get(url);
+    return response.data;
+  }
+};
+
+/**
+ * Complete/submit a quiz
+ */
+export const apiCompleteQuiz = async (attemptNum = null, moduleId = null, questionpaperId = null, courseId = null, data = null) => {
+  let url;
+  
+  if (attemptNum && moduleId && questionpaperId && courseId) {
+    url = `/api/quiz/complete/${attemptNum}/${moduleId}/${questionpaperId}/${courseId}/`;
+  } else {
+    url = `/api/quiz/complete/`;
+  }
+  
+  if (data) {
+    const response = await api.post(url, data);
+    return response.data;
+  } else {
+    const response = await api.get(url);
+    return response.data;
+  }
+};
+
+/**
+ * Submit and check an answer for a question
+ */
+export const apiCheckAnswer = async (questionId, attemptNum, moduleId, questionpaperId, courseId, answerData = null) => {
+  const url = `/api/quiz/check/${questionId}/${attemptNum}/${moduleId}/${questionpaperId}/${courseId}/`;
+  
+  if (answerData) {
+    const response = await api.post(url, answerData);
+    return response.data;
+  } else {
+    const response = await api.get(url);
+    return response.data;
+  }
+};
+
+/**
+ * Skip a question and move to the next one
+ */
+export const apiSkipQuestion = async (questionId, attemptNum, moduleId, questionpaperId, courseId, nextQuestionId = null, codeData = null) => {
+  let url;
+  
+  if (nextQuestionId) {
+    url = `/api/quiz/skip/${questionId}/${nextQuestionId}/${attemptNum}/${moduleId}/${questionpaperId}/${courseId}/`;
+  } else {
+    url = `/api/quiz/skip/${questionId}/${attemptNum}/${moduleId}/${questionpaperId}/${courseId}/`;
+  }
+  
+  if (codeData) {
+    const response = await api.post(url, codeData);
+    return response.data;
+  } else {
+    const response = await api.get(url);
+    return response.data;
+  }
+};
+
+
+// ============================================================
+
 
 export const startQuiz = async (courseId, quizId) => {
   const response = await api.get(`/api/start_quiz/${courseId}/${quizId}/`);
@@ -186,6 +284,11 @@ export const getQuizSubmissionStatus = async (answerpaperId) => {
   const response = await api.get(`/api/student/answerpapers/${answerpaperId}/submission/`);
   return response.data;
 };
+
+// =====================================================================================================================
+// =====================================================================================================================
+
+
 
 // ============================================================
 // TEACHER APIs - Content Creation
@@ -806,7 +909,16 @@ export const deleteQuestion = async (questionId) => {
   return response.data;
 };
 
-// Question Bulk Upload APIs
+// Test a question - creates a trial quiz for testing
+export const testQuestion = async (questionId) => {
+  const response = await api.post(`/api/teacher/questions/${questionId}/test/`);
+  return response.data;
+};
+
+// ===========================================
+// QUESTION Upload APIs 
+// ===========================================
+
 export const bulkUploadQuestions = async (file) => {
   const formData = new FormData();
   formData.append('file', file);
@@ -835,7 +947,9 @@ export const downloadQuestionTemplate = async () => {
   window.URL.revokeObjectURL(url);
 };
 
-
+// ===========================================
+// CREATE QUESTION APIs 
+// ===========================================
 
 
 export const createQuestion = async (questionData) => {

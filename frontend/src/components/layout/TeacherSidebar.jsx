@@ -15,6 +15,15 @@ const TeacherSidebar = () => {
     ];
 
     const isActive = (path) => {
+
+        if (path === '/teacher/dashboard') {
+            return (
+                location.pathname === path 
+                
+            );
+        }
+
+
         // Special handling for courses - match all course-related paths
         if (path === '/teacher/courses') {
             return (

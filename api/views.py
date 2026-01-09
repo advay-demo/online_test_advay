@@ -2865,6 +2865,30 @@ def teacher_questions_list(request):
     
     return Response(questions_data, status=status.HTTP_200_OK)
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def teacher_test_question(request, question_id):
+    """Create trial quiz for teacher to test a question"""
+    user = request.user
+    from yaksh.views import test_mode, is_moderator
+    
+    if not is_moderator(user):
+        return Response({'error': 'Only teachers can test questions'}, status=403)
+    
+    try:
+        question = Question.objects.get(id=question_id)
+    except Question.DoesNotExist:
+        return Response({'error': 'Question not found'}, status=404)
+    
+    trial_paper, trial_course, trial_module = test_mode(user, False, [question.id], None)
+    trial_paper.update_total_marks()
+    trial_paper.save()
+    
+    return Response({
+        'questionpaper_id': trial_paper.id,
+        'module_id': trial_module.id,
+        'course_id': trial_course.id,
+    }, status=201)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -4494,6 +4518,790 @@ class CreateDemoCourseAPIView(APIView):
             msg = "Demo course already created"
         return Response({"message": msg}, status=status.HTTP_200_OK)        
 
+# ============================================================
+# QUIZ APIs
+# ============================================================
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def api_start_quiz(request, questionpaper_id, module_id, course_id, attempt_num=None):
+    """
+    Start or resume a quiz. Returns quiz intro or first question.
+    Handles both students and teachers (trial mode).
+    
+    GET: Check if can start (returns intro page data)
+    POST: Actually start the quiz (create answerpaper, return first question)
+    """
+    user = request.user
+    
+    # Check conditions - Get question paper
+    try:
+        quest_paper = QuestionPaper.objects.get(id=questionpaper_id)
+    except QuestionPaper.DoesNotExist:
+        return Response({
+            'error': 'Quiz not found, please contact your instructor/administrator.'
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+    # Check if quiz has questions
+    if not quest_paper.has_questions():
+        return Response({
+            'error': 'Quiz does not have questions, please contact your instructor/administrator.'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Get course, module, unit
+    try:
+        course = Course.objects.get(id=course_id)
+        learning_module = course.learning_module.get(id=module_id)
+        learning_unit = learning_module.learning_unit.get(quiz=quest_paper.quiz.id)
+    except (Course.DoesNotExist, LearningModule.DoesNotExist, LearningUnit.DoesNotExist) as e:
+        return Response({
+            'error': 'Course, module, or unit not found'
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+    # Check if trial course (teacher testing mode)
+    is_trial_mode = course.is_trial and is_moderator(user)
+    
+    # Validation checks (skip for trial mode)
+    if not is_trial_mode:
+        # Unit module active status
+        if not learning_module.active:
+            return Response({
+                'error': f'Module {learning_module.name} is not active'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Unit module prerequisite check
+        if learning_module.has_prerequisite():
+            if not learning_module.is_prerequisite_complete(user, course):
+                return Response({
+                    'error': f'You have not completed the module previous to {learning_module.name}'
+                }, status=status.HTTP_403_FORBIDDEN)
+        
+        if learning_module.check_prerequisite_passes:
+            if not learning_module.is_prerequisite_passed(user, course):
+                return Response({
+                    'error': f'You have not successfully passed the module previous to {learning_module.name}'
+                }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Is user enrolled in the course
+        if not course.is_enrolled(user):
+            return Response({
+                'error': f'You are not enrolled in {course.name} course'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # If course is active and not expired
+        if not course.active or not course.is_active_enrollment():
+            return Response({
+                'error': f'{course.name} is either expired or not active'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Is quiz active and not expired
+        if quest_paper.quiz.is_expired() or not quest_paper.quiz.active:
+            return Response({
+                'error': f'{quest_paper.quiz.description} is either expired or not active'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Prerequisite check and passing criteria for quiz
+        if learning_unit.has_prerequisite():
+            if not learning_unit.is_prerequisite_complete(user, learning_module, course):
+                return Response({
+                    'error': 'You have not completed the previous Lesson/Quiz/Exercise'
+                }, status=status.HTTP_403_FORBIDDEN)
+    
+    # Update course status with current unit
+    from yaksh.views import _update_unit_status
+    _update_unit_status(course_id, user, learning_unit)
+    
+    # Check if any previous attempt
+    last_attempt = AnswerPaper.objects.get_user_last_attempt(
+        quest_paper, user, course_id
+    )
+    
+    # If previous attempt is in progress, resume it
+    if last_attempt and last_attempt.is_attempt_inprogress():
+        current_q = last_attempt.current_question()
+        return Response({
+            'status': 'resume',
+            'message': 'Resuming previous attempt',
+            'answerpaper_id': last_attempt.id,
+            'attempt_number': last_attempt.attempt_number,
+            'current_question_id': current_q.id if current_q else None,
+            'questions_answered': last_attempt.questions_answered.count(),
+            'questions_unanswered': last_attempt.questions_unanswered.count(),
+            'time_left': last_attempt.time_left(),
+        }, status=status.HTTP_200_OK)
+    
+    # Determine attempt number
+    if last_attempt:
+        attempt_number = last_attempt.attempt_number + 1
+    else:
+        attempt_number = 1
+    
+    # Check if allowed to start
+    can_attempt, msg = quest_paper.can_attempt_now(user, course_id)
+    if not can_attempt:
+        return Response({
+            'error': msg,
+            'can_attempt': False
+        }, status=status.HTTP_403_FORBIDDEN)
+    
+    # GET request: Return intro page data (don't create answerpaper yet)
+    if request.method == 'GET':
+        if attempt_num is None and not quest_paper.quiz.is_exercise:
+            return Response({
+                'status': 'intro',
+                'quiz': {
+                    'id': quest_paper.quiz.id,
+                    'description': quest_paper.quiz.description,
+                    'duration': quest_paper.quiz.duration,
+                    'is_exercise': quest_paper.quiz.is_exercise,
+                    'instructions': quest_paper.quiz.instructions,
+                    'attempts_allowed': quest_paper.quiz.attempts_allowed,
+                    'time_between_attempts': quest_paper.quiz.time_between_attempts,
+                },
+                'questionpaper': {
+                    'id': quest_paper.id,
+                    'total_marks': quest_paper.total_marks,
+                    'total_questions': quest_paper.get_total_questions(),
+                },
+                'course': {
+                    'id': course.id,
+                    'name': course.name,
+                },
+                'module': {
+                    'id': learning_module.id,
+                    'name': learning_module.name,
+                },
+                'attempt_number': attempt_number,
+                'is_trial_mode': is_trial_mode,
+                'is_moderator': is_moderator(user),
+            }, status=status.HTTP_200_OK)
+    
+    # POST request: Create answerpaper and start quiz
+    if request.method == 'POST':
+        # Get IP address
+        ip = request.META.get('REMOTE_ADDR', '0.0.0.0')
+        
+        # Check if user has profile
+        if not hasattr(user, 'profile'):
+            return Response({
+                'error': 'You do not have a profile and cannot take the quiz!'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Create new answerpaper
+        new_paper = quest_paper.make_answerpaper(user, ip, attempt_number, course_id)
+        
+        # Check if answerpaper was created successfully
+        if new_paper.status == 'inprogress':
+            current_q = new_paper.current_question()
+            
+            if not current_q:
+                return Response({
+                    'error': 'No questions available in this quiz'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Serialize question data
+            from api.serializers import QuestionSerializer
+            question_serializer = QuestionSerializer(current_q)
+            
+            return Response({
+                'status': 'started',
+                'message': 'Quiz started successfully',
+                'answerpaper_id': new_paper.id,
+                'attempt_number': new_paper.attempt_number,
+                'questionpaper_id': questionpaper_id,
+                'module_id': module_id,
+                'course_id': course_id,
+                'current_question': question_serializer.data,
+                'questions_answered': new_paper.questions_answered.count(),
+                'questions_unanswered': new_paper.questions_unanswered.count(),
+                'time_left': new_paper.time_left(),
+                'is_trial_mode': is_trial_mode,
+            }, status=status.HTTP_201_CREATED)
+        else:
+            return Response({
+                'error': 'You have already finished the quiz!',
+                'status': new_paper.status
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST', 'GET'])
+@permission_classes([IsAuthenticated])
+def api_quit_quiz(request, attempt_num, module_id, questionpaper_id, course_id):
+    """
+    API endpoint to quit a quiz.
+    GET: Retrieve quit information
+    POST: Mark quiz as quit and return result
+    """
+    try:
+        paper = AnswerPaper.objects.get(
+            user=request.user,
+            attempt_number=attempt_num,
+            question_paper_id=questionpaper_id,
+            course_id=course_id
+        )
+        
+        if request.method == 'POST':
+            # Get optional reason from request body
+            reason = request.data.get('reason', None)
+            
+            # Mark the paper as quit if it's not already completed
+            if paper.status == 'inprogress':
+                paper.status = 'quit'
+                paper.save()
+            
+            return Response({
+                'message': reason or 'You have quit the quiz.',
+                'paper': {
+                    'id': paper.id,
+                    'status': paper.status,
+                    'attempt_number': paper.attempt_number,
+                    'marks_obtained': paper.marks_obtained,
+                    'percent': paper.percent,
+                    'questions_answered': paper.questions_answered.count(),
+                    'questions_unanswered': paper.questions_unanswered.count(),
+                },
+                'course_id': course_id,
+                'module_id': module_id,
+                'questionpaper_id': questionpaper_id
+            }, status=status.HTTP_200_OK)
+        
+        else:  # GET request
+            return Response({
+                'paper': {
+                    'id': paper.id,
+                    'status': paper.status,
+                    'attempt_number': paper.attempt_number,
+                    'marks_obtained': paper.marks_obtained,
+                    'percent': paper.percent,
+                },
+                'course_id': course_id,
+                'module_id': module_id
+            }, status=status.HTTP_200_OK)
+            
+    except AnswerPaper.DoesNotExist:
+        return Response(
+            {'error': 'Answer paper not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_400_BAD_REQUEST
+        )  
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def api_complete_quiz(request, attempt_num=None, module_id=None, 
+                      questionpaper_id=None, course_id=None):
+    """
+    API endpoint to complete/submit a quiz.
+    GET: Retrieve completion information
+    POST: Mark quiz as completed and return result with updated marks
+    
+    Handles two cases:
+    1. Without parameters (error case)
+    2. With all parameters (normal completion)
+    """
+    user = request.user
+    
+    # Handle error case (no parameters)
+    if questionpaper_id is None:
+        reason = request.data.get('reason') if request.method == 'POST' else request.GET.get('reason')
+        message = reason or "An Unexpected Error occurred. Please contact your instructor/administrator."
+        return Response({
+            'error': True,
+            'message': message
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Normal completion flow with all parameters
+    try:
+        # Validate that the question paper exists
+        try:
+            q_paper = QuestionPaper.objects.get(id=questionpaper_id)
+        except QuestionPaper.DoesNotExist:
+            return Response({
+                'error': 'An Unexpected Error occurred. Please contact your instructor/administrator.'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Get the answer paper
+        try:
+            paper = AnswerPaper.objects.get(
+                user=user,
+                question_paper=q_paper,
+                attempt_number=attempt_num,
+                course_id=course_id
+            )
+        except AnswerPaper.DoesNotExist:
+            return Response({
+                'error': 'Answer paper not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Get course and learning module
+        course = Course.objects.get(id=course_id)
+        learning_module = course.learning_module.get(id=module_id)
+        learning_unit = learning_module.learning_unit.get(quiz=q_paper.quiz)
+        
+        if request.method == 'POST':
+            # Get optional reason from request body
+            reason = request.data.get('reason', None)
+            
+            # Update marks and set end time
+            paper.update_marks()
+            paper.set_end_time(timezone.now())
+            
+            message = reason or "Quiz has been submitted"
+            
+            # Prepare response data
+            response_data = {
+                'message': message,
+                'paper': {
+                    'id': paper.id,
+                    'status': paper.status,
+                    'attempt_number': paper.attempt_number,
+                    'marks_obtained': paper.marks_obtained,
+                    'percent': paper.percent,
+                    'questions_answered': paper.questions_answered.count(),
+                    'questions_unanswered': paper.questions_unanswered.count(),
+                    'start_time': paper.start_time,
+                    'end_time': paper.end_time,
+                    'time_taken': str(paper.time_taken) if paper.time_taken else None,
+                },
+                'course_id': int(course_id),
+                'module_id': int(module_id),
+                'learning_unit': {
+                    'id': learning_unit.id,
+                    'order': learning_unit.order,
+                    'type': learning_unit.type,
+                },
+                'quiz': {
+                    'id': q_paper.quiz.id,
+                    'description': q_paper.quiz.description,
+                },
+            }
+            
+            # Add moderator flag if user is moderator
+            if is_moderator(user):
+                response_data['user_type'] = 'moderator'
+            
+            return Response(response_data, status=status.HTTP_200_OK)
+        
+        else:  # GET request - retrieve completion info without updating
+            return Response({
+                'paper': {
+                    'id': paper.id,
+                    'status': paper.status,
+                    'attempt_number': paper.attempt_number,
+                    'marks_obtained': paper.marks_obtained,
+                    'percent': paper.percent,
+                    'questions_answered': paper.questions_answered.count(),
+                    'questions_unanswered': paper.questions_unanswered.count(),
+                    'start_time': paper.start_time,
+                    'end_time': paper.end_time,
+                },
+                'course_id': int(course_id),
+                'module_id': int(module_id),
+                'learning_unit': {
+                    'id': learning_unit.id,
+                    'order': learning_unit.order,
+                },
+            }, status=status.HTTP_200_OK)
+            
+    except Course.DoesNotExist:
+        return Response(
+            {'error': 'Course not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except LearningModule.DoesNotExist:
+        return Response(
+            {'error': 'Learning module not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except LearningUnit.DoesNotExist:
+        return Response(
+            {'error': 'Learning unit not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_400_BAD_REQUEST
+        )    
+
+@api_view(['POST', 'GET'])
+@permission_classes([IsAuthenticated])
+def api_check_answer(request, q_id, attempt_num, module_id, questionpaper_id, course_id):
+    """
+    API endpoint to check/submit an answer for a question.
+    POST: Submit answer and get validation result
+    GET: Get current question state (for re-display)
+    """
+    user = request.user
+    
+    try:
+        # Get the answer paper
+        paper = AnswerPaper.objects.get(
+            user=user,
+            attempt_number=attempt_num,
+            question_paper_id=questionpaper_id,
+            course_id=course_id
+        )
+    except AnswerPaper.DoesNotExist:
+        return Response({
+            'error': 'Answer paper not found'
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+    # Get the current question
+    try:
+        current_question = Question.objects.get(pk=q_id)
+    except Question.DoesNotExist:
+        return Response({
+            'error': 'Question not found'
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+    # Helper function to validate answer
+    def is_valid_answer(answer):
+        if ((current_question.type == "mcc" or current_question.type == "arrange") and not answer):
+            return False
+        elif answer is None or not str(answer):
+            return False
+        return True
+    
+    # GET request - return current question state
+    if request.method == 'GET':
+        from api.serializers import QuestionSerializer
+        question_serializer = QuestionSerializer(current_question)
+        
+        # Get previous answers if any
+        previous_answers = paper.get_previous_answers(current_question)
+        last_attempt = previous_answers[0].answer if previous_answers else None
+        
+        return Response({
+            'question': question_serializer.data,
+            'paper': {
+                'id': paper.id,
+                'status': paper.status,
+                'time_left': paper.time_left(),
+                'questions_answered': paper.questions_answered.count(),
+                'questions_unanswered': paper.questions_unanswered.count(),
+            },
+            'last_attempt': last_attempt,
+            'course_id': int(course_id),
+            'module_id': int(module_id),
+        }, status=status.HTTP_200_OK)
+    
+    # POST request - submit and check answer
+    if request.method == 'POST':
+        # Check if time is up or quiz completed
+        if paper.time_left() <= -10 or paper.status == "completed":
+            return Response({
+                'error': 'Your time is up!',
+                'time_up': True,
+                'should_complete': True,
+                'course_id': int(course_id),
+                'module_id': int(module_id),
+                'attempt_num': attempt_num,
+                'questionpaper_id': int(questionpaper_id),
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        user_answer = None
+        
+        # Parse answer based on question type
+        try:
+            if current_question.type == 'mcq':
+                user_answer = request.data.get('answer')
+            
+            elif current_question.type == 'integer':
+                try:
+                    user_answer = int(request.data.get('answer'))
+                except (ValueError, TypeError):
+                    return Response({
+                        'error': 'Please enter an Integer Value',
+                        'question_id': current_question.id
+                    }, status=status.HTTP_400_BAD_REQUEST)
+            
+            elif current_question.type == 'float':
+                try:
+                    user_answer = float(request.data.get('answer'))
+                except (ValueError, TypeError):
+                    return Response({
+                        'error': 'Please enter a Float Value',
+                        'question_id': current_question.id
+                    }, status=status.HTTP_400_BAD_REQUEST)
+            
+            elif current_question.type == 'string':
+                user_answer = str(request.data.get('answer', ''))
+            
+            elif current_question.type == 'mcc':
+                user_answer = request.data.get('answer', [])
+                if not isinstance(user_answer, list):
+                    user_answer = [user_answer]
+            
+            elif current_question.type == 'arrange':
+                answer_str = request.data.get('answer', '')
+                if isinstance(answer_str, str):
+                    user_answer = [int(ids) for ids in answer_str.split(',') if ids.strip()]
+                elif isinstance(answer_str, list):
+                    user_answer = [int(ids) for ids in answer_str]
+            
+            elif current_question.type == 'upload':
+                # Handle file upload
+                uploaded_files = request.FILES.getlist('assignment')
+                if not uploaded_files:
+                    return Response({
+                        'error': 'Please upload assignment file',
+                        'question_id': current_question.id
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                
+                # Delete existing uploads for this question
+                AssignmentUpload.objects.filter(
+                    assignmentQuestion_id=current_question.id,
+                    answer_paper_id=paper.id
+                ).delete()
+                
+                # Create new uploads
+                uploads_to_create = []
+                for fname in uploaded_files:
+                    fname._name = fname._name.replace(" ", "_")
+                    uploads_to_create.append(AssignmentUpload(
+                        assignmentQuestion_id=current_question.id,
+                        assignmentFile=fname,
+                        answer_paper_id=paper.id
+                    ))
+                AssignmentUpload.objects.bulk_create(uploads_to_create)
+                
+                user_answer = 'ASSIGNMENT UPLOADED'
+                new_answer = Answer(
+                    question=current_question,
+                    answer=user_answer,
+                    correct=False,
+                    error=json.dumps([])
+                )
+                new_answer.save()
+                paper.answers.add(new_answer)
+                next_q = paper.add_completed_question(current_question.id)
+                
+                # Return success with next question
+                from api.serializers import QuestionSerializer
+                next_question_data = QuestionSerializer(next_q).data if next_q else None
+                
+                return Response({
+                    'success': True,
+                    'message': 'Assignment uploaded successfully',
+                    'next_question': next_question_data,
+                    'paper': {
+                        'questions_answered': paper.questions_answered.count(),
+                        'questions_unanswered': paper.questions_unanswered.count(),
+                    }
+                }, status=status.HTTP_200_OK)
+            
+            else:
+                # Default: code or other types
+                user_answer = request.data.get('answer')
+        
+        except Exception as e:
+            return Response({
+                'error': f'Error parsing answer: {str(e)}',
+                'question_id': current_question.id
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Validate answer
+        if not is_valid_answer(user_answer):
+            return Response({
+                'error': 'Please submit a valid answer.',
+                'question_id': current_question.id
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Create or update answer
+        if (current_question in paper.get_questions_answered() and 
+            current_question.type not in ['code', 'upload']):
+            new_answer = paper.get_latest_answer(current_question.id)
+            new_answer.answer = user_answer
+            new_answer.correct = False
+        else:
+            new_answer = Answer(
+                question=current_question,
+                answer=user_answer,
+                correct=False,
+                error=json.dumps([])
+            )
+        
+        new_answer.save()
+        uid = new_answer.id
+        paper.answers.add(new_answer)
+        
+        # Validate the answer
+        json_data = current_question.consolidate_answer_data(
+            user_answer, user
+        ) if current_question.type == 'code' else None
+        
+        result = paper.validate_answer(
+            user_answer, current_question, json_data, uid
+        )
+        
+        # Handle code question asynchronously
+        if current_question.type == 'code':
+            if paper.time_left() <= 0 and not paper.question_paper.quiz.is_exercise:
+                # Time is up for code question - get result synchronously
+                url = f'{SERVER_HOST_NAME}:{SERVER_POOL_PORT}'
+                result_details = get_result_from_code_server(url, uid, block=True)
+                result = json.loads(result_details.get('result'))
+                
+                # Update paper with result
+                from yaksh.views import _update_paper
+                next_question, error_message, paper = _update_paper(
+                    request, uid, result
+                )
+                
+                from api.serializers import QuestionSerializer
+                next_question_data = QuestionSerializer(next_question).data if next_question else None
+                
+                return Response({
+                    'success': result.get('success', False),
+                    'result': result,
+                    'error_message': error_message,
+                    'next_question': next_question_data,
+                    'paper': {
+                        'marks_obtained': paper.marks_obtained,
+                        'questions_answered': paper.questions_answered.count(),
+                        'questions_unanswered': paper.questions_unanswered.count(),
+                    }
+                }, status=status.HTTP_200_OK)
+            else:
+                # Return result status for async processing
+                return Response({
+                    'status': 'processing',
+                    'answer_id': uid,
+                    'result': result,
+                    'message': 'Code is being evaluated'
+                }, status=status.HTTP_200_OK)
+        
+        else:
+            # Non-code question - process immediately
+            from yaksh.views import _update_paper
+            next_question, error_message, paper = _update_paper(
+                request, uid, result
+            )
+            
+            from api.serializers import QuestionSerializer
+            next_question_data = QuestionSerializer(next_question).data if next_question else None
+            
+            return Response({
+                'success': result.get('success', False),
+                'result': result,
+                'error_message': error_message,
+                'next_question': next_question_data,
+                'paper': {
+                    'marks_obtained': paper.marks_obtained,
+                    'questions_answered': paper.questions_answered.count(),
+                    'questions_unanswered': paper.questions_unanswered.count(),
+                    'time_left': paper.time_left(),
+                },
+                'answer_id': uid
+            }, status=status.HTTP_200_OK)
+    
+    return Response({
+        'error': 'Method not allowed'
+    }, status=status.HTTP_405_METHOD_NOT_ALLOWED)                      
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def api_skip_question(request, q_id, attempt_num, module_id, questionpaper_id, 
+                      course_id, next_q=None):
+    """
+    API endpoint to skip a question
+    GET: Returns the next question to skip to
+    POST: Saves code answer with skipped flag (for code questions only) then returns next question
+    """
+    user = request.user
+    
+    # Get the answer paper
+    try:
+        paper = AnswerPaper.objects.get(
+            user=user,
+            attempt_number=attempt_num,
+            question_paper_id=questionpaper_id,
+            course_id=course_id
+        )
+    except AnswerPaper.DoesNotExist:
+        return Response({
+            'error': 'Answer paper not found'
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+    # Get current question
+    try:
+        question = Question.objects.get(pk=q_id)
+    except Question.DoesNotExist:
+        return Response({
+            'error': 'Question not found'
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+    # Update start time if it's an exercise
+    if paper.question_paper.quiz.is_exercise:
+        paper.start_time = timezone.now()
+        paper.save()
+    
+    # Handle POST request for code questions
+    if request.method == 'POST' and question.type == 'code':
+        # Only save if no correct answer exists
+        if not paper.answers.filter(question=question, correct=True).exists():
+            user_code = request.data.get('answer', '')
+            new_answer = Answer(
+                question=question,
+                answer=user_code,
+                correct=False,
+                skipped=True,
+                error=json.dumps([])
+            )
+            new_answer.save()
+            paper.answers.add(new_answer)
+    
+    # Determine next question
+    if next_q is not None:
+        try:
+            next_question = Question.objects.get(pk=next_q)
+        except Question.DoesNotExist:
+            return Response({
+                'error': 'Next question not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+    else:
+        next_question = paper.next_question(q_id)
+    
+    # Serialize next question
+    from api.serializers import QuestionSerializer
+    
+    if next_question:
+        question_data = QuestionSerializer(next_question).data
+        
+        # Get previous answers for the next question if any
+        previous_answers = paper.get_previous_answers(next_question)
+        last_attempt = previous_answers[0].answer if previous_answers else None
+        
+        return Response({
+            'success': True,
+            'question': question_data,
+            'paper': {
+                'id': paper.id,
+                'status': paper.status,
+                'time_left': paper.time_left(),
+                'questions_answered': paper.questions_answered.count(),
+                'questions_unanswered': paper.questions_unanswered.count(),
+            },
+            'last_attempt': last_attempt,
+            'course_id': int(course_id),
+            'module_id': int(module_id),
+        }, status=status.HTTP_200_OK)
+    else:
+        # No more questions - quiz is complete
+        return Response({
+            'success': True,
+            'completed': True,
+            'message': 'No more questions available',
+            'course_id': int(course_id),
+            'module_id': int(module_id),
+            'attempt_num': attempt_num,
+            'questionpaper_id': int(questionpaper_id),
+        }, status=status.HTTP_200_OK)
 
 
 # ============================================================

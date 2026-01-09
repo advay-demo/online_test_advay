@@ -61,16 +61,13 @@ function App() {
           <Route path="/teacher/add-course" element={<AddCourse />} />
           <Route path="/teacher/grading-systems" element={<GradingSystems />} />
           <Route path="/teacher/courses" element={<Courses />} />
-          <Route path="/teacher/quizzes" element={<TeacherQuizzes />} />
           <Route path="/teacher/courses/:courseId/manage" element={<ManageCourse />} />
-
-
           <Route path="/teacher/courses/:courseId/edit" element={<AddCourse />} />
-          
-          
           <Route path="/teacher/questions" element={<Questions />} />
           <Route path="/teacher/add-question" element={<AddQuestion />} />
           <Route path="/teacher/upload-question" element={<UploadQuestion />} />
+
+          <Route path="/teacher/quizzes" element={<TeacherQuizzes />} />
           
         </Route>
 
