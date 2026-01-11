@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { FaSearch, FaEdit, FaTrash, FaBook, FaCode, FaCheckCircle, FaEllipsisV, FaTimes, FaPlus, FaUpload, FaFileAlt, FaExternalLinkAlt } from 'react-icons/fa';
+import { FaSearch, FaEdit, FaTrash, FaBook, FaCode, FaCheckCircle, FaEllipsisV, FaTimes, FaPlus, FaUpload, FaFileAlt, FaExternalLinkAlt, FaPlay } from 'react-icons/fa';
 import TeacherSidebar from '../../components/layout/TeacherSidebar';
 import Header from '../../components/layout/Header';
 import useQuestionsStore from '../../store/questionsStore';
 import QuestionActionButtons from '../../components/teacher/QuestionActionButtons';
+import { useNavigate } from 'react-router-dom';
+import useQuizStore from '../../store/quiz_QuestionStore';
 
 const defaultFormData = {
     summary: '',
@@ -87,6 +89,10 @@ const Questions = () => {
         updateQuestion
     } = useQuestionsStore();
 
+     const { testQuestion } = useQuizStore(); // Add this
+    const navigate = useNavigate(); // Add this
+
+
     const [actionMenuOpen, setActionMenuOpen] = useState(null);
     const [showEditModal, setShowEditModal] = useState(false);
     const [editForm, setEditForm] = useState(defaultFormData);
@@ -94,6 +100,9 @@ const Questions = () => {
     const [editId, setEditId] = useState(null);
     const [saving, setSaving] = useState(false);
     const [editError, setEditError] = useState(null);
+    const [testingQuestionId, setTestingQuestionId] = useState(null); // Add this for loading state
+
+    
 
     useEffect(() => {
         loadQuestions();
@@ -181,6 +190,21 @@ const Questions = () => {
             await deleteQuestion(questionId);
         } catch (err) {
             alert('Failed to delete question');
+        }
+    };
+
+    // Add this handler
+    const handleTestQuestion = async (questionId) => {
+        setTestingQuestionId(questionId);
+        try {
+            const result = await testQuestion(questionId);
+            // Navigate to test quiz page with the returned IDs
+            navigate(`/teacher/test-question/${result.questionpaper_id}/${result.module_id}/${result.course_id}`);
+        } catch (error) {
+            console.error('Error testing question:', error);
+            alert(error.message || 'Failed to create test quiz');
+        } finally {
+            setTestingQuestionId(null);
         }
     };
 
@@ -353,37 +377,62 @@ const Questions = () => {
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div className="relative gs-action-menu">
+                                                <div className="flex items-center gap-2">
+                                                    {/* Add Test Button */}
                                                     <button
-                                                        className="p-2 border border-[var(--border-color)] rounded-lg hover:bg-[var(--input-bg)] active:scale-95 transition-all duration-200 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-                                                        onClick={() => setActionMenuOpen(actionMenuOpen === question.id ? null : question.id)}
-                                                        aria-label="Actions"
-                                                        tabIndex={0}
+                                                        className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                                        onClick={() => handleTestQuestion(question.id)}
+                                                        disabled={testingQuestionId === question.id}
                                                     >
-                                                        <FaEllipsisV className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                                        {testingQuestionId === question.id ? (
+                                                            <>
+                                                                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                                </svg>
+                                                                Creating...
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <FaPlay className="w-3 h-3" />
+                                                                Test
+                                                            </>
+                                                        )}
                                                     </button>
-                                                    {actionMenuOpen === question.id && (
-                                                        <div className="absolute right-0 mt-2 z-50 w-32 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg shadow-lg py-1 flex flex-col text-sm animate-fade-in">
-                                                            <button
-                                                                className="flex items-center gap-2 px-4 py-2 hover:bg-blue-500/10 transition"
-                                                                onClick={() => {
-                                                                    setActionMenuOpen(null);
-                                                                    handleEdit(question);
-                                                                }}
-                                                            >
-                                                                <FaEdit className="w-4 h-4" /> Edit
-                                                            </button>
-                                                            <button
-                                                                className="flex items-center gap-2 px-4 py-2 text-red-500 hover:bg-red-500/10 transition"
-                                                                onClick={() => {
-                                                                    setActionMenuOpen(null);
-                                                                    handleDelete(question.id);
-                                                                }}
-                                                            >
-                                                                <FaTrash className="w-4 h-4" /> Delete
-                                                            </button>
-                                                        </div>
-                                                    )}
+                                                    
+                                                    {/* Existing Actions Menu */}
+                                                    <div className="relative gs-action-menu">
+                                                        <button
+                                                            className="p-2 border border-[var(--border-color)] rounded-lg hover:bg-[var(--input-bg)] active:scale-95 transition-all duration-200 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                                                            onClick={() => setActionMenuOpen(actionMenuOpen === question.id ? null : question.id)}
+                                                            aria-label="Actions"
+                                                            tabIndex={0}
+                                                        >
+                                                            <FaEllipsisV className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                                        </button>
+                                                        {actionMenuOpen === question.id && (
+                                                            <div className="absolute right-0 mt-2 z-50 w-32 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg shadow-lg py-1 flex flex-col text-sm animate-fade-in">
+                                                                <button
+                                                                    className="flex items-center gap-2 px-4 py-2 hover:bg-blue-500/10 transition"
+                                                                    onClick={() => {
+                                                                        setActionMenuOpen(null);
+                                                                        handleEdit(question);
+                                                                    }}
+                                                                >
+                                                                    <FaEdit className="w-4 h-4" /> Edit
+                                                                </button>
+                                                                <button
+                                                                    className="flex items-center gap-2 px-4 py-2 text-red-500 hover:bg-red-500/10 transition"
+                                                                    onClick={() => {
+                                                                        setActionMenuOpen(null);
+                                                                        handleDelete(question.id);
+                                                                    }}
+                                                                >
+                                                                    <FaTrash className="w-4 h-4" /> Delete
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>

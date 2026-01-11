@@ -21,6 +21,7 @@ import AddQuestion from './pages/teacher/AddQuestion';
 import PrivateRoute from './components/auth/PrivateRoute';
 import GradingSystems from './pages/teacher/GradingSystems';
 import UploadQuestion from './pages/teacher/UploadQuestion';
+import TestQuestion from './pages/teacher/TestQuestion';
 
 import ThemeController from './components/layout/ThemeController';
 
@@ -66,6 +67,7 @@ function App() {
           <Route path="/teacher/questions" element={<Questions />} />
           <Route path="/teacher/add-question" element={<AddQuestion />} />
           <Route path="/teacher/upload-question" element={<UploadQuestion />} />
+          <Route path="/teacher/test-question/:questionpaperId/:moduleId/:courseId" element={<TestQuestion />} />
 
           <Route path="/teacher/quizzes" element={<TeacherQuizzes />} />
           

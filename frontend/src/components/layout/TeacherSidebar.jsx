@@ -40,7 +40,8 @@ const TeacherSidebar = () => {
                 location.pathname === path ||
                 location.pathname.startsWith('/teacher/question/') ||
                 location.pathname === '/teacher/add-question' ||
-                location.pathname === '/teacher/upload-question'
+                location.pathname === '/teacher/upload-question' ||
+                location.pathname.startsWith('/teacher/test-question/')
             );
         }
         // For other paths, exact match or starts with

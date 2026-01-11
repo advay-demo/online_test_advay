@@ -5,7 +5,7 @@ import {
   apiCompleteQuiz,
   apiCheckAnswer,
   apiSkipQuestion,
-  testQuestion,
+  testQuestion as apiTestQuestion,
 } from '../api/api';
 
 const useQuizStore = create((set, get) => ({
@@ -67,14 +67,25 @@ const useQuizStore = create((set, get) => ({
     set({ loading: true, error: null });
     try {
       const quizData = await apiStartQuiz(questionpaperId, moduleId, courseId, attemptNum, {});
+      
+      // Handle response - API returns current_question
+      const question = quizData.current_question || quizData.question;
+      
       set({ 
-        currentQuestion: quizData.question,
-        paper: quizData.paper,
-        timeLeft: quizData.paper?.time_left,
-        questionpaperId,
-        moduleId,
-        courseId,
-        attemptNum: quizData.paper?.attempt_number || attemptNum,
+        currentQuestion: question,
+        paper: {
+          id: quizData.answerpaper_id,
+          attempt_number: quizData.attempt_number,
+          time_left: quizData.time_left,
+          is_trial_mode: quizData.is_trial_mode,
+          questions_answered: quizData.questions_answered,
+          questions_unanswered: quizData.questions_unanswered,
+        },
+        timeLeft: quizData.time_left,
+        questionpaperId: quizData.questionpaper_id || questionpaperId,
+        moduleId: quizData.module_id || moduleId,
+        courseId: quizData.course_id || courseId,
+        attemptNum: quizData.attempt_number || attemptNum,
         loading: false 
       });
       return quizData;
@@ -92,13 +103,23 @@ const useQuizStore = create((set, get) => ({
     set({ loading: true, error: null });
     try {
       const quizData = await apiStartQuiz(questionpaperId, moduleId, courseId, attemptNum);
+      
+      const question = quizData.current_question || quizData.question;
+      
       set({ 
-        currentQuestion: quizData.question,
-        paper: quizData.paper,
-        timeLeft: quizData.paper?.time_left,
-        questionpaperId,
-        moduleId,
-        courseId,
+        currentQuestion: question,
+        paper: {
+          id: quizData.answerpaper_id,
+          attempt_number: quizData.attempt_number,
+          time_left: quizData.time_left,
+          is_trial_mode: quizData.is_trial_mode,
+          questions_answered: quizData.questions_answered,
+          questions_unanswered: quizData.questions_unanswered,
+        },
+        timeLeft: quizData.time_left,
+        questionpaperId: quizData.questionpaper_id || questionpaperId,
+        moduleId: quizData.module_id || moduleId,
+        courseId: quizData.course_id || courseId,
         attemptNum,
         loading: false 
       });
@@ -127,11 +148,22 @@ const useQuizStore = create((set, get) => ({
         answerData
       );
       
+      // Handle response - could have next_question or current_question
+      const nextQuestion = result.next_question || result.current_question || result.question;
+      
       set({ 
-        answerResult: result,
-        currentQuestion: result.next_question || result.question,
-        paper: result.paper,
-        timeLeft: result.paper?.time_left,
+        answerResult: {
+          success: result.success,
+          error_message: result.error_message || result.message,
+        },
+        currentQuestion: nextQuestion,
+        paper: {
+          ...get().paper,
+          time_left: result.time_left || result.paper?.time_left,
+          questions_answered: result.questions_answered,
+          questions_unanswered: result.questions_unanswered,
+        },
+        timeLeft: result.time_left || result.paper?.time_left || get().timeLeft,
         loading: false 
       });
       
@@ -160,10 +192,15 @@ const useQuizStore = create((set, get) => ({
         null
       );
       
+      const question = result.current_question || result.question;
+      
       set({ 
-        currentQuestion: result.question,
-        paper: result.paper,
-        timeLeft: result.paper?.time_left,
+        currentQuestion: question,
+        paper: {
+          ...get().paper,
+          time_left: result.time_left || result.paper?.time_left,
+        },
+        timeLeft: result.time_left || result.paper?.time_left || get().timeLeft,
         loading: false 
       });
       
@@ -193,10 +230,17 @@ const useQuizStore = create((set, get) => ({
         codeData
       );
       
+      const nextQuestion = result.question || result.next_question || result.current_question;
+      
       set({ 
-        currentQuestion: result.question || result.next_question,
-        paper: result.paper,
-        timeLeft: result.paper?.time_left,
+        currentQuestion: nextQuestion,
+        paper: {
+          ...get().paper,
+          time_left: result.time_left || result.paper?.time_left,
+          questions_answered: result.questions_answered,
+          questions_unanswered: result.questions_unanswered,
+        },
+        timeLeft: result.time_left || result.paper?.time_left || get().timeLeft,
         loading: false 
       });
       
@@ -226,7 +270,7 @@ const useQuizStore = create((set, get) => ({
       
       set({ 
         quizResult: result,
-        paper: result.paper,
+        paper: result.paper || get().paper,
         loading: false 
       });
       
@@ -256,7 +300,7 @@ const useQuizStore = create((set, get) => ({
       
       set({ 
         quizResult: result,
-        paper: result.paper,
+        paper: result.paper || get().paper,
         loading: false 
       });
       
@@ -270,20 +314,39 @@ const useQuizStore = create((set, get) => ({
 
   /**
    * Test a question (teacher only)
+   * This creates a test quiz and returns the full quiz data with first question
    */
   testQuestion: async (questionId) => {
     set({ loading: true, error: null });
     try {
-      const result = await testQuestion(questionId);
+      // The test API returns the complete quiz response with current_question
+      const result = await apiTestQuestion(questionId);
+      
+      // Extract question from response
+      const question = result.current_question || result.question;
+      
+      // Set all state from the test response
       set({ 
+        currentQuestion: question,
+        paper: {
+          id: result.answerpaper_id,
+          attempt_number: result.attempt_number,
+          time_left: result.time_left,
+          is_trial_mode: result.is_trial_mode,
+          questions_answered: result.questions_answered,
+          questions_unanswered: result.questions_unanswered,
+        },
+        timeLeft: result.time_left,
         questionpaperId: result.questionpaper_id,
         moduleId: result.module_id,
         courseId: result.course_id,
+        attemptNum: result.attempt_number,
         loading: false 
       });
+      
       return result;
     } catch (err) {
-      const errorMsg = err.response?.data?.error || 'Failed to create test quiz';
+      const errorMsg = err.response?.data?.error || err.message || 'Failed to create test quiz';
       set({ error: errorMsg, loading: false });
       throw new Error(errorMsg);
     }

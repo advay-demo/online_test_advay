@@ -9,7 +9,7 @@ import {
   uploadQuestionFile,
   bulkUploadQuestions,
   downloadQuestionTemplate,
-  testQuestion,
+  //testQuestion,
 } from '../api/api';
 
 const useQuestionsStore = create((set, get) => ({
@@ -122,20 +122,8 @@ const useQuestionsStore = create((set, get) => ({
     }
   },
 
+  
 
-  // Add this new function
-  testQuestion: async (id) => {
-    set({ loading: true, error: null });
-    try {
-      const result = await testQuestion(id);
-      set({ loading: false });
-      return result; // Returns { questionpaper_id, module_id, course_id }
-    } catch (err) {
-      const errorMsg = err.response?.data?.error || 'Failed to create test quiz';
-      set({ error: errorMsg, loading: false });
-      throw new Error(errorMsg);
-    }
-  },
 
 
 

@@ -57,7 +57,9 @@ urlpatterns = [
     url(r'student/answerpapers/(?P<answerpaper_id>[0-9]+)/submission/$', views.quiz_submission_status,
         name='quiz_submission_status'),
 
-
+    ##============================================================================================================================================================================================
+    # COMMON ROUTES
+    ##============================================================================================================================================================================================
     # Forum API endpoints
     url(r'^forum/courses/(?P<course_id>\d+)/posts/$', views.ForumPostListCreateView.as_view(), name='api_forum_post_list_create'),
     url(r'^forum/courses/(?P<course_id>\d+)/posts/(?P<id>\d+)/$', views.ForumPostDetailView.as_view(), name='api_forum_post_detail'),
@@ -70,9 +72,9 @@ urlpatterns = [
     url(r'^forum/lessons/(?P<lesson_id>\d+)/posts/(?P<post_id>\d+)/comments/$', views.LessonForumCommentListCreateView.as_view(), name='api_lesson_forum_comment_list_create'),
     url(r'^forum/lessons/(?P<lesson_id>\d+)/comments/(?P<comment_id>\d+)/$', views.LessonForumCommentDetailView.as_view(), name='api_lesson_forum_comment_detail'),   
     
-   
-    url(r'^quiz/start/(?P<questionpaper_id>\d+)/(?P<module_id>\d+)/(?P<course_id>\d+)/$', views.api_start_quiz),  # First time start (shows intro)
-    url(r'^quiz/start/(?P<attempt_num>\d+)/(?P<module_id>\d+)/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/$', views.api_start_quiz), # Resume with attempt number
+   # for quiz functionality
+    url(r'^quiz/start/(?P<questionpaper_id>\d+)/(?P<module_id>\d+)/(?P<course_id>\d+)/$', views.api_start_quiz),  # First time start (shows intro) //  #teacher : ok
+    url(r'^quiz/start/(?P<attempt_num>\d+)/(?P<module_id>\d+)/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/$', views.api_start_quiz), # Resume with attempt number // #teacher : ok
     url(r'^quiz/quit/(?P<attempt_num>\d+)/(?P<module_id>\d+)/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/$', views.api_quit_quiz, name='api_quit_quiz'),
     url(r'^quiz/complete/$', views.api_complete_quiz, name='api_complete_quiz_error'), # Route 1: Error/generic completion (no parameters required)
     url(r'^quiz/complete/(?P<attempt_num>\d+)/(?P<module_id>\d+)/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/$', views.api_complete_quiz, name='api_complete_quiz'), # Route 2: Normal completion with all parameters
@@ -80,7 +82,17 @@ urlpatterns = [
     url(r'^quiz/skip/(?P<q_id>\d+)/(?P<attempt_num>\d+)/(?P<module_id>\d+)/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/$', views.api_skip_question, name='api_skip_question'),
     url(r'^quiz/skip/(?P<q_id>\d+)/(?P<next_q>\d+)/(?P<attempt_num>\d+)/(?P<module_id>\d+)/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/$', views.api_skip_question, name='api_skip_question_with_next'),
 
+    ##============================================================================================================================================================================================
+    ##============================================================================================================================================================================================
+    
+    
+    
+    
+    
+    
+    ##============================================================================================================================================================================================
     # Teacher APIs
+    ##============================================================================================================================================================================================
     url(r'teacher/dashboard/$', views.teacher_dashboard, name='teacher_dashboard'),
     url(r'teacher/courses/$', views.teacher_courses_list, name='teacher_courses_list'),
     url(r'teacher/courses/create/$', views.teacher_create_course, name='teacher_create_course'),
@@ -125,7 +137,7 @@ urlpatterns = [
     url(r'teacher/questions/(?P<question_id>[0-9]+)/update/$', views.teacher_update_question, name='teacher_update_question'), #ok
     url(r'teacher/questions/(?P<question_id>[0-9]+)/delete/$', views.teacher_delete_question, name='teacher_delete_question'), #ok
     url(r'teacher/questions/create/$', views.teacher_create_question, name='teacher_create_question'), #ok
-    url(r'teacher/questions/(?P<question_id>[0-9]+)/test/$', views.teacher_test_question, name='teacher_test_question'),
+    url(r'teacher/questions/(?P<question_id>[0-9]+)/test/$', views.teacher_test_question, name='teacher_test_question'),#ok
     url(r'teacher/questions/bulk-upload/$', views.bulk_upload_questions, name='bulk_upload_questions'),#ok
     url(r'teacher/questions/template/$', views.download_question_template, name='download_question_template'),#ok
 

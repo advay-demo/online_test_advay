@@ -2880,7 +2880,7 @@ def teacher_test_question(request, question_id):
     except Question.DoesNotExist:
         return Response({'error': 'Question not found'}, status=404)
     
-    trial_paper, trial_course, trial_module = test_mode(user, False, [question.id], None)
+    trial_paper, trial_course, trial_module = test_mode(user, False, [str(question.id)], None)
     trial_paper.update_total_marks()
     trial_paper.save()
     
@@ -2889,6 +2889,7 @@ def teacher_test_question(request, question_id):
         'module_id': trial_module.id,
         'course_id': trial_course.id,
     }, status=201)
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -4608,27 +4609,54 @@ def api_start_quiz(request, questionpaper_id, module_id, course_id, attempt_num=
                     'error': 'You have not completed the previous Lesson/Quiz/Exercise'
                 }, status=status.HTTP_403_FORBIDDEN)
     
-    # Update course status with current unit
     from yaksh.views import _update_unit_status
-    _update_unit_status(course_id, user, learning_unit)
+    try:
+        _update_unit_status(course_id, user, learning_unit)
+    except CourseStatus.MultipleObjectsReturned:
+        # Handle duplicate CourseStatus records
+        course_status = CourseStatus.objects.filter(
+            user=user, course_id=course_id
+        ).order_by('id').first()
+        
+        # Delete duplicates
+        CourseStatus.objects.filter(
+            user=user, course_id=course_id
+        ).exclude(id=course_status.id).delete()
+        
+        # Retry update
+        _update_unit_status(course_id, user, learning_unit)
     
     # Check if any previous attempt
     last_attempt = AnswerPaper.objects.get_user_last_attempt(
         quest_paper, user, course_id
     )
     
-    # If previous attempt is in progress, resume it
+        # If previous attempt is in progress, resume it
     if last_attempt and last_attempt.is_attempt_inprogress():
         current_q = last_attempt.current_question()
+        
+        if not current_q:
+            return Response({
+                'error': 'No questions available in this quiz'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Serialize question data with full details
+        from api.serializers import QuestionSerializer
+        question_serializer = QuestionSerializer(current_q)
+        
         return Response({
-            'status': 'resume',
-            'message': 'Resuming previous attempt',
+            'status': 'resume',  # Changed from 'resume' to 'started'
+            'message': 'Resuming previous attempt',  # Changed message
             'answerpaper_id': last_attempt.id,
             'attempt_number': last_attempt.attempt_number,
-            'current_question_id': current_q.id if current_q else None,
+            'questionpaper_id': questionpaper_id,
+            'module_id': module_id,
+            'course_id': course_id,
+            'current_question': question_serializer.data,  # Full question with test_cases and files
             'questions_answered': last_attempt.questions_answered.count(),
             'questions_unanswered': last_attempt.questions_unanswered.count(),
             'time_left': last_attempt.time_left(),
+            'is_trial_mode': is_trial_mode,
         }, status=status.HTTP_200_OK)
     
     # Determine attempt number
@@ -4679,7 +4707,40 @@ def api_start_quiz(request, questionpaper_id, module_id, course_id, attempt_num=
     
     # POST request: Create answerpaper and start quiz
     if request.method == 'POST':
-        # Get IP address
+        # RECHECK if any attempt is in progress (in case of race conditions)
+        last_attempt = AnswerPaper.objects.get_user_last_attempt(
+            quest_paper, user, course_id
+        )
+        
+        # If previous attempt is STILL in progress, resume it (don't create new one)
+        if last_attempt and last_attempt.is_attempt_inprogress():
+            current_q = last_attempt.current_question()
+            
+            if not current_q:
+                return Response({
+                    'error': 'No questions available in this quiz'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Serialize question data
+            from api.serializers import QuestionSerializer
+            question_serializer = QuestionSerializer(current_q)
+            
+            return Response({
+                'status': 'started',  # Changed from 'resume' to match your desired response
+                'message': 'Quiz started successfully',  # Changed message
+                'answerpaper_id': last_attempt.id,
+                'attempt_number': last_attempt.attempt_number,
+                'questionpaper_id': questionpaper_id,
+                'module_id': module_id,
+                'course_id': course_id,
+                'current_question': question_serializer.data,
+                'questions_answered': last_attempt.questions_answered.count(),
+                'questions_unanswered': last_attempt.questions_unanswered.count(),
+                'time_left': last_attempt.time_left(),
+                'is_trial_mode': is_trial_mode,
+            }, status=status.HTTP_201_CREATED)  # Return 201 to match new quiz start
+        
+                # Get IP address
         ip = request.META.get('REMOTE_ADDR', '0.0.0.0')
         
         # Check if user has profile
@@ -4688,8 +4749,46 @@ def api_start_quiz(request, questionpaper_id, module_id, course_id, attempt_num=
                 'error': 'You do not have a profile and cannot take the quiz!'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Create new answerpaper
-        new_paper = quest_paper.make_answerpaper(user, ip, attempt_number, course_id)
+        # Create new answerpaper with race condition handling
+        try:
+            new_paper = quest_paper.make_answerpaper(user, ip, attempt_number, course_id)
+        except IntegrityError:
+            # Race condition: Another request already created the answerpaper
+            # Fetch the newly created answerpaper and return it
+            last_attempt = AnswerPaper.objects.get_user_last_attempt(
+                quest_paper, user, course_id
+            )
+            
+            if last_attempt and last_attempt.is_attempt_inprogress():
+                current_q = last_attempt.current_question()
+                
+                if not current_q:
+                    return Response({
+                        'error': 'No questions available in this quiz'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                
+                # Serialize question data
+                from api.serializers import QuestionSerializer
+                question_serializer = QuestionSerializer(current_q)
+                
+                return Response({
+                    'status': 'started',
+                    'message': 'Quiz started successfully',
+                    'answerpaper_id': last_attempt.id,
+                    'attempt_number': last_attempt.attempt_number,
+                    'questionpaper_id': questionpaper_id,
+                    'module_id': module_id,
+                    'course_id': course_id,
+                    'current_question': question_serializer.data,
+                    'questions_answered': last_attempt.questions_answered.count(),
+                    'questions_unanswered': last_attempt.questions_unanswered.count(),
+                    'time_left': last_attempt.time_left(),
+                    'is_trial_mode': is_trial_mode,
+                }, status=status.HTTP_201_CREATED)
+            else:
+                return Response({
+                    'error': 'Failed to create or retrieve answerpaper'
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
         # Check if answerpaper was created successfully
         if new_paper.status == 'inprogress':
@@ -4723,7 +4822,6 @@ def api_start_quiz(request, questionpaper_id, module_id, course_id, attempt_num=
                 'error': 'You have already finished the quiz!',
                 'status': new_paper.status
             }, status=status.HTTP_400_BAD_REQUEST)
-
 
 @api_view(['POST', 'GET'])
 @permission_classes([IsAuthenticated])
