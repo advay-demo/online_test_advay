@@ -9,17 +9,31 @@ import {
   FaSignOutAlt,
   FaBars,
   FaTimes,
-  FaChevronDown
+  FaChevronDown,
+  FaCheck,
+  FaCheckDouble
 } from 'react-icons/fa';
 import Logo from '../ui/Logo';
 import { useStore } from '../../store/useStore';
 import { useAuthStore } from '../../store/authStore';
+import { useNotificationsStore } from '../../store/notificationsStore';
 
 const Header = ({ isAuth = false, isLanding = false }) => {
   const { theme, toggleTheme } = useStore();
   const navigate = useNavigate();
   const logout = useAuthStore((state) => state.logout);
   const user = useAuthStore((state) => state.user);
+  
+  // Notifications store
+  const { 
+    notifications, 
+    unreadCount, 
+    isLoading,
+    fetchNotifications,
+    fetchUnreadCount,
+    markAsRead,
+    markAllAsRead
+  } = useNotificationsStore();
   
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -29,11 +43,36 @@ const Header = ({ isAuth = false, isLanding = false }) => {
   const notificationRef = useRef(null);
   const mobileMenuRef = useRef(null);
 
+  // Fetch notifications on mount and periodically
+  useEffect(() => {
+    if (isAuth && user) {
+      fetchNotifications();
+      fetchUnreadCount();
+
+      // Poll for new notifications every 30 seconds
+      const interval = setInterval(() => {
+        fetchUnreadCount();
+      }, 30000);
+
+      return () => clearInterval(interval);
+    }
+  }, [isAuth, user]);
+
   const handleSignOut = async () => {
     await logout();
     setIsDropdownOpen(false);
     setIsMobileMenuOpen(false);
     navigate('/signin', { replace: true });
+  };
+
+  const handleNotificationClick = async (notification) => {
+    if (!notification.read) {
+      await markAsRead(notification.message_uid);
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    await markAllAsRead();
   };
 
   useEffect(() => {
@@ -77,15 +116,6 @@ const Header = ({ isAuth = false, isLanding = false }) => {
       )}
     </button>
   );
-
-  // Mock notifications (replace with real data)
-  const notifications = [
-    { id: 1, text: 'New assignment posted', time: '5m ago', unread: true },
-    { id: 2, text: 'Quiz results available', time: '2h ago', unread: true },
-    { id: 3, text: 'Course update', time: '1d ago', unread: false },
-  ];
-
-  const unreadCount = notifications.filter(n => n.unread).length;
 
   if (isLanding) {
     return (
@@ -176,44 +206,129 @@ const Header = ({ isAuth = false, isLanding = false }) => {
               {/* Notifications */}
               <div className="relative" ref={notificationRef}>
                 <button 
-                  onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+                  onClick={() => {
+                    setIsNotificationOpen(!isNotificationOpen);
+                    if (!isNotificationOpen) {
+                      fetchNotifications();
+                    }
+                  }}
                   className="relative p-2 sm:p-2.5 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5 active:scale-95 transition-all duration-200"
                   aria-label="Notifications"
                 >
                   <FaBell className="w-5 h-5 sm:w-6 sm:h-6" />
                   {unreadCount > 0 && (
                     <span className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-br from-red-500 to-pink-600 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-lg animate-pulse">
-                      {unreadCount}
+                      {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                   )}
                 </button>
 
                 {/* Notifications Dropdown */}
                 {isNotificationOpen && (
-                  <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-2xl shadow-2xl overflow-hidden z-50 animate-in slide-in-from-top-2 duration-200">
-                    <div className="px-4 py-3 border-b border-[var(--border-subtle)] bg-gradient-to-r from-purple-500/10 to-pink-500/10">
-                      <h3 className="font-semibold text-[var(--text-primary)]">Notifications</h3>
-                    </div>
-                    <div className="max-h-96 overflow-y-auto">
-                      {notifications.map((notif) => (
-                        <div
-                          key={notif.id}
-                          className={`px-4 py-3 hover:bg-white/5 transition-colors cursor-pointer border-l-2 ${
-                            notif.unread 
-                              ? 'border-purple-500 bg-purple-500/5' 
-                              : 'border-transparent'
-                          }`}
+                  <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-2xl shadow-2xl overflow-hidden z-50 animate-in slide-in-from-top-2 duration-200">
+                    
+                    {/* Header */}
+                    <div className="px-4 py-3 border-b border-[var(--border-subtle)] bg-gradient-to-r from-purple-500/10 to-pink-500/10 flex items-center justify-between">
+                      <h3 className="font-semibold text-[var(--text-primary)]">
+                        Notifications {unreadCount > 0 && `(${unreadCount})`}
+                      </h3>
+                      {notifications.length > 0 && unreadCount > 0 && (
+                        <button
+                          onClick={handleMarkAllAsRead}
+                          className="text-xs text-purple-500 hover:text-purple-400 font-medium transition-colors flex items-center gap-1"
                         >
-                          <p className="text-sm text-[var(--text-primary)] mb-1">{notif.text}</p>
-                          <span className="text-xs text-[var(--text-secondary)]">{notif.time}</span>
+                          <FaCheckDouble className="w-3 h-3" />
+                          Mark all read
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Notifications List */}
+                    <div className="max-h-96 overflow-y-auto">
+                      {isLoading ? (
+                        <div className="px-4 py-8 text-center">
+                          <div className="inline-block w-8 h-8 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin"></div>
+                          <p className="text-sm text-[var(--text-secondary)] mt-2">Loading...</p>
                         </div>
-                      ))}
+                      ) : notifications.length === 0 ? (
+                        <div className="px-4 py-8 text-center">
+                          <FaBell className="w-12 h-12 mx-auto text-[var(--text-secondary)] opacity-30 mb-2" />
+                          <p className="text-sm text-[var(--text-secondary)]">No notifications yet</p>
+                        </div>
+                      ) : (
+                        notifications.map((notif) => (
+                          <div
+                            key={notif.message_uid}
+                            onClick={() => handleNotificationClick(notif)}
+                            className={`px-4 py-3 hover:bg-white/5 transition-colors cursor-pointer border-l-2 ${
+                              !notif.read 
+                                ? 'border-purple-500 bg-purple-500/5' 
+                                : 'border-transparent'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-[var(--text-primary)] mb-1 line-clamp-2">
+                                  {notif.summary}
+                                </p>
+                                {notif.description && (
+                                  <p className="text-xs text-[var(--text-secondary)] mb-2 line-clamp-2">
+                                    {notif.description}
+                                  </p>
+                                )}
+                                <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+                                  {notif.sender_name && (
+                                    <span className="flex items-center gap-1">
+                                      <FaUser className="w-3 h-3" />
+                                      {notif.sender_name}
+                                    </span>
+                                  )}
+                                  <span>•</span>
+                                  <span>{notif.time_since} ago</span>
+                                </div>
+                              </div>
+                              {!notif.read && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    markAsRead(notif.message_uid);
+                                  }}
+                                  className="p-1.5 rounded-lg hover:bg-purple-500/20 text-purple-500 transition-colors flex-shrink-0"
+                                  title="Mark as read"
+                                >
+                                  <FaCheck className="w-3 h-3" />
+                                </button>
+                              )}
+                            </div>
+                            {notif.message_type && (
+                              <span className={`inline-block mt-2 px-2 py-0.5 text-xs rounded-full ${
+                                notif.message_type === 'success' ? 'bg-green-500/20 text-green-400' :
+                                notif.message_type === 'warning' ? 'bg-yellow-500/20 text-yellow-400' :
+                                notif.message_type === 'danger' ? 'bg-red-500/20 text-red-400' :
+                                'bg-blue-500/20 text-blue-400'
+                              }`}>
+                                {notif.message_type}
+                              </span>
+                            )}
+                          </div>
+                        ))
+                      )}
                     </div>
-                    <div className="px-4 py-3 border-t border-[var(--border-subtle)] text-center">
-                      <button className="text-sm text-purple-500 hover:text-purple-400 font-medium transition-colors">
-                        View All Notifications
-                      </button>
-                    </div>
+
+                    {/* Footer */}
+                    {notifications.length > 0 && (
+                      <div className="px-4 py-3 border-t border-[var(--border-subtle)] text-center">
+                        <button 
+                          onClick={() => {
+                            setIsNotificationOpen(false);
+                            navigate('/notifications');
+                          }}
+                          className="text-sm text-purple-500 hover:text-purple-400 font-medium transition-colors"
+                        >
+                          View All Notifications
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

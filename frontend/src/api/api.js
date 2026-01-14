@@ -155,6 +155,42 @@ export const fetchAchievements = async () => {
   return response.data;
 };
 
+// ============================================================
+// NOTIFICATION APIs (Common for both students and teachers)
+// ============================================================
+
+export const getNotifications = async () => {
+  const response = await api.get('/api/notifications/');
+  return response.data;
+};
+
+export const getUnreadNotificationsCount = async () => {
+  const response = await api.get('/api/notifications/unread/count/');
+  return response.data;
+};
+
+export const markNotificationRead = async (messageUid) => {
+  const response = await api.post(`/api/notifications/${messageUid}/mark-read/`);
+  return response.data;
+};
+
+export const markAllNotificationsRead = async () => {
+  const response = await api.post('/api/notifications/mark-all-read/');
+  return response.data;
+};
+
+export const markBulkNotificationsRead = async (messageUids) => {
+  const response = await api.post('/api/notifications/mark-bulk-read/', {
+    message_uids: messageUids
+  });
+  return response.data;
+};
+
+// ============================================================
+// ============================================================
+
+
+
 
 
 // ============================================================

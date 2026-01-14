@@ -82,6 +82,14 @@ urlpatterns = [
     url(r'^quiz/skip/(?P<q_id>\d+)/(?P<attempt_num>\d+)/(?P<module_id>\d+)/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/$', views.api_skip_question, name='api_skip_question'),
     url(r'^quiz/skip/(?P<q_id>\d+)/(?P<next_q>\d+)/(?P<attempt_num>\d+)/(?P<module_id>\d+)/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/$', views.api_skip_question, name='api_skip_question_with_next'),
 
+
+    # Notification endpoints (Common for both students and teachers)
+    url(r'^notifications/$', views.get_notifications, name='api_get_notifications'),
+    url(r'^notifications/unread/count/$', views.get_unread_notifications_count, name='api_unread_notifications_count'),
+    url(r'^notifications/(?P<message_uid>[0-9a-f-]+)/mark-read/$', views.mark_notification_read, name='api_mark_notification_read'),
+    url(r'^notifications/mark-all-read/$', views.mark_all_notifications_read, name='api_mark_all_notifications_read'),
+    url(r'^notifications/mark-bulk-read/$', views.mark_bulk_notifications_read, name='api_mark_bulk_notifications_read'),
+    
     ##============================================================================================================================================================================================
     ##============================================================================================================================================================================================
     

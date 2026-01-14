@@ -235,7 +235,7 @@ useEffect(() => {
             }).flat();
         }
         
-        // For arrange type, each test case IS an option
+        
         if (questionType === 'arrange') {
             return currentQuestion.test_cases.map(tc => tc.options);
         }
@@ -246,15 +246,25 @@ useEffect(() => {
     const [draggableOptions, setDraggableOptions] = useState([]);
     const [draggedIndex, setDraggedIndex] = useState(null);
 
-    // Initialize draggable options for arrange type questions
+    //  useEffect for arrange type initialization
     useEffect(() => {
         if (currentQuestion?.type === 'arrange') {
             const options = getQuestionOptions();
             setDraggableOptions(options);
-            // Initialize userAnswer with sequential order
-            if (!userAnswer) {
+            // Initialize userAnswer with sequential order (1,2,3,...)
+            if (!userAnswer || userAnswer === '') {
                 const initialOrder = options.map((_, idx) => idx + 1).join(',');
                 setUserAnswer(initialOrder);
+            } else {
+                // If userAnswer exists, reconstruct draggableOptions from it
+                const indices = userAnswer.split(',').map(n => parseInt(n.trim()) - 1);
+                if (indices.length === options.length && 
+                    indices.every(idx => !isNaN(idx) && idx >= 0 && idx < options.length)) {
+                    const reordered = indices.map(idx => options[idx]);
+                    if (reordered.every(item => item !== undefined)) {
+                        setDraggableOptions(reordered);
+                    }
+                }
             }
         }
     }, [currentQuestion]);
@@ -271,6 +281,7 @@ useEffect(() => {
         e.dataTransfer.dropEffect = 'move';
     };
 
+    //  handleDrop function
     const handleDrop = (e, dropIndex) => {
         e.preventDefault();
         
@@ -291,16 +302,19 @@ useEffect(() => {
         setDraggableOptions(newOptions);
         setDraggedIndex(null);
         
-        // Update userAnswer with new order (1-based indices)
-        const newOrder = newOptions.map((_, idx) => idx + 1).join(',');
+        // Update userAnswer with the original indices of items in new order
+        const originalOptions = getQuestionOptions();
+        const newOrder = newOptions.map(option => {
+            const originalIndex = originalOptions.findIndex(opt => opt === option);
+            return originalIndex + 1; // 1-based index
+        }).join(',');
+        
         handleAnswerChange(newOrder);
     };
 
     const handleDragEnd = () => {
         setDraggedIndex(null);
     };
-
-
 
 
     
@@ -587,73 +601,71 @@ useEffect(() => {
                     <div className="flex items-start gap-3 p-4 bg-blue-500/5 border border-blue-500/20 rounded-lg">
                         <FaLightbulb className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
                         <p className="text-sm text-blue-300">
-                            Drag items to reorder them, or enter the correct order as comma-separated numbers (e.g., "2,1,3")
+                            Drag items to reorder them. The order will be saved as comma-separated numbers representing the original position of each item.
                         </p>
                     </div>
 
                     {/* Draggable Items */}
                     <div className="space-y-3">
-                        {draggableOptions.map((option, idx) => (
-                            <div
-                                key={idx}
-                                className={`group flex items-center gap-4 p-4 rounded-lg bg-cyan-500/5 border-2 transition-all cursor-move ${
-                                    draggedIndex === idx 
-                                        ? 'border-cyan-400 opacity-50 scale-95' 
-                                        : 'border-cyan-500/20 hover:border-cyan-500/40'
-                                }`}
-                                draggable
-                                onDragStart={(e) => handleDragStart(e, idx)}
-                                onDragOver={handleDragOver}
-                                onDrop={(e) => handleDrop(e, idx)}
-                                onDragEnd={handleDragEnd}
-                            >
-                                <div className="flex items-center gap-3 flex-shrink-0">
-                                    <div className="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center">
-                                        <span className="text-sm font-bold text-cyan-400">{idx + 1}</span>
+                        {draggableOptions.map((option, idx) => {
+                            // Find the original index of this option
+                            const originalIndex = options.findIndex(opt => opt === option);
+                            
+                            return (
+                                <div
+                                    key={`${originalIndex}-${idx}`}
+                                    className={`group flex items-center gap-4 p-4 rounded-lg bg-cyan-500/5 border-2 transition-all cursor-move ${
+                                        draggedIndex === idx 
+                                            ? 'border-cyan-400 opacity-50 scale-95' 
+                                            : 'border-cyan-500/20 hover:border-cyan-500/40'
+                                    }`}
+                                    draggable
+                                    onDragStart={(e) => handleDragStart(e, idx)}
+                                    onDragOver={handleDragOver}
+                                    onDrop={(e) => handleDrop(e, idx)}
+                                    onDragEnd={handleDragEnd}
+                                >
+                                    <div className="flex items-center gap-3 flex-shrink-0">
+                                        <div className="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center">
+                                            <span className="text-sm font-bold text-cyan-400">{idx + 1}</span>
+                                        </div>
+                                        <div className="flex flex-col gap-0.5">
+                                            <div className="w-1 h-1 rounded-full bg-gray-500"></div>
+                                            <div className="w-1 h-1 rounded-full bg-gray-500"></div>
+                                            <div className="w-1 h-1 rounded-full bg-gray-500"></div>
+                                        </div>
                                     </div>
-                                    <div className="flex flex-col gap-0.5">
-                                        <div className="w-1 h-1 rounded-full bg-gray-500"></div>
-                                        <div className="w-1 h-1 rounded-full bg-gray-500"></div>
-                                        <div className="w-1 h-1 rounded-full bg-gray-500"></div>
+                                    <div className="flex-1">
+                                        <pre className="text-sm leading-relaxed text-gray-200 font-mono whitespace-pre-wrap break-all">
+                                            {option}
+                                        </pre>
+                                        <span className="text-xs text-gray-500 mt-1 block">
+                                            Original position: {originalIndex + 1}
+                                        </span>
                                     </div>
                                 </div>
-                                <pre className="text-sm flex-1 leading-relaxed text-gray-200 font-mono whitespace-pre-wrap break-all">
-                                    {option}
-                                </pre>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
 
-                    {/* Order Input - Manual Override */}
+                    {/* Current Order Display */}
                     <div className="relative">
                         <label className="text-xs text-gray-400 mb-2 block flex items-center gap-2">
-                            <span>Manual Order Entry</span>
-                            <span className="text-[10px] px-2 py-0.5 rounded bg-blue-500/20 text-blue-400">Optional</span>
+                            <span>Current Order (Original Positions)</span>
+                            <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-400">Read-only</span>
                         </label>
                         <input
                             type="text"
-                            className="w-full px-5 py-4 rounded-lg text-base font-mono bg-[var(--input-bg)] border-2 border-[var(--border-color)] focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10 transition-all placeholder:text-gray-500"
-                            placeholder="e.g., 2,1,3 (or drag items above)"
+                            className="w-full px-5 py-4 rounded-lg text-base font-mono bg-[var(--input-bg)] border-2 border-[var(--border-color)] text-gray-400 cursor-not-allowed"
                             value={userAnswer}
-                            onChange={(e) => {
-                                const value = e.target.value;
-                                handleAnswerChange(value);
-                                
-                                // Sync draggable items when manually typing valid order
-                                const indices = value.split(',').map(n => parseInt(n.trim()) - 1);
-                                if (indices.length === draggableOptions.length && 
-                                    indices.every((idx, i) => !isNaN(idx) && idx >= 0 && idx < draggableOptions.length)) {
-                                    const reordered = indices.map(idx => options[idx]);
-                                    if (reordered.every(item => item !== undefined)) {
-                                        setDraggableOptions(reordered);
-                                    }
-                                }
-                            }}
+                            readOnly
                         />
+                        <p className="text-xs text-gray-500 mt-2">
+                            This shows the original position numbers in your current arrangement. Drag items above to change the order.
+                        </p>
                     </div>
                 </div>
             );
-
 
         case 'assignment_upload':
             return (
@@ -1095,7 +1107,7 @@ useEffect(() => {
                                         resetQuiz();
                                         navigate('/teacher/questions');
                                     }}
-                                    className="w-10 h-10 rounded-full bg-[var(--input-bg)] border border-[var(--border-color)] flex items-center justify-center hover:bg-[var(--border-subtle)] active:scale-95 transition-all flex-shrink-0"
+                                    className="w-10 h-10 rounded-lg bg-[var(--input-bg)] border border-[var(--border-color)] flex items-center justify-center hover:bg-[var(--border-subtle)] hover:border-purple-500/30 active:scale-95 transition-all flex-shrink-0"
                                 >
                                     <svg
                                         className="w-5 h-5"
@@ -1144,7 +1156,7 @@ useEffect(() => {
                                 {/* Question header */}
                                 <div className="mb-6">
                                     <div className="flex items-start justify-between gap-4 mb-4">
-                                        <h3 className="text-xl sm:text-2xl font-bold flex-1">
+                                        <h3 className="text-xl sm:text-2xl font-bold flex-1 leading-tight">
                                             {currentQuestion.summary}
                                         </h3>
                                         <div className="px-4 py-2 bg-cyan-500/10 border border-cyan-500/30 rounded-lg flex-shrink-0">
@@ -1174,10 +1186,10 @@ useEffect(() => {
                                     </div>
 
                                     {answerResult && (
-                                        <div className="mb-4 p-4 bg-gradient-to-r from-orange-500/10 to-amber-500/10 border-l-4 border-orange-500 rounded-r-lg flex items-start gap-3">
+                                        <div className="mb-4 p-4 bg-orange-500/5 border-l-4 border-orange-500 rounded-r-lg flex items-start gap-3">
                                             <AiOutlineWarning className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" />
                                             <div>
-                                                <p className="text-sm font-bold text-orange-400 uppercase mb-1">Important Notice</p>
+                                                <p className="text-sm font-bold text-orange-400 mb-1">Important Notice</p>
                                                 <p className="text-xs text-orange-300/90">Last submitted answer is considered for evaluation</p>
                                             </div>
                                         </div>
@@ -1194,40 +1206,39 @@ useEffect(() => {
                                     </div>
                                 )}
 
-                                {/*Available files */}
+                                {/* Available files */}
                                 {currentQuestion.files && currentQuestion.files.length > 0 && (
-                                    <div className="mb-6 relative overflow-hidden bg-gradient-to-br from-cyan-500/5 to-blue-500/5 rounded-xl p-5 border border-cyan-500/20">
-                                        <div className="absolute bottom-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-3xl"></div>
-                                        <div className="relative">
-                                            <div className="flex items-center gap-3 mb-4">
-                                                <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
-                                                    <FaExternalLinkAlt className="w-5 h-5 text-cyan-400" />
-                                                </div>
-                                                <div>
-                                                    <h3 className="text-base font-bold text-cyan-400">Files</h3>
-                                                    <p className="text-xs text-cyan-300/70">{currentQuestion.files.length} file{currentQuestion.files.length !== 1 ? 's' : ''} available</p>
-                                                </div>
+                                    <div className="mb-6 bg-cyan-500/5 rounded-lg p-5 border border-cyan-500/20">
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <div className="w-10 h-10 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
+                                                <FaExternalLinkAlt className="w-5 h-5 text-cyan-400" />
                                             </div>
-                                            <div className="space-y-2">
-                                                {currentQuestion.files.map((file) => (
-                                                    <a
-                                                        key={file.id}
-                                                        href={file.url.startsWith('http') 
-                                                            ? file.url 
-                                                            : `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}${file.url}`
-                                                        }
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="group flex items-center justify-between p-3 bg-black/20 hover:bg-black/30 border border-cyan-500/20 hover:border-cyan-500/40 rounded-lg transition-all duration-200"
-                                                    >
-                                                        <div className="flex items-center gap-2">
+                                            <div>
+                                                <h3 className="text-base font-bold text-cyan-400">Attached Files</h3>
+                                                <p className="text-xs text-cyan-300/70">{currentQuestion.files.length} file{currentQuestion.files.length !== 1 ? 's' : ''} available</p>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            {currentQuestion.files.map((file) => (
+                                                <a
+                                                    key={file.id}
+                                                    href={file.url.startsWith('http') 
+                                                        ? file.url 
+                                                        : `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}${file.url}`
+                                                    }
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="group flex items-center justify-between p-3 bg-black/20 hover:bg-black/30 border border-cyan-500/20 hover:border-cyan-500/40 rounded-lg transition-all"
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-9 h-9 rounded-lg bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
                                                             <FaFileAlt className="w-4 h-4 text-cyan-400" />
-                                                            <span className="text-sm font-medium text-cyan-300 group-hover:text-cyan-200">{file.name}</span>
                                                         </div>
-                                                    
-                                                    </a>
-                                                ))}
-                                            </div>
+                                                        <span className="text-sm font-medium text-cyan-300 group-hover:text-cyan-200">{file.name}</span>
+                                                    </div>
+                                                    <FaExternalLinkAlt className="w-3.5 h-3.5 text-cyan-400 opacity-50 group-hover:opacity-100" />
+                                                </a>
+                                            ))}
                                         </div>
                                     </div>
                                 )}
@@ -1238,7 +1249,8 @@ useEffect(() => {
                                         {currentQuestion.type === 'code' ? 'Write Your Program' :
                                             currentQuestion.type === 'mcq' ? 'Select One Answer' :
                                                 currentQuestion.type === 'mcc' ? 'Select All Correct Answers' :
-                                                    'Enter Your Answer'}
+                                                    currentQuestion.type === 'arrange' ? 'Arrange in Correct Order' :
+                                                        'Enter Your Answer'}
                                     </label>
                                     {renderQuestionInput()}
                                 </div>
@@ -1274,25 +1286,25 @@ useEffect(() => {
 
                                 {/* Result display */}
                                 {showResult && answerResult && (
-                                    <div className={`mt-6 relative overflow-hidden rounded-xl p-6 border-2 ${
+                                    <div className={`mt-6 rounded-lg p-6 border ${
                                         answerResult.success 
-                                            ? 'bg-gradient-to-br from-green-500/10 to-emerald-500/5 border-green-500/60' 
-                                            : 'bg-gradient-to-br from-red-500/10 to-rose-500/5 border-red-500/60'
+                                            ? 'bg-green-500/5 border-green-500/30' 
+                                            : 'bg-red-500/5 border-red-500/30'
                                     }`}>
-                                        <div className="relative flex items-start gap-4">
-                                            <div className={`w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                                        <div className="flex items-start gap-4">
+                                            <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${
                                                 answerResult.success 
-                                                    ? 'bg-green-500/20 border-2 border-green-500/40' 
-                                                    : 'bg-red-500/20 border-2 border-red-500/40'
+                                                    ? 'bg-green-500/20 border border-green-500/40' 
+                                                    : 'bg-red-500/20 border border-red-500/40'
                                             }`}>
                                                 {answerResult.success ? (
-                                                    <FaCheckCircle className="w-7 h-7 text-green-400" />
+                                                    <FaCheckCircle className="w-6 h-6 text-green-400" />
                                                 ) : (
-                                                    <FaTimes className="w-7 h-7 text-red-400" />
+                                                    <FaTimes className="w-6 h-6 text-red-400" />
                                                 )}
                                             </div>
                                             <div className="flex-1">
-                                                <h3 className={`text-xl font-bold mb-2 ${
+                                                <h3 className={`text-lg font-bold mb-2 ${
                                                     answerResult.success ? 'text-green-400' : 'text-red-400'
                                                 }`}>
                                                     {answerResult.success ? 'Correct Answer! 🎉' : 'Incorrect Answer'}
@@ -1309,7 +1321,7 @@ useEffect(() => {
                             </div>
                         ) : (
                             <div className="p-12 text-center">
-                                <div className="w-16 h-16 bg-white/5 rounded-xl border border-white/10 flex items-center justify-center mx-auto mb-4">
+                                <div className="w-16 h-16 bg-white/5 rounded-lg border border-white/10 flex items-center justify-center mx-auto mb-4">
                                     <AiOutlineWarning className="w-8 h-8 muted" />
                                 </div>
                                 <p className="text-base muted mb-6">No question available</p>

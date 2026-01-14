@@ -5,6 +5,37 @@ from yaksh.models import (
     Badge, UserBadge, BadgeProgress, UserStats, DailyActivity, UserActivity, Post, Comment, User
 )
 from grades.models import GradingSystem, GradeRange
+from notifications_plugin.models import Notification
+
+
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    """Serializer for Notification model"""
+    message_uid = serializers.CharField(source='message.uid', read_only=True)
+    sender_name = serializers.CharField(source='message.creator.get_full_name', read_only=True)
+    sender_username = serializers.CharField(source='message.creator.username', read_only=True)
+    summary = serializers.CharField(source='message.summary', read_only=True)
+    description = serializers.CharField(source='message.description', read_only=True)
+    message_type = serializers.CharField(source='message.message_type', read_only=True)
+    time_since = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Notification
+        fields = [
+            'message_uid', 'sender_name', 'sender_username',
+            'summary', 'description', 'message_type', 
+            'timestamp', 'read', 'time_since'
+        ]
+        read_only_fields = ['message_uid', 'timestamp']
+    
+    def get_time_since(self, obj):
+        """Get human-readable time since notification was created"""
+        from django.utils.timesince import timesince
+        return timesince(obj.timestamp)
+
+
+
 
 
 class GradeRangeSerializer(serializers.ModelSerializer):

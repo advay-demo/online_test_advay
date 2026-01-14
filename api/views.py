@@ -59,6 +59,9 @@ from api.serializers import PostSerializer, CommentSerializer
 from rest_framework import generics, permissions
 from django.contrib.contenttypes.models import ContentType
 
+from notifications_plugin.models import Notification
+from api.serializers import NotificationSerializer
+
 import json
 import os
 import ruamel.yaml
@@ -306,6 +309,172 @@ def update_user_profile(request):
         return Response({'error': 'User not found'},
                         status=status.HTTP_404_NOT_FOUND)
 
+
+
+# ============================================================
+#  NOTIFICATION APIs (Common for both students and teachers)
+# ============================================================
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_notifications(request):
+    """
+    Get notifications for the authenticated user
+    
+    Query params:
+    - limit: Number of notifications to return (default: all)
+    - include_read: Include read notifications (default: false)
+    """
+    user = request.user
+    include_read = request.GET.get('include_read', 'false').lower() == 'true'
+    limit = request.GET.get('limit', None)
+    
+    try:
+        if include_read:
+            notifications = Notification.objects.filter(receiver=user).order_by('-created_at')
+        else:
+            notifications = Notification.objects.get_unread_receiver_notifications(user.id)
+        
+        if limit:
+            try:
+                limit = int(limit)
+                notifications = notifications[:limit]
+            except ValueError:
+                pass
+        
+        serializer = NotificationSerializer(notifications, many=True)
+        
+        return Response({
+            'success': True,
+            'count': len(serializer.data),
+            'notifications': serializer.data,
+            'is_moderator': is_moderator(user)
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_unread_notifications_count(request):
+    """Get count of unread notifications for the authenticated user"""
+    user = request.user
+    
+    try:
+        unread_count = Notification.objects.get_unread_receiver_notifications(user.id).count()
+        
+        return Response({
+            'success': True,
+            'unread_count': unread_count
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def mark_notification_read(request, message_uid):
+    """
+    Mark a single notification as read
+    
+    URL params:
+    - message_uid: UUID of the notification to mark as read
+    """
+    user = request.user
+    
+    try:
+        Notification.objects.mark_single_notification(
+            user.id, message_uid, True
+        )
+        
+        return Response({
+            'success': True,
+            'message': 'Notification marked as read'
+        }, status=status.HTTP_200_OK)
+        
+    except Notification.DoesNotExist:
+        return Response({
+            'success': False,
+            'error': 'Notification not found'
+        }, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def mark_all_notifications_read(request):
+    """Mark all unread notifications as read for the authenticated user"""
+    user = request.user
+    
+    try:
+        unread_notifications = Notification.objects.get_unread_receiver_notifications(user.id)
+        msg_uuids = [str(notif.message.uid) for notif in unread_notifications]
+        
+        if msg_uuids:
+            Notification.objects.mark_bulk_msg_notifications(
+                user.id, msg_uuids, True
+            )
+        
+        return Response({
+            'success': True,
+            'message': f'Marked {len(msg_uuids)} notification(s) as read',
+            'count': len(msg_uuids)
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def mark_bulk_notifications_read(request):
+    """
+    Mark multiple specific notifications as read
+    
+    Request body:
+    {
+        "notification_uids": ["uuid1", "uuid2", "uuid3"]
+    }
+    """
+    user = request.user
+    notification_uids = request.data.get('notification_uids', [])
+    
+    if not notification_uids:
+        return Response({
+            'success': False,
+            'error': 'No notification UIDs provided'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        Notification.objects.mark_bulk_msg_notifications(
+            user.id, notification_uids, True
+        )
+        
+        return Response({
+            'success': True,
+            'message': f'Marked {len(notification_uids)} notification(s) as read',
+            'count': len(notification_uids)
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # ============================================================
 #  ORIGINAL FOSSEE API VIEWS (UNCHANGED)
