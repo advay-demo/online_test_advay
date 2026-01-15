@@ -2,9 +2,40 @@ from rest_framework import serializers
 from yaksh.models import (
     Question, Quiz, QuestionPaper, AnswerPaper, Course,
     LearningModule, LearningUnit, Lesson, CourseStatus,
-    Badge, UserBadge, BadgeProgress, UserStats, DailyActivity, UserActivity, Post, Comment
+    Badge, UserBadge, BadgeProgress, UserStats, DailyActivity, UserActivity, Post, Comment, User, Profile
 )
 from grades.models import GradingSystem, GradeRange
+from notifications_plugin.models import Notification
+
+
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    """Serializer for Notification model"""
+    message_uid = serializers.CharField(source='message.uid', read_only=True)
+    sender_name = serializers.CharField(source='message.creator.get_full_name', read_only=True)
+    sender_username = serializers.CharField(source='message.creator.username', read_only=True)
+    summary = serializers.CharField(source='message.summary', read_only=True)
+    description = serializers.CharField(source='message.description', read_only=True)
+    message_type = serializers.CharField(source='message.message_type', read_only=True)
+    time_since = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Notification
+        fields = [
+            'message_uid', 'sender_name', 'sender_username',
+            'summary', 'description', 'message_type', 
+            'timestamp', 'read', 'time_since'
+        ]
+        read_only_fields = ['message_uid', 'timestamp']
+    
+    def get_time_since(self, obj):
+        """Get human-readable time since notification was created"""
+        from django.utils.timesince import timesince
+        return timesince(obj.timestamp)
+
+
+
 
 
 class GradeRangeSerializer(serializers.ModelSerializer):
@@ -60,22 +91,123 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 
-
+class ProfileSerializer(serializers.ModelSerializer):
+    """Serializer for user profile with nested user fields"""
+    first_name = serializers.CharField(source='user.first_name', required=False)
+    last_name = serializers.CharField(source='user.last_name', required=False)
+    email = serializers.EmailField(source='user.email', required=False)
+    username = serializers.CharField(source='user.username', read_only=True)
+    user_id = serializers.IntegerField(source='user.id', read_only=True)
+    is_moderator = serializers.BooleanField(read_only=True)
+    email_verified = serializers.BooleanField(source='is_email_verified', read_only=True)
+    
+    class Meta:
+        model = Profile
+        fields = [
+            'user_id', 'username', 'email', 'first_name', 'last_name',
+            'roll_number', 'institute', 'department', 'position',
+            'bio', 'phone', 'city', 'country', 'linkedin', 'github',
+            'display_name', 'timezone', 'is_moderator', 'email_verified'
+        ]
+        read_only_fields = ['user_id', 'username', 'is_moderator', 'email_verified']
+    
+    def validate_email(self, value):
+        """Validate that email is unique"""
+        user = self.context['request'].user
+        if User.objects.filter(email=value).exclude(id=user.id).exists():
+            raise serializers.ValidationError("This email is already in use.")
+        return value
+    
+    def update(self, instance, validated_data):
+        """Update both User and Profile models"""
+        user_data = validated_data.pop('user', {})
+        user = instance.user
+        
+        # Update User fields
+        if 'first_name' in user_data:
+            user.first_name = user_data['first_name']
+        if 'last_name' in user_data:
+            user.last_name = user_data['last_name']
+        if 'email' in user_data:
+            user.email = user_data['email']
+        user.save()
+        
+        # Update Profile fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        
+        return instance
         
 
 class QuestionSerializer(serializers.ModelSerializer):
     test_cases = serializers.SerializerMethodField()
+    files = serializers.SerializerMethodField()
+
+    def to_bool(self, val):
+        if isinstance(val, bool):
+            return val
+        if isinstance(val, str):
+            return val.lower() == "true"
+        return bool(val)  
 
     def get_test_cases(self, obj):
         try:
-            test_cases = obj.get_test_cases_as_dict()
-            return test_cases
+            return obj.get_test_cases_as_dict()
         except Exception:
             return []
 
+    def get_files(self, obj):  
+        import os
+        from yaksh.models import FileUpload
+        files = []
+        request = self.context.get('request')  # Get request from context
+        for f in FileUpload.objects.filter(question=obj):
+            # Build absolute URL if request is available
+            if request and hasattr(f.file, 'url'):
+                file_url = request.build_absolute_uri(f.file.url)
+            else:
+                file_url = f.file.url if hasattr(f.file, "url") else ""
+            
+            files.append({
+                "id": f.id,
+                "name": os.path.basename(f.file.name),
+                "url": file_url,
+                "extract": f.extract,
+                "hide": f.hide,
+            })
+        return files
+
+    def update(self, instance, validated_data):
+        # Update Question fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        # Update FileUpload extract/hide if files data is present
+        files_data = self.initial_data.get("files")
+        if files_data:
+            from yaksh.models import FileUpload
+            for file_data in files_data:
+                file_id = file_data.get("id")
+                if file_id is not None:
+                    try:
+                        file_obj = FileUpload.objects.get(id=file_id, question=instance)
+                        # Coerce to bool in case frontend sends as string
+                        extract = file_data.get("extract")
+                        hide = file_data.get("hide")
+                        if extract is not None:
+                            file_obj.extract = str(extract).lower() == "true" if isinstance(extract, str) else bool(extract)
+                        if hide is not None:
+                            file_obj.hide = str(hide).lower() == "true" if isinstance(hide, str) else bool(hide)
+                        file_obj.save()
+                    except FileUpload.DoesNotExist:
+                        continue
+        return instance    
+
     class Meta:
         model = Question
-        exclude = ('partial_grading', )
+        fields = '__all__'
 
 
 class QuizSerializer(serializers.ModelSerializer):
@@ -528,3 +660,10 @@ class MinimalLearningUnitSerializer(serializers.ModelSerializer):
     class Meta:
         model = LearningUnit
         fields = ['id', 'type', 'order', 'display_name', 'check_prerequisite']                   
+
+
+
+class SimpleUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'first_name', 'last_name']

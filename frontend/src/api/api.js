@@ -8,7 +8,6 @@ const api = axios.create({
   },
 });
 
-// Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('authToken');
@@ -30,10 +29,16 @@ api.interceptors.response.use(
   },
   (error) => {
     if (error.response && error.response.status === 401) {
-      // Token expired or invalid
+      // Token expired or invalid - clear everything
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');
-      window.location.href = '/signin';
+      localStorage.removeItem('auth-storage'); // Clear zustand persist
+      
+      // Only redirect if not already on auth pages (prevent loop)
+      const currentPath = window.location.pathname;
+      if (currentPath !== '/signin' && currentPath !== '/signup' && currentPath !== '/') {
+        window.location.href = '/signin';
+      }
     }
     return Promise.reject(error);
   }
@@ -58,18 +63,6 @@ export const logout = async () => {
   return response.data;
 };
 
-export const getUserProfile = async (username) => {
-  const response = await api.get(`/api/auth/profile/?username=${username}`);
-  return response.data;
-};
-
-export const updateUserProfile = async (username, profileData) => {
-  const response = await api.post('/api/auth/profile/update/', {
-    username,
-    ...profileData
-  });
-  return response.data;
-};
 
 export const requestPasswordChange = async () => {
   const response = await api.post('/api/auth/password-change/request/');
@@ -88,6 +81,26 @@ export const confirmPasswordChange = async (otp, newPassword) => {
 // ============================================================
 // ===========================================================
 
+
+// ============================================================
+// PROFILE APIs (Common for both students and teachers)
+// ============================================================
+
+
+export const getUserProfile = async () => {
+  const response = await api.get('/api/auth/profile/');
+  return response.data;
+};
+
+export const updateUserProfile = async (profileData) => {
+  const response = await api.put('/api/auth/profile/', profileData);
+  return response.data;
+};
+
+export const patchUserProfile = async (profileData) => {
+  const response = await api.patch('/api/auth/profile/', profileData);
+  return response.data;
+};
 
 // ============================================================
 // STUDENT DASHBOARD & STATS APIs
@@ -169,10 +182,144 @@ export const fetchAchievements = async () => {
   return response.data;
 };
 
+// ============================================================
+// NOTIFICATION APIs (Common for both students and teachers)
+// ============================================================
+
+export const getNotifications = async () => {
+  const response = await api.get('/api/notifications/');
+  return response.data;
+};
+
+export const getUnreadNotificationsCount = async () => {
+  const response = await api.get('/api/notifications/unread/count/');
+  return response.data;
+};
+
+export const markNotificationRead = async (messageUid) => {
+  const response = await api.post(`/api/notifications/${messageUid}/mark-read/`);
+  return response.data;
+};
+
+export const markAllNotificationsRead = async () => {
+  const response = await api.post('/api/notifications/mark-all-read/');
+  return response.data;
+};
+
+export const markBulkNotificationsRead = async (messageUids) => {
+  const response = await api.post('/api/notifications/mark-bulk-read/', {
+    message_uids: messageUids
+  });
+  return response.data;
+};
 
 // ============================================================
-// QUIZ APIs
 // ============================================================
+
+
+
+
+
+// ============================================================
+// ============================================================
+// QUIZ INTERACTION APIs (For Taking Quizzes)
+// ============================================================
+// ============================================================
+
+
+export const apiStartQuiz = async (questionpaperId, moduleId, courseId, attemptNum = null, data = null) => {
+  let url;
+  
+  if (attemptNum) {
+    url = `/api/quiz/start/${attemptNum}/${moduleId}/${questionpaperId}/${courseId}/`;
+  } else {
+    url = `/api/quiz/start/${questionpaperId}/${moduleId}/${courseId}/`;
+  }
+  
+  if (data) {
+    const response = await api.post(url, data);
+    return response.data;
+  } else {
+    const response = await api.get(url);
+    return response.data;
+  }
+};
+
+/**
+ * Quit/abandon a quiz
+ */
+export const apiQuitQuiz = async (attemptNum, moduleId, questionpaperId, courseId, reason = null) => {
+  const url = `/api/quiz/quit/${attemptNum}/${moduleId}/${questionpaperId}/${courseId}/`;
+  
+  if (reason !== null) {
+    const response = await api.post(url, { reason });
+    return response.data;
+  } else {
+    const response = await api.get(url);
+    return response.data;
+  }
+};
+
+/**
+ * Complete/submit a quiz
+ */
+export const apiCompleteQuiz = async (attemptNum = null, moduleId = null, questionpaperId = null, courseId = null, data = null) => {
+  let url;
+  
+  if (attemptNum && moduleId && questionpaperId && courseId) {
+    url = `/api/quiz/complete/${attemptNum}/${moduleId}/${questionpaperId}/${courseId}/`;
+  } else {
+    url = `/api/quiz/complete/`;
+  }
+  
+  if (data) {
+    const response = await api.post(url, data);
+    return response.data;
+  } else {
+    const response = await api.get(url);
+    return response.data;
+  }
+};
+
+/**
+ * Submit and check an answer for a question
+ */
+export const apiCheckAnswer = async (questionId, attemptNum, moduleId, questionpaperId, courseId, answerData = null) => {
+  const url = `/api/quiz/check/${questionId}/${attemptNum}/${moduleId}/${questionpaperId}/${courseId}/`;
+  
+  if (answerData) {
+    const response = await api.post(url, answerData);
+    return response.data;
+  } else {
+    const response = await api.get(url);
+    return response.data;
+  }
+};
+
+/**
+ * Skip a question and move to the next one
+ */
+export const apiSkipQuestion = async (questionId, attemptNum, moduleId, questionpaperId, courseId, nextQuestionId = null, codeData = null) => {
+  let url;
+  
+  if (nextQuestionId) {
+    url = `/api/quiz/skip/${questionId}/${nextQuestionId}/${attemptNum}/${moduleId}/${questionpaperId}/${courseId}/`;
+  } else {
+    url = `/api/quiz/skip/${questionId}/${attemptNum}/${moduleId}/${questionpaperId}/${courseId}/`;
+  }
+  
+  if (codeData) {
+    const response = await api.post(url, codeData);
+    return response.data;
+  } else {
+    const response = await api.get(url);
+    return response.data;
+  }
+};
+
+
+// ============================================================
+
 
 export const startQuiz = async (courseId, quizId) => {
   const response = await api.get(`/api/start_quiz/${courseId}/${quizId}/`);
@@ -200,6 +347,11 @@ export const getQuizSubmissionStatus = async (answerpaperId) => {
   const response = await api.get(`/api/student/answerpapers/${answerpaperId}/submission/`);
   return response.data;
 };
+
+// =====================================================================================================================
+// =====================================================================================================================
+
+
 
 // ============================================================
 // TEACHER APIs - Content Creation
@@ -242,6 +394,43 @@ export const fetchTeacherQuizzesGrouped = async () => {
   const response = await api.get('/api/teacher/quizzes/grouped/');
   return response.data;
 };
+
+
+// ============================================================
+// GRADING SYSTEM APIs 
+// ============================================================
+
+
+export const fetchGradingSystems = async () => {
+  const response = await api.get('/api/teacher/grading-systems/');
+  return response.data;
+};
+
+export const fetchGradingSystem = async (id) => {
+  const response = await api.get(`/api/teacher/grading-systems/${id}/`);
+  return response.data;
+};
+
+export const createGradingSystem = async (data) => {
+  const response = await api.post('/api/teacher/grading-systems/', data);
+  return response.data;
+};
+
+export const updateGradingSystem = async (id, data) => {
+  const response = await api.put(`/api/teacher/grading-systems/${id}/`, data);
+  return response.data;
+};
+
+export const deleteGradingSystem = async (id) => {
+  const response = await api.delete(`/api/teacher/grading-systems/${id}/`);
+  return response.data;
+};
+
+// ============================================================
+// ============================================================
+
+
+
 
 // ============================================================
 // MODULE TAB APIs : Modules, Lessons, Quizzes, Design, Exercise
@@ -476,36 +665,6 @@ export const deleteQuiz = async (moduleId, quizId) => {
 
 
 
-// Question APIs
-export const fetchTeacherQuestions = async (filters = {}) => {
-  const params = new URLSearchParams();
-  if (filters.type) params.append('type', filters.type);
-  if (filters.language) params.append('language', filters.language);
-  if (filters.search) params.append('search', filters.search);
-  if (filters.active !== undefined) params.append('active', filters.active);
-  const response = await api.get(`/api/teacher/questions/?${params.toString()}`);
-  return response.data;
-};
-
-export const getTeacherQuestion = async (questionId) => {
-  const response = await api.get(`/api/teacher/questions/${questionId}/`);
-  return response.data;
-};
-
-export const createQuestion = async (questionData) => {
-  const response = await api.post('/api/teacher/questions/create/', questionData);
-  return response.data;
-};
-
-export const updateQuestion = async (questionId, questionData) => {
-  const response = await api.put(`/api/teacher/questions/${questionId}/update/`, questionData);
-  return response.data;
-};
-
-export const deleteQuestion = async (questionId) => {
-  const response = await api.delete(`/api/teacher/questions/${questionId}/delete/`);
-  return response.data;
-};
 
 // Quiz Question Management APIs
 export const getQuizQuestions = async (quizId) => {
@@ -533,26 +692,50 @@ export const reorderQuizQuestions = async (quizId, questionOrder) => {
   return response.data;
 };
 
-// Enrollment Management APIs
+// ===============================
+//  ENROLLMENT TAB APIs
+// ===============================
+
+// Get all enrollments (enrolled, requested, rejected) for a course
 export const getCourseEnrollments = async (courseId) => {
   const response = await api.get(`/api/teacher/courses/${courseId}/enrollments/`);
   return response.data;
 };
 
-export const approveEnrollment = async (courseId, userId) => {
-  const response = await api.post(`/api/teacher/courses/${courseId}/enrollments/${userId}/approve/`);
+// Approve enrollments (single or bulk, from requested or rejected)
+export const approveEnrollment = async (courseId, userIds, wasRejected = false) => {
+  // userIds: array of user IDs (can be single or multiple)
+  // wasRejected: true if approving from rejected list
+  const response = await api.post(`/api/teacher/courses/${courseId}/enrollments/`, {
+    user_ids: Array.isArray(userIds) ? userIds : [userIds],
+    was_rejected: wasRejected,
+  });
   return response.data;
 };
 
-export const rejectEnrollment = async (courseId, userId) => {
-  const response = await api.post(`/api/teacher/courses/${courseId}/enrollments/${userId}/reject/`);
+// Reject enrollments (single or bulk, from requested or enrolled)
+export const rejectEnrollment = async (courseId, userIds, wasEnrolled = false) => {
+  // userIds: array of user IDs (can be single or multiple)
+  // wasEnrolled: true if rejecting from enrolled list
+  const response = await api.post(`/api/teacher/courses/${courseId}/enrollments/reject/`, {
+    user_ids: Array.isArray(userIds) ? userIds : [userIds],
+    was_enrolled: wasEnrolled,
+  });
   return response.data;
 };
 
-export const removeEnrollment = async (courseId, userId) => {
-  const response = await api.delete(`/api/teacher/courses/${courseId}/enrollments/${userId}/remove/`);
+// Remove enrollments (single or bulk, from enrolled)
+export const removeEnrollment = async (courseId, userIds) => {
+  // userIds: array of user IDs (can be single or multiple)
+  const response = await api.post(`/api/teacher/courses/${courseId}/enrollments/remove/`, {
+    user_ids: Array.isArray(userIds) ? userIds : [userIds],
+  });
   return response.data;
 };
+
+// ============================================================
+// ============================================================
+
 
 // Unit Ordering APIs
 export const reorderModuleUnits = async (moduleId, unitOrders) => {
@@ -569,40 +752,12 @@ export const reorderCourseModules = async (courseId, moduleOrders) => {
   return response.data;
 };
 
-// Course Analytics API
+// ============================================================
+// ANALYTICS TAB APIs
+// ============================================================
+
 export const getCourseAnalytics = async (courseId) => {
   const response = await api.get(`/api/teacher/courses/${courseId}/analytics/`);
-  return response.data;
-};
-
-
-// ============================================================
-// GRADING SYSTEM APIs 
-// ============================================================
-
-
-export const fetchGradingSystems = async () => {
-  const response = await api.get('/api/teacher/grading-systems/');
-  return response.data;
-};
-
-export const fetchGradingSystem = async (id) => {
-  const response = await api.get(`/api/teacher/grading-systems/${id}/`);
-  return response.data;
-};
-
-export const createGradingSystem = async (data) => {
-  const response = await api.post('/api/teacher/grading-systems/', data);
-  return response.data;
-};
-
-export const updateGradingSystem = async (id, data) => {
-  const response = await api.put(`/api/teacher/grading-systems/${id}/`, data);
-  return response.data;
-};
-
-export const deleteGradingSystem = async (id) => {
-  const response = await api.delete(`/api/teacher/grading-systems/${id}/`);
   return response.data;
 };
 
@@ -759,6 +914,111 @@ export const createLessonForumPostComment = async (lessonId, postId, commentData
 
 
 
+
+// ====================================================================
+// =====================================================================
+// QUESTION MENU : Question Library, , Upload Question , Create question 
+// =====================================================================
+// ===================================================================== 
+
+
+// ===========================================
+// QUESTION LIBRARY APIs 
+// ===========================================
+
+export const fetchTeacherQuestions = async (filters = {}) => {
+  const params = new URLSearchParams();
+  if (filters.type) params.append('type', filters.type);
+  if (filters.language) params.append('language', filters.language);
+  if (filters.search) params.append('search', filters.search);
+  if (filters.active !== undefined) params.append('active', filters.active);
+  const response = await api.get(`/api/teacher/questions/?${params.toString()}`);
+  return response.data;
+};
+
+export const getTeacherQuestion = async (questionId) => {
+  const response = await api.get(`/api/teacher/questions/${questionId}/`);
+  return response.data;
+};
+
+export const deleteQuestionFile = async (fileId) => {
+  const response = await api.delete(`/api/teacher/questions/files/${fileId}/delete/`);
+  return response.data;
+};
+
+export const uploadQuestionFile = async (questionId, file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await api.post(
+    `/api/teacher/questions/${questionId}/files/upload/`,
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }
+  );
+  return response.data;
+};
+
+
+export const updateQuestion = async (questionId, questionData) => {
+  const response = await api.put(`/api/teacher/questions/${questionId}/update/`, questionData);
+  return response.data;
+};
+
+export const deleteQuestion = async (questionId) => {
+  const response = await api.delete(`/api/teacher/questions/${questionId}/delete/`);
+  return response.data;
+};
+
+// Test a question - creates a trial quiz for testing
+export const testQuestion = async (questionId) => {
+  const response = await api.post(`/api/teacher/questions/${questionId}/test/`);
+  return response.data;
+};
+
+// ===========================================
+// QUESTION Upload APIs 
+// ===========================================
+
+export const bulkUploadQuestions = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  const response = await api.post('/api/teacher/questions/bulk-upload/', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data;
+};
+
+export const downloadQuestionTemplate = async () => {
+  const response = await api.get('/api/teacher/questions/template/', {
+    responseType: 'blob',
+  });
+  
+  // Create download link
+  const url = window.URL.createObjectURL(new Blob([response.data]));
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', 'questions_dump.yaml');
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+};
+
+// ===========================================
+// CREATE QUESTION APIs 
+// ===========================================
+
+
+export const createQuestion = async (questionData) => {
+  const response = await api.post('/api/teacher/questions/create/', questionData);
+  return response.data;
+};
 
 
 

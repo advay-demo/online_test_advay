@@ -108,11 +108,11 @@ const useManageCourseStore = create((set, get) => ({
 
     enrollments: { enrolled: [], pending_requests: [], rejected: [] },
     loadingEnrollments: false,
+    enrollmentsError: null,
 
-
-
+    // Load all enrollments for a course
     loadEnrollments: async (courseId) => {
-        set({ loadingEnrollments: true });
+        set({ loadingEnrollments: true, enrollmentsError: null });
         try {
             const data = await getCourseEnrollments(courseId);
             set({
@@ -123,23 +123,51 @@ const useManageCourseStore = create((set, get) => ({
                 }
             });
         } catch (err) {
-            // ignore
+            set({ enrollmentsError: err?.response?.data?.error || 'Failed to load enrollments' });
         } finally {
             set({ loadingEnrollments: false });
         }
     },
-    handleApproveEnrollment: async (courseId, userId) => {
-        await approveEnrollment(courseId, userId);
-        get().loadEnrollments(courseId);
+
+    // Approve enrollments (single or bulk)
+    approveEnrollments: async (courseId, userIds, wasRejected = false) => {
+        set({ loadingEnrollments: true, enrollmentsError: null });
+        try {
+            await approveEnrollment(courseId, userIds, wasRejected);
+            await get().loadEnrollments(courseId);
+        } catch (err) {
+            set({ enrollmentsError: err?.response?.data?.error || 'Failed to approve enrollment' });
+        } finally {
+            set({ loadingEnrollments: false });
+        }
     },
-    handleRejectEnrollment: async (courseId, userId) => {
-        await rejectEnrollment(courseId, userId);
-        get().loadEnrollments(courseId);
+
+    // Reject enrollments (single or bulk)
+    rejectEnrollments: async (courseId, userIds, wasEnrolled = false) => {
+        set({ loadingEnrollments: true, enrollmentsError: null });
+        try {
+            await rejectEnrollment(courseId, userIds, wasEnrolled);
+            await get().loadEnrollments(courseId);
+        } catch (err) {
+            set({ enrollmentsError: err?.response?.data?.error || 'Failed to reject enrollment' });
+        } finally {
+            set({ loadingEnrollments: false });
+        }
     },
-    handleRemoveEnrollment: async (courseId, userId) => {
-        await removeEnrollment(courseId, userId);
-        get().loadEnrollments(courseId);
+
+    // Remove enrollments (single or bulk)
+    removeEnrollments: async (courseId, userIds) => {
+        set({ loadingEnrollments: true, enrollmentsError: null });
+        try {
+            await removeEnrollment(courseId, userIds);
+            await get().loadEnrollments(courseId);
+        } catch (err) {
+            set({ enrollmentsError: err?.response?.data?.error || 'Failed to remove enrollment' });
+        } finally {
+            set({ loadingEnrollments: false });
+        }
     },
+
 
     //============================================================
 

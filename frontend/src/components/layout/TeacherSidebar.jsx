@@ -15,6 +15,15 @@ const TeacherSidebar = () => {
     ];
 
     const isActive = (path) => {
+
+        if (path === '/teacher/dashboard') {
+            return (
+                location.pathname === path 
+                
+            );
+        }
+
+
         // Special handling for courses - match all course-related paths
         if (path === '/teacher/courses') {
             return (
@@ -23,6 +32,16 @@ const TeacherSidebar = () => {
                 location.pathname.startsWith('/teacher/courses') ||
                 location.pathname === '/teacher/add-course' ||
                 location.pathname === '/teacher/grading-systems'
+            );
+        }
+
+        if (path === '/teacher/questions') {
+            return (
+                location.pathname === path ||
+                location.pathname.startsWith('/teacher/question/') ||
+                location.pathname === '/teacher/add-question' ||
+                location.pathname === '/teacher/upload-question' ||
+                location.pathname.startsWith('/teacher/test-question/')
             );
         }
         // For other paths, exact match or starts with

@@ -1,16 +1,33 @@
 import React from 'react';
 import useManageCourseStore from '../../store/manageCourseStore';
 
-const CourseEnrollment = () => {
+const CourseEnrollment = ({ courseId }) => {
     const {
         enrollments,
         loadingEnrollments,
-        handleApproveEnrollment,
-        handleRejectEnrollment,
-        handleRemoveEnrollment,
+        approveEnrollments,
+        rejectEnrollments,
+        removeEnrollments,
     } = useManageCourseStore();
 
-    
+    // Single-user handlers for UI buttons
+    const handleApprove = (userId, wasRejected = false) =>
+        approveEnrollments(courseId, [userId], wasRejected);
+    const handleReject = (userId, wasEnrolled = false) =>
+        rejectEnrollments(courseId, [userId], wasEnrolled);
+    const handleRemove = (userId) =>
+        removeEnrollments(courseId, [userId]);
+
+    // ...rest of your UI code, but update button handlers:
+    // For pending requests:
+    // onClick={() => handleApprove(student.user_id)}
+    // onClick={() => handleReject(student.user_id)}
+    // For enrolled:
+    // onClick={() => handleRemove(student.user_id)}
+    // For rejected:
+    // onClick={() => handleApprove(student.user_id, true)}
+
+    // (see below for the full JSX update)
     return (
         <div>
             <div className="text-cyan-400 text-sm sm:text-base font-medium mb-6 flex items-center gap-2">
@@ -42,13 +59,13 @@ const CourseEnrollment = () => {
                                         </div>
                                         <div className="flex gap-2 flex-wrap">
                                             <button
-                                                onClick={() => handleApproveEnrollment(student.user_id)}
+                                                onClick={() => handleApprove(student.id)}
                                                 className="px-3 py-1.5 sm:px-4 sm:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-xs sm:text-sm font-medium"
                                             >
                                                 Approve
                                             </button>
                                             <button
-                                                onClick={() => handleRejectEnrollment(student.user_id)}
+                                                onClick={() => handleReject(student.id)}
                                                 className="px-3 py-1.5 sm:px-4 sm:py-2 border border-red-500/30 text-red-400 rounded-lg hover:bg-red-500/20 transition text-xs sm:text-sm font-medium"
                                             >
                                                 Reject
@@ -88,7 +105,7 @@ const CourseEnrollment = () => {
                                             </div>
                                         </div>
                                         <button
-                                            onClick={() => handleRemoveEnrollment(student.user_id)}
+                                            onClick={() => handleRemove(student.id)}
                                             className="px-3 py-1.5 sm:px-4 sm:py-2 border border-red-500/30 text-red-400 rounded-lg hover:bg-red-500/20 transition text-xs sm:text-sm font-medium"
                                         >
                                             Remove
@@ -121,7 +138,7 @@ const CourseEnrollment = () => {
                                             <p className="text-xs sm:text-sm muted">{student.username} • {student.email}</p>
                                         </div>
                                         <button
-                                            onClick={() => handleApproveEnrollment(student.user_id)}
+                                            onClick={() => handleApprove(student.id, true)}
                                             className="px-3 py-1.5 sm:px-4 sm:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-xs sm:text-sm font-medium"
                                         >
                                             Approve
