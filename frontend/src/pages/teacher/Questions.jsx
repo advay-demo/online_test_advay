@@ -252,7 +252,7 @@ const Questions = () => {
                     <QuestionActionButtons activeButton="library" />
 
                     {/* Questions Library Section */}
-                    <div className="card-strong p-4 sm:p-5 lg:p-6 min-h-[600px]">
+                    <div className="card-strong p-3 sm:p-4 lg:p-6 min-h-[400px] sm:min-h-[600px]">
                         <div className="mb-4 sm:mb-6">
                             <h2 className="text-lg sm:text-xl font-bold mb-1">Question Library</h2>
                             <p className="text-xs sm:text-sm muted">Browse and manage all your questions</p>
@@ -260,26 +260,26 @@ const Questions = () => {
 
                         {/* Filters and Search */}
                         <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3 sm:gap-4 mb-6">
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 flex-1">
-                                <div>
-                                    <label className="block text-sm font-semibold mb-2">Search</label>
+                            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4 flex-1">
+                                <div className="col-span-2 sm:col-span-2 md:col-span-1">
+                                    <label className="block text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">Search</label>
                                     <div className="relative">
-                                        <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-muted w-4 h-4" />
+                                        <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-muted w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                         <input
                                             type="text"
                                             placeholder="Search questions..."
                                             value={filters.search}
                                             onChange={(e) => setFilters({...filters, search: e.target.value})}
-                                            className="w-full pl-10 pr-4 py-2 bg-black/20 border border-white/10 rounded-lg text-sm focus:outline-none focus:border-blue-500/50"
+                                            className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 bg-black/20 border border-white/10 rounded-lg text-xs sm:text-sm focus:outline-none focus:border-blue-500/50"
                                         />
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-semibold mb-2">Type</label>
+                                    <label className="block text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">Type</label>
                                     <select
                                         value={filters.type}
                                         onChange={(e) => setFilters({...filters, type: e.target.value})}
-                                        className="w-full px-4 py-2 bg-black/20 border border-white/10 rounded-lg text-sm focus:outline-none focus:border-blue-500/50"
+                                        className="w-full px-2 sm:px-3 md:px-4 py-2 bg-black/20 border border-white/10 rounded-lg text-xs sm:text-sm focus:outline-none focus:border-blue-500/50"
                                     >
                                         <option value="">All Types</option>
                                         <option value="mcq">Single Correct Choice</option>
@@ -293,11 +293,11 @@ const Questions = () => {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-semibold mb-2">Language</label>
+                                    <label className="block text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">Language</label>
                                     <select
                                         value={filters.language}
                                         onChange={(e) => setFilters({...filters, language: e.target.value})}
-                                        className="w-full px-4 py-2 bg-black/20 border border-white/10 rounded-lg text-sm focus:outline-none focus:border-blue-500/50"
+                                        className="w-full px-2 sm:px-3 md:px-4 py-2 bg-black/20 border border-white/10 rounded-lg text-xs sm:text-sm focus:outline-none focus:border-blue-500/50"
                                     >
                                         <option value="">All Languages</option>
                                         <option value="python">Python</option>
@@ -307,15 +307,15 @@ const Questions = () => {
                                         <option value="bash">Bash</option>
                                     </select>
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-semibold mb-2">Status</label>
+                                <div className="col-span-2 sm:col-span-2 md:col-span-1">
+                                    <label className="block text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">Status</label>
                                     <select
                                         value={filters.active === undefined ? '' : filters.active.toString()}
                                         onChange={(e) => setFilters({
                                             ...filters,
                                             active: e.target.value === '' ? undefined : e.target.value === 'true'
                                         })}
-                                        className="w-full px-4 py-2 bg-black/20 border border-white/10 rounded-lg text-sm focus:outline-none focus:border-blue-500/50"
+                                        className="w-full px-2 sm:px-3 md:px-4 py-2 bg-black/20 border border-white/10 rounded-lg text-xs sm:text-sm focus:outline-none focus:border-blue-500/50"
                                     >
                                         <option value="">All</option>
                                         <option value="true">Active</option>
@@ -327,108 +327,111 @@ const Questions = () => {
 
                         {/* Loading State */}
                         {loading && (
-                            <div className="flex items-center justify-center py-12">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                            <div className="flex items-center justify-center py-8 sm:py-12">
+                                <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-500"></div>
                             </div>
                         )}
 
                         {/* Error State */}
                         {error && !loading && (
-                            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-red-300 text-center">
+                            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 sm:p-4 text-red-300 text-center text-xs sm:text-sm">
                                 {error}
                             </div>
                         )}
 
                         {/* Questions List */}
                         {!loading && !error && (
-                            <div className="space-y-4">
+                            <div className="space-y-3 sm:space-y-4">
                                 {questions.length > 0 ? (
                                     questions.map((question) => (
                                         <div
                                             key={question.id}
-                                            className="card p-4 hover:bg-white/[0.02] transition group"
+                                            className="card p-3 sm:p-4 hover:bg-white/[0.02] transition group"
                                         >
-                                            <div className="flex items-start justify-between">
-                                                <div className="flex items-start gap-4 flex-1">
-                                                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${getQuestionTypeColor(question.type)}`}>
+                                            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
+                                                {/* Icon + Content */}
+                                                <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
+                                                    <div className={`w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0 rounded-lg flex items-center justify-center ${getQuestionTypeColor(question.type)}`}>
                                                         {getQuestionTypeIcon(question.type)}
                                                     </div>
-                                                    <div className="flex-1">
-                                                        <div className="flex items-center gap-3 mb-2">
-                                                            <h3 className="font-semibold text-lg">{question.summary}</h3>
-                                                            <span className={`text-xs px-2 py-1 rounded border ${getQuestionTypeColor(question.type)} uppercase font-bold`}>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                                                            <h3 className="font-semibold text-sm sm:text-base lg:text-lg truncate">{question.summary}</h3>
+                                                            <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border ${getQuestionTypeColor(question.type)} uppercase font-bold flex-shrink-0`}>
                                                                 {question.type.toUpperCase()}
                                                             </span>
                                                             {question.active ? (
-                                                                <span className="text-xs px-2 py-1 rounded bg-green-500/20 text-green-400 border border-green-500/30">
+                                                                <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded bg-green-500/20 text-green-400 border border-green-500/30 flex-shrink-0">
                                                                     Active
                                                                 </span>
                                                             ) : (
-                                                                <span className="text-xs px-2 py-1 rounded bg-gray-500/20 text-gray-400 border-gray-500/30">
+                                                                <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded bg-gray-500/20 text-gray-400 border-gray-500/30 flex-shrink-0">
                                                                     Inactive
                                                                 </span>
                                                             )}
                                                         </div>
-                                                        <div className="flex items-center gap-4 text-sm muted">
-                                                            <span>Language: {question.language || 'N/A'}</span>
-                                                            <span>Points: {question.points}</span>
-                                                            <span>Test Cases: {question.test_cases_count}</span>
-                                                            {question.topic && <span>Topic: {question.topic}</span>}
+                                                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 lg:gap-4 text-xs sm:text-sm muted">
+                                                            <span className="whitespace-nowrap">Lang: {question.language || 'N/A'}</span>
+                                                            <span className="whitespace-nowrap">Pts: {question.points}</span>
+                                                            <span className="whitespace-nowrap">Tests: {question.test_cases_count}</span>
+                                                            {question.topic && <span className="truncate max-w-[120px] sm:max-w-none">Topic: {question.topic}</span>}
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div className="flex items-center gap-2">
-                                                    {/* Add Test Button */}
+                                                
+                                                {/* Action Buttons */}
+                                                <div className="flex items-center gap-2 sm:flex-shrink-0 self-end sm:self-start">
+                                                    {/* Test Button */}
                                                     <button
-                                                        className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                                        className="px-3 sm:px-4 py-1.5 sm:py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium"
                                                         onClick={() => handleTestQuestion(question.id)}
                                                         disabled={testingQuestionId === question.id}
                                                     >
                                                         {testingQuestionId === question.id ? (
                                                             <>
-                                                                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                                <svg className="animate-spin h-3 w-3 sm:h-4 sm:w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                                                 </svg>
-                                                                Creating...
+                                                                <span className="hidden sm:inline">Creating...</span>
                                                             </>
                                                         ) : (
                                                             <>
-                                                                <FaPlay className="w-3 h-3" />
+                                                                <FaPlay className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                                                                 Test
                                                             </>
                                                         )}
                                                     </button>
                                                     
-                                                    {/* Existing Actions Menu */}
+                                                    {/* Actions Menu */}
                                                     <div className="relative gs-action-menu">
                                                         <button
-                                                            className="p-2 border border-[var(--border-color)] rounded-lg hover:bg-[var(--input-bg)] active:scale-95 transition-all duration-200 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                                                            className="p-1.5 sm:p-2 border border-[var(--border-color)] rounded-lg hover:bg-[var(--input-bg)] active:scale-95 transition-all duration-200 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                                                             onClick={() => setActionMenuOpen(actionMenuOpen === question.id ? null : question.id)}
                                                             aria-label="Actions"
                                                             tabIndex={0}
                                                         >
-                                                            <FaEllipsisV className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                                            <FaEllipsisV className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                                                         </button>
                                                         {actionMenuOpen === question.id && (
-                                                            <div className="absolute right-0 mt-2 z-50 w-32 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg shadow-lg py-1 flex flex-col text-sm animate-fade-in">
+                                                            <div className="absolute right-0 mt-2 z-50 w-28 sm:w-32 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg shadow-lg py-1 flex flex-col text-xs sm:text-sm animate-fade-in">
                                                                 <button
-                                                                    className="flex items-center gap-2 px-4 py-2 hover:bg-blue-500/10 transition"
+                                                                    className="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 hover:bg-blue-500/10 transition"
                                                                     onClick={() => {
                                                                         setActionMenuOpen(null);
                                                                         handleEdit(question);
                                                                     }}
                                                                 >
-                                                                    <FaEdit className="w-4 h-4" /> Edit
+                                                                    <FaEdit className="w-3 h-3 sm:w-4 sm:h-4" /> Edit
                                                                 </button>
                                                                 <button
-                                                                    className="flex items-center gap-2 px-4 py-2 text-red-500 hover:bg-red-500/10 transition"
+                                                                    className="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-red-500 hover:bg-red-500/10 transition"
                                                                     onClick={() => {
                                                                         setActionMenuOpen(null);
                                                                         handleDelete(question.id);
                                                                     }}
                                                                 >
-                                                                    <FaTrash className="w-4 h-4" /> Delete
+                                                                    <FaTrash className="w-3 h-3 sm:w-4 sm:h-4" /> Delete
                                                                 </button>
                                                             </div>
                                                         )}
@@ -438,11 +441,11 @@ const Questions = () => {
                                         </div>
                                     ))
                                 ) : (
-                                    <div className="text-center py-12 text-muted">
-                                        <p>No questions found. Create your first question!</p>
+                                    <div className="text-center py-8 sm:py-12 text-muted">
+                                        <p className="text-sm sm:text-base mb-3 sm:mb-4">No questions found. Create your first question!</p>
                                         <a
                                             href="/teacher/questions/create"
-                                            className="mt-4 inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
+                                            className="inline-block bg-blue-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-blue-700 transition text-sm sm:text-base font-medium"
                                         >
                                             Create Question
                                         </a>

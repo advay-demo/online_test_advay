@@ -60,41 +60,46 @@ const useQuizStore = create((set, get) => ({
     }
   },
 
-  /**
-   * Start quiz (actually create answerpaper and get first question)
-   */
   startQuiz: async (questionpaperId, moduleId, courseId, attemptNum = null) => {
-    set({ loading: true, error: null });
-    try {
-      const quizData = await apiStartQuiz(questionpaperId, moduleId, courseId, attemptNum, {});
-      
-      // Handle response - API returns current_question
-      const question = quizData.current_question || quizData.question;
-      
-      set({ 
-        currentQuestion: question,
-        paper: {
-          id: quizData.answerpaper_id,
-          attempt_number: quizData.attempt_number,
-          time_left: quizData.time_left,
-          is_trial_mode: quizData.is_trial_mode,
-          questions_answered: quizData.questions_answered,
-          questions_unanswered: quizData.questions_unanswered,
-        },
-        timeLeft: quizData.time_left,
-        questionpaperId: quizData.questionpaper_id || questionpaperId,
-        moduleId: quizData.module_id || moduleId,
-        courseId: quizData.course_id || courseId,
-        attemptNum: quizData.attempt_number || attemptNum,
-        loading: false 
-      });
-      return quizData;
-    } catch (err) {
-      const errorMsg = err.response?.data?.error || 'Failed to start quiz';
-      set({ error: errorMsg, loading: false });
-      throw new Error(errorMsg);
-    }
-  },
+  set({ loading: true, error: null });
+  try {
+    const quizData = await apiStartQuiz(questionpaperId, moduleId, courseId, attemptNum, {});
+    
+    // Handle response - API returns current_question
+    const question = quizData.current_question || quizData.question;
+    
+    // Check if this is a resume scenario
+    const isResume = quizData.status === 'resume';
+    
+    set({ 
+      currentQuestion: question,
+      paper: {
+        id: quizData.answerpaper_id,
+        attempt_number: quizData.attempt_number,
+        time_left: quizData.time_left,
+        is_trial_mode: quizData.is_trial_mode,
+        questions_answered: quizData.questions_answered,
+        questions_unanswered: quizData.questions_unanswered,
+      },
+      timeLeft: quizData.time_left,
+      questionpaperId: quizData.questionpaper_id || questionpaperId,
+      moduleId: quizData.module_id || moduleId,
+      courseId: quizData.course_id || courseId,
+      attemptNum: quizData.attempt_number || attemptNum,
+      loading: false 
+    });
+    
+    // Return full data including resume status
+    return {
+      ...quizData,
+      isResume,
+    };
+  } catch (err) {
+    const errorMsg = err.response?.data?.error || 'Failed to start quiz';
+    set({ error: errorMsg, loading: false });
+    throw new Error(errorMsg);
+  }
+},
 
   /**
    * Resume quiz with existing attempt
@@ -135,45 +140,45 @@ const useQuizStore = create((set, get) => ({
    * Submit an answer for the current question
    */
   submitAnswer: async (questionId, answerData) => {
-    const { attemptNum, moduleId, questionpaperId, courseId } = get();
-    set({ loading: true, error: null });
+  const { attemptNum, moduleId, questionpaperId, courseId } = get();
+  set({ loading: true, error: null });
+  
+  try {
+    const result = await apiCheckAnswer(
+      questionId,
+      attemptNum,
+      moduleId,
+      questionpaperId,
+      courseId,
+      answerData
+    );
     
-    try {
-      const result = await apiCheckAnswer(
-        questionId,
-        attemptNum,
-        moduleId,
-        questionpaperId,
-        courseId,
-        answerData
-      );
-      
-      // Handle response - could have next_question or current_question
-      const nextQuestion = result.next_question || result.current_question || result.question;
-      
-      set({ 
-        answerResult: {
-          success: result.success,
-          error_message: result.error_message || result.message,
-        },
-        currentQuestion: nextQuestion,
-        paper: {
-          ...get().paper,
-          time_left: result.time_left || result.paper?.time_left,
-          questions_answered: result.questions_answered,
-          questions_unanswered: result.questions_unanswered,
-        },
-        timeLeft: result.time_left || result.paper?.time_left || get().timeLeft,
-        loading: false 
-      });
-      
-      return result;
-    } catch (err) {
-      const errorMsg = err.response?.data?.error || 'Failed to submit answer';
-      set({ error: errorMsg, loading: false });
-      throw new Error(errorMsg);
-    }
-  },
+    // Handle response - could have next_question or current_question
+    const nextQuestion = result.next_question || result.current_question || result.question;
+    
+    set({ 
+      answerResult: {
+        success: result.success,
+        error_message: result.error_message || result.message,
+      },
+      currentQuestion: nextQuestion,
+      paper: {
+        ...get().paper,
+        time_left: result.time_left || result.paper?.time_left,
+        questions_answered: result.questions_answered || result.paper?.questions_answered,
+        questions_unanswered: result.questions_unanswered || result.paper?.questions_unanswered,
+      },
+      timeLeft: result.time_left || result.paper?.time_left || get().timeLeft,
+      loading: false 
+    });
+    
+    return result;
+  } catch (err) {
+    const errorMsg = err.response?.data?.error || 'Failed to submit answer';
+    set({ error: errorMsg, loading: false });
+    throw new Error(errorMsg);
+  }
+},
 
   /**
    * Get current question state (without submitting)

@@ -2,7 +2,7 @@ from rest_framework import serializers
 from yaksh.models import (
     Question, Quiz, QuestionPaper, AnswerPaper, Course,
     LearningModule, LearningUnit, Lesson, CourseStatus,
-    Badge, UserBadge, BadgeProgress, UserStats, DailyActivity, UserActivity, Post, Comment, User
+    Badge, UserBadge, BadgeProgress, UserStats, DailyActivity, UserActivity, Post, Comment, User, Profile
 )
 from grades.models import GradingSystem, GradeRange
 from notifications_plugin.models import Notification
@@ -91,7 +91,53 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 
-
+class ProfileSerializer(serializers.ModelSerializer):
+    """Serializer for user profile with nested user fields"""
+    first_name = serializers.CharField(source='user.first_name', required=False)
+    last_name = serializers.CharField(source='user.last_name', required=False)
+    email = serializers.EmailField(source='user.email', required=False)
+    username = serializers.CharField(source='user.username', read_only=True)
+    user_id = serializers.IntegerField(source='user.id', read_only=True)
+    is_moderator = serializers.BooleanField(read_only=True)
+    email_verified = serializers.BooleanField(source='is_email_verified', read_only=True)
+    
+    class Meta:
+        model = Profile
+        fields = [
+            'user_id', 'username', 'email', 'first_name', 'last_name',
+            'roll_number', 'institute', 'department', 'position',
+            'bio', 'phone', 'city', 'country', 'linkedin', 'github',
+            'display_name', 'timezone', 'is_moderator', 'email_verified'
+        ]
+        read_only_fields = ['user_id', 'username', 'is_moderator', 'email_verified']
+    
+    def validate_email(self, value):
+        """Validate that email is unique"""
+        user = self.context['request'].user
+        if User.objects.filter(email=value).exclude(id=user.id).exists():
+            raise serializers.ValidationError("This email is already in use.")
+        return value
+    
+    def update(self, instance, validated_data):
+        """Update both User and Profile models"""
+        user_data = validated_data.pop('user', {})
+        user = instance.user
+        
+        # Update User fields
+        if 'first_name' in user_data:
+            user.first_name = user_data['first_name']
+        if 'last_name' in user_data:
+            user.last_name = user_data['last_name']
+        if 'email' in user_data:
+            user.email = user_data['email']
+        user.save()
+        
+        # Update Profile fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        
+        return instance
         
 
 class QuestionSerializer(serializers.ModelSerializer):

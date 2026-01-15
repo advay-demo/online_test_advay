@@ -16,8 +16,12 @@ const DashboardTeachers = () => {
   } = useTeacherDashboardStore();
 
   useEffect(() => {
-    loadDashboard();
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      loadDashboard();
+    }
   }, [loadDashboard]);
+
 
   useEffect(() => {
     if (message) {

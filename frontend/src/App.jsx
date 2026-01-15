@@ -9,7 +9,7 @@ import CourseModule from './pages/student/CourseModule';
 import Quiz from './pages/student/Quiz';
 import Lesson from './pages/student/Lesson';
 import Insights from './pages/student/Insights';
-import Profile from './pages/student/Profile';
+import Profile from './pages/Profile';
 import Submission from './pages/student/Submission';
 import DashboardTeachers from './pages/teacher/DashboardTeachers';
 import AddCourse from './pages/teacher/AddCourse';

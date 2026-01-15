@@ -43,7 +43,7 @@ from api.serializers import (
     UserBadgeSerializer, BadgeProgressSerializer, UserStatsSerializer,
     UserActivitySerializer, CourseProgressSerializer, CourseCatalogSerializer,
     LessonDetailSerializer, LearningModuleDetailSerializer, LearningUnitDetailSerializer, MinimalLearningUnitSerializer,
-    SimpleUserSerializer
+    SimpleUserSerializer, ProfileSerializer
 )
 
 from rest_framework import generics, permissions, status
@@ -220,94 +220,54 @@ def logout_user(request):
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-@api_view(['GET'])
-@authentication_classes([])
-@permission_classes([AllowAny])
-def get_user_profile(request):
-    """Fetch user profile"""
+@api_view(['GET', 'PUT', 'PATCH'])
+@permission_classes([IsAuthenticated])
+def user_profile(request):
+    
     try:
-        username = request.GET.get('username')
-        if not username:
-            return Response({'error': 'Username required'},
-                            status=status.HTTP_400_BAD_REQUEST)
-
-        user = User.objects.get(username=username)
-        profile, created = Profile.objects.get_or_create(user=user)
-
+        profile, created = Profile.objects.get_or_create(user=request.user)
+        
+        # Optional: Remove or comment out this check for development
+        # if not profile.is_email_verified:
+        #     return Response({
+        #         'error': 'Email not verified. Please verify your email before accessing profile.',
+        #         'email_verified': False
+        #     }, status=status.HTTP_403_FORBIDDEN)
+        
+        if request.method == 'GET':
+            # Get profile data
+            serializer = ProfileSerializer(profile, context={'request': request})
+            return Response({
+                'user': serializer.data
+            }, status=status.HTTP_200_OK)
+        
+        else:  # PUT or PATCH
+            # Update profile data
+            partial = request.method == 'PATCH'
+            serializer = ProfileSerializer(
+                profile, 
+                data=request.data, 
+                partial=partial,
+                context={'request': request}
+            )
+            
+            if serializer.is_valid():
+                serializer.save()
+                return Response({
+                    'message': 'Profile updated successfully',
+                    'user': serializer.data
+                }, status=status.HTTP_200_OK)
+            
+            return Response({
+                'error': 'Validation failed',
+                'details': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+    except Exception as e:
         return Response({
-            'user': {
-                'id': user.id,
-                'username': user.username,
-                'email': user.email,
-                'first_name': user.first_name,
-                'last_name': user.last_name,
-                'is_moderator': profile.is_moderator,
-                'roll_number': profile.roll_number,
-                'institute': profile.institute,
-                'department': profile.department,
-                'position': profile.position,
-                'timezone': profile.timezone,
-                'bio': profile.bio,
-                'phone': profile.phone,
-                'city': profile.city,
-                'country': profile.country,
-                'linkedin': profile.linkedin,
-                'github': profile.github,
-                'display_name': profile.display_name,
-            }
-        }, status=status.HTTP_200_OK)
-
-    except User.DoesNotExist:
-        return Response({'error': 'User not found'},
-                        status=status.HTTP_404_NOT_FOUND)
-
-
-@api_view(['POST'])
-@authentication_classes([])
-@permission_classes([AllowAny])
-def update_user_profile(request):
-    """Update user profile"""
-    try:
-        username = request.data.get('username')
-        if not username:
-            return Response({'error': 'Username required'},
-                            status=status.HTTP_400_BAD_REQUEST)
-
-        user = User.objects.get(username=username)
-        profile, created = Profile.objects.get_or_create(user=user)
-
-        email = request.data.get('email')
-        if email and email != user.email:
-            if User.objects.filter(email=email).exclude(id=user.id).exists():
-                return Response({'error': 'Email already exists'},
-                                status=status.HTTP_400_BAD_REQUEST)
-            user.email = email
-
-        # Update base user info
-        user.first_name = request.data.get('first_name', user.first_name)
-        user.last_name = request.data.get('last_name', user.last_name)
-        user.save()
-
-        # Update profile fields
-        profile.roll_number = request.data.get('roll_number', profile.roll_number)
-        profile.institute = request.data.get('institute', profile.institute)
-        profile.department = request.data.get('department', profile.department)
-        profile.position = request.data.get('position', profile.position)
-        profile.timezone = request.data.get('timezone', profile.timezone)
-        profile.bio = request.data.get('bio', profile.bio)
-        profile.phone = request.data.get('phone', profile.phone)
-        profile.city = request.data.get('city', profile.city)
-        profile.country = request.data.get('country', profile.country)
-        profile.linkedin = request.data.get('linkedin', profile.linkedin)
-        profile.github = request.data.get('github', profile.github)
-        profile.display_name = request.data.get('display_name', profile.display_name)
-        profile.save()
-
-        return Response({'message': 'Profile updated'}, status=status.HTTP_200_OK)
-
-    except User.DoesNotExist:
-        return Response({'error': 'User not found'},
-                        status=status.HTTP_404_NOT_FOUND)
+            'error': 'An error occurred while processing your request',
+            'details': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 

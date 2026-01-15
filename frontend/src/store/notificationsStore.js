@@ -143,4 +143,5 @@ export const useNotificationsStore = create((set, get) => ({
     isLoading: false, 
     error: null 
   }),
+  
 }));

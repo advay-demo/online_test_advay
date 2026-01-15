@@ -9,8 +9,7 @@ urlpatterns = [
     url(r'auth/register/$', views.register_user, name='register'),
     url(r'auth/login/$', views.login_user, name='login'),
     url(r'auth/logout/$', views.logout_user, name='logout'),
-    url(r'auth/profile/$', views.get_user_profile, name='get_user_profile'),
-    url(r'auth/profile/update/$', views.update_user_profile, name='update_user_profile'),
+    url(r'auth/profile/$', views.user_profile, name='user_profile'),
     
     # Student Dashboard & Stats
     url(r'student/dashboard/$', views.student_dashboard, name='student_dashboard'),
@@ -61,10 +60,10 @@ urlpatterns = [
     # COMMON ROUTES
     ##============================================================================================================================================================================================
     # Forum API endpoints
-    url(r'^forum/courses/(?P<course_id>\d+)/posts/$', views.ForumPostListCreateView.as_view(), name='api_forum_post_list_create'),
-    url(r'^forum/courses/(?P<course_id>\d+)/posts/(?P<id>\d+)/$', views.ForumPostDetailView.as_view(), name='api_forum_post_detail'),
-    url(r'^forum/courses/(?P<course_id>\d+)/posts/(?P<post_id>\d+)/comments/$', views.ForumCommentListCreateView.as_view(), name='api_forum_comment_list_create'),
-    url(r'^forum/courses/(?P<course_id>\d+)/comments/(?P<comment_id>\d+)/$', views.ForumCommentDetailView.as_view(), name='api_forum_comment_detail'),
+    url(r'^forum/courses/(?P<course_id>\d+)/posts/$', views.ForumPostListCreateView.as_view(), name='api_forum_post_list_create'),  #ok
+    url(r'^forum/courses/(?P<course_id>\d+)/posts/(?P<id>\d+)/$', views.ForumPostDetailView.as_view(), name='api_forum_post_detail'), #ok 
+    url(r'^forum/courses/(?P<course_id>\d+)/posts/(?P<post_id>\d+)/comments/$', views.ForumCommentListCreateView.as_view(), name='api_forum_comment_list_create'), #ok 
+    url(r'^forum/courses/(?P<course_id>\d+)/comments/(?P<comment_id>\d+)/$', views.ForumCommentDetailView.as_view(), name='api_forum_comment_detail'), #ok
 
     # For lessons forum
     url(r'^forum/lessons/(?P<lesson_id>\d+)/posts/$', views.LessonForumPostListCreateView.as_view(), name='api_lesson_forum_post_list_create'),
@@ -101,24 +100,24 @@ urlpatterns = [
     ##============================================================================================================================================================================================
     # Teacher APIs
     ##============================================================================================================================================================================================
-    url(r'teacher/dashboard/$', views.teacher_dashboard, name='teacher_dashboard'),
-    url(r'teacher/courses/$', views.teacher_courses_list, name='teacher_courses_list'),
-    url(r'teacher/courses/create/$', views.teacher_create_course, name='teacher_create_course'),
-    url(r'teacher/courses/(?P<course_id>[0-9]+)/$', views.teacher_get_course, name='teacher_get_course'),
-    url(r'teacher/courses/(?P<course_id>[0-9]+)/update/$', views.teacher_update_course, name='teacher_update_course'),
-    url(r'teacher/courses/create_demo_course/$', views.CreateDemoCourseAPIView.as_view(), name="api_create_demo_course"),
-    url(r'^teacher/grading-systems/$', views.GradingSystemListCreateView.as_view(), name='grading-system-list-create'),
-    url(r'^teacher/grading-systems/(?P<pk>[0-9]+)/$', views.GradingSystemDetailView.as_view(), name='grading-system-detail'),
+    url(r'teacher/dashboard/$', views.teacher_dashboard, name='teacher_dashboard'), #ok
+    url(r'teacher/courses/$', views.teacher_courses_list, name='teacher_courses_list'), #ok
+    url(r'teacher/courses/create/$', views.teacher_create_course, name='teacher_create_course'), #ok
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/$', views.teacher_get_course, name='teacher_get_course'), #ok
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/update/$', views.teacher_update_course, name='teacher_update_course'), ##### check
+    url(r'teacher/courses/create_demo_course/$', views.CreateDemoCourseAPIView.as_view(), name="api_create_demo_course"), #ok
+    url(r'^teacher/grading-systems/$', views.GradingSystemListCreateView.as_view(), name='grading-system-list-create'),  #ok
+    url(r'^teacher/grading-systems/(?P<pk>[0-9]+)/$', views.GradingSystemDetailView.as_view(), name='grading-system-detail'),  #ok
 
-    url(r'teacher/courses/(?P<course_id>[0-9]+)/enrollments/$', views.teacher_get_course_enrollments, name='teacher_get_course_enrollments'),
-    url(r'teacher/courses/(?P<course_id>[0-9]+)/enrollments/approve/$', views.teacher_approve_enrollment, name='teacher_approve_enrollment'),
-    url(r'teacher/courses/(?P<course_id>[0-9]+)/enrollments/reject/$', views.teacher_reject_enrollment, name='teacher_reject_enrollment'),
-    url(r'teacher/courses/(?P<course_id>[0-9]+)/enrollments/remove/$', views.teacher_remove_enrollment, name='teacher_remove_enrollment'),
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/enrollments/$', views.teacher_get_course_enrollments, name='teacher_get_course_enrollments'), #ok
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/enrollments/approve/$', views.teacher_approve_enrollment, name='teacher_approve_enrollment'), #ok
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/enrollments/reject/$', views.teacher_reject_enrollment, name='teacher_reject_enrollment'), #ok
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/enrollments/remove/$', views.teacher_remove_enrollment, name='teacher_remove_enrollment'), #ok
 
 
-    url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/$', views.teacher_get_course_modules, name='teacher_get_course_modules'),
-    url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/create/$', views.teacher_create_module, name='teacher_create_module'),
-    url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/(?P<module_id>[0-9]+)/update/$', views.teacher_update_module, name='teacher_update_module'),
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/$', views.teacher_get_course_modules, name='teacher_get_course_modules'), #ok
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/create/$', views.teacher_create_module, name='teacher_create_module'), #ok
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/(?P<module_id>[0-9]+)/update/$', views.teacher_update_module, name='teacher_update_module'), ##### check
     
     url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/(?P<module_id>[0-9]+)/lessons/$', views.api_lesson_handler, name='api_lesson_handler'),
     url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/(?P<module_id>[0-9]+)/lessons/(?P<lesson_id>[0-9]+)/$', views.api_lesson_handler, name='api_lesson_handler'),
@@ -133,9 +132,9 @@ urlpatterns = [
     url(r'teacher/courses/(?P<course_id>\d+)/modules/(?P<module_id>\d+)/quizzes/(?P<quiz_id>\d+)/$', views.teacher_update_quiz, name='teacher_update_quiz_handler'),
 
 
-    url(r'teacher/courses/(?P<course_id>\d+)/designcourse/$', views.api_design_course, name='api_design_course'),
+    url(r'teacher/courses/(?P<course_id>\d+)/designcourse/$', views.api_design_course, name='api_design_course'), #ok
 
-    url(r'teacher/courses/(?P<course_id>[0-9]+)/analytics/$', views.teacher_get_course_analytics, name='teacher_get_course_analytics'),
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/analytics/$', views.teacher_get_course_analytics, name='teacher_get_course_analytics'), #ok
 
 
     url(r'teacher/questions/$', views.teacher_questions_list, name='teacher_questions_list'), #ok 

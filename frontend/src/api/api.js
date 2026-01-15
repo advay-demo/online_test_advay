@@ -8,7 +8,6 @@ const api = axios.create({
   },
 });
 
-// Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('authToken');
@@ -30,10 +29,16 @@ api.interceptors.response.use(
   },
   (error) => {
     if (error.response && error.response.status === 401) {
-      // Token expired or invalid
+      // Token expired or invalid - clear everything
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');
-      window.location.href = '/signin';
+      localStorage.removeItem('auth-storage'); // Clear zustand persist
+      
+      // Only redirect if not already on auth pages (prevent loop)
+      const currentPath = window.location.pathname;
+      if (currentPath !== '/signin' && currentPath !== '/signup' && currentPath !== '/') {
+        window.location.href = '/signin';
+      }
     }
     return Promise.reject(error);
   }
@@ -58,22 +63,30 @@ export const logout = async () => {
   return response.data;
 };
 
-export const getUserProfile = async (username) => {
-  const response = await api.get(`/api/auth/profile/?username=${username}`);
-  return response.data;
-};
-
-export const updateUserProfile = async (username, profileData) => {
-  const response = await api.post('/api/auth/profile/update/', {
-    username,
-    ...profileData
-  });
-  return response.data;
-};
 
 // ============================================================
 // ===========================================================
 
+
+// ============================================================
+// PROFILE APIs (Common for both students and teachers)
+// ============================================================
+
+
+export const getUserProfile = async () => {
+  const response = await api.get('/api/auth/profile/');
+  return response.data;
+};
+
+export const updateUserProfile = async (profileData) => {
+  const response = await api.put('/api/auth/profile/', profileData);
+  return response.data;
+};
+
+export const patchUserProfile = async (profileData) => {
+  const response = await api.patch('/api/auth/profile/', profileData);
+  return response.data;
+};
 
 // ============================================================
 // STUDENT DASHBOARD & STATS APIs

@@ -29,7 +29,7 @@ const QuestionActionButtons = ({ activeButton = null }) => {
 
   return (
     <div className="mb-6 lg:mb-8">
-      <div className="flex gap-2 sm:gap-3 overflow-x-auto scrollbar-hide pb-1">
+      <div className="flex gap-7 sm:gap-3 overflow-x-auto scrollbar-hide pb-1">
         {buttons.map((button) => {
           const isActive = activeButton === button.type;
           return (
