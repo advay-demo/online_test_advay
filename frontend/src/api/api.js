@@ -64,6 +64,20 @@ export const logout = async () => {
 };
 
 
+export const requestPasswordChange = async () => {
+  const response = await api.post('/api/auth/password-change/request/');
+  return response.data;
+};
+
+export const confirmPasswordChange = async (otp, newPassword) => {
+  const response = await api.post('/api/auth/password-change/confirm/', {
+    code: otp,
+    new_password: newPassword
+  });
+  return response.data;
+};
+
+
 // ============================================================
 // ===========================================================
 
@@ -830,7 +844,7 @@ export const getCourseForumPosts = async (courseId) => {
 
 // Create a new post for a course
 export const createCourseForumPost = async (courseId, postData) => {
-  const response = await api.post(`/api/forum/courses/${courseId}/posts/`, 
+  const response = await api.post(`/api/forum/courses/${courseId}/posts/`,
     postData,
     {
       headers: {

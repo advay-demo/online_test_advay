@@ -10,6 +10,11 @@ urlpatterns = [
     url(r'auth/login/$', views.login_user, name='login'),
     url(r'auth/logout/$', views.logout_user, name='logout'),
     url(r'auth/profile/$', views.user_profile, name='user_profile'),
+
+    url(r'auth/password-change/request/$', views.request_password_change, name='request_password_change'),
+    url(r'auth/password-change/confirm/$', views.confirm_password_change, name='confirm_password_change'),
+    
+
     
     # Student Dashboard & Stats
     url(r'student/dashboard/$', views.student_dashboard, name='student_dashboard'),

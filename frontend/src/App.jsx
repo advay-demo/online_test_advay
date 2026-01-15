@@ -22,6 +22,8 @@ import PrivateRoute from './components/auth/PrivateRoute';
 import GradingSystems from './pages/teacher/GradingSystems';
 import UploadQuestion from './pages/teacher/UploadQuestion';
 import TestQuestion from './pages/teacher/TestQuestion';
+import Settings from './pages/Settings';
+
 
 import ThemeController from './components/layout/ThemeController';
 
@@ -37,7 +39,7 @@ function App() {
         {/* Protected Routes */}
         <Route element={<PrivateRoute />}>
           <Route path="/profile" element={<Profile />} />
-          <Route path="/settings" element={<div className="p-8">Settings Page - Coming Soon</div>} />
+          <Route path="/settings" element={<Settings />} />
 
           <Route path="/dashboard" element={<DashboardHome />} />
           <Route path="/courses" element={<CourseCatalog />} />

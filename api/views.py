@@ -339,6 +339,74 @@ def get_unread_notifications_count(request):
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+
+import random
+import hashlib
+from django.core.cache import cache
+from django.core.mail import send_mail
+
+def hash_code(code: str) -> str:
+    return hashlib.sha256(code.encode()).hexdigest()
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def request_password_change(request):
+    user=request.user
+    code = str(random.randint(100000, 999999))
+    cache_key = f"pwd_change_otp:{user.id}"
+    OTP_TTL = 120
+    cache.set(cache_key, hash_code(code), timeout=OTP_TTL)
+    send_mail(
+        subject="Password change verification",
+        message=f"Your code is {code}. Valid for 1 minute.",
+        from_email="no-reply@yourapp.com",
+        recipient_list=[user.email],
+    )
+
+    return Response({"message": "OTP sent"})
+    
+
+
+from django.contrib.auth.password_validation import validate_password
+from django.utils.crypto import constant_time_compare
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def confirm_password_change(request):
+    user = request.user
+    code = request.data.get("code")
+    new_password = request.data.get("new_password")
+
+    if not code or not new_password:
+        return Response({"error": "Missing fields"}, status=400)
+
+    cache_key = f"pwd_change_otp:{user.id}"
+    cached_hash = cache.get(cache_key)
+    
+    if not cached_hash:
+        return Response({"error": "OTP expired or invalid"}, status=400)
+
+    if not constant_time_compare(cached_hash, hash_code(code)):
+        return Response({"error": "Invalid OTP"}, status=400)
+
+    try:
+        validate_password(new_password, user)
+    except Exception as e:
+        return Response({"error": list(e.messages)}, status=400)
+
+    user.set_password(new_password)
+    user.save()
+
+    cache.delete(cache_key)
+
+    return Response({"success": True})
+
+
+
+
+
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def mark_notification_read(request, message_uid):
