@@ -13,8 +13,8 @@ urlpatterns = [
 
     url(r'auth/password-change/request/$', views.request_password_change, name='request_password_change'),
     url(r'auth/password-change/confirm/$', views.confirm_password_change, name='confirm_password_change'),
-    
-
+    url(r'auth/moderator/status/$', views.get_moderator_status, name='get_moderator_status'),
+    url(r'auth/toggle_moderator/$', views.toggle_moderator_role_api, name='toggle_moderator_role'),
     
     # Student Dashboard & Stats
     url(r'student/dashboard/$', views.student_dashboard, name='student_dashboard'),
@@ -118,6 +118,8 @@ urlpatterns = [
     url(r'teacher/courses/(?P<course_id>[0-9]+)/enrollments/approve/$', views.teacher_approve_enrollment, name='teacher_approve_enrollment'), #ok
     url(r'teacher/courses/(?P<course_id>[0-9]+)/enrollments/reject/$', views.teacher_reject_enrollment, name='teacher_reject_enrollment'), #ok
     url(r'teacher/courses/(?P<course_id>[0-9]+)/enrollments/remove/$', views.teacher_remove_enrollment, name='teacher_remove_enrollment'), #ok
+    
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/send_mail/$', views.teacher_send_mail, name='teacher_send_mail'),
 
 
     url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/$', views.teacher_get_course_modules, name='teacher_get_course_modules'), #ok
@@ -178,7 +180,17 @@ urlpatterns = [
     
     url(r'teacher/modules/(?P<module_id>[0-9]+)/units/reorder/$', views.teacher_reorder_module_units, name='teacher_reorder_module_units'),
     url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/reorder/$', views.teacher_reorder_course_modules, name='teacher_reorder_course_modules'),
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/analytics/$', views.teacher_get_course_analytics, name='teacher_get_course_analytics'),
     
+    # Teacher/TA Management
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/teachers/$', views.teacher_get_course_teachers, name='teacher_get_course_teachers'),
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/teachers/search/$', views.teacher_search_teachers, name='teacher_search_teachers'),
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/teachers/add/$', views.teacher_add_teachers, name='teacher_add_teachers'),
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/teachers/remove/$', views.teacher_remove_teachers, name='teacher_remove_teachers'),
+    
+    # Course MD Upload/Download
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/md/download/$', views.teacher_download_course_md, name='teacher_download_course_md'),
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/md/upload/$', views.teacher_upload_course_md, name='teacher_upload_course_md'),
 
     
 ]

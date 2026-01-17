@@ -1,10 +1,14 @@
 # ----------------------------
 # IMPORTS
 # ----------------------------
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.db import IntegrityError
+import tempfile
+import os
+from zipfile import ZipFile
+from io import BytesIO
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -14,6 +18,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.decorators import (
     api_view, authentication_classes, permission_classes
 )
+from yaksh.send_emails import send_bulk_mail
 
 from rest_framework.parsers import MultiPartParser, FormParser
 
@@ -27,7 +32,7 @@ from yaksh.models import (
     ArrangeTestCase, FileUpload
 )
 from yaksh.models import get_model_class
-from yaksh.views import is_moderator, get_html_text, prof_manage
+from yaksh.views import is_moderator, get_html_text, prof_manage, add_as_moderator
 from django.db.models import Q, Count, Avg, Sum, F, FloatField
 from django.utils import timezone
 from datetime import datetime, timedelta
@@ -220,10 +225,69 @@ def logout_user(request):
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def get_moderator_status(request):
+    """Get current moderator status (active/inactive)"""
+    user = request.user
+    
+    try:
+        group = Group.objects.get(name='moderator')
+        is_moderator_active = group.user_set.filter(id=user.id).exists()
+    except Group.DoesNotExist:
+        is_moderator_active = False
+    
+    return Response({
+        'is_moderator': user.profile.is_moderator if hasattr(user, 'profile') else False,
+        'is_moderator_active': is_moderator_active,
+        'can_toggle': user.profile.is_moderator if hasattr(user, 'profile') else False
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def toggle_moderator_role_api(request):
+    """Toggle moderator role - switch between teacher and student view"""
+    user = request.user
+    
+    try:
+        group = Group.objects.get(name='moderator')
+    except Group.DoesNotExist:
+        return Response(
+            {'error': 'The Moderator group does not exist'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    # Check if user has permanent moderator designation
+    if not user.profile.is_moderator:
+        return Response(
+            {'error': 'You are not allowed to perform this action'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    # Toggle group membership
+    is_currently_in_group = group.user_set.filter(id=user.id).exists()
+    
+    if is_currently_in_group:
+        group.user_set.remove(user)
+        is_moderator_active = False
+        message = 'Switched to student view'
+    else:
+        group.user_set.add(user)
+        is_moderator_active = True
+        message = 'Switched to teacher view'
+    
+    return Response({
+        'success': True,
+        'is_moderator_active': is_moderator_active,
+        'message': message
+    }, status=status.HTTP_200_OK)
+
+
 @api_view(['GET', 'PUT', 'PATCH'])
 @permission_classes([IsAuthenticated])
 def user_profile(request):
-    
+    """Get or update user profile"""
     try:
         profile, created = Profile.objects.get_or_create(user=request.user)
         
@@ -1364,6 +1428,17 @@ def teacher_dashboard(request):
     user = request.user
     
     if not _check_teacher_permission(user):
+        # Check if user has moderator designation but is in student mode
+        has_moderator_designation = hasattr(user, 'profile') and user.profile.is_moderator
+        if has_moderator_designation:
+            return Response(
+                {
+                    'error': 'You are currently in student view. Please switch to teacher view to access this page.',
+                    'can_toggle': True,
+                    'is_moderator_designation': True
+                },
+                status=status.HTTP_403_FORBIDDEN
+            )
         return Response(
             {'error': 'You are not authorized to access this page'},
             status=status.HTTP_403_FORBIDDEN
@@ -1375,7 +1450,7 @@ def teacher_dashboard(request):
         is_trial=False
     ).distinct()
     
-    # Calculate statistics
+    # Calculate statistics (current period)
     total_courses = courses.count()
     active_courses = courses.filter(active=True).count()
     
@@ -1388,17 +1463,85 @@ def teacher_dashboard(request):
     recent_courses = courses.order_by('-created_on')[:5]
     
     # Calculate average completion rate
+    # Include all courses with enrolled students in the calculation
+    # Courses with 0% completion should still contribute to the average
     completion_rates = []
     for course in courses:
         enrolled_count = course.students.count()
         if enrolled_count > 0:
+            # Count students who have completed the course (have a grade assigned)
             completed_count = CourseStatus.objects.filter(
                 course=course, grade__isnull=False
             ).count()
-            if completed_count > 0:
-                completion_rates.append((completed_count / enrolled_count) * 100)
+            # Calculate completion rate for this course (can be 0% if no completions)
+            course_completion_rate = (completed_count / enrolled_count) * 100
+            completion_rates.append(course_completion_rate)
     
+    # Calculate average across all courses with enrolled students
+    # If no courses have enrolled students, return 0
     avg_completion = sum(completion_rates) / len(completion_rates) if completion_rates else 0
+    
+    # Calculate previous period metrics (30 days ago)
+    date_30_days_ago = timezone.now() - timedelta(days=30)
+    
+    # Previous period: Total courses (courses created before 30 days ago)
+    previous_courses = Course.objects.filter(
+        Q(creator=user) | Q(teachers=user),
+        is_trial=False,
+        created_on__lte=date_30_days_ago
+    ).distinct()
+    previous_total_courses = previous_courses.count()
+    
+    # Previous period: Active courses (courses that existed and were active 30 days ago)
+    # We check if course was created before 30 days ago and was active
+    # Note: We can't know historical active status, so we use current active status
+    # for courses that existed 30 days ago
+    previous_active_courses = previous_courses.filter(active=True).count()
+    
+    # Previous period: Total students
+    # Count distinct students enrolled in courses that existed 30 days ago
+    # Since we can't track exact enrollment dates, we use students in courses that existed then
+    previous_total_students = User.objects.filter(
+        students__in=previous_courses
+    ).distinct().count()
+    
+    # Previous period: Average completion rate
+    # Calculate completion rate for courses that existed 30 days ago
+    previous_completion_rates = []
+    for course in previous_courses:
+        # Count students enrolled in this course (that existed 30 days ago)
+        previous_enrolled = course.students.count()
+        
+        if previous_enrolled > 0:
+            # Count students who completed the course
+            # Note: We can't know if they completed before 30 days ago,
+            # so we use current completion status for courses that existed then
+            previous_completed = CourseStatus.objects.filter(
+                course=course,
+                grade__isnull=False
+            ).count()
+            previous_course_completion_rate = (previous_completed / previous_enrolled) * 100
+            previous_completion_rates.append(previous_course_completion_rate)
+    
+    previous_avg_completion = sum(previous_completion_rates) / len(previous_completion_rates) if previous_completion_rates else 0
+    
+    # Calculate percentage changes
+    def calculate_percentage_change(current, previous):
+        """Calculate percentage change, handling edge cases"""
+        if previous == 0:
+            if current == 0:
+                return 0.0  # No change
+            else:
+                # New data appeared (can't calculate meaningful percentage)
+                # Return a large positive number or handle as "New"
+                return 100.0  # Represent as 100% increase
+        else:
+            return ((current - previous) / previous) * 100
+    
+    total_courses_change = calculate_percentage_change(total_courses, previous_total_courses)
+    active_courses_change = calculate_percentage_change(active_courses, previous_active_courses)
+    total_students_change = calculate_percentage_change(total_students, previous_total_students)
+    avg_completion_change = calculate_percentage_change(avg_completion, previous_avg_completion)
     
     # Recent events (upcoming quizzes)
     upcoming_quizzes = []
@@ -1409,6 +1552,7 @@ def teacher_dashboard(request):
                 if quiz and quiz.active:
                     upcoming_quizzes.append({
                         'id': quiz.id,
+                        'course_id': course.id,
                         'name': quiz.description,
                         'course_name': course.name,
                         'module_name': module.name
@@ -1418,44 +1562,78 @@ def teacher_dashboard(request):
     top_students = []
     try:
         # Get all answer papers for courses managed by this teacher
-        from django.db.models import Sum
+        from django.db.models import Sum, Avg, Count
         
-        top_performers = AnswerPaper.objects.filter(
+        # Filter completed answer papers with valid marks
+        completed_papers = AnswerPaper.objects.filter(
             status='completed',
-            course__in=courses
-        ).values('user__id', 'user__first_name', 'user__last_name', 'user__username') \
-        .annotate(total_score=Sum('marks_obtained')) \
-        .order_by('-total_score')[:5]
+            course__in=courses,
+            marks_obtained__isnull=False
+        )
+        
+        # Get top students by average score across all their quizzes
+        # This gives a fairer representation than total sum
+        # Require at least 1 completed quiz to be considered
+        top_performers = completed_papers.values(
+            'user__id', 
+            'user__first_name', 
+            'user__last_name', 
+            'user__username'
+        ).annotate(
+            avg_score=Avg('marks_obtained'),
+            total_score=Sum('marks_obtained'),
+            quiz_count=Count('id')
+        ).filter(
+            quiz_count__gte=1  # At least one completed quiz
+        ).order_by('-avg_score')[:5]
         
         for student in top_performers:
-            # Get the subject (course) where they scored the most or just the latest one
-            last_paper = AnswerPaper.objects.filter(
-                user__id=student['user__id'],
-                course__in=courses
-            ).order_by('-start_time').first()
+            # Get the course where they scored the highest average
+            user_id = student['user__id']
+            best_course_data = completed_papers.filter(
+                user__id=user_id
+            ).values('course__id', 'course__name').annotate(
+                course_avg=Avg('marks_obtained')
+            ).order_by('-course_avg').first()
             
-            subject = last_paper.course.name if last_paper else 'General'
-            
+            # Get student name
             name = f"{student['user__first_name']} {student['user__last_name']}".strip()
             if not name:
                 name = student['user__username']
-                
+            
+            # Use the course where they scored best, or fallback to any course they took
+            if best_course_data and best_course_data.get('course__name'):
+                subject = best_course_data['course__name']
+            else:
+                # Fallback: get any course they took
+                any_paper = completed_papers.filter(user__id=user_id).first()
+                subject = any_paper.course.name if any_paper and any_paper.course else 'General'
+            
+            # Round the average score for display
+            avg_score = round(student['avg_score'] or 0, 1)
+            
             top_students.append({
-                'id': student['user__id'],
+                'id': user_id,
                 'name': name,
                 'subject': subject,
-                'score': student['total_score'] or 0
+                'score': avg_score
             })
             
     except Exception as e:
+        import traceback
         print(f"Error calculating top students: {e}")
+        print(traceback.format_exc())
 
     
     return Response({
         'total_courses': total_courses,
+        'total_courses_change': round(total_courses_change, 1),
         'active_courses': active_courses,
+        'active_courses_change': round(active_courses_change, 1),
         'total_students': total_students,
+        'total_students_change': round(total_students_change, 1),
         'avg_completion': round(avg_completion, 1),
+        'avg_completion_change': round(avg_completion_change, 1),
         'top_students': top_students,
         'recent_courses': [
             {
@@ -1478,6 +1656,17 @@ def teacher_courses_list(request):
     user = request.user
     
     if not _check_teacher_permission(user):
+        # Check if user has moderator designation but is in student mode
+        has_moderator_designation = hasattr(user, 'profile') and user.profile.is_moderator
+        if has_moderator_designation:
+            return Response(
+                {
+                    'error': 'You are currently in student view. Please switch to teacher view to access this page.',
+                    'can_toggle': True,
+                    'is_moderator_designation': True
+                },
+                status=status.HTTP_403_FORBIDDEN
+            )
         return Response(
             {'error': 'You are not authorized to access this page'},
             status=status.HTTP_403_FORBIDDEN
@@ -2680,6 +2869,11 @@ def api_exercise_handler(request, course_id, module_id, quiz_id=None):
         return Response({'message': 'Exercise deleted'})
 
     return Response({'error': 'Invalid request'}, status=400)
+
+
+
+
+
 
 
 
@@ -4055,6 +4249,60 @@ def teacher_reorder_quiz_questions(request, quiz_id):
 #  ENROLLMENT MANAGEMENT APIs
 # ============================================================
 
+
+
+
+
+
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def teacher_send_mail(request, course_id):
+    try:
+        user = request.user
+        # if not user.is_teacher:
+        #     return Response({'error': 'Only teachers can perform this action'}, 
+        #                   status=status.HTTP_403_FORBIDDEN)
+
+        course = get_object_or_404(Course, pk=course_id)
+        if not course.is_creator(user) and not course.is_teacher(user):
+            return Response({'error': 'This course does not belong to you'}, 
+                          status=status.HTTP_403_FORBIDDEN)
+
+        data = request.data
+        subject = data.get('subject')
+        body = data.get('body')
+        recipient_ids = data.get('recipients', []) # List of user IDs
+
+        if not subject or not body:
+            return Response({'error': 'Subject and Body are required'}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+        
+        if not recipient_ids:
+            return Response({'error': 'At least one recipient is required'}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+
+        # Filter recipients to ensure they exist
+        users = User.objects.filter(id__in=recipient_ids)
+        recipients = [u.email for u in users if u.email]
+        
+        # Handle attachments if any (standard Django request.FILES)
+        attachments = request.FILES.getlist('email_attach')
+
+        # Send mail using the utility function
+        # Message returned is a success string or error string
+        message = send_bulk_mail(subject, body, recipients, attachments)
+
+        if "Error" in message:
+             return Response({'error': message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response({'message': message}, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def teacher_get_course_enrollments(request, course_id):
@@ -4172,6 +4420,319 @@ def teacher_remove_enrollment(request, course_id):
         course.students.remove(student)
         removed_users.append(SimpleUserSerializer(student).data)
     return Response({'success': True, 'removed': removed_users}, status=status.HTTP_200_OK)
+
+
+# ============================================================
+#  TEACHER/TA MANAGEMENT APIs
+# ============================================================
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def teacher_search_teachers(request, course_id):
+    """Search for teachers/TAs to add to a course"""
+    user = request.user
+    
+    if not _check_teacher_permission(user):
+        return Response(
+            {'error': 'You are not authorized'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    try:
+        course = Course.objects.get(id=course_id)
+        
+        # Verify teacher owns the course
+        if course.creator != user and user not in course.teachers.all():
+            return Response(
+                {'error': 'You do not have permission to access this course'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Get search query from GET or POST
+        search_query = request.GET.get('query') or request.data.get('query') or request.data.get('uname')
+        
+        if not search_query:
+            return Response(
+                {'error': 'Search query is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Search for users matching the query
+        # Exclude: current user, superusers, course creator, and already added teachers
+        existing_teacher_ids = list(course.teachers.values_list('id', flat=True))
+        
+        teachers = User.objects.filter(
+            Q(username__icontains=search_query) |
+            Q(first_name__icontains=search_query) |
+            Q(last_name__icontains=search_query) |
+            Q(email__icontains=search_query)
+        ).exclude(
+            Q(id=user.id) |
+            Q(is_superuser=True) |
+            Q(id=course.creator.id) |
+            Q(id__in=existing_teacher_ids)
+        )
+        
+        # Serialize teacher data
+        teachers_data = []
+        for teacher in teachers:
+            try:
+                profile = teacher.profile
+                teachers_data.append({
+                    'id': teacher.id,
+                    'username': teacher.username,
+                    'first_name': teacher.first_name,
+                    'last_name': teacher.last_name,
+                    'email': teacher.email,
+                    'institute': profile.institute if hasattr(profile, 'institute') else '',
+                    'department': profile.department if hasattr(profile, 'department') else '',
+                    'position': profile.position if hasattr(profile, 'position') else '',
+                    'is_moderator': profile.is_moderator if hasattr(profile, 'is_moderator') else False
+                })
+            except Profile.DoesNotExist:
+                # Include users without profile but with basic info
+                teachers_data.append({
+                    'id': teacher.id,
+                    'username': teacher.username,
+                    'first_name': teacher.first_name,
+                    'last_name': teacher.last_name,
+                    'email': teacher.email,
+                    'institute': '',
+                    'department': '',
+                    'position': '',
+                    'is_moderator': False
+                })
+        
+        return Response({
+            'success': True,
+            'count': len(teachers_data),
+            'teachers': teachers_data
+        }, status=status.HTTP_200_OK)
+        
+    except Course.DoesNotExist:
+        return Response(
+            {'error': 'Course not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def teacher_get_course_teachers(request, course_id):
+    """Get list of current teachers/TAs for a course"""
+    user = request.user
+    
+    if not _check_teacher_permission(user):
+        return Response(
+            {'error': 'You are not authorized'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    try:
+        course = Course.objects.get(id=course_id)
+        
+        # Verify teacher owns the course
+        if course.creator != user and user not in course.teachers.all():
+            return Response(
+                {'error': 'You do not have permission to access this course'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Get all teachers
+        teachers = course.get_teachers()
+        
+        # Serialize teacher data
+        teachers_data = []
+        for teacher in teachers:
+            try:
+                profile = teacher.profile
+                teachers_data.append({
+                    'id': teacher.id,
+                    'username': teacher.username,
+                    'first_name': teacher.first_name,
+                    'last_name': teacher.last_name,
+                    'email': teacher.email,
+                    'institute': profile.institute if hasattr(profile, 'institute') else '',
+                    'department': profile.department if hasattr(profile, 'department') else '',
+                    'position': profile.position if hasattr(profile, 'position') else '',
+                    'is_moderator': profile.is_moderator if hasattr(profile, 'is_moderator') else False
+                })
+            except Profile.DoesNotExist:
+                teachers_data.append({
+                    'id': teacher.id,
+                    'username': teacher.username,
+                    'first_name': teacher.first_name,
+                    'last_name': teacher.last_name,
+                    'email': teacher.email,
+                    'institute': '',
+                    'department': '',
+                    'position': '',
+                    'is_moderator': False
+                })
+        
+        return Response({
+            'course_id': course.id,
+            'course_name': course.name,
+            'count': len(teachers_data),
+            'teachers': teachers_data
+        }, status=status.HTTP_200_OK)
+        
+    except Course.DoesNotExist:
+        return Response(
+            {'error': 'Course not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def teacher_add_teachers(request, course_id):
+    """Add teachers/TAs to a course"""
+    user = request.user
+    
+    if not _check_teacher_permission(user):
+        return Response(
+            {'error': 'You are not authorized'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    try:
+        course = Course.objects.get(id=course_id)
+        
+        # Verify teacher owns the course
+        if course.creator != user and user not in course.teachers.all():
+            return Response(
+                {'error': 'You do not have permission to modify this course'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Get teacher IDs from request
+        teacher_ids = request.data.get('teacher_ids', [])
+        if not teacher_ids:
+            return Response(
+                {'error': 'teacher_ids is required and cannot be empty'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Get teacher users
+        teachers = User.objects.filter(id__in=teacher_ids)
+        
+        if teachers.count() != len(teacher_ids):
+            return Response(
+                {'error': 'Some teacher IDs are invalid'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Add as moderators (sets is_moderator=True on their profiles)
+        try:
+            add_as_moderator(teachers)
+        except Http404 as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Add teachers to course
+        course.add_teachers(*teachers)
+        
+        # Serialize added teachers
+        added_teachers = []
+        for teacher in teachers:
+            added_teachers.append({
+                'id': teacher.id,
+                'username': teacher.username,
+                'first_name': teacher.first_name,
+                'last_name': teacher.last_name,
+                'email': teacher.email
+            })
+        
+        return Response({
+            'success': True,
+            'message': f'Successfully added {len(added_teachers)} teacher(s) to the course',
+            'teachers_added': added_teachers
+        }, status=status.HTTP_200_OK)
+        
+    except Course.DoesNotExist:
+        return Response(
+            {'error': 'Course not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {'error': 'Failed to add teachers', 'details': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['DELETE', 'POST'])
+@permission_classes([IsAuthenticated])
+def teacher_remove_teachers(request, course_id):
+    """Remove teachers/TAs from a course"""
+    user = request.user
+    
+    if not _check_teacher_permission(user):
+        return Response(
+            {'error': 'You are not authorized'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    try:
+        course = Course.objects.get(id=course_id)
+        
+        # Verify teacher owns the course
+        if course.creator != user and user not in course.teachers.all():
+            return Response(
+                {'error': 'You do not have permission to modify this course'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Get teacher IDs from request (support both DELETE body and POST data)
+        teacher_ids = request.data.get('teacher_ids', [])
+        if not teacher_ids:
+            return Response(
+                {'error': 'teacher_ids is required and cannot be empty'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Get teacher users
+        teachers = User.objects.filter(id__in=teacher_ids)
+        
+        if teachers.count() == 0:
+            return Response(
+                {'error': 'No valid teachers found to remove'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Remove teachers from course
+        course.remove_teachers(*teachers)
+        
+        # Serialize removed teachers
+        removed_teachers = []
+        for teacher in teachers:
+            removed_teachers.append({
+                'id': teacher.id,
+                'username': teacher.username,
+                'first_name': teacher.first_name,
+                'last_name': teacher.last_name,
+                'email': teacher.email
+            })
+        
+        return Response({
+            'success': True,
+            'message': f'Successfully removed {len(removed_teachers)} teacher(s) from the course',
+            'teachers_removed': removed_teachers
+        }, status=status.HTTP_200_OK)
+        
+    except Course.DoesNotExist:
+        return Response(
+            {'error': 'Course not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {'error': 'Failed to remove teachers', 'details': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 
 # ============================================================
@@ -4699,6 +5260,10 @@ class LessonForumCommentDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         return Comment.objects.filter(active=True)
 
+
+# ============================================================
+#  DEMO COURSE API
+# ============================================================
 
 class CreateDemoCourseAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -5598,9 +6163,8 @@ def api_skip_question(request, q_id, attempt_num, module_id, questionpaper_id,
             'questionpaper_id': int(questionpaper_id),
         }, status=status.HTTP_200_OK)
 
-
 # ============================================================
-# DESIGN COURSE TAB APIs
+#  DESIGN COURSE TAB APIs
 # ============================================================
 
 @api_view(['GET', 'POST'])
@@ -5693,3 +6257,213 @@ def api_design_course(request, course_id):
         'course': course.id,
         'is_design_course': True
     })
+
+
+# ============================================================
+#  COURSE MD UPLOAD/DOWNLOAD APIs
+# ============================================================
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def teacher_download_course_md(request, course_id):
+    """Download course structure as Markdown ZIP file"""
+    user = request.user
+    
+    if not _check_teacher_permission(user):
+        return Response(
+            {'error': 'You are not authorized to access this page'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    try:
+        course = Course.objects.get(id=course_id)
+        
+        # Verify teacher owns the course
+        if course.creator != user and user not in course.teachers.all():
+            return Response(
+                {'error': 'You do not have permission to download this course'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Import here to avoid circular imports
+        from upload.utils import write_course_to_file
+        
+        curr_dir = os.getcwd()
+        zip_file_buffer = BytesIO()
+        
+        try:
+            with tempfile.TemporaryDirectory() as tmpdirname:
+                os.chdir(tmpdirname)
+                write_course_to_file(course_id)
+                
+                # Create ZIP file
+                with ZipFile(zip_file_buffer, 'w') as zip_file:
+                    for foldername, subfolders, filenames in os.walk(tmpdirname):
+                        for filename in filenames:
+                            file_path = os.path.join(foldername, filename)
+                            arcname = os.path.relpath(file_path, tmpdirname)
+                            zip_file.write(file_path, arcname)
+                
+                zip_file_buffer.seek(0)
+                
+                # Create HTTP response with ZIP file
+                response = HttpResponse(
+                    zip_file_buffer.read(),
+                    content_type='application/zip'
+                )
+                response['Content-Disposition'] = f'attachment; filename="course_{course_id}.zip"'
+                return response
+                
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response(
+                {'error': f'Error while generating course file: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        finally:
+            os.chdir(curr_dir)
+            
+    except Course.DoesNotExist:
+        return Response(
+            {'error': 'Course not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {'error': f'Unexpected error: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def teacher_upload_course_md(request, course_id):
+    """Upload course structure from Markdown ZIP file"""
+    user = request.user
+    
+    if not _check_teacher_permission(user):
+        return Response(
+            {'error': 'You are not authorized to access this page'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    try:
+        course = Course.objects.get(id=course_id)
+        
+        # Verify teacher owns the course
+        if course.creator != user and user not in course.teachers.all():
+            return Response(
+                {'error': 'You do not have permission to upload to this course'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Check if file is provided
+        course_upload_file = request.FILES.get('course_upload_md')
+        if not course_upload_file:
+            return Response(
+                {'error': 'No file provided. Please upload a ZIP file.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Validate file extension
+        file_extension = os.path.splitext(course_upload_file.name)[1][1:].lower()
+        if file_extension != 'zip':
+            return Response(
+                {'error': 'Please upload a ZIP file'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Import here to avoid circular imports
+        from upload.utils import upload_course
+        
+        curr_dir = os.getcwd()
+        upload_status = False
+        msg = None
+        
+        try:
+            with tempfile.TemporaryDirectory() as tmpdirname:
+                # Extract ZIP file
+                with ZipFile(course_upload_file, 'r') as zip_file:
+                    zip_file.extractall(tmpdirname)
+                
+                # Find toc.yml file (it might be in a subdirectory)
+                toc_path = None
+                for root, dirs, files in os.walk(tmpdirname):
+                    if 'toc.yml' in files:
+                        toc_path = root
+                        break
+                
+                if not toc_path:
+                    return Response(
+                        {'error': 'toc.yml file not found in the ZIP archive. Please ensure your ZIP file contains a toc.yml file.'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+                # Change to directory containing toc.yml and process
+                os.chdir(toc_path)
+                upload_status, msg = upload_course(user)
+                
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            error_msg = str(e)
+            # Provide more helpful error messages
+            if 'duplicate' in error_msg.lower() or 'duplicate' in (msg or '').lower():
+                return Response(
+                    {
+                        'error': msg or error_msg,
+                        'details': 'The uploaded file contains duplicate module IDs. Please check your toc.yml and module files to ensure each module has a unique ID, or remove the ID field from modules you want to create as new.'
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            return Response(
+                {'error': f'Error parsing file structure: {error_msg}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        finally:
+            os.chdir(curr_dir)
+        
+        if upload_status:
+            return Response(
+                {'success': True, 'message': 'MD File successfully uploaded to course'},
+                status=status.HTTP_200_OK
+            )
+        else:
+            # Provide more context for validation errors
+            error_details = {}
+            if msg:
+                if 'duplicate' in msg.lower():
+                    error_details = {
+                        'error': msg,
+                        'details': 'Your uploaded file contains duplicate IDs. To fix this:\n'
+                                   '1. If you want to update existing modules: Ensure each module has a unique ID that matches an existing module in the course.\n'
+                                   '2. If you want to create new modules: Remove the "id" field from the module metadata in the Markdown files.\n'
+                                   '3. Check your toc.yml file to ensure no module appears twice.'
+                    }
+                elif 'not belong' in msg.lower() or 'relationship' in msg.lower():
+                    error_details = {
+                        'error': msg,
+                        'details': 'The IDs in your uploaded file do not match the course structure. Please ensure:\n'
+                                   '1. Module IDs belong to the current course.\n'
+                                   '2. Lesson/Quiz IDs belong to their respective modules.\n'
+                                   '3. Or remove IDs to create new items instead of updating existing ones.'
+                    }
+                else:
+                    error_details = {'error': msg}
+            
+            return Response(
+                error_details if error_details else {'error': 'Failed to upload course MD file'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+    except Course.DoesNotExist:
+        return Response(
+            {'error': 'Course not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {'error': f'Unexpected error: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )

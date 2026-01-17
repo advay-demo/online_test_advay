@@ -476,7 +476,7 @@ const CourseModules = () => {
                                 <span className="hidden sm:inline">Edit</span>
                             </button>
                             <button
-                                onClick={() => handleDeleteModule(module.id)}
+                                onClick={() => handleDeleteModule(courseId, module.id)}
                                 className="px-3 py-1.5 bg-red-500/20 text-red-400 border border-red-500/30 rounded text-xs font-bold hover:bg-red-500/30 transition flex items-center gap-1"
                             >
                                 <FaTrash className="w-3 h-3" />
@@ -524,7 +524,7 @@ const CourseModules = () => {
                                                     Edit
                                                 </button>
                                                 <button
-                                                    onClick={() => handleDeleteLesson(module, unit)}
+                                                    onClick={() => handleDeleteLesson(module.id, unit.lesson_id)}
                                                     className="px-3 py-1 border border-red-500/30 text-red-400 rounded text-xs hover:bg-red-500/20 transition"
                                                 >
                                                     Delete
@@ -545,7 +545,7 @@ const CourseModules = () => {
                                                     Edit
                                                 </button>
                                                 <button
-                                                    onClick={() => handleDeleteQuiz(module, unit)}
+                                                    onClick={() => handleDeleteQuiz(module.id, unit.quiz_id)}
                                                     className="px-3 py-1 border border-red-500/30 text-red-400 rounded text-xs hover:bg-red-500/20 transition"
                                                 >
                                                     Delete

@@ -15,6 +15,10 @@ import useManageCourseStore from '../../store/manageCourseStore';
 import CourseEnrollment from '../../components/teacher/CourseEnrollement';
 import CourseModules from '../../components/teacher/CourseModules';
 import CourseDesign from '../../components/teacher/CourseDesign';
+import CourseMail from '../../components/teacher/CourseMail';
+import CourseTeachers from '../../components/teacher/CourseTeachers';
+import CourseMembers from '../../components/teacher/CourseMembers';
+import CourseMDManager from '../../components/teacher/CourseMDManager';
 
 const ManageCourse = () => {
     const { courseId } = useParams();
@@ -151,23 +155,23 @@ const ManageCourse = () => {
                                 </button>
 
                                 {activeTab === 'Modules' && (
-                                <button
-                                    onClick={openCreateModule}
-                                    className="bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-700 transition flex items-center gap-2"
-                                >
-                                    <FaPlus className="w-3 h-3" />
-                                    <span className="hidden sm:inline">Add Module</span>
-                                </button>
+                                    <button
+                                        onClick={openCreateModule}
+                                        className="bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-700 transition flex items-center gap-2"
+                                    >
+                                        <FaPlus className="w-3 h-3" />
+                                        <span className="hidden sm:inline">Add Module</span>
+                                    </button>
                                 )}
 
                                 {activeTab === 'Discussions' && (
-                                <button
-                                    onClick={openCreatePost}
-                                    className="bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-700 transition flex items-center gap-2"
-                                >
-                                    <FaPlus className="w-3 h-3" />
-                                    <span className="hidden sm:inline">New Post</span>
-                                </button>
+                                    <button
+                                        onClick={openCreatePost}
+                                        className="bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-700 transition flex items-center gap-2"
+                                    >
+                                        <FaPlus className="w-3 h-3" />
+                                        <span className="hidden sm:inline">New Post</span>
+                                    </button>
                                 )}
                             </div>
                         </div>
@@ -179,11 +183,10 @@ const ManageCourse = () => {
                                     <button
                                         key={tab}
                                         onClick={() => setActiveTab(tab)}
-                                        className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition whitespace-nowrap ${
-                                            activeTab === tab
-                                                ? 'bg-blue-600 text-white'
-                                                : 'text-muted hover:text-white hover:bg-white/5'
-                                        }`}
+                                        className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition whitespace-nowrap ${activeTab === tab
+                                            ? 'bg-blue-600 text-white'
+                                            : 'text-muted hover:text-white hover:bg-white/5'
+                                            }`}
                                     >
                                         {tab}
                                     </button>
@@ -205,13 +208,17 @@ const ManageCourse = () => {
                                 </div>
                             )}
                             {activeTab === 'Discussions' && course && (
-                            <CourseDiscussionsTab
-                                courseId={course.id}
-                                showAddPostModal={showAddPostModal}
-                                setShowAddPostModal={setShowAddPostModal}
-                                closeCreatePost={closeCreatePost}
-                            />
+                                <CourseDiscussionsTab
+                                    courseId={course.id}
+                                    showAddPostModal={showAddPostModal}
+                                    setShowAddPostModal={setShowAddPostModal}
+                                    closeCreatePost={closeCreatePost}
+                                />
                             )}
+                            {activeTab === 'Mail' && <CourseMail courseId={course.id} />}
+                            {activeTab === 'Add' && <CourseTeachers />}
+                            {activeTab === 'Members' && <CourseMembers />}
+                            {activeTab === 'Files' && <CourseMDManager />}
                         </div>
                     </div>
                 </div>

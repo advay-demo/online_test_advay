@@ -1,14 +1,17 @@
 import React, { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import TeacherSidebar from '../../components/layout/TeacherSidebar';
 import Header from '../../components/layout/Header';
 import { useTeacherDashboardStore } from '../../store/teacherDashboardStore';
+import { toggleModeratorRole } from '../../api/api';
 
 const DashboardTeachers = () => {
+  const navigate = useNavigate();
   const {
     dashboardData,
     loading,
     error,
+    errorDetails,
     loadDashboard,
     createDemoCourse,
     message,
@@ -30,12 +33,22 @@ const DashboardTeachers = () => {
     }
   }, [message, clearMessage]);
 
+  // Helper function to format percentage change
+  const formatChange = (changeValue) => {
+    if (changeValue === null || changeValue === undefined) {
+      return '0%';
+    }
+    const rounded = Math.round(changeValue * 10) / 10; // Round to 1 decimal place
+    return rounded >= 0 ? `+${rounded}%` : `${rounded}%`;
+  };
+
   // Stats config for UI
   const stats = [
     {
       label: 'Total Courses',
       value: dashboardData?.total_courses ?? 0,
-      change: '+12.5%',
+      change: formatChange(dashboardData?.total_courses_change),
+      isNegative: (dashboardData?.total_courses_change ?? 0) < 0,
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13M3 6.253C4.168 5.477 5.754 5 7.5 5S10.832 5.477 12 6.253M12 6.253C13.168 5.477 14.754 5 16.5 5S19.832 5.477 21 6.253M3 19.253C4.168 18.477 5.754 18 7.5 18S10.832 18.477 12 19.253M12 19.253C13.168 18.477 14.754 18 16.5 18S19.832 18.477 21 19.253" />
@@ -46,7 +59,8 @@ const DashboardTeachers = () => {
     {
       label: 'Active Courses',
       value: dashboardData?.active_courses ?? 0,
-      change: '+8.2%',
+      change: formatChange(dashboardData?.active_courses_change),
+      isNegative: (dashboardData?.active_courses_change ?? 0) < 0,
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
           <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -57,7 +71,8 @@ const DashboardTeachers = () => {
     {
       label: 'Students',
       value: dashboardData?.total_students ?? 0,
-      change: '+5.1%',
+      change: formatChange(dashboardData?.total_students_change),
+      isNegative: (dashboardData?.total_students_change ?? 0) < 0,
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
           <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -68,8 +83,8 @@ const DashboardTeachers = () => {
     {
       label: 'Avg. Completion',
       value: `${dashboardData?.avg_completion ?? 0}%`,
-      change: '-2.3%',
-      isNegative: true,
+      change: formatChange(dashboardData?.avg_completion_change),
+      isNegative: (dashboardData?.avg_completion_change ?? 0) < 0,
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -97,23 +112,64 @@ const DashboardTeachers = () => {
     );
   }
 
+  const handleSwitchToTeacher = async () => {
+    try {
+      const response = await toggleModeratorRole();
+      if (response.success && response.is_moderator_active) {
+        // Reload the dashboard after switching
+        window.location.reload();
+      }
+    } catch (err) {
+      console.error('Failed to switch to teacher mode:', err);
+    }
+  };
+
   if (error || !dashboardData) {
+    // Check if user is in student mode and can toggle
+    const canToggle = errorDetails?.can_toggle === true;
+    const isModeratorDesignation = errorDetails?.is_moderator_designation === true;
+    
     return (
       <div className="flex min-h-screen relative grid-texture">
         <TeacherSidebar />
         <main className="flex-1">
           <Header isAuth />
           <div className="p-8 flex items-center justify-center min-h-[400px]">
-            <div className="text-center">
-              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-red-300 mb-4">
-                {error || 'Failed to load dashboard'}
+            <div className="text-center max-w-md">
+              <div className={`${canToggle ? 'bg-amber-500/10 border-amber-500/30' : 'bg-red-500/10 border-red-500/30'} border rounded-lg p-6 mb-4`}>
+                <div className={`${canToggle ? 'text-amber-300' : 'text-red-300'} mb-4`}>
+                  <svg className="w-12 h-12 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <p className="font-semibold text-lg mb-2">{error || 'Failed to load dashboard'}</p>
+                  {canToggle && (
+                    <p className="text-sm opacity-90">
+                      You are currently in student view. Switch to teacher view to access the teacher dashboard.
+                    </p>
+                  )}
+                </div>
+                {canToggle ? (
+                  <button
+                    onClick={handleSwitchToTeacher}
+                    className="bg-amber-600 hover:bg-amber-700 text-white px-6 py-3 rounded-lg font-semibold transition w-full mb-3"
+                  >
+                    Switch To Teacher View
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => navigate('/dashboard')}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition w-full mb-3"
+                  >
+                    Go To Student Dashboard
+                  </button>
+                )}
+                <button
+                  onClick={loadDashboard}
+                  className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg transition w-full"
+                >
+                  Retry
+                </button>
               </div>
-              <button
-                onClick={loadDashboard}
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
-              >
-                Retry
-              </button>
             </div>
           </div>
         </main>
@@ -233,12 +289,18 @@ const DashboardTeachers = () => {
                           </div>
                         </div>
                       </div>
-                      <Link
-                        to={`/teacher/courses/${event.id}/manage`}
-                        className="w-full sm:w-auto border border-[var(--border-color)] px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold hover:bg-[var(--input-bg)] transition whitespace-nowrap"
-                      >
-                        Manage
-                      </Link>
+                      {event.course_id ? (
+                        <Link
+                          to={`/teacher/courses/${event.course_id}/manage`}
+                          className="w-full sm:w-auto border border-[var(--border-color)] px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold hover:bg-[var(--input-bg)] transition whitespace-nowrap"
+                        >
+                          Manage
+                        </Link>
+                      ) : (
+                        <span className="w-full sm:w-auto border border-[var(--border-color)] px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold text-muted opacity-50 cursor-not-allowed whitespace-nowrap">
+                          Manage
+                        </span>
+                      )}
                     </div>
                   </div>
                 )) : (
