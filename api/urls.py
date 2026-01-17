@@ -118,6 +118,8 @@ urlpatterns = [
     url(r'teacher/courses/(?P<course_id>[0-9]+)/enrollments/approve/$', views.teacher_approve_enrollment, name='teacher_approve_enrollment'), #ok
     url(r'teacher/courses/(?P<course_id>[0-9]+)/enrollments/reject/$', views.teacher_reject_enrollment, name='teacher_reject_enrollment'), #ok
     url(r'teacher/courses/(?P<course_id>[0-9]+)/enrollments/remove/$', views.teacher_remove_enrollment, name='teacher_remove_enrollment'), #ok
+    
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/send_mail/$', views.teacher_send_mail, name='teacher_send_mail'),
 
 
     url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/$', views.teacher_get_course_modules, name='teacher_get_course_modules'), #ok

@@ -14,6 +14,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.decorators import (
     api_view, authentication_classes, permission_classes
 )
+from yaksh.send_emails import send_bulk_mail
 
 from rest_framework.parsers import MultiPartParser, FormParser
 
@@ -2684,6 +2685,11 @@ def api_exercise_handler(request, course_id, module_id, quiz_id=None):
 
 
 
+
+
+
+
+
 # ============================================================
 #  QUIZ APIs
 # ============================================================
@@ -4054,6 +4060,60 @@ def teacher_reorder_quiz_questions(request, quiz_id):
 # ============================================================
 #  ENROLLMENT MANAGEMENT APIs
 # ============================================================
+
+
+
+
+
+
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def teacher_send_mail(request, course_id):
+    try:
+        user = request.user
+        # if not user.is_teacher:
+        #     return Response({'error': 'Only teachers can perform this action'}, 
+        #                   status=status.HTTP_403_FORBIDDEN)
+
+        course = get_object_or_404(Course, pk=course_id)
+        if not course.is_creator(user) and not course.is_teacher(user):
+            return Response({'error': 'This course does not belong to you'}, 
+                          status=status.HTTP_403_FORBIDDEN)
+
+        data = request.data
+        subject = data.get('subject')
+        body = data.get('body')
+        recipient_ids = data.get('recipients', []) # List of user IDs
+
+        if not subject or not body:
+            return Response({'error': 'Subject and Body are required'}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+        
+        if not recipient_ids:
+            return Response({'error': 'At least one recipient is required'}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+
+        # Filter recipients to ensure they exist
+        users = User.objects.filter(id__in=recipient_ids)
+        recipients = [u.email for u in users if u.email]
+        
+        # Handle attachments if any (standard Django request.FILES)
+        attachments = request.FILES.getlist('email_attach')
+
+        # Send mail using the utility function
+        # Message returned is a success string or error string
+        message = send_bulk_mail(subject, body, recipients, attachments)
+
+        if "Error" in message:
+             return Response({'error': message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response({'message': message}, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
