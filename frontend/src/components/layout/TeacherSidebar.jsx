@@ -105,12 +105,6 @@ const TeacherSidebar = () => {
                         );
                     })}
                 </nav>
-
-
-                {/* Footer */}
-                <div className="p-4 sm:p-6 lg:p-8 border-t border-[var(--border-subtle)] bg-[var(--bg-primary)]/95 backdrop-blur-xl shadow-sm flex-shrink-0">
-                    <p className="text-xs text-muted text-center">© 2025 Yaksh</p>
-                </div>
             </aside>
 
             {/* Mobile Menu Toggle Button - Floating */}

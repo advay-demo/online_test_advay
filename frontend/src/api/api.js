@@ -64,6 +64,7 @@ export const logout = async () => {
 };
 
 
+// Password Change APIs
 export const requestPasswordChange = async () => {
   const response = await api.post('/api/auth/password-change/request/');
   return response.data;
@@ -77,10 +78,16 @@ export const confirmPasswordChange = async (otp, newPassword) => {
   return response.data;
 };
 
+// Moderator Role APIs
+export const toggleModeratorRole = async () => {
+  const response = await api.post('/api/auth/toggle_moderator/');
+  return response.data;
+};
 
-// ============================================================
-// ===========================================================
-
+export const getModeratorStatus = async () => {
+  const response = await api.get('/api/auth/moderator/status/');
+  return response.data;
+};
 
 // ============================================================
 // PROFILE APIs (Common for both students and teachers)
@@ -743,9 +750,61 @@ export const teacherSendMail = async (courseId, { subject, body, recipients }) =
   return response.data;
 };
 
-// ============================================================
-// ============================================================
+// Teacher/TA Management APIs
+export const searchTeachers = async (courseId, query) => {
+  const response = await api.get(`/api/teacher/courses/${courseId}/teachers/search/?query=${encodeURIComponent(query)}`);
+  return response.data;
+};
 
+export const getCourseTeachers = async (courseId) => {
+  const response = await api.get(`/api/teacher/courses/${courseId}/teachers/`);
+  return response.data;
+};
+
+export const addTeachersToCourse = async (courseId, teacherIds) => {
+  const response = await api.post(`/api/teacher/courses/${courseId}/teachers/add/`, {
+    teacher_ids: teacherIds
+  });
+  return response.data;
+};
+
+export const removeTeachersFromCourse = async (courseId, teacherIds) => {
+  const response = await api.delete(`/api/teacher/courses/${courseId}/teachers/remove/`, {
+    data: { teacher_ids: teacherIds }
+  });
+  return response.data;
+};
+
+// Course MD Upload/Download APIs
+export const downloadCourseMD = async (courseId) => {
+  const response = await api.get(`/api/teacher/courses/${courseId}/md/download/`, {
+    responseType: 'blob', // Important for binary file download
+  });
+  
+  // Create a blob URL and trigger download
+  const url = window.URL.createObjectURL(new Blob([response.data]));
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', `course_${courseId}.zip`);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+  
+  return { success: true };
+};
+
+export const uploadCourseMD = async (courseId, file) => {
+  const formData = new FormData();
+  formData.append('course_upload_md', file);
+  
+  const response = await api.post(`/api/teacher/courses/${courseId}/md/upload/`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data;
+};
 
 // Unit Ordering APIs
 export const reorderModuleUnits = async (moduleId, unitOrders) => {

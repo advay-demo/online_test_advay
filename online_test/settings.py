@@ -128,19 +128,19 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "yaksh_data", "data")
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Set this varable to <True> if smtp-server is not allowing to send email.
-EMAIL_USE_TLS = False
+EMAIL_HOST = 'smtp.gmail.com'
 
-EMAIL_HOST = 'your_email_host'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'ayushbutola13@gmail.com'
 
-EMAIL_PORT = 'your_email_port'
+EMAIL_HOST_PASSWORD = 'qkpredluzlzhpnvi'
 
-EMAIL_HOST_USER = 'email_host_user'
-
-EMAIL_HOST_PASSWORD = 'email_host_password'
+DEFAULT_FROM_EMAIL = "Yaksh <ayushbutola13@gmail.com>"
 
 # Set EMAIL_BACKEND to 'django.core.mail.backends.smtp.EmailBackend'
 # in production
-EMAIL_BACKEND = 'django.core.mail.backends.dummy.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
 # SENDER_EMAIL, REPLY_EMAIL, PRODUCTION_URL, IS_DEVELOPMENT are used in email
 # verification. Set the variables accordingly to avoid errors in production
@@ -277,6 +277,18 @@ if USE_AWS:
     DEFAULT_FILE_STORAGE = 'yaksh.storage_backends.PublicMediaStorage'
 
 
+# Cache Configuration (required for OTP storage in password change)
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
+
+
 # ============================================================================
 # PRODUCTION CONFIGURATION FOR RENDER
 # ============================================================================
@@ -352,6 +364,17 @@ if not DEBUG:
     CELERY_TASK_SERIALIZER = 'json'
     CELERY_RESULT_SERIALIZER = 'json'
     CELERY_TIMEZONE = TIME_ZONE
+    
+    # Cache Configuration with Redis for OTP storage
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": config('REDIS_URL', default='redis://localhost:6379/1'),
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            }
+        }
+    }
     
     # Email Backend for Production (optional - configure later)
     # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

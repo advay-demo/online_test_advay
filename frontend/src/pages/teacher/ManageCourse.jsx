@@ -16,6 +16,9 @@ import CourseEnrollment from '../../components/teacher/CourseEnrollement';
 import CourseModules from '../../components/teacher/CourseModules';
 import CourseDesign from '../../components/teacher/CourseDesign';
 import CourseMail from '../../components/teacher/CourseMail';
+import CourseTeachers from '../../components/teacher/CourseTeachers';
+import CourseMembers from '../../components/teacher/CourseMembers';
+import CourseMDManager from '../../components/teacher/CourseMDManager';
 
 const ManageCourse = () => {
     const { courseId } = useParams();
@@ -213,6 +216,9 @@ const ManageCourse = () => {
                                 />
                             )}
                             {activeTab === 'Mail' && <CourseMail courseId={course.id} />}
+                            {activeTab === 'Add' && <CourseTeachers />}
+                            {activeTab === 'Members' && <CourseMembers />}
+                            {activeTab === 'Files' && <CourseMDManager />}
                         </div>
                     </div>
                 </div>

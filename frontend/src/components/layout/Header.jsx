@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
   FaBell, 
   FaUser, 
@@ -13,18 +13,22 @@ import {
   FaCheck,
   FaCheckDouble,
   FaArrowRight,
-  FaClock
+  FaClock,
+  FaSync
 } from 'react-icons/fa';
 import Logo from '../ui/Logo';
 import { useStore } from '../../store/useStore';
 import { useAuthStore } from '../../store/authStore';
 import { useNotificationsStore } from '../../store/notificationsStore';
+import { toggleModeratorRole, getModeratorStatus } from '../../api/api';
 
 const Header = ({ isAuth = false, isLanding = false }) => {
   const { theme, toggleTheme } = useStore();
   const navigate = useNavigate();
+  const location = useLocation();
   const logout = useAuthStore((state) => state.logout);
   const user = useAuthStore((state) => state.user);
+  const updateUser = useAuthStore((state) => state.updateUser);
   
   // Notifications store
   const { 
@@ -40,6 +44,7 @@ const Header = ({ isAuth = false, isLanding = false }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [isModeratorActive, setIsModeratorActive] = useState(null);
   
   const dropdownRef = useRef(null);
   const notificationRef = useRef(null);
@@ -77,6 +82,30 @@ const Header = ({ isAuth = false, isLanding = false }) => {
     await markAllAsRead();
   };
 
+  const handleToggleModerator = async () => {
+    try {
+      const response = await toggleModeratorRole();
+      if (response.success) {
+        setIsModeratorActive(response.is_moderator_active);
+        setIsDropdownOpen(false);
+        
+        // Check if currently on a teacher route
+        const isOnTeacherRoute = location.pathname.startsWith('/teacher');
+        
+        // Redirect immediately based on new mode (like old Django version did)
+        if (response.is_moderator_active) {
+          // Switched to teacher mode - redirect to teacher dashboard
+          window.location.href = '/teacher/dashboard';
+        } else {
+          // Switched to student mode - redirect to student dashboard (like old Django redirects to /exam/)
+          window.location.href = '/dashboard';
+        }
+      }
+    } catch (error) {
+      console.error('Failed to toggle moderator role:', error);
+      // Could show a toast notification here
+    }
+  };
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -104,6 +133,26 @@ const Header = ({ isAuth = false, isLanding = false }) => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Fetch moderator status on mount and when user changes
+  useEffect(() => {
+    const fetchModeratorStatus = async () => {
+      if (user?.is_moderator && isAuth) {
+        try {
+          const status = await getModeratorStatus();
+          setIsModeratorActive(status.is_moderator_active);
+        } catch (error) {
+          console.error('Failed to fetch moderator status:', error);
+          // Default to false if we can't fetch status
+          setIsModeratorActive(false);
+        }
+      } else {
+        setIsModeratorActive(false);
+      }
+    };
+
+    fetchModeratorStatus();
+  }, [user, isAuth]);
 
   const ThemeToggle = () => (
     <button
@@ -445,6 +494,20 @@ const Header = ({ isAuth = false, isLanding = false }) => {
                         <FaUser className="w-4 h-4 group-hover:scale-110 transition-transform" />
                         <span>My Profile</span>
                       </Link>
+                      
+                      {user?.is_moderator && (
+                        <>
+                          <div className="border-t border-[var(--border-subtle)] my-2"></div>
+                          <button
+                            onClick={handleToggleModerator}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[var(--text-secondary)] hover:bg-white/5 hover:text-[var(--text-primary)] transition-colors group"
+                          >
+                            <FaSync className="w-4 h-4 group-hover:rotate-180 transition-transform duration-300" />
+                            <span>{isModeratorActive ? 'Switch To Student' : 'Switch To Teacher'}</span>
+                          </button>
+                          <div className="border-t border-[var(--border-subtle)] my-2"></div>
+                        </>
+                      )}
                       
                       <Link
                         to="/settings"

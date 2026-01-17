@@ -6,13 +6,19 @@ export const useTeacherDashboardStore = create((set) => ({
   loading: false,
   error: null,
   message: null,
+  errorDetails: null, // Store detailed error info
   loadDashboard: async () => {
-    set({ loading: true, error: null, message: null });
+    set({ loading: true, error: null, message: null, errorDetails: null });
     try {
       const data = await fetchTeacherDashboard();
-      set({ dashboardData: data, error: null });
+      set({ dashboardData: data, error: null, errorDetails: null });
     } catch (err) {
-      set({ error: 'Failed to load dashboard data' });
+      const errorMessage = err.response?.data?.error || 'Failed to load dashboard data';
+      const errorDetails = err.response?.data || {};
+      set({ 
+        error: errorMessage,
+        errorDetails: errorDetails
+      });
     } finally {
       set({ loading: false });
     }
