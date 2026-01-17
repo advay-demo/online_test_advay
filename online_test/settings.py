@@ -128,15 +128,15 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "yaksh_data", "data")
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Set this varable to <True> if smtp-server is not allowing to send email.
-EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
 
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'ayushbutola13@gmail.com'
+EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 
-EMAIL_HOST_PASSWORD = 'qkpredluzlzhpnvi'
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 
-DEFAULT_FROM_EMAIL = "Yaksh <ayushbutola13@gmail.com>"
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='')
 
 # Set EMAIL_BACKEND to 'django.core.mail.backends.smtp.EmailBackend'
 # in production
@@ -169,7 +169,9 @@ IS_DEVELOPMENT = True
 MAX_UPLOAD_SIZE = 524288000
 
 
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+# Use EMAIL_HOST_USER as DEFAULT_FROM_EMAIL if DEFAULT_FROM_EMAIL is not set
+if not DEFAULT_FROM_EMAIL:
+    DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 TEMPLATES = [
     {
