@@ -13,8 +13,6 @@ urlpatterns = [
 
     url(r'auth/password-change/request/$', views.request_password_change, name='request_password_change'),
     url(r'auth/password-change/confirm/$', views.confirm_password_change, name='confirm_password_change'),
-    url(r'auth/profile/$', views.get_user_profile, name='get_user_profile'),
-    url(r'auth/profile/update/$', views.update_user_profile, name='update_user_profile'),
     url(r'auth/moderator/status/$', views.get_moderator_status, name='get_moderator_status'),
     url(r'auth/toggle_moderator/$', views.toggle_moderator_role_api, name='toggle_moderator_role'),
     
