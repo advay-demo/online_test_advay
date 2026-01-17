@@ -33,7 +33,7 @@ api.interceptors.response.use(
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');
       localStorage.removeItem('auth-storage'); // Clear zustand persist
-      
+
       // Only redirect if not already on auth pages (prevent loop)
       const currentPath = window.location.pathname;
       if (currentPath !== '/signin' && currentPath !== '/signup' && currentPath !== '/') {
@@ -229,13 +229,13 @@ export const markBulkNotificationsRead = async (messageUids) => {
 
 export const apiStartQuiz = async (questionpaperId, moduleId, courseId, attemptNum = null, data = null) => {
   let url;
-  
+
   if (attemptNum) {
     url = `/api/quiz/start/${attemptNum}/${moduleId}/${questionpaperId}/${courseId}/`;
   } else {
     url = `/api/quiz/start/${questionpaperId}/${moduleId}/${courseId}/`;
   }
-  
+
   if (data) {
     const response = await api.post(url, data);
     return response.data;
@@ -250,7 +250,7 @@ export const apiStartQuiz = async (questionpaperId, moduleId, courseId, attemptN
  */
 export const apiQuitQuiz = async (attemptNum, moduleId, questionpaperId, courseId, reason = null) => {
   const url = `/api/quiz/quit/${attemptNum}/${moduleId}/${questionpaperId}/${courseId}/`;
-  
+
   if (reason !== null) {
     const response = await api.post(url, { reason });
     return response.data;
@@ -265,13 +265,13 @@ export const apiQuitQuiz = async (attemptNum, moduleId, questionpaperId, courseI
  */
 export const apiCompleteQuiz = async (attemptNum = null, moduleId = null, questionpaperId = null, courseId = null, data = null) => {
   let url;
-  
+
   if (attemptNum && moduleId && questionpaperId && courseId) {
     url = `/api/quiz/complete/${attemptNum}/${moduleId}/${questionpaperId}/${courseId}/`;
   } else {
     url = `/api/quiz/complete/`;
   }
-  
+
   if (data) {
     const response = await api.post(url, data);
     return response.data;
@@ -286,7 +286,7 @@ export const apiCompleteQuiz = async (attemptNum = null, moduleId = null, questi
  */
 export const apiCheckAnswer = async (questionId, attemptNum, moduleId, questionpaperId, courseId, answerData = null) => {
   const url = `/api/quiz/check/${questionId}/${attemptNum}/${moduleId}/${questionpaperId}/${courseId}/`;
-  
+
   if (answerData) {
     const response = await api.post(url, answerData);
     return response.data;
@@ -301,13 +301,13 @@ export const apiCheckAnswer = async (questionId, attemptNum, moduleId, questionp
  */
 export const apiSkipQuestion = async (questionId, attemptNum, moduleId, questionpaperId, courseId, nextQuestionId = null, codeData = null) => {
   let url;
-  
+
   if (nextQuestionId) {
     url = `/api/quiz/skip/${questionId}/${nextQuestionId}/${attemptNum}/${moduleId}/${questionpaperId}/${courseId}/`;
   } else {
     url = `/api/quiz/skip/${questionId}/${attemptNum}/${moduleId}/${questionpaperId}/${courseId}/`;
   }
-  
+
   if (codeData) {
     const response = await api.post(url, codeData);
     return response.data;
@@ -733,6 +733,16 @@ export const removeEnrollment = async (courseId, userIds) => {
   return response.data;
 };
 
+// Send email to students
+export const teacherSendMail = async (courseId, { subject, body, recipients }) => {
+  const response = await api.post(`/api/teacher/courses/${courseId}/send_mail/`, {
+    subject,
+    body,
+    recipients
+  });
+  return response.data;
+};
+
 // ============================================================
 // ============================================================
 
@@ -985,7 +995,7 @@ export const testQuestion = async (questionId) => {
 export const bulkUploadQuestions = async (file) => {
   const formData = new FormData();
   formData.append('file', file);
-  
+
   const response = await api.post('/api/teacher/questions/bulk-upload/', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
@@ -998,7 +1008,7 @@ export const downloadQuestionTemplate = async () => {
   const response = await api.get('/api/teacher/questions/template/', {
     responseType: 'blob',
   });
-  
+
   // Create download link
   const url = window.URL.createObjectURL(new Blob([response.data]));
   const link = document.createElement('a');
