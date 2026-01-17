@@ -17,7 +17,8 @@ import {
   FaTimes,
   FaEdit,
   FaPlus,
-  FaTrash
+  FaTrash,
+  FaChartLine
 } from 'react-icons/fa';
 import Header from '../components/layout/Header';
 import StudentSidebar from '../components/layout/Sidebar';
@@ -28,6 +29,7 @@ import { getUserProfile, patchUserProfile } from '../api/api';
 const Profile = () => {
   const { user, isAuthenticated } = useAuthStore();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   
   const [profileData, setProfileData] = useState(null);
   const [formData, setFormData] = useState({
@@ -265,6 +267,15 @@ const Profile = () => {
             </div>
           )}
 
+          {/* Floating Summary Button - Only on mobile/tablet */}
+          <button
+            onClick={() => setIsSummaryOpen(true)}
+            className="xl:hidden fixed bottom-6 left-6 z-40 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-lg transition-all active:scale-95 flex items-center gap-2"
+          >
+            <FaChartLine className="w-5 h-5" />
+            <span className="text-sm font-semibold pr-1">Summary</span>
+          </button>
+
           <div className="flex flex-col xl:flex-row gap-4 sm:gap-6 lg:gap-8">
             {/* Main Card */}
             <div className="flex-1 card-strong rounded-xl sm:rounded-2xl overflow-hidden">
@@ -279,6 +290,7 @@ const Profile = () => {
                     />
                     {isEditing && (
                       <button 
+                        type="button"
                         className="absolute -bottom-1 -right-1 bg-indigo-600 hover:bg-indigo-700 text-white p-1.5 rounded-full border-2 border-[#0a0a0f] transition-colors"
                         onClick={() => alert('Avatar upload coming soon!')}
                       >
@@ -299,6 +311,7 @@ const Profile = () => {
                 </div>
                 {!isEditing && (
                   <button
+                    type="button"
                     onClick={() => setIsEditing(true)}
                     className="bg-blue-600 text-white px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg font-semibold hover:bg-blue-700 active:scale-95 transition text-xs sm:text-sm whitespace-nowrap flex-shrink-0"
                   >
@@ -692,8 +705,8 @@ const Profile = () => {
               </form>
             </div>
 
-            {/* Profile Summary Card */}
-            <div className="xl:w-80 2xl:w-96">
+            {/* Profile Summary Card - Desktop Sticky */}
+            <div className="hidden xl:block xl:w-80 2xl:w-96">
               <div className="card-strong p-4 sm:p-6 rounded-xl sm:rounded-2xl sticky top-6">
                 <div className="mb-4">
                   <h3 className="text-base sm:text-lg font-bold mb-1">Profile Summary</h3>
@@ -792,6 +805,129 @@ const Profile = () => {
           </div>
         </div>
       </main>
+
+      {/* Mobile/Tablet Sliding Drawer */}
+      {isSummaryOpen && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className="xl:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 transition-opacity"
+            onClick={() => setIsSummaryOpen(false)}
+          />
+          
+          {/* Drawer */}
+          <div className={`xl:hidden fixed right-0 top-0 bottom-0 w-full max-w-md bg-[var(--card-bg)] shadow-2xl z-50 transform transition-transform duration-300 ease-out ${
+            isSummaryOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}>
+            <div className="h-full overflow-y-auto">
+              {/* Drawer Header */}
+              <div className="sticky top-0 bg-[var(--card-bg)] border-b border-[var(--border-color)] p-4 flex items-center justify-between z-10">
+                <div>
+                  <h3 className="text-lg font-bold">Profile Summary</h3>
+                  <p className="text-xs muted">Your profile overview</p>
+                </div>
+                <button
+                  onClick={() => setIsSummaryOpen(false)}
+                  className="p-2 hover:bg-white/5 rounded-lg transition-colors"
+                >
+                  <FaTimes className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Drawer Content */}
+              <div className="p-4">
+                {/* Profile Completeness */}
+                <div className="mb-6">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium">Completeness</span>
+                    <span className="text-sm font-semibold">{completeness}%</span>
+                  </div>
+                  <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                    <div 
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        completeness >= 80 ? 'bg-green-500' :
+                        completeness >= 50 ? 'bg-yellow-500' :
+                        'bg-red-500'
+                      }`}
+                      style={{ width: `${completeness}%` }}
+                    />
+                  </div>
+                  <p className="text-xs muted mt-2">
+                    {completeness >= 80 ? '🎉 Great! Your profile is looking complete' :
+                     completeness >= 50 ? '👍 Good progress! Add more details' :
+                     '📝 Let\'s complete your profile'}
+                  </p>
+                </div>
+
+                {/* Quick Stats */}
+                <div className="grid grid-cols-2 gap-3 mb-6">
+                  <div className="bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg p-3 text-center">
+                    <div className="text-2xl font-bold">{isTeacher ? '12' : '8'}</div>
+                    <div className="text-xs muted">{isTeacher ? 'Courses' : 'Enrolled'}</div>
+                  </div>
+                  <div className="bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg p-3 text-center">
+                    <div className="text-2xl font-bold">{isTeacher ? '248' : '47'}</div>
+                    <div className="text-xs muted">{isTeacher ? 'Students' : 'Completed'}</div>
+                  </div>
+                </div>
+
+                {/* Account Info */}
+                <div className="pt-6 border-t border-[var(--border-color)] space-y-3">
+                  <h4 className="text-sm font-semibold mb-3">Account Information</h4>
+                  
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="muted">Username</span>
+                    <span className="font-medium">@{user?.username}</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="muted">Role</span>
+                    <span className="font-medium">{isTeacher ? 'Teacher' : 'Student'}</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="muted">Location</span>
+                    <span className="font-medium">
+                      {formData.city ? `${formData.city}, ${formData.country}` : 'Not set'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Social Links Summary */}
+                {(formData.linkedin || formData.github) && (
+                  <div className="pt-6 border-t border-[var(--border-color)] mt-6">
+                    <h4 className="text-sm font-semibold mb-3">Social Profiles</h4>
+                    <div className="space-y-2">
+                      {formData.linkedin && (
+                        <a 
+                          href={formData.linkedin}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-3 p-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 rounded-lg transition-colors group"
+                        >
+                          <FaLinkedin className="w-5 h-5 text-blue-400" />
+                          <span className="text-sm group-hover:text-white transition-colors">LinkedIn</span>
+                        </a>
+                      )}
+                      {formData.github && (
+                        <a 
+                          href={formData.github}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-3 p-2 bg-gray-500/10 hover:bg-gray-500/20 border border-gray-500/20 rounded-lg transition-colors group"
+                        >
+                          <FaGithub className="w-5 h-5 text-gray-400" />
+                          <span className="text-sm group-hover:text-white transition-colors">GitHub</span>
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };
