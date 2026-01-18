@@ -821,43 +821,138 @@ class AnswerPaperList(APIView):
 class AnswerValidator(APIView):
     def post(self, request, answerpaper_id, question_id, format=None):
         user = request.user
-        answerpaper = AnswerPaper.objects.get(pk=answerpaper_id, user=user)
-        question = Question.objects.get(pk=question_id)
-
-        if question not in answerpaper.questions.all():
-            raise Http404
-
+        
+        # Get answerpaper with error handling
         try:
+            answerpaper = AnswerPaper.objects.get(pk=answerpaper_id, user=user)
+        except AnswerPaper.DoesNotExist:
+            return Response(
+                {'error': 'Answer paper not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Get question with error handling
+        try:
+            question = Question.objects.get(pk=question_id)
+        except Question.DoesNotExist:
+            return Response(
+                {'error': 'Question not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Verify question belongs to this answer paper
+        if question not in answerpaper.questions.all():
+            return Response(
+                {'error': 'Question not in this answer paper'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Extract and normalize answer based on question type
+        try:
+            raw_answer = request.data.get('answer')
+            
+            if raw_answer is None:
+                return Response(
+                    {'error': 'Answer is required'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Normalize answer format - handle both array and direct value
             if question.type in ['mcq', 'mcc']:
-                user_answer = request.data['answer']
+                # MCQ/MCC can be single value or array
+                if isinstance(raw_answer, list):
+                    user_answer = raw_answer
+                else:
+                    user_answer = [raw_answer] if raw_answer else []
+                    
             elif question.type == 'integer':
-                user_answer = int(request.data['answer'][0])
+                # Extract integer from array or direct value
+                if isinstance(raw_answer, list):
+                    user_answer = int(raw_answer[0]) if raw_answer else 0
+                else:
+                    user_answer = int(raw_answer)
+                    
             elif question.type == 'float':
-                user_answer = float(request.data['answer'][0])
+                # Extract float from array or direct value
+                if isinstance(raw_answer, list):
+                    user_answer = float(raw_answer[0]) if raw_answer else 0.0
+                else:
+                    user_answer = float(raw_answer)
+                    
+            elif question.type in ['code', 'upload']:
+                # Code/upload expects string, extract from array if needed
+                if isinstance(raw_answer, list):
+                    user_answer = raw_answer[0] if raw_answer else ''
+                else:
+                    user_answer = raw_answer
+                    
             else:
-                user_answer = request.data['answer']
-        except KeyError:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+                # Default: use as-is or extract from array
+                if isinstance(raw_answer, list):
+                    user_answer = raw_answer[0] if raw_answer else ''
+                else:
+                    user_answer = raw_answer
+                    
+        except (ValueError, TypeError, IndexError) as e:
+            return Response(
+                {'error': f'Invalid answer format for {question.type} question: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-        ans = Answer.objects.create(question=question, answer=user_answer)
-        answerpaper.answers.add(ans)
-        answerpaper.save()
+        # Create answer object
+        try:
+            ans = Answer.objects.create(question=question, answer=user_answer)
+            answerpaper.answers.add(ans)
+            answerpaper.save()
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to save answer for question {question_id}: {str(e)}", exc_info=True)
+            return Response(
+                {'error': f'Failed to save answer: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
-        json_data = None
-        if question.type in ['code', 'upload']:
-            json_data = question.consolidate_answer_data(user_answer, user)
+        # Validate answer
+        try:
+            json_data = None
+            if question.type in ['code', 'upload']:
+                json_data = question.consolidate_answer_data(user_answer, user)
 
-        result = answerpaper.validate_answer(user_answer, question, json_data, ans.id)
+            result = answerpaper.validate_answer(user_answer, question, json_data, ans.id)
 
-        if question.type not in ['code', 'upload']:
-            if result.get('success'):
-                ans.correct = True
-                ans.marks = question.points
-            ans.error = json.dumps(result.get('error'))
-            ans.save()
-            answerpaper.update_marks(state='inprogress')
+            # Update answer object for non-code questions
+            if question.type not in ['code', 'upload']:
+                if result.get('success'):
+                    ans.correct = True
+                    ans.marks = question.points
+                ans.error = json.dumps(result.get('error'))
+                ans.save()
+                answerpaper.update_marks(state='inprogress')
 
-        return Response(result)
+            return Response(result)
+            
+        except Exception as e:
+            # Log the error for debugging
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error validating answer for question {question_id}: {str(e)}", exc_info=True)
+            
+            # Check if it's a code server connection error
+            error_str = str(e)
+            if 'ConnectionError' in str(type(e).__name__) or 'Connection refused' in error_str or 'Max retries exceeded' in error_str:
+                # Code server is not available
+                if question.type in ['code', 'upload']:
+                    return Response({
+                        'success': False,
+                        'error': 'Code evaluation server is currently unavailable. Your answer has been saved and will be evaluated when the server is available. Please contact your instructor if this persists.',
+                        'message': 'Answer saved for later evaluation'
+                    }, status=status.HTTP_202_ACCEPTED)
+            
+            return Response(
+                {'error': f'Failed to validate answer: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     def get(self, request, uid):
         ans = Answer.objects.get(pk=uid)

@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { FaClock, FaCheck, FaArrowRight } from 'react-icons/fa';
+import { FaClock, FaCheck, FaArrowRight, FaTimes } from 'react-icons/fa';
 import { AiOutlineWarning } from 'react-icons/ai';
 import QuizSidebar from '../../components/layout/QuizSidebar';
-import { startQuiz, submitAnswer, quitQuiz } from '../../api/api';
+import { startQuiz, submitAnswer, getAnswerResult, quitQuiz } from '../../api/api';
 
 const Quiz = () => {
   const { courseId, quizId } = useParams();
@@ -16,6 +16,10 @@ const Quiz = () => {
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [attemptedQuestions, setAttemptedQuestions] = useState(new Set());
+  const [evaluatingQuestions, setEvaluatingQuestions] = useState(new Set());
+  const [correctAnswers, setCorrectAnswers] = useState(new Set());
+  const [incorrectAnswers, setIncorrectAnswers] = useState(new Set());
+  const [questionResults, setQuestionResults] = useState({});
   const timerIntervalRef = useRef(null);
 
   useEffect(() => {
@@ -91,29 +95,304 @@ const Quiz = () => {
     }));
   };
 
+  // Render code error with detailed information
+  const renderCodeError = (error, index) => {
+    // Hidden test case
+    if (error.hidden) {
+      return (
+        <div key={index} className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded">
+          <p className="font-semibold">🔒 Hidden test case failed</p>
+          <p className="text-sm text-gray-400">
+            This test case is hidden to prevent reverse engineering the solution.
+          </p>
+        </div>
+      );
+    }
+
+    // Assertion error (code exception)
+    if (error.type === 'assertion') {
+      return (
+        <div key={index} className="p-3 bg-red-500/10 border border-red-500/30 rounded">
+          <h5 className="font-semibold mb-2">Test Case #{index + 1}</h5>
+
+          {error.test_case && (
+            <div className="mb-2">
+              <p className="text-sm font-semibold">We tried your code with:</p>
+              <pre className="text-sm bg-black/20 p-2 rounded mt-1">
+                {error.test_case}
+              </pre>
+            </div>
+          )}
+
+          <div className="mt-2">
+            <p className="text-sm font-semibold mb-1">Error occurred:</p>
+            <table className="text-sm w-full">
+              <tbody>
+                <tr>
+                  <td className="font-semibold pr-2 py-1">Exception:</td>
+                  <td className="text-red-400">{error.exception}</td>
+                </tr>
+                <tr>
+                  <td className="font-semibold pr-2 py-1">Message:</td>
+                  <td>{error.message}</td>
+                </tr>
+                {error.traceback && (
+                  <tr>
+                    <td className="font-semibold pr-2 py-1 align-top">Traceback:</td>
+                    <td>
+                      <pre className="text-xs bg-black/20 p-2 rounded mt-1 overflow-auto max-h-40">
+                        {error.traceback}
+                      </pre>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+    }
+
+    // stdio error (input/output mismatch)
+    if (error.type === 'stdio') {
+      return (
+        <div key={index} className="p-3 bg-red-500/10 border border-red-500/30 rounded">
+          <h5 className="font-semibold mb-2">Test Case #{index + 1}</h5>
+
+          {error.given_input && (
+            <div className="mb-2">
+              <p className="text-sm">
+                <span className="font-semibold">Input:</span> {error.given_input}
+              </p>
+            </div>
+          )}
+
+          <div className="overflow-x-auto">
+            <table className="text-sm w-full border-collapse">
+              <thead>
+                <tr className="border-b border-white/10">
+                  <th className="text-left p-2">Line</th>
+                  <th className="text-left p-2">Expected Output</th>
+                  <th className="text-left p-2">Your Output</th>
+                  <th className="text-left p-2">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {error.expected_output?.map((expected, i) => {
+                  const userOut = error.user_output?.[i] || '';
+                  const isError = error.error_line_numbers?.includes(i);
+
+                  return (
+                    <tr key={i} className={isError ? 'bg-red-500/10' : ''}>
+                      <td className="p-2">{i + 1}</td>
+                      <td className="p-2 font-mono text-xs">{expected}</td>
+                      <td className="p-2 font-mono text-xs">{userOut}</td>
+                      <td className="p-2">
+                        {isError ? (
+                          <FaTimes className="text-red-500" />
+                        ) : (
+                          <FaCheck className="text-green-500" />
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {error.error_msg && (
+            <div className="mt-2 p-2 bg-red-500/20 rounded">
+              <p className="text-sm">
+                <span className="font-semibold">Error:</span> {error.error_msg}
+              </p>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Generic error (no type)
+    return (
+      <div key={index} className="p-3 bg-red-500/10 border border-red-500/30 rounded">
+        <pre className="text-sm">{typeof error === 'string' ? error : JSON.stringify(error, null, 2)}</pre>
+      </div>
+    );
+  };
+
+  // Render error display based on error type
+  const renderErrorDisplay = (error) => {
+    // If error is a string, show it directly
+    if (typeof error === 'string') {
+      return <p className="text-sm">{error}</p>;
+    }
+
+    // If error is an array
+    if (Array.isArray(error)) {
+      // Empty array
+      if (error.length === 0) {
+        return <p className="text-sm">An error occurred</p>;
+      }
+
+      // Simple string array (non-code questions)
+      if (typeof error[0] === 'string') {
+        return (
+          <div className="space-y-1">
+            {error.map((err, idx) => (
+              <p key={idx} className="text-sm">{err}</p>
+            ))}
+          </div>
+        );
+      }
+
+      // Complex error objects (code questions)
+      return (
+        <div className="space-y-3">
+          {error.map((err, idx) => renderCodeError(err, idx))}
+        </div>
+      );
+    }
+
+    // Fallback for unexpected formats
+    return <pre className="text-sm overflow-auto max-h-40">{JSON.stringify(error, null, 2)}</pre>;
+  };
+
+  // Handle immediate results for non-code questions
+  const handleImmediateResult = (questionId, result) => {
+    // Mark as attempted
+    setAttemptedQuestions((prev) => new Set([...prev, questionId]));
+
+    // Store result for display
+    setQuestionResults((prev) => ({
+      ...prev,
+      [questionId]: result
+    }));
+
+    // Update correct/incorrect status
+    if (result.success) {
+      setCorrectAnswers((prev) => new Set([...prev, questionId]));
+      setIncorrectAnswers((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(questionId);
+        return newSet;
+      });
+      // Result shown in UI
+    } else {
+      setIncorrectAnswers((prev) => new Set([...prev, questionId]));
+      setCorrectAnswers((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(questionId);
+        return newSet;
+      });
+
+      // Error shown in UI
+    }
+  };
+
+  // Poll for code evaluation results
+  const pollForCodeResult = async (uid, questionId, maxAttempts = 60) => {
+    let attempts = 0;
+
+    const poll = async () => {
+      try {
+        const result = await getAnswerResult(uid);
+
+        if (result.status === 'done') {
+          // Evaluation complete - remove from evaluating set
+          setEvaluatingQuestions((prev) => {
+            const newSet = new Set(prev);
+            newSet.delete(questionId);
+            return newSet;
+          });
+
+          // Parse and handle result
+          const parsedResult = JSON.parse(result.result);
+          handleImmediateResult(questionId, parsedResult);
+          return;
+        }
+
+        // Still running - poll again
+        if (attempts < maxAttempts) {
+          attempts++;
+          setTimeout(poll, 1000); // Poll every 1 second
+        } else {
+          // Timeout
+          setEvaluatingQuestions((prev) => {
+            const newSet = new Set(prev);
+            newSet.delete(questionId);
+            return newSet;
+          });
+          // Timeout shown in UI
+        }
+      } catch (error) {
+        console.error('Polling error:', error);
+        setEvaluatingQuestions((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(questionId);
+          return newSet;
+        });
+        // Error shown in UI
+      }
+    };
+
+    poll();
+  };
+
   const handleSubmitAnswer = async (questionId) => {
     const answer = answers[questionId];
-    if (!answer || answer.trim() === '') {
-      alert('Please enter an answer');
+    const currentQuestion = answerPaper.questions.find(q => q.id === questionId);
+
+    if (!currentQuestion) {
+      alert('Question not found');
       return;
+    }
+
+    // Validate answer based on question type
+    if (currentQuestion.type === 'mcc') {
+      // For multiple choice, check if at least one option is selected
+      if (!answer || (Array.isArray(answer) && answer.length === 0)) {
+        alert('Please select at least one answer');
+        return;
+      }
+    } else {
+      // For other types, check if answer is not empty
+      if (!answer || (typeof answer === 'string' && answer.trim() === '')) {
+        alert('Please enter an answer');
+        return;
+      }
     }
 
     try {
       setSubmitting(true);
-      const result = await submitAnswer(answerPaper.id, questionId, [answer]);
 
-      // Mark question as attempted
-      setAttemptedQuestions((prev) => new Set([...prev, questionId]));
-
-      // Show feedback if available
-      if (result.success) {
-        // Answer is correct
+      // Format answer based on question type
+      let formattedAnswer;
+      if (currentQuestion.type === 'mcc') {
+        formattedAnswer = Array.isArray(answer) ? answer : [answer];
+      } else if (currentQuestion.type === 'mcq') {
+        formattedAnswer = answer;
       } else {
-        // Answer is incorrect
+        formattedAnswer = [answer];
+      }
+
+      const result = await submitAnswer(answerPaper.id, questionId, formattedAnswer);
+
+      // Check if it's a code question with async evaluation
+      if (result.status === 'running' && result.uid) {
+        // Code question - start polling
+        setEvaluatingQuestions((prev) => new Set([...prev, questionId]));
+        setAttemptedQuestions((prev) => new Set([...prev, questionId]));
+        pollForCodeResult(result.uid, questionId);
+
+        // Loading indicator shown in UI
+      } else {
+        // Non-code question - immediate result
+        handleImmediateResult(questionId, result);
       }
     } catch (err) {
       console.error('Failed to submit answer:', err);
-      alert('Failed to submit answer');
+      const errorMessage = err.response?.data?.error || 'Failed to submit answer. Please try again.';
+      alert(errorMessage);
     } finally {
       setSubmitting(false);
     }
@@ -358,6 +637,47 @@ const Quiz = () => {
                   </label>
                   {renderQuestionInput()}
                 </div>
+
+                {/* Code Evaluation Loading Indicator */}
+                {evaluatingQuestions.has(currentQuestion.id) && (
+                  <div className="mt-4 mb-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+                      <div>
+                        <p className="font-semibold">Evaluating your code...</p>
+                        <p className="text-sm text-gray-400">This may take a few seconds. Please wait.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Result Display */}
+                {questionResults[currentQuestion.id] && !evaluatingQuestions.has(currentQuestion.id) && (
+                  <div className={`mt-4 mb-6 p-4 rounded-lg ${questionResults[currentQuestion.id].success
+                    ? 'bg-green-500/10 border border-green-500/30'
+                    : 'bg-red-500/10 border border-red-500/30'
+                    }`}>
+                    <h4 className="font-bold mb-2 flex items-center gap-2">
+                      {questionResults[currentQuestion.id].success ? (
+                        <><FaCheck className="text-green-500" /> Correct!</>
+                      ) : (
+                        <><FaTimes className="text-red-500" /> Incorrect</>
+                      )}
+                    </h4>
+
+                    {questionResults[currentQuestion.id].error && (
+                      <div className="mt-2">
+                        {renderErrorDisplay(questionResults[currentQuestion.id].error)}
+                      </div>
+                    )}
+
+                    {questionResults[currentQuestion.id].success && currentQuestion.type === 'code' && (
+                      <p className="text-sm text-gray-400 mt-2">
+                        All test cases passed! ✅
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 {/* Action Buttons */}
                 <div className="flex gap-4 flex-wrap">

@@ -1,0 +1,5 @@
+🚀 Starting code server on port 55556 with 5 workers
+⚠️  WARNING: Running in UNSAFE mode (no user isolation)
+   Only use for local testing!
+✅ Code server is running on http://localhost:55556
+   Press Ctrl+C to stop
