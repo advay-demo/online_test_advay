@@ -5,16 +5,11 @@ from api import views
 app_name = 'api'
 
 urlpatterns = [
-    # Authentication endpoints
-    url(r'auth/register/$', views.register_user, name='register'),
-    url(r'auth/login/$', views.login_user, name='login'),
-    url(r'auth/logout/$', views.logout_user, name='logout'),
-    url(r'auth/profile/$', views.user_profile, name='user_profile'),
+    
+    ##============================================================================================================================================================================================
+    # STUDENT ROUTES
+    ##============================================================================================================================================================================================    
 
-    url(r'auth/password-change/request/$', views.request_password_change, name='request_password_change'),
-    url(r'auth/password-change/confirm/$', views.confirm_password_change, name='confirm_password_change'),
-    url(r'auth/moderator/status/$', views.get_moderator_status, name='get_moderator_status'),
-    url(r'auth/toggle_moderator/$', views.toggle_moderator_role_api, name='toggle_moderator_role'),
     
     # Student Dashboard & Stats
     url(r'student/dashboard/$', views.student_dashboard, name='student_dashboard'),
@@ -61,9 +56,40 @@ urlpatterns = [
     url(r'student/answerpapers/(?P<answerpaper_id>[0-9]+)/submission/$', views.quiz_submission_status,
         name='quiz_submission_status'),
 
+
+    ##============================================================================================================================================================================================
+    ##============================================================================================================================================================================================
+    
+
+
     ##============================================================================================================================================================================================
     # COMMON ROUTES
     ##============================================================================================================================================================================================
+    
+
+    # Authentication endpoints
+    url(r'auth/register/$', views.register_user, name='register'),
+    url(r'auth/login/$', views.login_user, name='login'),
+    url(r'auth/logout/$', views.logout_user, name='logout'),
+
+    # User common features
+    url(r'auth/profile/$', views.user_profile, name='user_profile'),
+    url(r'auth/password-change/request/$', views.request_password_change, name='request_password_change'),
+    url(r'auth/password-change/confirm/$', views.confirm_password_change, name='confirm_password_change'),
+    url(r'auth/moderator/status/$', views.get_moderator_status, name='get_moderator_status'),
+    url(r'auth/toggle_moderator/$', views.toggle_moderator_role_api, name='toggle_moderator_role'),
+    
+
+
+    # Notification endpoints (Common for both students and teachers)
+    url(r'^notifications/$', views.get_notifications, name='api_get_notifications'),
+    url(r'^notifications/unread/count/$', views.get_unread_notifications_count, name='api_unread_notifications_count'),
+    url(r'^notifications/(?P<message_uid>[0-9a-f-]+)/mark-read/$', views.mark_notification_read, name='api_mark_notification_read'),
+    url(r'^notifications/mark-all-read/$', views.mark_all_notifications_read, name='api_mark_all_notifications_read'),
+    url(r'^notifications/mark-bulk-read/$', views.mark_bulk_notifications_read, name='api_mark_bulk_notifications_read'),
+
+
+    
     # Forum API endpoints
     url(r'^forum/courses/(?P<course_id>\d+)/posts/$', views.ForumPostListCreateView.as_view(), name='api_forum_post_list_create'),  #ok
     url(r'^forum/courses/(?P<course_id>\d+)/posts/(?P<id>\d+)/$', views.ForumPostDetailView.as_view(), name='api_forum_post_detail'), #ok 
@@ -87,13 +113,6 @@ urlpatterns = [
     url(r'^quiz/skip/(?P<q_id>\d+)/(?P<next_q>\d+)/(?P<attempt_num>\d+)/(?P<module_id>\d+)/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/$', views.api_skip_question, name='api_skip_question_with_next'),
 
 
-    # Notification endpoints (Common for both students and teachers)
-    url(r'^notifications/$', views.get_notifications, name='api_get_notifications'),
-    url(r'^notifications/unread/count/$', views.get_unread_notifications_count, name='api_unread_notifications_count'),
-    url(r'^notifications/(?P<message_uid>[0-9a-f-]+)/mark-read/$', views.mark_notification_read, name='api_mark_notification_read'),
-    url(r'^notifications/mark-all-read/$', views.mark_all_notifications_read, name='api_mark_all_notifications_read'),
-    url(r'^notifications/mark-bulk-read/$', views.mark_bulk_notifications_read, name='api_mark_bulk_notifications_read'),
-    
     ##============================================================================================================================================================================================
     ##============================================================================================================================================================================================
     
@@ -103,7 +122,7 @@ urlpatterns = [
     
     
     ##============================================================================================================================================================================================
-    # Teacher APIs
+    # TEACHER ROUTES
     ##============================================================================================================================================================================================
     url(r'teacher/dashboard/$', views.teacher_dashboard, name='teacher_dashboard'), #ok
     url(r'teacher/courses/$', views.teacher_courses_list, name='teacher_courses_list'), #ok

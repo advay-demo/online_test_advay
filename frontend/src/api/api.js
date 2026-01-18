@@ -78,7 +78,11 @@ export const confirmPasswordChange = async (otp, newPassword) => {
   return response.data;
 };
 
-// Moderator Role APIs
+// ============================================================
+// MODERATOR ROLE APIS
+// ============================================================
+
+
 export const toggleModeratorRole = async () => {
   const response = await api.post('/api/auth/toggle_moderator/');
   return response.data;
@@ -740,7 +744,9 @@ export const removeEnrollment = async (courseId, userIds) => {
   return response.data;
 };
 
-// Send email to students
+// ===============================
+//  SEND MAIL APIs
+// ===============================
 export const teacherSendMail = async (courseId, { subject, body, recipients }) => {
   const response = await api.post(`/api/teacher/courses/${courseId}/send_mail/`, {
     subject,
@@ -750,7 +756,11 @@ export const teacherSendMail = async (courseId, { subject, body, recipients }) =
   return response.data;
 };
 
-// Teacher/TA Management APIs
+
+// ===============================
+//  TEACHER/TA MANAGEMENT APIs
+// ===============================
+
 export const searchTeachers = async (courseId, query) => {
   const response = await api.get(`/api/teacher/courses/${courseId}/teachers/search/?query=${encodeURIComponent(query)}`);
   return response.data;
@@ -775,7 +785,11 @@ export const removeTeachersFromCourse = async (courseId, teacherIds) => {
   return response.data;
 };
 
-// Course MD Upload/Download APIs
+
+// =========================================================================================
+//  COURSE MD UPLOAD/DOWNLOAD APIs
+// =========================================================================================
+
 export const downloadCourseMD = async (courseId) => {
   const response = await api.get(`/api/teacher/courses/${courseId}/md/download/`, {
     responseType: 'blob', // Important for binary file download
@@ -805,6 +819,9 @@ export const uploadCourseMD = async (courseId, file) => {
   });
   return response.data;
 };
+
+
+
 
 // Unit Ordering APIs
 export const reorderModuleUnits = async (moduleId, unitOrders) => {

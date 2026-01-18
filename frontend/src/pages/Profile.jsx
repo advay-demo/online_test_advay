@@ -249,7 +249,7 @@ const Profile = () => {
         <div className="p-4 sm:p-6 lg:p-8">
           {/* Header Section */}
           <div className="mb-6 lg:mb-8">
-            <h1 className="text-2xl sm:text-3xl font-bold mb-2">Profile Settings</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2">Profile</h1>
             <p className="text-sm muted">Manage your account information and preferences</p>
           </div>
 
@@ -267,18 +267,12 @@ const Profile = () => {
             </div>
           )}
 
-          {/* Floating Summary Button - Only on mobile/tablet */}
-          <button
-            onClick={() => setIsSummaryOpen(true)}
-            className="xl:hidden fixed bottom-6 left-6 z-40 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-lg transition-all active:scale-95 flex items-center gap-2"
-          >
-            <FaChartLine className="w-5 h-5" />
-            <span className="text-sm font-semibold pr-1">Summary</span>
-          </button>
+          
 
           <div className="flex flex-col xl:flex-row gap-4 sm:gap-6 lg:gap-8">
             {/* Main Card */}
             <div className="flex-1 card-strong rounded-xl sm:rounded-2xl overflow-hidden">
+              
               {/* Card Header */}
               <div className="flex items-center justify-between p-4 sm:p-6 border-b border-[var(--border-color)] gap-3 sm:gap-4">
                 <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
@@ -310,15 +304,29 @@ const Profile = () => {
                   </div>
                 </div>
                 {!isEditing && (
-                  <button
-                    type="button"
-                    onClick={() => setIsEditing(true)}
-                    className="bg-blue-600 text-white px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg font-semibold hover:bg-blue-700 active:scale-95 transition text-xs sm:text-sm whitespace-nowrap flex-shrink-0"
-                  >
-                    <FaEdit className="inline w-4 h-4 mr-2" />
-                    <span className="hidden sm:inline">Edit Profile</span>
-                    <span className="sm:hidden">Edit</span>
-                  </button>
+                  <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                    {/* Summary Button - Only on mobile/tablet */}
+                    <button
+                      type="button"
+                      onClick={() => setIsSummaryOpen(true)}
+                      className="xl:hidden bg-green-600 text-white px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg font-semibold hover:bg-blue-700 active:scale-95 transition text-xs sm:text-sm whitespace-nowrap"
+                    >
+                      <FaChartLine className="inline w-4 h-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Summary</span>
+                      
+                    </button>
+                    
+                    {/* Edit Profile Button */}
+                    <button
+                      type="button"
+                      onClick={() => setIsEditing(true)}
+                      className="bg-blue-600 text-white px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg font-semibold hover:bg-blue-700 active:scale-95 transition text-xs sm:text-sm whitespace-nowrap"
+                    >
+                      <FaEdit className="inline w-4 h-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Edit Profile</span>
+                      
+                    </button>
+                  </div>
                 )}
               </div>
 
@@ -811,7 +819,7 @@ const Profile = () => {
         <>
           {/* Backdrop */}
           <div 
-            className="xl:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 transition-opacity"
+            className="xl:hidden fixed inset-0 bg-black/75 backdrop-blur-sm z-50 transition-opacity"
             onClick={() => setIsSummaryOpen(false)}
           />
           

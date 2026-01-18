@@ -23,6 +23,7 @@ import GradingSystems from './pages/teacher/GradingSystems';
 import UploadQuestion from './pages/teacher/UploadQuestion';
 import TestQuestion from './pages/teacher/TestQuestion';
 import Settings from './pages/Settings';
+import Notifications from './pages/Notifications';
 
 
 import ThemeController from './components/layout/ThemeController';
@@ -40,6 +41,7 @@ function App() {
         <Route element={<PrivateRoute />}>
           <Route path="/profile" element={<Profile />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/notifications" element={<Notifications />} />
 
           <Route path="/dashboard" element={<DashboardHome />} />
           <Route path="/courses" element={<CourseCatalog />} />
