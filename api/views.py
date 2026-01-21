@@ -29,12 +29,13 @@ from yaksh.models import (
     DailyActivity, Lesson, LearningModule, LearningUnit, LessonFile,
     TestCase, McqTestCase, StdIOBasedTestCase, StandardTestCase,
     HookTestCase, IntegerTestCase, StringTestCase, FloatTestCase,
-    ArrangeTestCase, FileUpload
+    ArrangeTestCase, FileUpload, AssignmentUpload
 )
 from yaksh.models import get_model_class
 from yaksh.views import is_moderator, get_html_text, prof_manage, add_as_moderator
 from django.db.models import Q, Count, Avg, Sum, F, FloatField
 from django.utils import timezone
+from django.core.paginator import Paginator
 from datetime import datetime, timedelta
 import json
 from collections import defaultdict
@@ -48,7 +49,8 @@ from api.serializers import (
     UserBadgeSerializer, BadgeProgressSerializer, UserStatsSerializer,
     UserActivitySerializer, CourseProgressSerializer, CourseCatalogSerializer,
     LessonDetailSerializer, LearningModuleDetailSerializer, LearningUnitDetailSerializer, MinimalLearningUnitSerializer,
-    SimpleUserSerializer, ProfileSerializer
+    SimpleUserSerializer, ProfileSerializer, AnswerDetailSerializer, AnswerPaperGradingSerializer, UserAttemptSerializer, GradeUpdateSerializer, GradingCourseSerializer,
+    MonitorAnswerPaperSerializer
 )
 
 from rest_framework import generics, permissions, status
@@ -6163,6 +6165,790 @@ def api_skip_question(request, q_id, attempt_num, module_id, questionpaper_id,
             'questionpaper_id': int(questionpaper_id),
         }, status=status.HTTP_200_OK)
 
+
+# ============================================================
+#  GRADING APIs
+# ============================================================
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def api_get_grading_courses(request):
+    """
+    Get list of courses for grading (Level 1) - Only includes quizzes, no lessons
+    Equivalent to: /manage/gradeuser/
+    """
+    user = request.user
+    
+    if not is_moderator(user):
+        return Response(
+            {'error': 'You are not allowed to access this page'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    courses = Course.objects.filter(
+        Q(creator=user) | Q(teachers=user), 
+        is_trial=False
+    ).order_by("-active").distinct()
+    
+    # Pagination
+    page = request.query_params.get('page', 1)
+    paginator = Paginator(courses, 30)
+    
+    try:
+        courses_page = paginator.page(page)
+    except:
+        courses_page = paginator.page(1)
+    
+    # Use specialized grading serializer (quizzes only)
+    serializer = GradingCourseSerializer(courses_page, many=True)
+    
+    return Response({
+        'courses': serializer.data,
+        'total_pages': paginator.num_pages,
+        'current_page': courses_page.number,
+        'has_next': courses_page.has_next(),
+        'has_previous': courses_page.has_previous()
+    })
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def api_get_quiz_users(request, quiz_id, course_id):
+    """
+    Get list of users who attempted a quiz (Level 2)
+    Equivalent to: /manage/gradeuser/<quiz_id>/<course_id>/
+    """
+    user = request.user
+    
+    if not is_moderator(user):
+        return Response(
+            {'error': 'You are not allowed to access this page'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    try:
+        quiz = Quiz.objects.get(id=quiz_id)
+        course = Course.objects.get(id=course_id)
+        
+        if not course.is_creator(user) and not course.is_teacher(user):
+            return Response(
+                {'error': 'This course does not belong to you'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        questionpaper_id = QuestionPaper.objects.filter(
+            quiz_id=quiz_id
+        ).values("id")
+        
+        user_details = AnswerPaper.objects.get_users_for_questionpaper(
+            questionpaper_id, course_id
+        )
+        
+        has_quiz_assignments = AssignmentUpload.objects.filter(
+            answer_paper__course_id=course_id,
+            answer_paper__question_paper_id__in=questionpaper_id
+        ).exists()
+        
+        # Serialize user details
+        users_data = []
+        for user_detail in user_details:
+            # user_detail is a dict with keys: user__id, user__first_name, user__last_name
+            user_id = user_detail['user__id']
+            user_obj = User.objects.select_related('profile').get(id=user_id)
+            users_data.append({
+                'id': user_obj.id,
+                'username': user_obj.username,
+                'email': user_obj.email,
+                'first_name': user_obj.first_name,
+                'last_name': user_obj.last_name,
+                'roll_number': user_obj.profile.roll_number if hasattr(user_obj, 'profile') else None
+            })
+        
+        return Response({
+            'quiz': {
+                'id': quiz.id,
+                'description': quiz.description,
+                'duration': quiz.duration
+            },
+            'course': {
+                'id': course.id,
+                'name': course.name
+            },
+            'users': users_data,
+            'has_quiz_assignments': has_quiz_assignments
+        })
+        
+    except Quiz.DoesNotExist:
+        return Response({'error': 'Quiz not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Course.DoesNotExist:
+        return Response({'error': 'Course not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def api_get_user_attempts(request, quiz_id, user_id, course_id):
+    """
+    Get all attempts of a user for a quiz (Level 3)
+    Equivalent to: /manage/gradeuser/<quiz_id>/<user_id>/<course_id>/
+    """
+    current_user = request.user
+    
+    if not is_moderator(current_user):
+        return Response(
+            {'error': 'You are not allowed to access this page'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    try:
+        quiz = Quiz.objects.get(id=quiz_id)
+        course = Course.objects.get(id=course_id)
+        student = User.objects.get(id=user_id)
+        
+        if not course.is_creator(current_user) and not course.is_teacher(current_user):
+            return Response(
+                {'error': 'This course does not belong to you'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        questionpaper_id = QuestionPaper.objects.filter(
+            quiz_id=quiz_id
+        ).values("id")
+        
+        attempts = AnswerPaper.objects.get_user_all_attempts(
+            questionpaper_id, user_id, course_id
+        )
+        
+        if not attempts:
+            return Response({'error': 'No attempts found for this user'}, 
+                          status=status.HTTP_404_NOT_FOUND)
+        
+        has_user_assignments = AssignmentUpload.objects.filter(
+            answer_paper__course_id=course_id,
+            answer_paper__question_paper_id__in=questionpaper_id,
+            answer_paper__user_id=user_id
+        ).exists()
+        
+        # Get all users for quiz (for navigation)
+        user_details = AnswerPaper.objects.get_users_for_questionpaper(
+            questionpaper_id, course_id
+        )
+        
+        users_data = []
+        for user_detail in user_details:
+            # user_detail is a dict with keys: user__id, user__first_name, user__last_name
+            users_data.append({
+                'id': user_detail['user__id'],
+                'username': '',  # Not available in get_users_for_questionpaper
+                'first_name': user_detail['user__first_name'],
+                'last_name': user_detail['user__last_name'],
+            })
+        
+        serializer = UserAttemptSerializer(attempts, many=True)
+        
+        return Response({
+            'quiz': {
+                'id': quiz.id,
+                'description': quiz.description
+            },
+            'course': {
+                'id': course.id,
+                'name': course.name
+            },
+            'student': {
+                'id': student.id,
+                'username': student.username,
+                'first_name': student.first_name,
+                'last_name': student.last_name,
+                'email': student.email
+            },
+            'attempts': serializer.data,
+            'has_user_assignments': has_user_assignments,
+            'users': users_data
+        })
+        
+    except (Quiz.DoesNotExist, Course.DoesNotExist, User.DoesNotExist):
+        return Response({'error': 'Resource not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def api_grade_user_attempt(request, quiz_id, user_id, attempt_number, course_id):
+    """
+    Get or update grades for a specific attempt (Level 4)
+    GET: Equivalent to: /manage/gradeuser/<quiz_id>/<user_id>/<attempt_number>/<course_id>/
+    POST: Submit grades for the attempt
+    """
+    current_user = request.user
+    
+    if not is_moderator(current_user):
+        return Response(
+            {'error': 'You are not allowed to access this page'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    try:
+        quiz = Quiz.objects.get(id=quiz_id)
+        course = Course.objects.get(id=course_id)
+        student = User.objects.get(id=user_id)
+        
+        if not course.is_creator(current_user) and not course.is_teacher(current_user):
+            return Response(
+                {'error': 'This course does not belong to you'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Use values_list with flat=True to get list of IDs
+        questionpaper_id = QuestionPaper.objects.filter(
+            quiz_id=quiz_id
+        ).values_list("id", flat=True)
+        
+        # Check if question paper exists
+        if not questionpaper_id:
+            return Response(
+                {'error': 'No question paper found for this quiz'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        if request.method == 'GET':
+            # Get the specific attempt data
+            data = AnswerPaper.objects.get_user_data(
+                student, questionpaper_id, course_id, attempt_number
+            )
+            
+            # Check if user has any attempts
+            if not data or not data.get('papers'):
+                return Response(
+                    {'error': 'No attempt found for this user'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            attempts = AnswerPaper.objects.get_user_all_attempts(
+                questionpaper_id, user_id, course_id
+            )
+            
+            has_user_assignments = AssignmentUpload.objects.filter(
+                answer_paper__course_id=course_id,
+                answer_paper__question_paper_id__in=questionpaper_id,
+                answer_paper__user_id=user_id
+            ).exists()
+            
+            has_quiz_assignments = AssignmentUpload.objects.filter(
+                answer_paper__course_id=course_id,
+                answer_paper__question_paper_id__in=questionpaper_id
+            ).exists()
+            
+            # Get all users for navigation
+            user_details = AnswerPaper.objects.get_users_for_questionpaper(
+                questionpaper_id, course_id
+            )
+            
+            users_data = []
+            for user_detail in user_details:
+                # user_detail is a dict with keys: user__id, user__first_name, user__last_name
+                users_data.append({
+                    'id': user_detail['user__id'],
+                    'username': '',  # Not available in get_users_for_questionpaper
+                    'first_name': user_detail['user__first_name'],
+                    'last_name': user_detail['user__last_name'],
+                })
+            
+            # Format the data for frontend
+            papers_data = []
+            for paper in data['papers']:
+                questions_data = []
+                # get_question_answers returns all questions in the paper (attempted or not)
+                for question, answers in paper.get_question_answers().items():
+                    # Use QuestionSerializer to get full details including test cases
+                    # Note: Ensure QuestionSerializer is imported from api.serializers
+                    question_data = QuestionSerializer(question).data
+                    
+                    answer_data = None
+                    
+                    # Check if answer exists and isn't just a placeholder
+                    if answers and answers[0] is not None:
+                        if isinstance(answers[0], dict) and answers[0].get('answer'):
+                            ans_obj = answers[0]['answer']
+                            answer_data = {
+                                'id': ans_obj.id,
+                                'answer_content': ans_obj.answer,
+                                'marks': ans_obj.marks,
+                                'correct': ans_obj.correct,
+                                'error': ans_obj.error,
+                                'skipped': getattr(ans_obj, 'skipped', False)
+                            }
+                    
+                    # If no valid answer found, return structured null object for "Did not attempt"
+                    if answer_data is None:
+                        answer_data = {
+                            'id': None,
+                            'answer_content': None, # Front-end should treat None as "Did not attempt"
+                            'marks': 0.0,
+                            'correct': False,
+                            'error': None,
+                            'skipped': True
+                        }
+                    
+                    questions_data.append({
+                        'question': question_data,
+                        'answer': answer_data
+                    })
+                
+                papers_data.append({
+                    'id': paper.id,
+                    'marks_obtained': paper.marks_obtained,
+                    'percent': paper.percent,
+                    'status': paper.status,
+                    'comments': paper.comments,
+                    'questions': questions_data
+                })
+            
+            return Response({
+                'quiz': {
+                    'id': quiz.id,
+                    'description': quiz.description,
+                    'duration': quiz.duration
+                },
+                'course': {
+                    'id': course.id,
+                    'name': course.name
+                },
+                'student': {
+                    'id': student.id,
+                    'username': student.username,
+                    'first_name': student.first_name,
+                    'last_name': student.last_name,
+                    'email': student.email
+                },
+                'papers': papers_data,
+                'attempts': UserAttemptSerializer(attempts, many=True).data,
+                'has_user_assignments': has_user_assignments,
+                'has_quiz_assignments': has_quiz_assignments,
+                'users': users_data
+            })
+        
+        elif request.method == 'POST':
+            # Update grades
+            data = AnswerPaper.objects.get_user_data(
+                student, questionpaper_id, course_id, attempt_number
+            )
+            
+            # Check if user has any attempts
+            if not data or not data.get('papers'):
+                return Response(
+                    {'error': 'No attempt found for this user'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            papers = data['papers']
+            grades_data = request.data.get('grades', [])
+            paper_comments = request.data.get('comments', '')
+            
+            for paper in papers:
+                for question, answers in paper.get_question_answers().items():
+                    # Find the marks for this question
+                    for grade in grades_data:
+                        if grade.get('question_id') == question.id:
+                            marks = float(grade.get('marks', 0))
+                            if answers and answers[0] and isinstance(answers[0], dict) and answers[0].get('answer'):
+                                answer = answers[0]['answer']
+                                answer.set_marks(marks)
+                                answer.save()
+                            break
+                
+                paper.update_marks()
+                paper.comments = paper_comments or 'No comments'
+                paper.save()
+            
+            # Update course status
+            course_status = CourseStatus.objects.filter(
+                course_id=course.id, user_id=student.id
+            )
+            if course_status.exists():
+                course_status.first().set_grade()
+            
+            return Response({
+                'message': 'Student data saved successfully',
+                'success': True
+            })
+            
+            
+    except (Quiz.DoesNotExist, Course.DoesNotExist, User.DoesNotExist):
+        return Response({'error': 'Resource not found'}, status=status.HTTP_404_NOT_FOUND)
+    except IndexError:
+        return Response({'error': 'No attempts for this paper'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+# ============================================================
+#  REGRADING APIs
+# ============================================================
+
+# Imports for regrade functionality
+from yaksh.tasks import regrade_papers
+try:
+    from online_test.celery_settings import app
+except (ImportError, ModuleNotFoundError):
+    app = None
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def api_regrade(request, course_id, questionpaper_id, question_id=None, answerpaper_id=None):
+    """
+    API Endpoint to trigger regrading via Celery task.
+    Handles regrading by:
+    1. Quiz (QuestionPaper)
+    2. User (AnswerPaper)
+    3. Specific Question (Question + AnswerPaper)
+    """
+    user = request.user
+    course = get_object_or_404(Course, pk=course_id)
+    
+    # Permission Check: User must be a Moderator OR (Creator AND Teacher) of the course
+    has_permission = is_moderator(user) or (course.is_creator(user) and course.is_teacher(user))
+    
+    if not has_permission:
+        return Response(
+            {'error': 'You are not allowed to perform this action.'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+        
+    questionpaper = get_object_or_404(QuestionPaper, pk=questionpaper_id)
+    quiz = questionpaper.quiz
+    
+    data = {
+        "user_id": user.id,
+        "course_id": course_id,
+        "questionpaper_id": questionpaper_id,
+        "question_id": question_id,
+        "answerpaper_id": answerpaper_id,
+        "quiz_id": quiz.id,
+        "quiz_name": quiz.description,
+        "course_name": course.name
+    }
+    
+    # Check if Celery is alive
+    is_celery_alive = False
+    if app:
+        try:
+            # app.control.ping() returns a list of worker responses if alive
+            if app.control.ping():
+                is_celery_alive = True
+        except Exception:
+            pass
+
+    if is_celery_alive:
+        regrade_papers.delay(data)
+        msg = f"{quiz.description} is submitted for re-evaluation. You will receive a notification for the re-evaluation status."
+        return Response({'message': msg}, status=status.HTTP_200_OK)
+    else:
+        return Response(
+            {'error': "Unable to submit for regrade. Celery worker not reachable. Please contact admin."},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE
+        )
+
+
+# ============================================================
+# MONITOR QUIZ APIs
+# ============================================================
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def monitor_papers(request, quiz_id=None, course_id=None, attempt_number=1):
+    """
+    API to monitor progress of papers.
+    If IDs are provided, returns stats for that specific quiz/course.
+    If IDs are missing, returns a list of monitorable quizzes for the user.
+    """
+    user = request.user
+    if not is_moderator(user):
+        return Response({'error': 'You are not allowed to view this page!'}, status=status.HTTP_403_FORBIDDEN)
+
+    # === LIST VIEW: No valid IDs provided ===
+    # If we don't have enough info to show a specific monitor page, show list of courses/quizzes
+    if quiz_id is None or course_id is None:
+        # Find courses where user is creator or teacher
+        courses = Course.objects.filter(Q(creator=user) | Q(teachers=user)).distinct()
+        data = []
+        for course in courses:
+            # 1. Get IDs of modules in this course
+            module_ids = course.learning_module.values_list('id', flat=True)
+            
+            # 2. Get IDs of units in these modules that are quizzes
+            # LearningModule has M2M `learning_unit` field with related_name="learning_unit"
+            # So, LearningUnit.learning_unit refers to LearningModule set.
+            unit_ids = LearningUnit.objects.filter(
+                learning_unit__id__in=module_ids, 
+                type='quiz'
+            ).values_list('id', flat=True)
+            
+            # 3. Get Quizzes from these units
+            quizzes = Quiz.objects.filter(
+                learningunit__id__in=unit_ids
+            ).distinct().values('id', 'description')
+            
+            if quizzes:
+                data.append({
+                    'course': {
+                        'id': course.id, 
+                        'name': course.name, 
+                        'code': course.code
+                    },
+                    'quizzes': list(quizzes)
+                })
+        return Response(data, status=status.HTTP_200_OK)
+
+    # === DETAIL VIEW: IDs provided ===
+    course = get_object_or_404(Course, id=course_id)
+    if not course.is_creator(user) and not course.is_teacher(user):
+        return Response({'error': 'This course does not belong to you'}, status=status.HTTP_403_FORBIDDEN)
+
+    quiz = get_object_or_404(Quiz, id=quiz_id)
+    
+    # Get the latest non-trial question paper for this quiz
+    q_paper = QuestionPaper.objects.filter(
+        quiz__is_trial=False, 
+        quiz_id=quiz_id
+    ).distinct().last()
+    
+    if not q_paper:
+        return Response({
+            'error': 'No valid Question Paper found for this quiz.'
+        }, status=status.HTTP_404_NOT_FOUND)
+
+    # Get available attempt numbers used in this course for this QP
+    attempt_numbers = AnswerPaper.objects.get_attempt_numbers(
+        q_paper.id, course.id
+    )
+    
+    questions_count = 0
+    questions_attempted = {}
+    completed_papers = 0
+    inprogress_papers = 0
+    
+    # Ensure attempt_number is an integer
+    try:
+        attempt_number = int(attempt_number)
+    except (ValueError, TypeError):
+        attempt_number = 1
+
+    # Filter answer papers for specific QP, Course, and Attempt
+    papers = AnswerPaper.objects.filter(
+        question_paper_id=q_paper.id, 
+        course_id=course_id,
+        attempt_number=attempt_number
+    ).order_by('user__first_name')
+    
+    if papers.exists():
+        questions_count = q_paper.get_questions_count()
+        
+        # Get count of questions attempted for each paper (for progress bars/stats)
+        questions_attempted = AnswerPaper.objects.get_questions_attempted(
+            papers.values_list("id", flat=True)
+        ) or {}
+        
+        corrected_count = papers.filter(status="completed").count()
+        completed_papers = corrected_count 
+        inprogress_papers = papers.filter(status="inprogress").count()
+    
+    
+    
+    serializer_context = {
+        'request': request,
+        'questions_attempted': questions_attempted
+    }
+    
+    serializer = MonitorAnswerPaperSerializer(papers, many=True, context=serializer_context)
+    
+    return Response({
+        'quiz': {
+            'id': quiz.id,
+            'description': quiz.description,
+            'duration': quiz.duration,
+            'total_marks': q_paper.total_marks  # Fixed: Use q_paper.total_marks
+        },
+        'course': {
+            'id': course.id,
+            'name': course.name, 
+            'code': course.code
+        },
+        'stats': {
+            'total_papers': papers.count(),
+            'completed_papers': completed_papers,
+            'inprogress_papers': inprogress_papers,
+            'questions_count': questions_count
+        },
+        'attempt_numbers': list(attempt_numbers),
+        'current_attempt': attempt_number,
+        'papers': serializer.data
+    })
+
+
+# ============================================================
+#  OTHER QUIZ MENU APIs
+# ============================================================
+
+
+import pandas as pd
+from django.http import HttpResponse
+
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def show_statistics(request, questionpaper_id, course_id, attempt_number=None):
+    """
+    API to show statistics for a specific question paper attempt.
+    """
+    user = request.user
+    if not is_moderator(user):
+        return Response({'error': 'You are not allowed to view this page'}, status=status.HTTP_403_FORBIDDEN)
+
+    course = get_object_or_404(Course, id=course_id)
+    if not course.is_creator(user) and not course.is_teacher(user):
+        return Response({'error': 'This course does not belong to you'}, status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        q_paper = get_object_or_404(QuestionPaper, pk=questionpaper_id)
+    except QuestionPaper.DoesNotExist:
+         return Response({'error': 'Question Paper not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    quiz = q_paper.quiz
+    attempt_numbers = AnswerPaper.objects.get_attempt_numbers(questionpaper_id, course_id)
+    
+    response_data = {
+        'quiz': {
+            'id': quiz.id,
+            'description': quiz.description
+        },
+        'course_id': course_id,
+        'questionpaper_id': questionpaper_id,
+        'attempts': list(attempt_numbers)
+    }
+
+    if attempt_number is None:
+        return Response(response_data)
+        
+    try:
+        attempt_number = int(attempt_number)
+    except (ValueError, TypeError):
+        return Response({'error': 'Invalid attempt number'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if not AnswerPaper.objects.has_attempt(questionpaper_id, attempt_number, course_id):
+         response_data['message'] = "No answerpapers found for this attempt"
+         return Response(response_data)
+
+    total_attempt = AnswerPaper.objects.get_count(questionpaper_id, attempt_number, course_id)
+    
+    # helper method returns dictionary: {QuestionObject: (total, correct, percent, per_tc_ans)}
+    raw_stats = AnswerPaper.objects.get_question_statistics(
+        questionpaper_id, attempt_number, course_id
+    )
+    
+    # Serialize the statistics
+    stats_list = []
+    for question, data in raw_stats.items():
+        stats_list.append({
+            'question': {
+                'id': question.id,
+                'summary': question.summary,
+                'type': question.type,
+                'points': question.points
+            },
+            'total_attempts': data[0],
+            'correct_attempts': data[1],
+            'correct_percentage': data[2],
+            'per_testcase_stats': data[3]
+        })
+
+    response_data.update({
+        'total_attempts_count': total_attempt,
+        'current_attempt': attempt_number,
+        'statistics': stats_list
+    })
+    
+    return Response(response_data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def download_quiz_csv(request, course_id, quiz_id):
+    """
+    API to download CSV report for a quiz attempt.
+    Expects 'attempt_number' in POST body.
+    """
+    user = request.user
+    if not is_moderator(user):
+        return Response({'error': 'You are not allowed to view this page!'}, status=status.HTTP_403_FORBIDDEN)
+        
+    course = get_object_or_404(Course, id=course_id)
+    if not course.is_creator(user) and not course.is_teacher(user):
+        return Response({'error': 'The quiz does not belong to your course'}, status=status.HTTP_403_FORBIDDEN)
+        
+    quiz = get_object_or_404(Quiz, id=quiz_id)
+    question_paper = quiz.questionpaper_set.last()
+    
+    if not question_paper:
+         return Response({'error': 'No question paper found for this quiz'}, status=status.HTTP_404_NOT_FOUND)
+
+    attempt_number = request.data.get('attempt_number')
+    if not attempt_number:
+        return Response({'error': 'Attempt number is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+    questions = question_paper.get_question_bank()
+    
+    answerpapers = AnswerPaper.objects.select_related(
+        "user", "question_paper"
+    ).prefetch_related('answers').filter(
+        course_id=course_id, 
+        question_paper_id=question_paper.id,
+        attempt_number=attempt_number
+    ).order_by("user__first_name")
+    
+    if not answerpapers.exists():
+        return Response(
+            {'error': f'No papers found for attempt {attempt_number}'}, 
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    que_summaries = [
+        (f"Q-{que.id}-{que.summary}-{que.points}-marks", que.id,
+            f"Q-{que.id}-{que.summary}-comments"
+            )
+        for que in questions
+    ]
+    
+    # Base user data
+    user_data = list(answerpapers.values(
+        "user__username", "user__first_name", "user__last_name",
+        "user__profile__roll_number", "user__profile__institute",
+        "user__profile__department", "marks_obtained",
+        "question_paper__total_marks", "percent", "status"
+    ))
+    
+    # Append per-question scores
+    for idx, ap in enumerate(answerpapers):
+        que_data = ap.get_per_question_score(que_summaries)
+        if que_data:
+            user_data[idx].update(que_data)
+            
+    df = pd.DataFrame(user_data)
+    
+    response = HttpResponse(content_type='text/csv')
+    filename = f"{course.name.replace(' ', '_')}-{quiz.description.replace(' ', '_')}-attempt-{attempt_number}.csv"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    df.to_csv(response, index=False)
+    return response
+
+
+
+
 # ============================================================
 #  DESIGN COURSE TAB APIs
 # ============================================================
@@ -6467,3 +7253,6 @@ def teacher_upload_course_md(request, course_id):
             {'error': f'Unexpected error: {str(e)}'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+
+

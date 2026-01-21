@@ -211,7 +211,33 @@ urlpatterns = [
     url(r'teacher/courses/(?P<course_id>[0-9]+)/md/download/$', views.teacher_download_course_md, name='teacher_download_course_md'),
     url(r'teacher/courses/(?P<course_id>[0-9]+)/md/upload/$', views.teacher_upload_course_md, name='teacher_upload_course_md'),
 
+    # Grading Management APIs
+    url(r'teacher/grading/courses/$', views.api_get_grading_courses, name='api_get_grading_courses'),
+    url(r'teacher/grading/(?P<quiz_id>\d+)/(?P<course_id>\d+)/users/$', views.api_get_quiz_users, name='api_get_quiz_users'),
+    url(r'teacher/grading/(?P<quiz_id>\d+)/(?P<user_id>\d+)/(?P<course_id>\d+)/attempts/$', views.api_get_user_attempts, name='api_get_user_attempts'),
+    url(r'teacher/grading/(?P<quiz_id>\d+)/(?P<user_id>\d+)/(?P<attempt_number>\d+)/(?P<course_id>\d+)/$', views.api_grade_user_attempt, name='api_grade_user_attempt'),
+
+    # Regrading APIs
     
+    url(r'teacher/regrading/paper/question/(?P<course_id>\d+)/(?P<questionpaper_id>\d+)/(?P<question_id>\d+)/$', views.api_regrade, name='api_regrade_by_quiz'),         # 1. Regrade specific question in a paper (Quiz wide or specific Context)
+    url(r'teacher/regrading/user/(?P<course_id>\d+)/(?P<questionpaper_id>\d+)/(?P<answerpaper_id>\d+)/$', views.api_regrade, name='api_regrade_by_user'),                # 2. Regrade a specific user's attempt (AnswerPaper)
+    url(r'teacher/regrading/user/question/(?P<course_id>\d+)/(?P<questionpaper_id>\d+)/(?P<answerpaper_id>\d+)/(?P<question_id>\d+)/$', views.api_regrade, name='api_regrade_by_question'), # 3. Regrade a specific question for a specific user
+
+    # Monitor APIs
+    url(r'teacher/monitor/$', views.monitor_papers, name="monitor_papers_list"),
+    url(r'teacher/monitor/(?P<quiz_id>\d+)/(?P<course_id>\d+)/$', views.monitor_papers, name="monitor_papers"),
+    url(r'teacher/monitor/(?P<quiz_id>\d+)/(?P<course_id>\d+)/(?P<attempt_number>\d+)/$', views.monitor_papers, name="monitor_papers_attempt"),
+    
+
+     # Statistics APIs
+    url(r'teacher/statistics/question/(?P<questionpaper_id>\d+)/'
+        '(?P<course_id>\d+)/$', views.show_statistics, name="show_statistics"),
+
+    url(r'teacher/statistics/question/(?P<questionpaper_id>\d+)/'
+        '(?P<course_id>\d+)/(?P<attempt_number>\d+)/$', views.show_statistics, name="show_statistics_attempt"),
+
+    # Download CSV API
+    url(r'teacher/download_quiz_csv/(?P<course_id>\d+)/(?P<quiz_id>\d+)/$', views.download_quiz_csv, name="download_quiz_csv"),
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)
