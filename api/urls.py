@@ -12,6 +12,7 @@ urlpatterns = [
 
     
     # Student Dashboard & Stats
+    url(r'student/dash/$', views.student_dash, name="student_dashboard_courses"),
     url(r'student/dashboard/$', views.student_dashboard, name='student_dashboard'),
     url(r'student/stats/$', views.student_stats, name='student_stats'),
     
@@ -201,6 +202,9 @@ urlpatterns = [
     url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/reorder/$', views.teacher_reorder_course_modules, name='teacher_reorder_course_modules'),
     url(r'teacher/courses/(?P<course_id>[0-9]+)/analytics/$', views.teacher_get_course_analytics, name='teacher_get_course_analytics'),
     
+
+
+    
     # Teacher/TA Management
     url(r'teacher/courses/(?P<course_id>[0-9]+)/teachers/$', views.teacher_get_course_teachers, name='teacher_get_course_teachers'),
     url(r'teacher/courses/(?P<course_id>[0-9]+)/teachers/search/$', views.teacher_search_teachers, name='teacher_search_teachers'),
@@ -230,14 +234,25 @@ urlpatterns = [
     
 
      # Statistics APIs
-    url(r'teacher/statistics/question/(?P<questionpaper_id>\d+)/'
-        '(?P<course_id>\d+)/$', views.show_statistics, name="show_statistics"),
+    url(r'teacher/statistics/question/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/$', views.show_statistics, name="show_statistics"),
 
-    url(r'teacher/statistics/question/(?P<questionpaper_id>\d+)/'
-        '(?P<course_id>\d+)/(?P<attempt_number>\d+)/$', views.show_statistics, name="show_statistics_attempt"),
+    url(r'teacher/statistics/question/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/(?P<attempt_number>\d+)/$', views.show_statistics, name="show_statistics_attempt"),
 
     # Download CSV API
     url(r'teacher/download_quiz_csv/(?P<course_id>\d+)/(?P<quiz_id>\d+)/$', views.download_quiz_csv, name="download_quiz_csv"),
+    url(r'teacher/upload_marks/(?P<course_id>\d+)/(?P<questionpaper_id>\d+)/$', views.upload_marks, name='upload_marks'),
+
+    # User Data
+    url(r'teacher/user_data/(?P<user_id>\d+)/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/$', views.user_data, name="user_data_detail"),
+    url(r'teacher/user_data/(?P<user_id>\d+)/$', views.user_data, name="user_data"),
+
+    # Extend Time
+    url(r'teacher/extend_time/(?P<paper_id>\d+)/$', views.extend_time, name='extend_time'),
+
+    # MicroManager / Special Attempts
+    url(r'teacher/micromanager/allow_special_attempt/(?P<user_id>\d+)/(?P<course_id>\d+)/(?P<quiz_id>\d+)/$', views.allow_special_attempt, name='allow_special_attempt'),    
+    url(r'teacher/micromanager/special_start/(?P<micromanager_id>\d+)/$', views.special_start, name='special_start'),    
+    url(r'teacher/micromanager/special_revoke/(?P<micromanager_id>\d+)/$', views.revoke_special_attempt, name='revoke_special_attempt'),
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)

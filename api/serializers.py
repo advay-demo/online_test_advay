@@ -776,3 +776,50 @@ class MonitorAnswerPaperSerializer(serializers.ModelSerializer):
     def get_questions_attempted_count(self, obj):
         # Expects 'questions_attempted' dict in context
         return self.context.get('questions_attempted', {}).get(obj.id, 0)                 
+
+
+class StudentDashboardLearningModuleSerializer(serializers.ModelSerializer):
+    """Simple serializer for course content listing"""
+    class Meta:
+        model = LearningModule
+        fields = ['id', 'name']
+
+class StudentDashboardCourseSerializer(serializers.ModelSerializer):
+    """Serializer for student dashboard course listing"""
+    completion_percentage = serializers.SerializerMethodField()
+    instructor = serializers.SerializerMethodField()
+    is_enrolled = serializers.SerializerMethodField()
+    
+    # Explicitly map legacy/API field names to actual model fields
+    start_date = serializers.DateTimeField(source='start_enroll_time', read_only=True)
+    end_date = serializers.DateTimeField(source='end_enroll_time', read_only=True)
+    description = serializers.CharField(source='instructions', read_only=True)
+    
+    # Map the ManyToMany field 'learning_module' to our new serializer
+    course_content = StudentDashboardLearningModuleSerializer(source='learning_module', many=True, read_only=True)
+
+    class Meta:
+        model = Course
+        fields = ['id', 'name', 'code', 'start_date', 'end_date', 'active', 
+                  'description', 'completion_percentage', 'instructor', 'is_enrolled',
+                  'course_content']
+
+    def get_completion_percentage(self, obj):
+        # The view will pass the pre-calculated percentage in the context if available
+        # OR we can calculate it here if passed a user object
+        if 'completion_percentages' in self.context:
+            return self.context['completion_percentages'].get(obj.id)
+        
+        user = self.context.get('user')
+        if user and obj.is_enrolled(user):
+            return obj.get_completion_percent(user)
+        return None
+
+    def get_instructor(self, obj):
+        return obj.creator.get_full_name()
+
+    def get_is_enrolled(self, obj):
+        user = self.context.get('user')
+        if user:
+            return obj.is_enrolled(user)
+        return False

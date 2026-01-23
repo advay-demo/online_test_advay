@@ -50,7 +50,7 @@ from api.serializers import (
     UserActivitySerializer, CourseProgressSerializer, CourseCatalogSerializer,
     LessonDetailSerializer, LearningModuleDetailSerializer, LearningUnitDetailSerializer, MinimalLearningUnitSerializer,
     SimpleUserSerializer, ProfileSerializer, AnswerDetailSerializer, AnswerPaperGradingSerializer, UserAttemptSerializer, GradeUpdateSerializer, GradingCourseSerializer,
-    MonitorAnswerPaperSerializer
+    MonitorAnswerPaperSerializer, StudentDashboardCourseSerializer
 )
 
 from rest_framework import generics, permissions, status
@@ -60,7 +60,9 @@ from .serializers import GradingSystemSerializer
 from yaksh.forms import LessonForm, LessonFileForm, ExerciseForm
 from yaksh.views import get_html_text, is_moderator
 from django.shortcuts import get_object_or_404
-
+from yaksh.models import MicroManager
+from yaksh.tasks import update_user_marks
+from yaksh.file_utils import is_csv
 from yaksh.models import Post, Comment, Course, Lesson, TableOfContents, Quiz, User, CourseStatus
 from api.serializers import PostSerializer, CommentSerializer
 from rest_framework import generics, permissions
@@ -953,6 +955,66 @@ def quiz_submission_status(request, answerpaper_id):
 #  STUDENT DASHBOARD & STATS APIs
 # ============================================================
 
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def student_dash(request):
+    """
+    API for Student Dashboard (replaces quizlist_user).
+    GET: Returns enrolled courses and other available courses.
+    POST: Search for hidden courses by code.
+    """
+    user = request.user
+    courses = []
+    completion_percentages = {}
+
+    if request.method == "POST":
+        course_code = request.data.get('course_code')
+        if course_code:
+            try:
+                # Use the manager method if available, else filter manually
+                if hasattr(Course.objects, 'get_hidden_courses'):
+                    courses = list(Course.objects.get_hidden_courses(code=course_code))
+                else:
+                    courses = list(Course.objects.filter(code=course_code, hidden=True))
+            except Exception:
+                courses = []
+        else:
+            return Response({'error': 'Course code is required for search'}, status=status.HTTP_400_BAD_REQUEST)
+    else:
+        # GET Request logic
+        enrolled_courses = user.students.filter(is_trial=False).order_by('-id')
+        
+        remaining_courses = Course.objects.filter(
+            active=True, is_trial=False, hidden=False
+        ).exclude(
+            id__in=enrolled_courses.values_list("id", flat=True)
+        ).order_by('-id')
+        
+        # Combine lists: Enrolled first, then others
+        courses = list(enrolled_courses) + list(remaining_courses)
+
+    # Calculate completion percentages for enrolled courses
+    for course in courses:
+        if course.is_enrolled(user):
+            completion_percentages[course.id] = course.get_completion_percent(user)
+        else:
+             completion_percentages[course.id] = None
+
+    serializer = StudentDashboardCourseSerializer(
+        courses, 
+        many=True, 
+        context={'user': user, 'completion_percentages': completion_percentages}
+    )
+
+    return Response({
+        'courses': serializer.data,
+        'user': {
+            'id': user.id,
+            'name': user.get_full_name(),
+            'username': user.username
+        }
+    })
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def student_dashboard(request):
@@ -6456,15 +6518,11 @@ def api_grade_user_attempt(request, quiz_id, user_id, attempt_number, course_id)
             papers_data = []
             for paper in data['papers']:
                 questions_data = []
-                # get_question_answers returns all questions in the paper (attempted or not)
+                total_marks = 0.0
                 for question, answers in paper.get_question_answers().items():
-                    # Use QuestionSerializer to get full details including test cases
-                    # Note: Ensure QuestionSerializer is imported from api.serializers
                     question_data = QuestionSerializer(question).data
-                    
+                    total_marks += float(question_data.get('points', 0) or 0)
                     answer_data = None
-                    
-                    # Check if answer exists and isn't just a placeholder
                     if answers and answers[0] is not None:
                         if isinstance(answers[0], dict) and answers[0].get('answer'):
                             ans_obj = answers[0]['answer']
@@ -6476,26 +6534,23 @@ def api_grade_user_attempt(request, quiz_id, user_id, attempt_number, course_id)
                                 'error': ans_obj.error,
                                 'skipped': getattr(ans_obj, 'skipped', False)
                             }
-                    
-                    # If no valid answer found, return structured null object for "Did not attempt"
                     if answer_data is None:
                         answer_data = {
                             'id': None,
-                            'answer_content': None, # Front-end should treat None as "Did not attempt"
+                            'answer_content': None,
                             'marks': 0.0,
                             'correct': False,
                             'error': None,
                             'skipped': True
                         }
-                    
                     questions_data.append({
                         'question': question_data,
                         'answer': answer_data
                     })
-                
                 papers_data.append({
                     'id': paper.id,
                     'marks_obtained': paper.marks_obtained,
+                    'total_marks': total_marks,
                     'percent': paper.percent,
                     'status': paper.status,
                     'comments': paper.comments,
@@ -6946,6 +7001,287 @@ def download_quiz_csv(request, course_id, quiz_id):
     df.to_csv(response, index=False)
     return response
 
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def upload_marks(request, course_id, questionpaper_id):
+    """
+    API to upload marks CSV for a question paper.
+    """
+    user = request.user
+    course = get_object_or_404(Course, pk=course_id)
+    
+    # Permission check
+    if not (course.is_teacher(user) or course.is_creator(user)):
+        return Response({'error': 'You are not allowed to perform this action!'}, status=status.HTTP_403_FORBIDDEN)
+        
+    question_paper = get_object_or_404(QuestionPaper, pk=questionpaper_id)
+    quiz = question_paper.quiz
+
+    if 'csv_file' not in request.FILES:
+        return Response({'error': 'Please upload a CSV file.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+    csv_file = request.FILES['csv_file']
+    is_csv_file, _ = is_csv(csv_file)
+    
+    if not is_csv_file:
+         return Response({'error': 'The file uploaded is not a CSV file.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Prepare data for Celery task
+    try:
+        csv_content = csv_file.read().decode('utf-8').splitlines()
+    except UnicodeDecodeError:
+        return Response({'error': 'File encoding error. Please upload a UTF-8 encoded CSV.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    data = {
+        "course_id": course_id, 
+        "questionpaper_id": questionpaper_id,
+        "csv_data": csv_content,
+        "user_id": user.id
+    }
+    
+    # Check Celery status
+    is_celery_alive = False
+    if app:
+        try:
+             if app.control.ping():
+                is_celery_alive = True
+        except Exception:
+            pass
+
+    if is_celery_alive:
+        update_user_marks.delay(data)
+        msg = f"{quiz.description} is submitted for marks update. You will receive a notification for the update status"
+        return Response({'message': msg}, status=status.HTTP_200_OK)
+    else:
+        return Response({'error': "Unable to submit for marks update. Please check with admin"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def user_data(request, user_id, questionpaper_id=None, course_id=None):
+    """
+    API to fetch detailed user data for a specific question paper attempt.
+    """
+    current_user = request.user
+    if not is_moderator(current_user):
+        return Response({'error': 'You are not allowed to view this page!'}, status=status.HTTP_403_FORBIDDEN)
+
+    target_user = get_object_or_404(User, id=user_id)
+    
+    # If course_id provided, verify instructor permissions
+    if course_id:
+        course = get_object_or_404(Course, pk=course_id)
+        if not (course.is_creator(current_user) or course.is_teacher(current_user)):
+             return Response({'error': 'This course does not belong to you'}, status=status.HTTP_403_FORBIDDEN)
+
+    # get_user_data returns a dictionary with 'user', 'profile', 'papers' (queryset), etc.
+    data = AnswerPaper.objects.get_user_data(target_user, questionpaper_id, course_id)
+    
+    # Data serialization
+    papers_data = []
+    if 'papers' in data:
+        papers = data['papers']
+        # We can use MonitorAnswerPaperSerializer or a simpler one
+        for paper in papers:
+            papers_data.append({
+                'id': paper.id,
+                'attempt_number': paper.attempt_number,
+                'start_time': paper.start_time,
+                'end_time': paper.end_time,
+                'status': paper.status,
+                'marks_obtained': paper.marks_obtained,
+                'passed': paper.passed,
+                'percent': paper.percent,
+                'user_ip': paper.user_ip
+            })
+
+    response_data = {
+        'user': {
+            'id': target_user.id,
+            'username': target_user.username,
+            'first_name': target_user.first_name,
+            'last_name': target_user.last_name,
+            'email': target_user.email,
+             # Add profile info if needed
+            'roll_number': getattr(target_user.profile, 'roll_number', '') if hasattr(target_user, 'profile') else ''
+        },
+        'course_id': course_id,
+        'questionpaper_id': questionpaper_id,
+        'papers': papers_data
+    }
+    
+    return Response(response_data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def extend_time(request, paper_id):
+    """
+    API to extend time for an answer paper.
+    """
+    user = request.user
+    if not is_moderator(user):
+        return Response({'error': 'You are not allowed to perform this action'}, status=status.HTTP_403_FORBIDDEN)
+
+    anspaper = get_object_or_404(AnswerPaper, pk=paper_id)
+    course = anspaper.course
+    
+    if not (course.is_creator(user) or course.is_teacher(user)):
+        return Response({'error': 'This course does not belong to you'}, status=status.HTTP_403_FORBIDDEN)
+
+    extra_time = request.data.get('extra_time')
+    
+    if extra_time is None:
+        return Response({'error': 'Please provide extra_time'}, status=status.HTTP_400_BAD_REQUEST)
+        
+    try:
+        extra_time = float(extra_time)
+    except ValueError:
+        return Response({'error': 'Invalid time format'}, status=status.HTTP_400_BAD_REQUEST)
+
+    anspaper.set_extra_time(extra_time)
+    
+    msg = f'Extra {extra_time} minutes given to {anspaper.user.get_full_name()}'
+    return Response({'message': msg}, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def allow_special_attempt(request, user_id, course_id, quiz_id):
+    """
+    API to grant a special attempt to a student.
+    """
+    user = request.user
+    if not is_moderator(user):
+        return Response({'error': 'You are not allowed to perform this action'}, status=status.HTTP_403_FORBIDDEN)
+
+    course = get_object_or_404(Course, pk=course_id)
+    if not (course.is_creator(user) or course.is_teacher(user)):
+        return Response({'error': 'This course does not belong to you'}, status=status.HTTP_403_FORBIDDEN)
+
+    quiz = get_object_or_404(Quiz, pk=quiz_id)
+    student = get_object_or_404(User, pk=user_id)
+
+    if not course.is_enrolled(student):
+         return Response({'error': 'The student is not enrolled for this course'}, status=status.HTTP_400_BAD_REQUEST)
+
+    micromanager, created = MicroManager.objects.get_or_create(
+        course=course, student=student, quiz=quiz
+    )
+    micromanager.manager = user
+    micromanager.save()
+
+    msg = ""
+    status_code = status.HTTP_200_OK
+
+    if (not micromanager.is_special_attempt_required() or
+            micromanager.is_last_attempt_inprogress()):
+        name = student.get_full_name()
+        msg = f'{name} can attempt normally. No special attempt required!'
+        status_code = status.HTTP_200_OK # Info, not error
+    elif micromanager.can_student_attempt():
+        msg = f'{student.get_full_name()} already has a special attempt!'
+        status_code = status.HTTP_200_OK # Info
+    else:
+        micromanager.allow_special_attempt()
+        msg = f'A special attempt is provided to {student.get_full_name()}!'
+
+    return Response({
+        'message': msg,
+        'micromanager_id': micromanager.id
+    }, status=status_code)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def special_start(request, micromanager_id=None):
+    """
+    API for a student to start a special attempt.
+    """
+    user = request.user
+    micromanager = get_object_or_404(MicroManager, pk=micromanager_id, student=user)
+    course = micromanager.course
+    quiz = micromanager.quiz
+    module = course.get_learning_module(quiz)
+    
+    # Normally question_paper is linked to quiz
+    # Logic from legacy: get_object_or_404(QuestionPaper, quiz=quiz)
+    # This might fail if multiple QPs exist? Usually OneToOne or FK. 
+    # Legacy uses .get() via shortcut so implies single QP or validation elsewhere.
+    # Assuming standard flow where one non-trial QP is active or just 'quiz.questionpaper_set.first()'
+    # Legacy code: get_object_or_404(QuestionPaper, quiz=quiz) implies uniqueness.
+    
+    try:
+        quest_paper = QuestionPaper.objects.filter(quiz=quiz, quiz__is_trial=False).last()
+        if not quest_paper:
+             # Fallback
+             quest_paper = get_object_or_404(QuestionPaper, quiz=quiz)
+    except MultipleObjectsReturned:
+        quest_paper = QuestionPaper.objects.filter(quiz=quiz).last()
+
+    if not course.is_enrolled(user):
+        return Response({'error': f'You are not enrolled in {course.name} course'}, status=status.HTTP_403_FORBIDDEN)
+
+    if not micromanager.can_student_attempt():
+         return Response({'error': f'Your special attempts are exhausted for {quiz.description}'}, status=status.HTTP_403_FORBIDDEN)
+
+    last_attempt = AnswerPaper.objects.get_user_last_attempt(
+        quest_paper, user, course.id)
+
+    # If last attempt is in progress, resume it (this logic exists in legacy)
+    # But this route is 'special_start', implying creation of new attempt usually?
+    # Legacy logic: if inprogress, return show_question (resume).
+    
+    if last_attempt and last_attempt.is_attempt_inprogress():
+        # Resume logic: In API, we just return the attempt details so frontend can navigate.
+        return Response({
+            'message': 'Resuming existing attempt',
+            'attempt_id': last_attempt.id,
+            'status': 'resumed',
+            'course_id': course.id,
+            'module_id': module.id if module else None,
+            'quiz_id': quiz.id
+        })
+
+    # Start new special attempt
+    attempt_num = micromanager.get_attempt_number()
+    ip = request.META.get('REMOTE_ADDR', '0.0.0.0')
+    
+    new_paper = quest_paper.make_answerpaper(user, ip, attempt_num, course.id, special=True)
+    micromanager.increment_attempts_utilised()
+    
+    return Response({
+        'message': 'Special attempt started',
+        'attempt_id': new_paper.id,
+        'status': 'started',
+        'course_id': course.id,
+        'module_id': module.id if module else None,
+        'quiz_id': quiz.id
+    })
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def revoke_special_attempt(request, micromanager_id):
+    """
+    API to revoke a special attempt.
+    """
+    user = request.user
+    if not is_moderator(user):
+        return Response({'error': 'You are not allowed to perform this action'}, status=status.HTTP_403_FORBIDDEN)
+
+    micromanager = get_object_or_404(MicroManager, pk=micromanager_id)
+    course = micromanager.course
+    
+    if not (course.is_creator(user) or course.is_teacher(user)):
+        return Response({'error': 'This course does not belong to you'}, status=status.HTTP_403_FORBIDDEN)
+
+    micromanager.revoke_special_attempt()
+    msg = f'Revoked special attempt for {micromanager.student.get_full_name()}'
+    
+    return Response({'message': msg}, status=status.HTTP_200_OK)
 
 
 

@@ -127,6 +127,19 @@ export const fetchUserStats = async () => {
   return response.data;
 };
 
+export const fetchStudentDashboardCourses = async (courseCode = null) => {
+  if (courseCode) {
+    // POST request to search hidden courses by code
+    const response = await api.post('/api/student/dash/', {
+      course_code: courseCode
+    });
+    return response.data;
+  } else {
+    // GET request to fetch all courses
+    const response = await api.get('/api/student/dash/');
+    return response.data;
+  }
+};
 
 // ============================================================
 // COURSE CATALOG & ENROLLMENT APIs
@@ -1108,5 +1121,230 @@ export const createQuestion = async (questionData) => {
 
 
 
+// ====================================================================
+// GRADING & MONITORING TAB APIs
+// ====================================================================
+
+// ===========================================
+// GRADING MANAGEMENT APIs 
+// ===========================================
+
+/**
+ * Get all courses for grading (courses where user is teacher/creator with quizzes)
+ */
+export const getGradingCourses = async () => {
+  const response = await api.get('/api/teacher/grading/courses/');
+  return response.data;
+};
+
+/**
+ * Get all users who attempted a specific quiz in a course
+ */
+export const getQuizUsers = async (quizId, courseId) => {
+  const response = await api.get(`/api/teacher/grading/${quizId}/${courseId}/users/`);
+  return response.data;
+};
+
+/**
+ * Get all attempts for a specific user in a quiz
+ */
+export const getUserAttempts = async (quizId, userId, courseId) => {
+  const response = await api.get(`/api/teacher/grading/${quizId}/${userId}/${courseId}/attempts/`);
+  return response.data;
+};
+
+
+export const gradeUserAttempt = async (quizId, userId, attemptNumber, courseId, gradesData = null) => {
+  const url = `/api/teacher/grading/${quizId}/${userId}/${attemptNumber}/${courseId}/`;
+  
+  if (gradesData) {
+    // POST request to update grades
+    const response = await api.post(url, gradesData);
+    return response.data;
+  } else {
+    // GET request to fetch attempt details
+    const response = await api.get(url);
+    return response.data;
+  }
+};
+
+// ===========================================
+// REGRADING APIs 
+// ===========================================
+
+
+export const regradePaperByQuiz = async (courseId, questionpaperId, questionId) => {
+  const response = await api.post(
+    `/api/teacher/regrading/paper/question/${courseId}/${questionpaperId}/${questionId}/`
+  );
+  return response.data;
+};
+
+export const regradePaperByUser = async (courseId, questionpaperId, answerpaperId) => {
+  const response = await api.post(
+    `/api/teacher/regrading/user/${courseId}/${questionpaperId}/${answerpaperId}/`
+  );
+  return response.data;
+};
+
+export const regradePaperByQuestion = async (courseId, questionpaperId, answerpaperId, questionId) => {
+  const response = await api.post(
+    `/api/teacher/regrading/user/question/${courseId}/${questionpaperId}/${answerpaperId}/${questionId}/`
+  );
+  return response.data;
+};
+
+// ===========================================
+// MONITOR APIs 
+// ===========================================
+
+
+export const getMonitorList = async () => {
+  const response = await api.get('/api/teacher/monitor/');
+  return response.data;
+};
+
+
+export const monitorQuizProgress = async (quizId, courseId, attemptNumber = null) => {
+  let url = `/api/teacher/monitor/${quizId}/${courseId}/`;
+  
+  if (attemptNumber !== null) {
+    url = `/api/teacher/monitor/${quizId}/${courseId}/${attemptNumber}/`;
+  }
+  
+  const response = await api.get(url);
+  return response.data;
+};
+
+// ===========================================
+// STATISTICS APIs 
+// ===========================================
+
+
+export const getQuizStatistics = async (questionpaperId, courseId, attemptNumber = null) => {
+  let url = `/api/teacher/statistics/question/${questionpaperId}/${courseId}/`;
+  
+  if (attemptNumber !== null) {
+    url = `/api/teacher/statistics/question/${questionpaperId}/${courseId}/${attemptNumber}/`;
+  }
+  
+  const response = await api.get(url);
+  return response.data;
+};
+
+// ===========================================
+// CSV DOWNLOAD/UPLOAD APIs 
+// ===========================================
+
+
+export const downloadQuizCSV = async (courseId, quizId, attemptNumber) => {
+  const response = await api.post(
+    `/api/teacher/download_quiz_csv/${courseId}/${quizId}/`,
+    { attempt_number: attemptNumber },
+    { responseType: 'blob' }
+  );
+  
+  // Create a blob URL and trigger download
+  const url = window.URL.createObjectURL(new Blob([response.data]));
+  const link = document.createElement('a');
+  link.href = url;
+  
+  // Extract filename from response headers if available
+  const contentDisposition = response.headers['content-disposition'];
+  let filename = `quiz_${quizId}_attempt_${attemptNumber}.csv`;
+  
+  if (contentDisposition) {
+    const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+    if (filenameMatch) {
+      filename = filenameMatch[1];
+    }
+  }
+  
+  link.setAttribute('download', filename);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+  
+  return { success: true };
+};
+
+
+export const uploadMarksCSV = async (courseId, questionpaperId, csvFile) => {
+  const formData = new FormData();
+  formData.append('csv_file', csvFile);
+  
+  const response = await api.post(
+    `/api/teacher/upload_marks/${courseId}/${questionpaperId}/`,
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }
+  );
+  return response.data;
+};
+
+// ===========================================
+// USER DATA APIs 
+// ===========================================
+
+
+export const getUserData = async (userId, questionpaperId = null, courseId = null) => {
+  let url = `/api/teacher/user_data/${userId}/`;
+  
+  if (questionpaperId && courseId) {
+    url = `/api/teacher/user_data/${userId}/${questionpaperId}/${courseId}/`;
+  }
+  
+  const response = await api.get(url);
+  return response.data;
+};
+
+// ===========================================
+// TIME EXTENSION APIs 
+// ===========================================
+
+
+export const extendAnswerPaperTime = async (paperId, extraTime) => {
+  const response = await api.post(`/api/teacher/extend_time/${paperId}/`, {
+    extra_time: extraTime
+  });
+  return response.data;
+};
+
+// ===========================================
+// MICROMANAGER / SPECIAL ATTEMPTS APIs 
+// ===========================================
+
+export const allowSpecialAttempt = async (userId, courseId, quizId) => {
+  const response = await api.post(
+    `/api/teacher/micromanager/allow_special_attempt/${userId}/${courseId}/${quizId}/`
+  );
+  return response.data;
+};
+
+
+export const startSpecialAttempt = async (micromanagerId) => {
+  const response = await api.post(
+    `/api/teacher/micromanager/special_start/${micromanagerId}/`
+  );
+  return response.data;
+};
+
+export const revokeSpecialAttempt = async (micromanagerId) => {
+  const response = await api.post(
+    `/api/teacher/micromanager/special_revoke/${micromanagerId}/`
+  );
+  return response.data;
+};
+
+// ====================================================================
+// ====================================================================
 
 export default api;
+
+
+
+
