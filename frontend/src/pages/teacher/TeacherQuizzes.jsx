@@ -105,7 +105,7 @@ const TeacherQuizzes = () => {
                 <Header isAuth />
                 <div className="p-4 sm:p-6 lg:p-8">
                     <div className="mb-4 sm:mb-6 lg:mb-8">
-                        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-1 sm:mb-2">Quizzes & Exercises</h1>
+                        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-1 sm:mb-2">Quizzes</h1>
                         <p className="text-xs sm:text-sm muted">Manage and monitor all your quizzes and exercises</p>
                     </div>
                     {gradingQuiz && gradingCourse ? (
