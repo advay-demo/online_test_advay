@@ -32,7 +32,8 @@ const QuizListContent = ({
     toggleMenu,
     getQuizTypeIcon,
     getQuizTypeColor,
-    onGradeClick
+    onGradeClick,
+    onMonitorClick
 
 }) => {
     return (
@@ -310,7 +311,8 @@ const QuizListContent = ({
                             </Link>
                             <div className="flex gap-2">
                                 <Link
-                                    to={`/teacher/quiz/${quiz.id}/monitor`}
+                                    to="#"
+                                    onClick={() => onMonitorClick(quiz, course)}
                                     className="inline-flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-semibold px-3 py-1 rounded-lg bg-gradient-to-r from-purple-500/80 to-pink-500/80 text-white shadow-sm hover:from-purple-600 hover:to-pink-600 active:scale-95 transition-all duration-150"
                                     style={{ boxShadow: '0 2px 8px 0 rgba(168,85,247,0.10)' }}
                                 >

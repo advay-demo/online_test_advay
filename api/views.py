@@ -6725,28 +6725,18 @@ def monitor_papers(request, quiz_id=None, course_id=None, attempt_number=1):
         return Response({'error': 'You are not allowed to view this page!'}, status=status.HTTP_403_FORBIDDEN)
 
     # === LIST VIEW: No valid IDs provided ===
-    # If we don't have enough info to show a specific monitor page, show list of courses/quizzes
     if quiz_id is None or course_id is None:
-        # Find courses where user is creator or teacher
         courses = Course.objects.filter(Q(creator=user) | Q(teachers=user)).distinct()
         data = []
         for course in courses:
-            # 1. Get IDs of modules in this course
             module_ids = course.learning_module.values_list('id', flat=True)
-            
-            # 2. Get IDs of units in these modules that are quizzes
-            # LearningModule has M2M `learning_unit` field with related_name="learning_unit"
-            # So, LearningUnit.learning_unit refers to LearningModule set.
             unit_ids = LearningUnit.objects.filter(
                 learning_unit__id__in=module_ids, 
                 type='quiz'
             ).values_list('id', flat=True)
-            
-            # 3. Get Quizzes from these units
             quizzes = Quiz.objects.filter(
                 learningunit__id__in=unit_ids
             ).distinct().values('id', 'description')
-            
             if quizzes:
                 data.append({
                     'course': {
@@ -6764,68 +6754,59 @@ def monitor_papers(request, quiz_id=None, course_id=None, attempt_number=1):
         return Response({'error': 'This course does not belong to you'}, status=status.HTTP_403_FORBIDDEN)
 
     quiz = get_object_or_404(Quiz, id=quiz_id)
-    
-    # Get the latest non-trial question paper for this quiz
     q_paper = QuestionPaper.objects.filter(
         quiz__is_trial=False, 
         quiz_id=quiz_id
     ).distinct().last()
-    
     if not q_paper:
         return Response({
             'error': 'No valid Question Paper found for this quiz.'
         }, status=status.HTTP_404_NOT_FOUND)
 
-    # Get available attempt numbers used in this course for this QP
-    attempt_numbers = AnswerPaper.objects.get_attempt_numbers(
-        q_paper.id, course.id
+    # FIX: Always get all attempt numbers for this course and question paper
+    attempt_numbers = list(
+        AnswerPaper.objects.filter(
+            question_paper_id=q_paper.id,
+            course_id=course.id
+        ).values_list('attempt_number', flat=True).distinct()
     )
-    
+
     questions_count = 0
     questions_attempted = {}
     completed_papers = 0
     inprogress_papers = 0
-    
-    # Ensure attempt_number is an integer
+
     try:
         attempt_number = int(attempt_number)
     except (ValueError, TypeError):
         attempt_number = 1
 
-    # Filter answer papers for specific QP, Course, and Attempt
     papers = AnswerPaper.objects.filter(
         question_paper_id=q_paper.id, 
         course_id=course_id,
         attempt_number=attempt_number
     ).order_by('user__first_name')
-    
+
     if papers.exists():
         questions_count = q_paper.get_questions_count()
-        
-        # Get count of questions attempted for each paper (for progress bars/stats)
         questions_attempted = AnswerPaper.objects.get_questions_attempted(
             papers.values_list("id", flat=True)
         ) or {}
-        
-        corrected_count = papers.filter(status="completed").count()
-        completed_papers = corrected_count 
+        completed_papers = papers.filter(status="completed").count()
         inprogress_papers = papers.filter(status="inprogress").count()
-    
-    
-    
+
     serializer_context = {
         'request': request,
         'questions_attempted': questions_attempted
     }
-    
     serializer = MonitorAnswerPaperSerializer(papers, many=True, context=serializer_context)
-    
+
     return Response({
         'quiz': {
             'id': quiz.id,
             'description': quiz.description,
             'duration': quiz.duration,
-            'total_marks': q_paper.total_marks  # Fixed: Use q_paper.total_marks
+            'total_marks': q_paper.total_marks
         },
         'course': {
             'id': course.id,
@@ -6838,11 +6819,10 @@ def monitor_papers(request, quiz_id=None, course_id=None, attempt_number=1):
             'inprogress_papers': inprogress_papers,
             'questions_count': questions_count
         },
-        'attempt_numbers': list(attempt_numbers),
+        'attempt_numbers': attempt_numbers,
         'current_attempt': attempt_number,
         'papers': serializer.data
     })
-
 
 # ============================================================
 #  OTHER QUIZ MENU APIs

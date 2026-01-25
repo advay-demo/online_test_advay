@@ -4,6 +4,8 @@ import TeacherSidebar from '../../components/layout/TeacherSidebar';
 import Header from '../../components/layout/Header';
 import QuizListContent from '../../components/teacher/QuizListContent';
 import QuizGradingPanel from '../../components/teacher/QuizGradingPanel';
+import QuizMonitorPanel from '../../components/teacher/QuizMonitorPanel';
+
 import { useQuizGradingStore } from '../../store/quizGradeStore';
 import { FaTrophy, FaDumbbell, FaSearch, FaFilter } from 'react-icons/fa';
 
@@ -26,6 +28,9 @@ const TeacherQuizzes = () => {
     const [openMenuId, setOpenMenuId] = useState(null);
     const [gradingQuiz, setGradingQuiz] = useState(null);
     const [gradingCourse, setGradingCourse] = useState(null);
+
+    const [monitoringQuiz, setMonitoringQuiz] = useState(null);
+    const [monitoringCourse, setMonitoringCourse] = useState(null);
 
     // Load quizzes on mount
     useEffect(() => {
@@ -63,6 +68,11 @@ const TeacherQuizzes = () => {
     const handleGradeClick = (quiz, course) => {
         setGradingQuiz(quiz);
         setGradingCourse(course);
+    };
+
+    const handleMonitorClick = (quiz, course) => {
+        setMonitoringQuiz(quiz);
+        setMonitoringCourse(course);
     };
 
 
@@ -114,6 +124,12 @@ const TeacherQuizzes = () => {
                             course={gradingCourse}
                             onBack={() => { setGradingQuiz(null); setGradingCourse(null); }}
                         />
+                    ) : monitoringQuiz && monitoringCourse ? (
+                        <QuizMonitorPanel
+                            quiz={monitoringQuiz}
+                            course={monitoringCourse}
+                            onBack={() => { setMonitoringQuiz(null); setMonitoringCourse(null); }}
+                        />
                     ) : (
                         <QuizListContent
                             courses={quizzesByCourse}
@@ -133,6 +149,7 @@ const TeacherQuizzes = () => {
                             getQuizTypeIcon={getQuizTypeIcon}
                             getQuizTypeColor={getQuizTypeColor}
                             onGradeClick={handleGradeClick}
+                            onMonitorClick={handleMonitorClick}
                         />
                     )}    
                 </div>
