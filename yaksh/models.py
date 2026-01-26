@@ -2399,6 +2399,8 @@ class AnswerPaper(models.Model):
             self.start_time = now - timezone.timedelta(minutes=quiz_time)
             self.end_time = now + timezone.timedelta(minutes=time)
             self.status = 'inprogress'
+        else:
+            self.end_time += timezone.timedelta(minutes=time)
         self.save()
 
     def time_left(self):
