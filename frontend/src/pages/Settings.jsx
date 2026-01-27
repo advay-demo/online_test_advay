@@ -1,20 +1,47 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import Header from '../components/layout/Header';
-import Sidebar from '../components/layout/Sidebar';
+import StudentSidebar from '../components/layout/Sidebar';
+import TeacherSidebar from '../components/layout/TeacherSidebar';
 import ChangePassword from '../components/auth/ChangePassword';
 import { useAuthStore } from '../store/authStore';
 import { FaUserCircle, FaEnvelope, FaIdBadge } from 'react-icons/fa';
 
 const Settings = () => {
-    const user = useAuthStore((state) => state.user);
+    const { user, isAuthenticated } = useAuthStore();
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+    // Determine if user is moderator/teacher
+    const isTeacher = user?.is_moderator || false;
+
+    if (!isAuthenticated || !user) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f]">
+                <div className="text-center">
+                    <div className="text-2xl text-gray-300 mb-4">Please log in to view settings</div>
+                    <Link to="/signin" className="text-indigo-400 hover:text-indigo-300">
+                        Go to Login
+                    </Link>
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <div className="min-h-screen bg-[var(--bg-primary)] transition-colors duration-200">
-            <Header isAuth={true} />
-            <div className="flex">
-                <Sidebar activePage="settings" />
+        <div className="flex min-h-screen relative grid-texture">
+            {/* Sidebar - Conditional based on role */}
+            {isTeacher ? (
+                <TeacherSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+            ) : (
+                <StudentSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+            )}
 
-                <main className="flex-1 p-4 sm:p-6 lg:p-8 ml-0 md:ml-64 transition-all duration-300">
+            {/* Main Content */}
+            <main className="flex-1 ">
+                <Header isAuth
+                />
+
+                <div className="p-4 sm:p-6 lg:p-8">
                     <div className="max-w-4xl mx-auto space-y-8">
 
                         {/* Page Header */}
@@ -62,8 +89,8 @@ const Settings = () => {
                         <ChangePassword />
 
                     </div>
-                </main>
-            </div>
+                </div>
+            </main>
         </div>
     );
 };

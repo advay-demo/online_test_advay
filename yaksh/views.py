@@ -1398,10 +1398,14 @@ def monitor(request, quiz_id=None, course_id=None, attempt_number=1):
         raise Http404('This course does not belong to you')
 
     quiz = get_object_or_404(Quiz, id=quiz_id)
-    q_paper = QuestionPaper.objects.filter(quiz__is_trial=False,
-                                           quiz_id=quiz_id).distinct().last()
-    attempt_numbers = AnswerPaper.objects.get_attempt_numbers(
-        q_paper.id, course.id
+    # Get the QuestionPaper object
+    q_paper = QuestionPaper.objects.filter(quiz_id=quiz_id).last()
+    # Get all attempt numbers for this quiz and course
+    attempt_numbers = list(
+        AnswerPaper.objects.filter(
+            question_paper_id=q_paper.id,
+            course_id=course_id
+        ).values_list('attempt_number', flat=True).distinct()
     )
     questions_count = 0
     questions_attempted = {}

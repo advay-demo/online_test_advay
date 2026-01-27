@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from yaksh.models import (
-    Question, Quiz, QuestionPaper, AnswerPaper, Course,
+    Question, Quiz, QuestionPaper, AnswerPaper, Answer, Course,
     LearningModule, LearningUnit, Lesson, CourseStatus,
     Badge, UserBadge, BadgeProgress, UserStats, DailyActivity, UserActivity, Post, Comment, User, Profile
 )
@@ -663,7 +663,163 @@ class MinimalLearningUnitSerializer(serializers.ModelSerializer):
 
 
 
+#class SimpleUserSerializer(serializers.ModelSerializer):
+#    class Meta:
+#        model = User
+#        fields = ['id', 'username', 'email', 'first_name', 'last_name']
+
+# Grading Serializers
 class SimpleUserSerializer(serializers.ModelSerializer):
+    """Serializer for user basic info"""
+    roll_number = serializers.CharField(source='profile.roll_number', read_only=True)
+    
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'roll_number']
+
+
+class AnswerDetailSerializer(serializers.ModelSerializer):
+    """Detailed answer serializer for grading"""
+    question = QuestionSerializer(read_only=True)
+    
+    class Meta:
+        model = Answer
+        fields = ['id', 'question', 'answer', 'marks', 'error', 'correct', 'skipped']
+
+
+class AnswerPaperGradingSerializer(serializers.ModelSerializer):
+    """AnswerPaper serializer for grading interface"""
+    user = SimpleUserSerializer(read_only=True)
+    answers = AnswerDetailSerializer(many=True, read_only=True)
+    question_paper = QuestionPaperSerializer(read_only=True)
+    
+    class Meta:
+        model = AnswerPaper
+        fields = ['id', 'user', 'question_paper', 'answers', 'marks_obtained', 
+                 'percent', 'status', 'attempt_number', 'comments', 'start_time', 
+                 'end_time']
+
+
+class UserAttemptSerializer(serializers.ModelSerializer):
+    """Serializer for user attempts list"""
+    user = SimpleUserSerializer(read_only=True)
+    
+    class Meta:
+        model = AnswerPaper
+        fields = ['id', 'user', 'attempt_number', 'marks_obtained', 'status', 
+                 'start_time', 'end_time']
+
+
+class GradeUpdateSerializer(serializers.Serializer):
+    """Serializer for updating grades"""
+    question_id = serializers.IntegerField()
+    marks = serializers.FloatField()
+    comments = serializers.CharField(required=False, allow_blank=True)
+
+# Specialized Grading Serializers (Quizzes Only - No Lessons)
+class QuizOnlyLearningUnitSerializer(serializers.ModelSerializer):
+    """Learning unit serializer that only includes quiz units for grading"""
+    quiz = QuizSerializer(read_only=True)
+    
+    class Meta:
+        model = LearningUnit
+        fields = ['id', 'quiz', 'order', 'type', 'check_prerequisite']
+    
+    def to_representation(self, instance):
+        """Only serialize quiz units, skip lesson units"""
+        if instance.type != 'quiz':
+            return None
+        return super().to_representation(instance)
+
+
+class QuizOnlyLearningModuleSerializer(serializers.ModelSerializer):
+    """Learning module serializer that only includes quiz units"""
+    learning_unit = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = LearningModule
+        fields = ['id', 'name', 'description', 'order', 'check_prerequisite', 
+                 'check_prerequisite_passes', 'html_data', 'active', 'learning_unit']
+    
+    def get_learning_unit(self, obj):
+        """Filter to only include quiz units"""
+        quiz_units = obj.learning_unit.filter(type='quiz').order_by('order')
+        serializer = QuizOnlyLearningUnitSerializer(quiz_units, many=True)
+        # Filter out None values (from lesson units)
+        return [unit for unit in serializer.data if unit is not None]
+
+
+class GradingCourseSerializer(serializers.ModelSerializer):
+    """Specialized course serializer for grading - only includes quizzes"""
+    learning_module = QuizOnlyLearningModuleSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = Course
+        fields = ['id', 'name', 'enrollment', 'active', 'code', 'hidden', 
+                 'created_on', 'is_trial', 'instructions', 'start_enroll_time', 
+                 'end_enroll_time', 'creator', 'learning_module'] 
+
+
+class MonitorAnswerPaperSerializer(serializers.ModelSerializer):
+    """Serializer for monitoring answer papers"""
+    user = SimpleUserSerializer(read_only=True)
+    questions_attempted_count = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = AnswerPaper
+        fields = [
+            'id', 'user', 'status', 'start_time', 'end_time', 
+            'marks_obtained', 'user_ip', 'questions_attempted_count', 
+            'passed', 'percent'
+        ]
+
+    def get_questions_attempted_count(self, obj):
+        # Expects 'questions_attempted' dict in context
+        return self.context.get('questions_attempted', {}).get(obj.id, 0)                 
+
+
+class StudentDashboardLearningModuleSerializer(serializers.ModelSerializer):
+    """Simple serializer for course content listing"""
+    class Meta:
+        model = LearningModule
+        fields = ['id', 'name']
+
+class StudentDashboardCourseSerializer(serializers.ModelSerializer):
+    """Serializer for student dashboard course listing"""
+    completion_percentage = serializers.SerializerMethodField()
+    instructor = serializers.SerializerMethodField()
+    is_enrolled = serializers.SerializerMethodField()
+    
+    # Explicitly map legacy/API field names to actual model fields
+    start_date = serializers.DateTimeField(source='start_enroll_time', read_only=True)
+    end_date = serializers.DateTimeField(source='end_enroll_time', read_only=True)
+    description = serializers.CharField(source='instructions', read_only=True)
+    
+    # Map the ManyToMany field 'learning_module' to our new serializer
+    course_content = StudentDashboardLearningModuleSerializer(source='learning_module', many=True, read_only=True)
+
+    class Meta:
+        model = Course
+        fields = ['id', 'name', 'code', 'start_date', 'end_date', 'active', 
+                  'description', 'completion_percentage', 'instructor', 'is_enrolled',
+                  'course_content']
+
+    def get_completion_percentage(self, obj):
+        # The view will pass the pre-calculated percentage in the context if available
+        # OR we can calculate it here if passed a user object
+        if 'completion_percentages' in self.context:
+            return self.context['completion_percentages'].get(obj.id)
+        
+        user = self.context.get('user')
+        if user and obj.is_enrolled(user):
+            return obj.get_completion_percent(user)
+        return None
+
+    def get_instructor(self, obj):
+        return obj.creator.get_full_name()
+
+    def get_is_enrolled(self, obj):
+        user = self.context.get('user')
+        if user:
+            return obj.is_enrolled(user)
+        return False

@@ -5,18 +5,14 @@ from api import views
 app_name = 'api'
 
 urlpatterns = [
-    # Authentication endpoints
-    url(r'auth/register/$', views.register_user, name='register'),
-    url(r'auth/login/$', views.login_user, name='login'),
-    url(r'auth/logout/$', views.logout_user, name='logout'),
-    url(r'auth/profile/$', views.user_profile, name='user_profile'),
+    
+    ##============================================================================================================================================================================================
+    # STUDENT ROUTES
+    ##============================================================================================================================================================================================    
 
-    url(r'auth/password-change/request/$', views.request_password_change, name='request_password_change'),
-    url(r'auth/password-change/confirm/$', views.confirm_password_change, name='confirm_password_change'),
-    url(r'auth/moderator/status/$', views.get_moderator_status, name='get_moderator_status'),
-    url(r'auth/toggle_moderator/$', views.toggle_moderator_role_api, name='toggle_moderator_role'),
     
     # Student Dashboard & Stats
+    url(r'student/dash/$', views.student_dash, name="student_dashboard_courses"),
     url(r'student/dashboard/$', views.student_dashboard, name='student_dashboard'),
     url(r'student/stats/$', views.student_stats, name='student_stats'),
     
@@ -61,9 +57,40 @@ urlpatterns = [
     url(r'student/answerpapers/(?P<answerpaper_id>[0-9]+)/submission/$', views.quiz_submission_status,
         name='quiz_submission_status'),
 
+
+    ##============================================================================================================================================================================================
+    ##============================================================================================================================================================================================
+    
+
+
     ##============================================================================================================================================================================================
     # COMMON ROUTES
     ##============================================================================================================================================================================================
+    
+
+    # Authentication endpoints
+    url(r'auth/register/$', views.register_user, name='register'),
+    url(r'auth/login/$', views.login_user, name='login'),
+    url(r'auth/logout/$', views.logout_user, name='logout'),
+
+    # User common features
+    url(r'auth/profile/$', views.user_profile, name='user_profile'),
+    url(r'auth/password-change/request/$', views.request_password_change, name='request_password_change'),
+    url(r'auth/password-change/confirm/$', views.confirm_password_change, name='confirm_password_change'),
+    url(r'auth/moderator/status/$', views.get_moderator_status, name='get_moderator_status'),
+    url(r'auth/toggle_moderator/$', views.toggle_moderator_role_api, name='toggle_moderator_role'),
+    
+
+
+    # Notification endpoints (Common for both students and teachers)
+    url(r'^notifications/$', views.get_notifications, name='api_get_notifications'),
+    url(r'^notifications/unread/count/$', views.get_unread_notifications_count, name='api_unread_notifications_count'),
+    url(r'^notifications/(?P<message_uid>[0-9a-f-]+)/mark-read/$', views.mark_notification_read, name='api_mark_notification_read'),
+    url(r'^notifications/mark-all-read/$', views.mark_all_notifications_read, name='api_mark_all_notifications_read'),
+    url(r'^notifications/mark-bulk-read/$', views.mark_bulk_notifications_read, name='api_mark_bulk_notifications_read'),
+
+
+    
     # Forum API endpoints
     url(r'^forum/courses/(?P<course_id>\d+)/posts/$', views.ForumPostListCreateView.as_view(), name='api_forum_post_list_create'),  #ok
     url(r'^forum/courses/(?P<course_id>\d+)/posts/(?P<id>\d+)/$', views.ForumPostDetailView.as_view(), name='api_forum_post_detail'), #ok 
@@ -87,13 +114,6 @@ urlpatterns = [
     url(r'^quiz/skip/(?P<q_id>\d+)/(?P<next_q>\d+)/(?P<attempt_num>\d+)/(?P<module_id>\d+)/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/$', views.api_skip_question, name='api_skip_question_with_next'),
 
 
-    # Notification endpoints (Common for both students and teachers)
-    url(r'^notifications/$', views.get_notifications, name='api_get_notifications'),
-    url(r'^notifications/unread/count/$', views.get_unread_notifications_count, name='api_unread_notifications_count'),
-    url(r'^notifications/(?P<message_uid>[0-9a-f-]+)/mark-read/$', views.mark_notification_read, name='api_mark_notification_read'),
-    url(r'^notifications/mark-all-read/$', views.mark_all_notifications_read, name='api_mark_all_notifications_read'),
-    url(r'^notifications/mark-bulk-read/$', views.mark_bulk_notifications_read, name='api_mark_bulk_notifications_read'),
-    
     ##============================================================================================================================================================================================
     ##============================================================================================================================================================================================
     
@@ -103,7 +123,7 @@ urlpatterns = [
     
     
     ##============================================================================================================================================================================================
-    # Teacher APIs
+    # TEACHER ROUTES
     ##============================================================================================================================================================================================
     url(r'teacher/dashboard/$', views.teacher_dashboard, name='teacher_dashboard'), #ok
     url(r'teacher/courses/$', views.teacher_courses_list, name='teacher_courses_list'), #ok
@@ -182,6 +202,9 @@ urlpatterns = [
     url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/reorder/$', views.teacher_reorder_course_modules, name='teacher_reorder_course_modules'),
     url(r'teacher/courses/(?P<course_id>[0-9]+)/analytics/$', views.teacher_get_course_analytics, name='teacher_get_course_analytics'),
     
+
+
+    
     # Teacher/TA Management
     url(r'teacher/courses/(?P<course_id>[0-9]+)/teachers/$', views.teacher_get_course_teachers, name='teacher_get_course_teachers'),
     url(r'teacher/courses/(?P<course_id>[0-9]+)/teachers/search/$', views.teacher_search_teachers, name='teacher_search_teachers'),
@@ -192,7 +215,44 @@ urlpatterns = [
     url(r'teacher/courses/(?P<course_id>[0-9]+)/md/download/$', views.teacher_download_course_md, name='teacher_download_course_md'),
     url(r'teacher/courses/(?P<course_id>[0-9]+)/md/upload/$', views.teacher_upload_course_md, name='teacher_upload_course_md'),
 
+    # Grading Management APIs
+    url(r'teacher/grading/courses/$', views.api_get_grading_courses, name='api_get_grading_courses'),
+    url(r'teacher/grading/(?P<quiz_id>\d+)/(?P<course_id>\d+)/users/$', views.api_get_quiz_users, name='api_get_quiz_users'),
+    url(r'teacher/grading/(?P<quiz_id>\d+)/(?P<user_id>\d+)/(?P<course_id>\d+)/attempts/$', views.api_get_user_attempts, name='api_get_user_attempts'),
+    url(r'teacher/grading/(?P<quiz_id>\d+)/(?P<user_id>\d+)/(?P<attempt_number>\d+)/(?P<course_id>\d+)/$', views.api_grade_user_attempt, name='api_grade_user_attempt'),
+
+    # Regrading APIs
     
+    url(r'teacher/regrading/paper/question/(?P<course_id>\d+)/(?P<questionpaper_id>\d+)/(?P<question_id>\d+)/$', views.api_regrade, name='api_regrade_by_quiz'),         # 1. Regrade specific question in a paper (Quiz wide or specific Context)
+    url(r'teacher/regrading/user/(?P<course_id>\d+)/(?P<questionpaper_id>\d+)/(?P<answerpaper_id>\d+)/$', views.api_regrade, name='api_regrade_by_user'),                # 2. Regrade a specific user's attempt (AnswerPaper)
+    url(r'teacher/regrading/user/question/(?P<course_id>\d+)/(?P<questionpaper_id>\d+)/(?P<answerpaper_id>\d+)/(?P<question_id>\d+)/$', views.api_regrade, name='api_regrade_by_question'), # 3. Regrade a specific question for a specific user
+
+    # Monitor APIs
+    url(r'teacher/monitor/$', views.monitor_papers, name="monitor_papers_list"),
+    url(r'teacher/monitor/(?P<quiz_id>\d+)/(?P<course_id>\d+)/$', views.monitor_papers, name="monitor_papers"),
+    url(r'teacher/monitor/(?P<quiz_id>\d+)/(?P<course_id>\d+)/(?P<attempt_number>\d+)/$', views.monitor_papers, name="monitor_papers_attempt"),
+    
+
+     # Statistics APIs
+    url(r'teacher/statistics/question/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/$', views.show_statistics, name="show_statistics"),
+
+    url(r'teacher/statistics/question/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/(?P<attempt_number>\d+)/$', views.show_statistics, name="show_statistics_attempt"),
+
+    # Download CSV API
+    url(r'teacher/download_quiz_csv/(?P<course_id>\d+)/(?P<quiz_id>\d+)/$', views.download_quiz_csv, name="download_quiz_csv"),
+    url(r'teacher/upload_marks/(?P<course_id>\d+)/(?P<questionpaper_id>\d+)/$', views.upload_marks, name='upload_marks'),
+
+    # User Data
+    url(r'teacher/user_data/(?P<user_id>\d+)/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/$', views.user_data, name="user_data_detail"),
+    url(r'teacher/user_data/(?P<user_id>\d+)/$', views.user_data, name="user_data"),
+
+    # Extend Time
+    url(r'teacher/extend_time/(?P<paper_id>\d+)/$', views.extend_time, name='extend_time'),
+
+    # MicroManager / Special Attempts
+    url(r'teacher/micromanager/allow_special_attempt/(?P<user_id>\d+)/(?P<course_id>\d+)/(?P<quiz_id>\d+)/$', views.allow_special_attempt, name='allow_special_attempt'),    
+    url(r'teacher/micromanager/special_start/(?P<micromanager_id>\d+)/$', views.special_start, name='special_start'),    
+    url(r'teacher/micromanager/special_revoke/(?P<micromanager_id>\d+)/$', views.revoke_special_attempt, name='revoke_special_attempt'),
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)
