@@ -161,9 +161,21 @@ urlpatterns = [
 
     url(r'teacher/courses/(?P<course_id>\d+)/designcourse/$', views.api_design_course, name='api_design_course'), #ok
 
+    # Teacher Courses Analytics
     url(r'teacher/courses/(?P<course_id>[0-9]+)/analytics/$', views.teacher_get_course_analytics, name='teacher_get_course_analytics'), #ok
 
 
+    # Teacher/TA Management
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/teachers/$', views.teacher_get_course_teachers, name='teacher_get_course_teachers'),
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/teachers/search/$', views.teacher_search_teachers, name='teacher_search_teachers'),
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/teachers/add/$', views.teacher_add_teachers, name='teacher_add_teachers'),
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/teachers/remove/$', views.teacher_remove_teachers, name='teacher_remove_teachers'),
+    
+    # Course MD Upload/Download
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/md/download/$', views.teacher_download_course_md, name='teacher_download_course_md'),
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/md/upload/$', views.teacher_upload_course_md, name='teacher_upload_course_md'),
+
+    # Question Management APIs
     url(r'teacher/questions/$', views.teacher_questions_list, name='teacher_questions_list'), #ok 
     url(r'teacher/questions/(?P<question_id>[0-9]+)/$', views.teacher_get_question, name='teacher_get_question'),#ok
     url(r'teacher/questions/files/(?P<file_id>[0-9]+)/delete/$', views.delete_question_file, name='delete_question_file'), #ok
@@ -174,6 +186,47 @@ urlpatterns = [
     url(r'teacher/questions/(?P<question_id>[0-9]+)/test/$', views.teacher_test_question, name='teacher_test_question'),#ok
     url(r'teacher/questions/bulk-upload/$', views.bulk_upload_questions, name='bulk_upload_questions'),#ok
     url(r'teacher/questions/template/$', views.download_question_template, name='download_question_template'),#ok
+
+
+    #  Quizzes Grading Management APIs
+    url(r'teacher/grading/courses/$', views.api_get_grading_courses, name='api_get_grading_courses'),
+    url(r'teacher/grading/(?P<quiz_id>\d+)/(?P<course_id>\d+)/users/$', views.api_get_quiz_users, name='api_get_quiz_users'),
+    url(r'teacher/grading/(?P<quiz_id>\d+)/(?P<user_id>\d+)/(?P<course_id>\d+)/attempts/$', views.api_get_user_attempts, name='api_get_user_attempts'),
+    url(r'teacher/grading/(?P<quiz_id>\d+)/(?P<user_id>\d+)/(?P<attempt_number>\d+)/(?P<course_id>\d+)/$', views.api_grade_user_attempt, name='api_grade_user_attempt'),
+
+    #  Quizzes Regrading APIs
+    
+    url(r'teacher/regrading/paper/question/(?P<course_id>\d+)/(?P<questionpaper_id>\d+)/(?P<question_id>\d+)/$', views.api_regrade, name='api_regrade_by_quiz'),         # 1. Regrade specific question in a paper (Quiz wide or specific Context)
+    url(r'teacher/regrading/user/(?P<course_id>\d+)/(?P<questionpaper_id>\d+)/(?P<answerpaper_id>\d+)/$', views.api_regrade, name='api_regrade_by_user'),                # 2. Regrade a specific user's attempt (AnswerPaper)
+    url(r'teacher/regrading/user/question/(?P<course_id>\d+)/(?P<questionpaper_id>\d+)/(?P<answerpaper_id>\d+)/(?P<question_id>\d+)/$', views.api_regrade, name='api_regrade_by_question'), # 3. Regrade a specific question for a specific user
+
+    #  Quizzes Monitor APIs
+    url(r'teacher/monitor/$', views.monitor_papers, name="monitor_papers_list"),
+    url(r'teacher/monitor/(?P<quiz_id>\d+)/(?P<course_id>\d+)/$', views.monitor_papers, name="monitor_papers"),
+    url(r'teacher/monitor/(?P<quiz_id>\d+)/(?P<course_id>\d+)/(?P<attempt_number>\d+)/$', views.monitor_papers, name="monitor_papers_attempt"),
+    
+
+     # Statistics APIs
+    url(r'teacher/statistics/question/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/$', views.show_statistics, name="show_statistics"),
+
+    url(r'teacher/statistics/question/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/(?P<attempt_number>\d+)/$', views.show_statistics, name="show_statistics_attempt"),
+
+    # Download CSV API
+    url(r'teacher/download_quiz_csv/(?P<course_id>\d+)/(?P<quiz_id>\d+)/$', views.download_quiz_csv, name="download_quiz_csv"),
+    url(r'teacher/upload_marks/(?P<course_id>\d+)/(?P<questionpaper_id>\d+)/$', views.upload_marks, name='upload_marks'),
+
+    # User Data
+    url(r'teacher/user_data/(?P<user_id>\d+)/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/$', views.user_data, name="user_data_detail"),
+    url(r'teacher/user_data/(?P<user_id>\d+)/$', views.user_data, name="user_data"),
+
+    # Extend Time
+    url(r'teacher/extend_time/(?P<paper_id>\d+)/$', views.extend_time, name='extend_time'),
+
+    # MicroManager / Special Attempts
+    url(r'teacher/micromanager/allow_special_attempt/(?P<user_id>\d+)/(?P<course_id>\d+)/(?P<quiz_id>\d+)/$', views.allow_special_attempt, name='allow_special_attempt'),    
+    url(r'teacher/micromanager/special_start/(?P<micromanager_id>\d+)/$', views.special_start, name='special_start'),    
+    url(r'teacher/micromanager/special_revoke/(?P<micromanager_id>\d+)/$', views.revoke_special_attempt, name='revoke_special_attempt'),
+
 
 
     
@@ -200,59 +253,11 @@ urlpatterns = [
     
     url(r'teacher/modules/(?P<module_id>[0-9]+)/units/reorder/$', views.teacher_reorder_module_units, name='teacher_reorder_module_units'),
     url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/reorder/$', views.teacher_reorder_course_modules, name='teacher_reorder_course_modules'),
-    url(r'teacher/courses/(?P<course_id>[0-9]+)/analytics/$', views.teacher_get_course_analytics, name='teacher_get_course_analytics'),
+    
     
 
-
-    
-    # Teacher/TA Management
-    url(r'teacher/courses/(?P<course_id>[0-9]+)/teachers/$', views.teacher_get_course_teachers, name='teacher_get_course_teachers'),
-    url(r'teacher/courses/(?P<course_id>[0-9]+)/teachers/search/$', views.teacher_search_teachers, name='teacher_search_teachers'),
-    url(r'teacher/courses/(?P<course_id>[0-9]+)/teachers/add/$', views.teacher_add_teachers, name='teacher_add_teachers'),
-    url(r'teacher/courses/(?P<course_id>[0-9]+)/teachers/remove/$', views.teacher_remove_teachers, name='teacher_remove_teachers'),
-    
-    # Course MD Upload/Download
-    url(r'teacher/courses/(?P<course_id>[0-9]+)/md/download/$', views.teacher_download_course_md, name='teacher_download_course_md'),
-    url(r'teacher/courses/(?P<course_id>[0-9]+)/md/upload/$', views.teacher_upload_course_md, name='teacher_upload_course_md'),
-
-    # Grading Management APIs
-    url(r'teacher/grading/courses/$', views.api_get_grading_courses, name='api_get_grading_courses'),
-    url(r'teacher/grading/(?P<quiz_id>\d+)/(?P<course_id>\d+)/users/$', views.api_get_quiz_users, name='api_get_quiz_users'),
-    url(r'teacher/grading/(?P<quiz_id>\d+)/(?P<user_id>\d+)/(?P<course_id>\d+)/attempts/$', views.api_get_user_attempts, name='api_get_user_attempts'),
-    url(r'teacher/grading/(?P<quiz_id>\d+)/(?P<user_id>\d+)/(?P<attempt_number>\d+)/(?P<course_id>\d+)/$', views.api_grade_user_attempt, name='api_grade_user_attempt'),
-
-    # Regrading APIs
-    
-    url(r'teacher/regrading/paper/question/(?P<course_id>\d+)/(?P<questionpaper_id>\d+)/(?P<question_id>\d+)/$', views.api_regrade, name='api_regrade_by_quiz'),         # 1. Regrade specific question in a paper (Quiz wide or specific Context)
-    url(r'teacher/regrading/user/(?P<course_id>\d+)/(?P<questionpaper_id>\d+)/(?P<answerpaper_id>\d+)/$', views.api_regrade, name='api_regrade_by_user'),                # 2. Regrade a specific user's attempt (AnswerPaper)
-    url(r'teacher/regrading/user/question/(?P<course_id>\d+)/(?P<questionpaper_id>\d+)/(?P<answerpaper_id>\d+)/(?P<question_id>\d+)/$', views.api_regrade, name='api_regrade_by_question'), # 3. Regrade a specific question for a specific user
-
-    # Monitor APIs
-    url(r'teacher/monitor/$', views.monitor_papers, name="monitor_papers_list"),
-    url(r'teacher/monitor/(?P<quiz_id>\d+)/(?P<course_id>\d+)/$', views.monitor_papers, name="monitor_papers"),
-    url(r'teacher/monitor/(?P<quiz_id>\d+)/(?P<course_id>\d+)/(?P<attempt_number>\d+)/$', views.monitor_papers, name="monitor_papers_attempt"),
-    
-
-     # Statistics APIs
-    url(r'teacher/statistics/question/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/$', views.show_statistics, name="show_statistics"),
-
-    url(r'teacher/statistics/question/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/(?P<attempt_number>\d+)/$', views.show_statistics, name="show_statistics_attempt"),
-
-    # Download CSV API
-    url(r'teacher/download_quiz_csv/(?P<course_id>\d+)/(?P<quiz_id>\d+)/$', views.download_quiz_csv, name="download_quiz_csv"),
-    url(r'teacher/upload_marks/(?P<course_id>\d+)/(?P<questionpaper_id>\d+)/$', views.upload_marks, name='upload_marks'),
-
-    # User Data
-    url(r'teacher/user_data/(?P<user_id>\d+)/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/$', views.user_data, name="user_data_detail"),
-    url(r'teacher/user_data/(?P<user_id>\d+)/$', views.user_data, name="user_data"),
-
-    # Extend Time
-    url(r'teacher/extend_time/(?P<paper_id>\d+)/$', views.extend_time, name='extend_time'),
-
-    # MicroManager / Special Attempts
-    url(r'teacher/micromanager/allow_special_attempt/(?P<user_id>\d+)/(?P<course_id>\d+)/(?P<quiz_id>\d+)/$', views.allow_special_attempt, name='allow_special_attempt'),    
-    url(r'teacher/micromanager/special_start/(?P<micromanager_id>\d+)/$', views.special_start, name='special_start'),    
-    url(r'teacher/micromanager/special_revoke/(?P<micromanager_id>\d+)/$', views.revoke_special_attempt, name='revoke_special_attempt'),
 ]
+    
+    
 
 urlpatterns = format_suffix_patterns(urlpatterns)

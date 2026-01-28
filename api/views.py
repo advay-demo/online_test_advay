@@ -972,7 +972,6 @@ def student_dash(request):
         course_code = request.data.get('course_code')
         if course_code:
             try:
-                # Use the manager method if available, else filter manually
                 if hasattr(Course.objects, 'get_hidden_courses'):
                     courses = list(Course.objects.get_hidden_courses(code=course_code))
                 else:
@@ -982,24 +981,19 @@ def student_dash(request):
         else:
             return Response({'error': 'Course code is required for search'}, status=status.HTTP_400_BAD_REQUEST)
     else:
-        # GET Request logic
         enrolled_courses = user.students.filter(is_trial=False).order_by('-id')
-        
         remaining_courses = Course.objects.filter(
             active=True, is_trial=False, hidden=False
         ).exclude(
             id__in=enrolled_courses.values_list("id", flat=True)
         ).order_by('-id')
-        
-        # Combine lists: Enrolled first, then others
         courses = list(enrolled_courses) + list(remaining_courses)
 
-    # Calculate completion percentages for enrolled courses
     for course in courses:
         if course.is_enrolled(user):
             completion_percentages[course.id] = course.get_completion_percent(user)
         else:
-             completion_percentages[course.id] = None
+            completion_percentages[course.id] = None
 
     serializer = StudentDashboardCourseSerializer(
         courses, 
@@ -1007,14 +1001,81 @@ def student_dash(request):
         context={'user': user, 'completion_percentages': completion_percentages}
     )
 
+    # --- Add user stats to the response ---
+    user_stats, _ = UserStats.objects.get_or_create(user=user)
+    stats_serializer = UserStatsSerializer(user_stats)
+
+    # --- Enhanced statistics and highlights ---
+    total_enrolled = user.students.filter(is_trial=False).count()
+    active_enrolled = user.students.filter(is_trial=False, active=True).count()
+    avg_completion = (
+        sum([v for v in completion_percentages.values() if v is not None]) /
+        max(1, len([v for v in completion_percentages.values() if v is not None]))
+    ) if completion_percentages else 0
+
+    # Recent courses (last 5 enrolled)
+    recent_courses = user.students.filter(is_trial=False).order_by('-created_on')[:5]
+    recent_courses_data = StudentDashboardCourseSerializer(
+        recent_courses, many=True, context={'user': user, 'completion_percentages': completion_percentages}
+    ).data
+
+    # Top completed courses
+    top_courses = sorted(
+        [
+            (course, completion_percentages.get(course.id, 0) or 0)
+            for course in courses if completion_percentages.get(course.id) is not None
+        ],
+        key=lambda x: x[1], reverse=True
+    )[:5]
+    top_courses_data = StudentDashboardCourseSerializer(
+        [c[0] for c in top_courses], many=True, context={'user': user, 'completion_percentages': completion_percentages}
+    ).data
+
+    # Recent activities (last 5)
+    recent_activities = UserActivity.objects.filter(user=user).order_by('-timestamp')[:5]
+    recent_activities_data = UserActivitySerializer(recent_activities, many=True).data
+
+    # Badges
+    badges = UserBadge.objects.filter(user=user)
+    badges_data = UserBadgeSerializer(badges, many=True).data
+
+    # Upcoming quizzes (active, not attempted)
+    upcoming_quizzes = []
+    for course in courses[:10]:
+        for module in course.learning_module.all():
+            for unit in module.learning_unit.filter(type='quiz'):
+                quiz = unit.quiz
+                if quiz and quiz.active and (not AnswerPaper.objects.filter(user=user, question_paper__quiz=quiz, status='completed').exists()):
+                    upcoming_quizzes.append({
+                        'id': quiz.id,
+                        'course_id': course.id,
+                        'name': quiz.description,
+                        'course_name': course.name,
+                        'module_name': module.name
+                    })
+    upcoming_quizzes = upcoming_quizzes[:5]
+
     return Response({
         'courses': serializer.data,
         'user': {
             'id': user.id,
             'name': user.get_full_name(),
-            'username': user.username
+            'username': user.username,
+            'email': user.email
+        },
+        'stats': stats_serializer.data,
+        'dashboard': {
+            'total_enrolled': total_enrolled,
+            'active_enrolled': active_enrolled,
+            'avg_completion': round(avg_completion, 1),
+            'recent_courses': recent_courses_data,
+            'top_courses': top_courses_data,
+            'recent_activities': recent_activities_data,
+            'badges': badges_data,
+            'upcoming_quizzes': upcoming_quizzes
         }
     })
+    
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def student_dashboard(request):

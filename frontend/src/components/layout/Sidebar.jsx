@@ -16,6 +16,9 @@ const Sidebar = () => {
   const isActive = (path) =>
     location.pathname === path || location.pathname.startsWith(path + '/');
 
+  // Check if any nav item is active
+  const anyActive = navItems.some(item => isActive(item.path));
+
   const handleLinkClick = () => {
     setIsMobileOpen(false);
   };
@@ -57,12 +60,14 @@ const Sidebar = () => {
         <nav className="flex-1 p-4 sm:p-6 lg:p-8 space-y-2 overflow-y-auto">
           {navItems.map((item) => {
             const Icon = item.icon;
+            // If no nav item is active, force dashboard to be active
+            const active = isActive(item.path) || (!anyActive && item.path === '/dashboard');
             return (
               <Link
                 key={item.path}
                 to={item.path}
                 onClick={handleLinkClick}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition ${isActive(item.path)
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition ${active
                     ? 'bg-blue-600 text-white'
                     : 'text-soft hover:bg-white/3'
                   }`}

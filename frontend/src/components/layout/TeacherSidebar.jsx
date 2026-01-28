@@ -14,17 +14,11 @@ const TeacherSidebar = () => {
         { path: '/teacher/questions', label: 'Questions', icon: FaQuestionCircle },
     ];
 
+    // Helper to determine if a nav item is active
     const isActive = (path) => {
-
         if (path === '/teacher/dashboard') {
-            return (
-                location.pathname === path 
-                
-            );
+            return location.pathname === path;
         }
-
-
-        // Special handling for courses - match all course-related paths
         if (path === '/teacher/courses') {
             return (
                 location.pathname === path ||
@@ -34,7 +28,6 @@ const TeacherSidebar = () => {
                 location.pathname === '/teacher/grading-systems'
             );
         }
-
         if (path === '/teacher/questions') {
             return (
                 location.pathname === path ||
@@ -44,9 +37,11 @@ const TeacherSidebar = () => {
                 location.pathname.startsWith('/teacher/test-question/')
             );
         }
-        // For other paths, exact match or starts with
         return location.pathname === path || location.pathname.startsWith(path + '/');
     };
+
+    // Find if any nav item is active
+    const anyActive = navItems.some(item => isActive(item.path));
 
     const handleLinkClick = () => {
         setIsMobileOpen(false);
@@ -71,7 +66,7 @@ const TeacherSidebar = () => {
                     ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
                 `}
             >
-                {/* Logo Section - Matching header height */}
+                {/* Logo Section */}
                 <div className="h-16 lg:h-20 px-4 sm:px-6 lg:px-8 border-b border-[var(--border-subtle)] bg-[var(--bg-primary)]/95 backdrop-blur-xl shadow-sm flex items-center justify-between flex-shrink-0">
                     <Logo />
                     <button
@@ -89,12 +84,14 @@ const TeacherSidebar = () => {
                 <nav className="flex-1 p-4 sm:p-6 lg:p-8 space-y-2 overflow-y-auto">
                     {navItems.map((item) => {
                         const Icon = item.icon;
+                        // If no nav item is active, force dashboard to be active
+                        const active = isActive(item.path) || (!anyActive && item.path === '/teacher/dashboard');
                         return (
                             <Link
                                 key={item.path}
                                 to={item.path}
                                 onClick={handleLinkClick}
-                                className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition ${isActive(item.path)
+                                className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition ${active
                                     ? 'bg-blue-600 text-white'
                                     : 'text-soft hover:bg-white/3'
                                     }`}
@@ -107,7 +104,7 @@ const TeacherSidebar = () => {
                 </nav>
             </aside>
 
-            {/* Mobile Menu Toggle Button - Floating */}
+            {/* Mobile Menu Toggle Button */}
             <button
                 onClick={() => setIsMobileOpen(true)}
                 className="lg:hidden fixed bottom-6 right-6 z-30 w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all duration-200"
