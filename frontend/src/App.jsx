@@ -4,7 +4,8 @@ import Home from './pages/Home';
 import Signup from './pages/Signup';
 import Signin from './pages/Signin';
 import DashboardHome from './pages/DashboardHome';
-import CourseCatalog from './pages/student/CourseCatalog';
+import CourseStudent from './pages/student/Courses';
+import AddNewCourseStudent from './pages/student/AddCourse';
 import CourseModule from './pages/student/CourseModule';
 import Quiz from './pages/student/Quiz';
 import Lesson from './pages/student/Lesson';
@@ -44,7 +45,9 @@ function App() {
           <Route path="/notifications" element={<Notifications />} />
 
           <Route path="/dashboard" element={<DashboardHome />} />
-          <Route path="/courses" element={<CourseCatalog />} />
+          <Route path="/courses" element={<CourseStudent />} />
+          <Route path="/add-course" element={<AddNewCourseStudent />} />
+          
           <Route path="/courses/:courseId/modules" element={<CourseModule />} />
           <Route path="/courses/:courseId/modules/:moduleId" element={<CourseModule />} />
           <Route path="/lessons/:lessonId" element={<Lesson />} />

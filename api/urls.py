@@ -12,9 +12,11 @@ urlpatterns = [
 
     
     # Student Dashboard & Stats
-    url(r'student/dash/$', views.student_dash, name="student_dashboard_courses"),
-    url(r'student/dashboard/$', views.student_dashboard, name='student_dashboard'),
-    url(r'student/stats/$', views.student_stats, name='student_stats'),
+    url(r'student/dashboard/$', views.student_dash, name="student_dashboard_courses"), #ok
+
+    url(r'student/courses/$', views.user_courselist, name='user_courselist'),
+    url(r'student/new-courses/', views.search_new_courses, name='search_new_courses'),
+    
     
     # Course Catalog & Enrollment
     url(r'student/courses/catalog/$', views.course_catalog, name='course_catalog'),

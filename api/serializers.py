@@ -469,6 +469,10 @@ class CourseCatalogSerializer(serializers.ModelSerializer):
     progress = serializers.SerializerMethodField()
     color = serializers.SerializerMethodField()
     is_enrolled = serializers.SerializerMethodField()
+    modules = LearningModuleSerializer(source='learning_module', many=True, read_only=True)
+    instructions = serializers.CharField(read_only=True)
+    start_date = serializers.DateTimeField(source='start_enroll_time', read_only=True)
+    end_date = serializers.DateTimeField(source='end_enroll_time', read_only=True)
     
     def get_instructor(self, obj):
         creator = obj.creator
@@ -522,9 +526,11 @@ class CourseCatalogSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Course
-        fields = ['id', 'name', 'instructor', 'level', 'rating', 'students_count',
-                 'duration', 'progress', 'color', 'is_enrolled', 'code']
-
+        fields = [
+            'id', 'name', 'instructor', 'level', 'rating', 'students_count',
+            'duration', 'progress', 'color', 'is_enrolled', 'code', 'modules',
+            'instructions', 'start_date', 'end_date'
+        ]
 
 ###############################################################################
 # Enhanced Lesson & Module Serializers
@@ -849,3 +855,10 @@ class StudentDashboardCourseSerializer(serializers.ModelSerializer):
         # Remove badge__course=obj if Badge does not have a course field
         badges = UserBadge.objects.filter(user=user)
         return UserBadgeSerializer(badges, many=True).data
+        
+
+
+
+class CourseWithCompletionSerializer(serializers.Serializer):
+    data = CourseCatalogSerializer()
+    completion_percentage = serializers.FloatField(allow_null=True)        

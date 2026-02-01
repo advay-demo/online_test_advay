@@ -50,7 +50,7 @@ from api.serializers import (
     UserActivitySerializer, CourseProgressSerializer, CourseCatalogSerializer,
     LessonDetailSerializer, LearningModuleDetailSerializer, LearningUnitDetailSerializer, MinimalLearningUnitSerializer,
     SimpleUserSerializer, ProfileSerializer, AnswerDetailSerializer, AnswerPaperGradingSerializer, UserAttemptSerializer, GradeUpdateSerializer, GradingCourseSerializer,
-    MonitorAnswerPaperSerializer, StudentDashboardCourseSerializer
+    MonitorAnswerPaperSerializer, StudentDashboardCourseSerializer, CourseWithCompletionSerializer
 )
 
 from rest_framework import generics, permissions, status
@@ -952,7 +952,7 @@ def quiz_submission_status(request, answerpaper_id):
 
 
 # ============================================================
-#  STUDENT DASHBOARD & STATS APIs
+#  STUDENT DASHBOARD APIs
 # ============================================================
 
 
@@ -1076,72 +1076,75 @@ def student_dash(request):
         }
     })
     
+
+
+# ============================================================
+#  COURSES & ENROLLMENT APIs
+# ============================================================
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def student_dashboard(request):
-    """Get student dashboard data with stats, active courses, and recent activities"""
+def user_courselist(request):
+    """
+    API endpoint to get all quizzes/courses available to the logged-in user.
+    """
     user = request.user
-    
-    # Get or create user stats
-    user_stats, created = UserStats.objects.get_or_create(user=user)
-    if created:
-        # Initialize stats for new user
-        user_stats.save()
-    
-    # Reset weekly/monthly stats if needed
-    user_stats.reset_weekly_stats()
-    user_stats.reset_monthly_stats()
-    
-    # Serialize stats
-    stats_serializer = UserStatsSerializer(user_stats)
-    stats_data = stats_serializer.data
-    
-    # Add courses enrolled count
-    enrolled_courses = Course.objects.filter(students=user, active=True).count()
-    in_progress_courses = CourseStatus.objects.filter(
-        user=user, 
-        grade__isnull=True
-    ).count()
-    
-    stats_data['coursesEnrolled'] = enrolled_courses
-    stats_data['inProgress'] = in_progress_courses
-    
-    # Get active courses (enrolled and in progress)
-    active_courses = Course.objects.filter(
-        students=user, 
-        active=True
-    ).prefetch_related('learning_module', 'learning_module__learning_unit', 'creator').order_by('-created_on')[:3]
-    
-    courses_serializer = CourseProgressSerializer(
-        active_courses, many=True, context={'user': user}
-    )
-    
-    # Get recent activities
-    recent_activities = UserActivity.objects.filter(user=user).order_by('-timestamp')[:10]
-    activities_serializer = UserActivitySerializer(recent_activities, many=True)
-    
+    courses_data = []
+
+    enrolled_courses = user.students.filter(is_trial=False).order_by('-id')
+    remaining_courses = list(Course.objects.filter(
+        active=True, is_trial=False, hidden=False
+    ).exclude(
+        id__in=enrolled_courses.values_list("id", flat=True)
+    ).order_by('-id'))
+    courses = list(enrolled_courses)
+    courses.extend(remaining_courses)
+    title = 'All Courses'
+
+    for course in courses:
+        if course.students.filter(id=user.id).exists():
+            _percent = course.get_completion_percent(user)
+        else:
+            _percent = None
+        courses_data.append({
+            'data': course,
+            'completion_percentage': _percent,
+        })
+
+    serializer = CourseWithCompletionSerializer(courses_data, many=True, context={'request': request})
     return Response({
-        'stats': stats_data,
-        'activeCourses': courses_serializer.data,
-        'recentActivities': activities_serializer.data
-    }, status=status.HTTP_200_OK)
+        'user_id': user.id,
+        'courses': serializer.data,
+        'title': title
+    })
 
 
-@api_view(['GET'])
+@api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def student_stats(request):
-    """Get detailed student statistics"""
+def search_new_courses(request):
+    """
+    API endpoint to search for new (not enrolled) courses by course code.
+    """
     user = request.user
-    
-    user_stats, created = UserStats.objects.get_or_create(user=user)
-    serializer = UserStatsSerializer(user_stats)
-    
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    course_code = request.data.get('course_code')
+    enrolled_ids = user.students.filter(is_trial=False).values_list("id", flat=True)
+    new_courses = Course.objects.get_hidden_courses(code=course_code).exclude(id__in=enrolled_ids)
+
+    courses_data = []
+    for course in new_courses:
+        courses_data.append({
+            'data': course,
+            'completion_percentage': None,  # Not enrolled, so no completion
+        })
+
+    serializer = CourseWithCompletionSerializer(courses_data, many=True, context={'request': request})
+    return Response({
+        'courses': serializer.data,
+        'title': 'Search Results'
+    })
 
 
-# ============================================================
-#  COURSE CATALOG & ENROLLMENT APIs
-# ============================================================
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

@@ -9,12 +9,29 @@ const Sidebar = () => {
 
   const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: FaHome },
-    { path: '/courses', label: 'Course Catalog', icon: FaBook },
+    { path: '/courses', label: 'Courses', icon: FaBook },
     { path: '/insights', label: 'Insights', icon: FaChartBar },
   ];
 
-  const isActive = (path) =>
-    location.pathname === path || location.pathname.startsWith(path + '/');
+
+  const isActive = (path) => {
+        if (path === '/dashboard') {
+            return location.pathname === path;
+        }
+        if (path === '/courses') {
+            return (
+                location.pathname === path ||
+                location.pathname.startsWith('/teacher/course/') ||
+                location.pathname.startsWith('/teacher/courses') ||
+                location.pathname === '/add-course'
+                
+            );
+        }
+       
+        return location.pathname === path || location.pathname.startsWith(path + '/');
+    };
+
+  
 
   // Check if any nav item is active
   const anyActive = navItems.some(item => isActive(item.path));
