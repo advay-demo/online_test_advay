@@ -4,7 +4,7 @@ import { AiOutlineClockCircle, AiOutlineBarChart } from 'react-icons/ai';
 import Sidebar from '../../components/layout/Sidebar';
 import Header from '../../components/layout/Header';
 import CourseActionButtons from '../../components/student/CourseActionButtons';
-import useCourseStore from '../../store/student/manageCourseStore';
+import useCourseStore from '../../store/student/courseStore';
 import { enrollInCourse } from '../../api/api';
 
 

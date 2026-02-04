@@ -26,6 +26,8 @@ urlpatterns = [
     # Course Modules & Lessons
     url(r'student/courses/(?P<course_id>[0-9]+)/modules/$', views.course_modules, name='course_modules'),
     url(r'student/modules/(?P<module_id>[0-9]+)/$', views.module_detail, name='module_detail'),
+
+    
     url(r'student/lessons/(?P<lesson_id>[0-9]+)/$', views.lesson_detail, name='lesson_detail'),
     url(r'student/lessons/(?P<lesson_id>[0-9]+)/complete/$', views.complete_lesson, name='complete_lesson'),
     

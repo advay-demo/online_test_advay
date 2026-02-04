@@ -17,7 +17,7 @@ const CourseActionButtons = ({ activeButton = null }) => {
     
     {
       label: 'Add New Course',
-      shortLabel: 'New Course',
+      shortLabel: 'Course',
       path: '/add-course',
       type: 'create',
       icon: (
@@ -30,7 +30,7 @@ const CourseActionButtons = ({ activeButton = null }) => {
 
   return (
     <div className="mb-6 lg:mb-8">
-      <div className="flex gap-2 sm:gap-3 overflow-x-auto scrollbar-hide pb-1">
+      <div className="flex justify-center sm:justify-start gap-2 sm:gap-3 overflow-x-auto scrollbar-hide pb-1">
         {buttons.map((button) => {
           const isActive = activeButton === button.type;
           return (

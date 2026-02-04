@@ -1242,10 +1242,11 @@ def enroll_course(request, course_id):
 #  COURSE MODULES & LESSONS APIs
 # ============================================================
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def course_modules(request, course_id):
-    """Get all modules for a course"""
+    """Get all modules for a course with progress and grade"""
     user = request.user
     
     try:
@@ -1256,33 +1257,48 @@ def course_modules(request, course_id):
             status=status.HTTP_404_NOT_FOUND
         )
     
-    # Check if user is enrolled
+    # Check enrollment
     if not course.students.filter(id=user.id).exists():
         return Response(
-            {'error': 'Not enrolled in this course'},
+            {'error': 'You are not enrolled for this course!'},
             status=status.HTTP_403_FORBIDDEN
         )
+        
+    # Check active status
+    if not course.active or not course.is_active_enrollment():
+         return Response(
+             {'error': "{0} is either expired or not active".format(course.name)},
+             status=status.HTTP_403_FORBIDDEN
+         )
     
-    modules = course.learning_module.filter(active=True).order_by('order')
+    # Use model method to get modules (handles ordering and is_trial)
+    learning_modules = course.get_learning_modules()
+    
+    # Calculate global course progress
+    course_percentage = course.get_completion_percent(user)
+    
+    # Get grade if available
+    grade = None
+    course_status = CourseStatus.objects.filter(course=course, user=user).first()
+    if course_status:
+        if not course_status.grade:
+            course_status.set_grade()
+        grade = course_status.get_grade()
+
+    # Pass course object in context so serializer can calculate module progress efficiently
+    context = {'user': user, 'course': course}
     serializer = LearningModuleDetailSerializer(
-        modules, many=True, context={'user': user, 'course_id': course_id}
+        learning_modules, many=True, context=context
     )
-    
-    # Get overall course progress
-    try:
-        course_status = CourseStatus.objects.get(user=user, course=course)
-        total_units = sum(module.learning_unit.count() for module in modules)
-        completed_units = course_status.completed_units.count()
-        progress = int((completed_units / total_units) * 100) if total_units > 0 else 0
-    except CourseStatus.DoesNotExist:
-        progress = 0
     
     return Response({
         'course': {
             'id': course.id,
             'name': course.name,
             'code': course.code,
-            'progress': progress
+            'progress': course_percentage,
+            'grade': grade,
+            'instructions': course.instructions,
         },
         'modules': serializer.data
     }, status=status.HTTP_200_OK)
@@ -1302,26 +1318,38 @@ def module_detail(request, module_id):
             status=status.HTTP_404_NOT_FOUND
         )
     
-    # Find course that contains this module
-    course = Course.objects.filter(learning_module=module).first()
+    # Find course that contains this module AND the user is enrolled in
+    courses = Course.objects.filter(learning_module=module, students=user)
+    course = courses.first()
+
     if not course:
-        return Response(
-            {'error': 'Course not found for this module'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    
-    # Check enrollment
-    if not course.students.filter(id=user.id).exists():
-        return Response(
-            {'error': 'Not enrolled in this course'},
-            status=status.HTTP_403_FORBIDDEN
-        )
-    
+         # Fallback to checking any course if user not enrolled (for consistent error messaging)
+         course = Course.objects.filter(learning_module=module).first()
+         if not course:
+            return Response(
+                {'error': 'Course not found for this module'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+         # If we found a course but user isn't in it (logic above failed), return 403
+         if not course.students.filter(id=user.id).exists():
+            return Response(
+                {'error': 'Not enrolled in this course'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+            
+    # Check active status of the course
+    if not course.active or not course.is_active_enrollment():
+         return Response(
+             {'error': "{0} is either expired or not active".format(course.name)},
+             status=status.HTTP_403_FORBIDDEN
+         )
+
     serializer = LearningModuleDetailSerializer(
-        module, context={'user': user, 'course_id': course.id}
+        module, context={'user': user, 'course': course}
     )
     
     return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 
 @api_view(['GET'])

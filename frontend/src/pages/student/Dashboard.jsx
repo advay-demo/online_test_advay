@@ -340,7 +340,7 @@ const Dashboard = () => {
                     </div>
                     {/* CTA */}
                     <Link
-                      to={`/courses/${course.id}/modules`}
+                      to={`/courses/${course.id}/manage`}
                       className="
                         mt-auto inline-flex items-center justify-center gap-2
                         rounded-xl
@@ -353,6 +353,7 @@ const Dashboard = () => {
                       "
                     >
                       Resume
+                      
                       <FaArrowRight className="w-3.5 h-3.5 opacity-70" />
                     </Link>
                   </article>

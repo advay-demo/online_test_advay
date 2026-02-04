@@ -1,36 +1,76 @@
 import { create } from 'zustand';
-import { fetchCoursesList, searchNewCourses } from '../../api/api';
+import {
+  fetchCourseModules,
+  fetchModuleDetail,
+} from '../../api/api';
 
-const useCourseStore = create((set) => ({
-  courses: [],
-  newCourses: [],
-  loading: false,
-  error: null,
+const useManageCourseStore = create((set, get) => ({
+  // State
+  activeTab: 'Modules',
+  course: null,
+  courseLoading: false,
+  courseError: null,
 
-  // Fetch all courses (enrolled + available)
-  fetchCourses: async () => {
-    set({ loading: true, error: null });
+  modules: [],
+  modulesLoading: false,
+  modulesError: null,
+  moduleDetail: null,
+  moduleDetailLoading: false,
+  moduleDetailError: null,
+
+  // Actions
+  setActiveTab: (tab) => set({ activeTab: tab }),
+
+  // Load course data and modules (API returns both in one call)
+  loadCourseData: async (courseId) => {
+    set({ courseLoading: true, courseError: null, modulesLoading: true, modulesError: null });
     try {
-      const data = await fetchCoursesList();
-      set({ courses: data.courses || [], loading: false });
-    } catch (err) {
-      set({ error: err.message || 'Failed to fetch courses', loading: false });
+      const data = await fetchCourseModules(courseId);
+      
+      // Response structure: { course: {...}, modules: [...] }
+      if (data && data.course) {
+        set({ 
+          course: data.course, 
+          modules: data.modules || [], 
+          courseLoading: false, 
+          modulesLoading: false 
+        });
+      } else {
+         set({ 
+            courseError: 'Invalid course data received', 
+            courseLoading: false,
+            modulesLoading: false
+         });
+      }
+    } catch (error) {
+      const errorMessage = error.message || 'Failed to load course.';
+      set({ 
+          courseError: errorMessage, 
+          modulesError: errorMessage,
+          courseLoading: false, 
+          modulesLoading: false 
+      });
     }
   },
 
-  // Search for new courses by code
-  searchCourses: async (courseCode) => {
-    set({ loading: true, error: null });
+  // Fetch all modules for a course (same endpoint as loadCourseData)
+  loadCourseModules: async (courseId) => {
+    await get().loadCourseData(courseId);
+  },
+
+  // Fetch details for a specific module
+  loadModuleDetail: async (moduleId) => {
+    set({ moduleDetailLoading: true, moduleDetailError: null });
     try {
-      const data = await searchNewCourses(courseCode);
-      set({ newCourses: data.courses || [], loading: false });
-    } catch (err) {
-      set({ error: err.message || 'Failed to search courses', loading: false });
+      const data = await fetchModuleDetail(moduleId);
+      set({ moduleDetail: data, moduleDetailLoading: false });
+    } catch (error) {
+      set({ moduleDetailError: error, moduleDetailLoading: false });
     }
   },
 
-  // Optionally, clear search results
-  clearSearch: () => set({ newCourses: [] }),
+  // Optionally, clear module detail
+  clearModuleDetail: () => set({ moduleDetail: null, moduleDetailError: null }),
 }));
 
-export default useCourseStore;
+export default useManageCourseStore;

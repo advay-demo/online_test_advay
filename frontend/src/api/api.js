@@ -147,6 +147,8 @@ export const searchNewCourses = async (courseCode) => {
   return response.data;
 };  
 
+//---------------------------------------------------------------------------------------------------
+
 export const fetchCourseCatalog = async (filters = {}) => {
   const params = new URLSearchParams();
 

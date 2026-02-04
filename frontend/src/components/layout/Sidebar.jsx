@@ -21,8 +21,8 @@ const Sidebar = () => {
         if (path === '/courses') {
             return (
                 location.pathname === path ||
-                location.pathname.startsWith('/teacher/course/') ||
-                location.pathname.startsWith('/teacher/courses') ||
+                location.pathname.startsWith('/course') ||
+                location.pathname.startsWith('/courses') ||
                 location.pathname === '/add-course'
                 
             );

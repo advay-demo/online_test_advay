@@ -553,7 +553,11 @@ class LessonDetailSerializer(serializers.ModelSerializer):
     
     def get_is_completed(self, obj):
         user = self.context.get('user')
+        course = self.context.get('course')
         course_id = self.context.get('course_id')
+
+        if course and not course_id:
+            course_id = course.id
         
         if not user or not course_id:
             return False
@@ -587,23 +591,31 @@ class LearningUnitDetailSerializer(serializers.ModelSerializer):
     
     def get_status(self, obj):
         user = self.context.get('user')
+        course = self.context.get('course')
         course_id = self.context.get('course_id')
         
-        if not user or not course_id:
+        if not user:
             return "not_attempted"
-        
-        try:
-            from yaksh.models import Course
-            course = Course.objects.get(id=course_id)
+
+        if course:
             return obj.get_completion_status(user, course)
-        except:
-            return "not_attempted"
+
+        if course_id:
+            try:
+                from yaksh.models import Course
+                course = Course.objects.get(id=course_id)
+                return obj.get_completion_status(user, course)
+            except:
+                pass
+            
+        return "not_attempted"
     
     class Meta:
         model = LearningUnit
         fields = ['id', 'order', 'type', 'lesson', 'quiz', 'status', 'check_prerequisite']
 
 
+        
 class LearningModuleDetailSerializer(serializers.ModelSerializer):
     """Detailed module serializer with units and progress"""
     units = serializers.SerializerMethodField()
@@ -618,26 +630,20 @@ class LearningModuleDetailSerializer(serializers.ModelSerializer):
     
     def get_progress(self, obj):
         user = self.context.get('user')
+        course = self.context.get('course')
         course_id = self.context.get('course_id')
         
-        if not user or not course_id:
-            return 0
+        # Fallback if course object not passed but ID is
+        if not course and course_id:
+             try:
+                 course = Course.objects.get(id=course_id)
+             except Course.DoesNotExist:
+                 pass
         
-        try:
-            course_status = CourseStatus.objects.get(user=user, course_id=course_id)
-            total_units = obj.learning_unit.count()
-            
-            if total_units == 0:
-                return 0
-            
-            completed_units = 0
-            for unit in obj.learning_unit.all():
-                if course_status.completed_units.filter(id=unit.id).exists():
-                    completed_units += 1
-            
-            return int((completed_units / total_units) * 100)
-        except CourseStatus.DoesNotExist:
-            return 0
+        if user and course:
+            return obj.get_module_complete_percent(course, user)
+        
+        return 0
     
     class Meta:
         model = LearningModule

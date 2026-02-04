@@ -4,7 +4,7 @@ import { FaBook, FaUserFriends, FaEllipsisV } from 'react-icons/fa';
 import Sidebar from '../../components/layout/Sidebar';
 import Header from '../../components/layout/Header';
 import CourseActionButtons from '../../components/student/CourseActionButtons';
-import useCourseStore from '../../store/student/manageCourseStore';
+import useCourseStore from '../../store/student/courseStore';
 
 const CourseStudent = () => {
   const { courses, loading, error, fetchCourses } = useCourseStore();
@@ -134,7 +134,7 @@ const CourseStudent = () => {
                           
                           <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto sm:self-start">
                             <Link
-                              to={`/teacher/courses/${course.id}/manage`}
+                              to={`/courses/${course.id}/manage`}
                               className="flex-1 sm:flex-none px-3 sm:px-4 py-2 border border-[var(--border-color)] rounded-lg text-xs sm:text-sm font-medium hover:bg-[var(--input-bg)] active:scale-95 transition-all duration-200 text-center whitespace-nowrap"
                             >
                               Manage

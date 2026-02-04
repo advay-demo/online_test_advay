@@ -6,12 +6,14 @@ import Signin from './pages/Signin';
 import DashboardHome from './pages/DashboardHome';
 import CourseStudent from './pages/student/Courses';
 import AddNewCourseStudent from './pages/student/AddCourse';
-import CourseModule from './pages/student/CourseModule';
+import ManageCourseStudent from './pages/student/ManageCourse';
+
 import Quiz from './pages/student/Quiz';
 import Lesson from './pages/student/Lesson';
 import Insights from './pages/student/Insights';
 import Profile from './pages/Profile';
 import Submission from './pages/student/Submission';
+
 import DashboardTeachers from './pages/teacher/DashboardTeachers';
 import AddCourse from './pages/teacher/AddCourse';
 import Courses from './pages/teacher/Courses';
@@ -25,9 +27,8 @@ import UploadQuestion from './pages/teacher/UploadQuestion';
 import TestQuestion from './pages/teacher/TestQuestion';
 import Settings from './pages/Settings';
 import Notifications from './pages/Notifications';
-
-
 import ThemeController from './components/layout/ThemeController';
+
 
 function App() {
   return (
@@ -47,9 +48,9 @@ function App() {
           <Route path="/dashboard" element={<DashboardHome />} />
           <Route path="/courses" element={<CourseStudent />} />
           <Route path="/add-course" element={<AddNewCourseStudent />} />
+          <Route path="/courses/:courseId/manage" element={<ManageCourseStudent />} />
           
-          <Route path="/courses/:courseId/modules" element={<CourseModule />} />
-          <Route path="/courses/:courseId/modules/:moduleId" element={<CourseModule />} />
+          
           <Route path="/lessons/:lessonId" element={<Lesson />} />
           <Route path="/courses/:courseId/quizzes/:quizId" element={<Quiz />} />
           <Route path="/quizzes/:quizId" element={<Quiz />} />
@@ -57,7 +58,7 @@ function App() {
           <Route path="/insights" element={<Insights />} />
 
           {/* Legacy routes for backward compatibility */}
-          <Route path="/module" element={<CourseModule />} />
+          
           <Route path="/quiz" element={<Quiz />} />
           <Route path="/lesson" element={<Lesson />} />
           <Route path="/submission" element={<Submission />} />
