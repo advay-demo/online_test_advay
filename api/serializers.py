@@ -73,23 +73,60 @@ class GradingSystemSerializer(serializers.ModelSerializer):
         return instance
 
 class PostSerializer(serializers.ModelSerializer):
-    author = serializers.CharField(source='creator.username', read_only=True)
+    author = serializers.SerializerMethodField()
+    is_me = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
         fields = '__all__'
-        read_only_fields = ['creator']
+        read_only_fields = ['uid', 'creator', 'created_at', 'modified_at', 'target_ct', 'target_id', 'target']
+
+    def get_author(self, obj):
+        # If the requester is the creator, show their name even if anon (so they know it's theirs)
+        # Or if they are a moderator
+        request = self.context.get('request')
+        user = request.user if request else None
         
+        if obj.anonymous:
+            # If user is the creator or a moderator, reveal the name
+            # Otherwise, hide it
+            if user and (obj.creator == user or user.groups.filter(name='moderator').exists()):
+                return obj.creator.get_full_name() or obj.creator.username
+            return "Anonymous"
+        
+        return obj.creator.get_full_name() or obj.creator.username
+
+    def get_is_me(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.creator == request.user
+        return False
 
 class CommentSerializer(serializers.ModelSerializer):
-    author = serializers.CharField(source='creator.username', read_only=True)
-    # or use 'get_full_name' if you want full name
+    author = serializers.SerializerMethodField()
+    is_me = serializers.SerializerMethodField()
 
     class Meta:
         model = Comment
-        fields = ['id', 'description', 'created_at', 'modified_at', 'author']
+        fields = '__all__'
+        read_only_fields = ['uid', 'creator', 'created_at', 'modified_at', 'post_field']
 
+    def get_author(self, obj):
+        request = self.context.get('request')
+        user = request.user if request else None
 
+        if obj.anonymous:
+            if user and (obj.creator == user or user.groups.filter(name='moderator').exists()):
+                 return obj.creator.get_full_name() or obj.creator.username
+            return "Anonymous"
+        
+        return obj.creator.get_full_name() or obj.creator.username
+
+    def get_is_me(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.creator == request.user
+        return False
 
 class ProfileSerializer(serializers.ModelSerializer):
     """Serializer for user profile with nested user fields"""

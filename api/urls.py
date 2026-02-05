@@ -13,9 +13,10 @@ urlpatterns = [
     
     # Student Dashboard & Stats
     url(r'student/dashboard/$', views.student_dash, name="student_dashboard_courses"), #ok
-
-    url(r'student/courses/$', views.user_courselist, name='user_courselist'),
-    url(r'student/new-courses/', views.search_new_courses, name='search_new_courses'),
+    url(r'student/courses/$', views.user_courselist, name='user_courselist'), #ok
+    url(r'student/new-courses/', views.search_new_courses, name='search_new_courses'), #ok
+    url(r'student/courses/(?P<course_id>[0-9]+)/modules/$', views.course_modules, name='course_modules'), #ok
+    url(r'student/modules/(?P<module_id>[0-9]+)/$', views.module_detail, name='module_detail'), #ok
     
     
     # Course Catalog & Enrollment
@@ -24,10 +25,7 @@ urlpatterns = [
     url(r'student/courses/(?P<course_id>[0-9]+)/enroll/$', views.enroll_course, name='enroll_course'),
     
     # Course Modules & Lessons
-    url(r'student/courses/(?P<course_id>[0-9]+)/modules/$', views.course_modules, name='course_modules'),
-    url(r'student/modules/(?P<module_id>[0-9]+)/$', views.module_detail, name='module_detail'),
-
-    
+   
     url(r'student/lessons/(?P<lesson_id>[0-9]+)/$', views.lesson_detail, name='lesson_detail'),
     url(r'student/lessons/(?P<lesson_id>[0-9]+)/complete/$', views.complete_lesson, name='complete_lesson'),
     

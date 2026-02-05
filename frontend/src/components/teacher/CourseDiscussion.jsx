@@ -236,9 +236,10 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
                         <h3 className="font-semibold text-base sm:text-lg line-clamp-1 group-hover:text-blue-400 transition-colors duration-200">
                           {post.title}
                         </h3>
-                        {post.author && (
-                          <span className="text-xs text-gray-400 ml-2">by {post.author}</span>
-                        )}
+                        {/* UPDATE: Conditional anonymous display */}
+                        <span className="text-xs text-gray-400 ml-2">
+                           by {post.anonymous ? (post.is_me ? "Anonymous (You)" : "Anonymous") : post.author}
+                        </span>
                       </div>
                       <div
                         className="text-xs sm:text-sm muted mb-2 sm:mb-3 line-clamp-2"
@@ -318,9 +319,8 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
                                       {new Date(comment.created_at).toLocaleString()}
                                     </span>
                                   )}
-                                  {comment.author && (
-                                    <span>--      {comment.author}</span>
-                                  )}
+                                  {/* UPDATE: Conditional anonymous display for comments */}
+                                  <span>-- {comment.anonymous ? (comment.is_me ? "Anonymous (You)" : "Anonymous") : comment.author}</span>
                                 </div>
                                 <div className="absolute top-2 right-2">
                                   <button
@@ -383,8 +383,10 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
               onSubmit={async e => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
+                // UPDATE: Handle anonymous flag in submission
                 await handleAddComment({
-                  description: formData.get('description')
+                  description: formData.get('description'),
+                  anonymous: formData.get('anonymous') ? 'true' : 'false'
                 });
               }}
               className="space-y-4 mt-2"
@@ -400,6 +402,17 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
                   required
                 />
               </div>
+              {/* UPDATE: Added Anonymous checkbox */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  name="anonymous"
+                  id="comment-anonymous"
+                  className="toggle-checkbox"
+                />
+                <label htmlFor="comment-anonymous" className="text-sm">Anonymous</label>
+              </div>
+
               <div className="flex gap-2 justify-end mt-6 flex-wrap">
                 <button
                   type="button"

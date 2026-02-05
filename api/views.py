@@ -5330,26 +5330,68 @@ class GradingSystemDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 # --- Course Forum Views  ---
+class IsOwnerOrReadOnly(permissions.BasePermission):
+    """
+    Object-level permission to only allow owners of an object to edit it.
+    Assumes the model instance has an `owner` or `creator` attribute.
+    """
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        # Instance must have an attribute named `creator`.
+        return obj.creator == request.user or is_moderator(request.user)
+
+# --- Course Forum Views ---
 
 class ForumPostListCreateView(generics.ListCreateAPIView):
     serializer_class = PostSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def get_queryset(self):
+    def get_course(self):
         course_id = self.kwargs['course_id']
-        return Post.objects.filter(target_id=course_id, active=True).order_by('-modified_at')
+        course = get_object_or_404(Course, pk=course_id)
+        user = self.request.user
+        # Strict enrollment check
+        if not (course.is_student(user) or course.is_teacher(user) or course.is_creator(user) or is_moderator(user)):
+             raise PermissionDenied("You are not enrolled in this course.")
+        return course
+
+    def get_queryset(self):
+        course = self.get_course()
+        course_ct = ContentType.objects.get_for_model(Course)
+        
+        # We retrieve both correctly tagged posts AND posts that might correspond to this ID 
+        # but are missing the ContentType tag (legacy data support)
+        # WARNING: Ideally we should migrate the data, but this allows viewing the old broken posts
+        return Post.objects.filter(
+            target_id=course.id, 
+            active=True
+        ).filter(
+            Q(target_ct=course_ct) | Q(target_ct__isnull=True)
+        ).order_by('-modified_at')
 
     def perform_create(self, serializer):
-        course_id = self.kwargs['course_id']
-        serializer.save(creator=self.request.user, target_id=course_id, active=True)
+        course = self.get_course()
+        course_ct = ContentType.objects.get_for_model(Course)
+        # Handle Anonymous posts
+        is_anonymous = self.request.data.get('anonymous') == 'true' or self.request.data.get('anonymous') == True
+        
+        serializer.save(
+            creator=self.request.user, 
+            target_id=course.id, 
+            target_ct=course_ct, 
+            active=True,
+            anonymous=is_anonymous
+        )
 
 class ForumPostDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = PostSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
     lookup_field = 'id'
 
     def get_queryset(self):
         course_id = self.kwargs['course_id']
+        # Relaxed filtering to allow Deleting/Getting the legacy (null CT) posts too
         return Post.objects.filter(target_id=course_id, active=True)
 
 class ForumCommentListCreateView(generics.ListCreateAPIView):
@@ -5358,15 +5400,27 @@ class ForumCommentListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         post_id = self.kwargs['post_id']
+        # Check if user has access to the course of this post (if linked)
+        # This is a bit expensive but necessary for security
         return Comment.objects.filter(post_field_id=post_id, active=True).order_by('created_at')
 
     def perform_create(self, serializer):
         post_id = self.kwargs['post_id']
-        serializer.save(creator=self.request.user, post_field_id=post_id)
+        post = get_object_or_404(Post, pk=post_id)
+        
+        # Security: Check if user is enrolled in the course this post belongs to
+        if post.target_ct and post.target_ct.model == 'course':
+             course = Course.objects.get(id=post.target_id)
+             user = self.request.user
+             if not (course.is_student(user) or course.is_teacher(user) or course.is_creator(user) or is_moderator(user)):
+                 raise PermissionDenied("You do not have permission to comment in this course.")
+
+        is_anonymous = self.request.data.get('anonymous') == 'true' or self.request.data.get('anonymous') == True
+        serializer.save(creator=self.request.user, post_field_id=post_id, active=True, anonymous=is_anonymous)
 
 class ForumCommentDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = CommentSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
     lookup_field = 'id'
     lookup_url_kwarg = 'comment_id'
 
@@ -5374,23 +5428,37 @@ class ForumCommentDetailView(generics.RetrieveUpdateDestroyAPIView):
         return Comment.objects.filter(active=True)
 
 # --- Lesson Forum Views ---
+
 class LessonForumPostListCreateView(generics.ListCreateAPIView):
     serializer_class = PostSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         lesson_id = self.kwargs['lesson_id']
+        # Ensure lesson exists
+        get_object_or_404(Lesson, pk=lesson_id)
+        
         lesson_ct = ContentType.objects.get_for_model(Lesson)
         return Post.objects.filter(target_ct=lesson_ct, target_id=lesson_id, active=True).order_by('-modified_at')
 
     def perform_create(self, serializer):
         lesson_id = self.kwargs['lesson_id']
+        get_object_or_404(Lesson, pk=lesson_id)
+        
         lesson_ct = ContentType.objects.get_for_model(Lesson)
-        serializer.save(creator=self.request.user, target_id=lesson_id, target_ct=lesson_ct)
+        is_anonymous = self.request.data.get('anonymous') == 'true' or self.request.data.get('anonymous') == True
+
+        serializer.save(
+            creator=self.request.user, 
+            target_id=lesson_id, 
+            target_ct=lesson_ct,
+            anonymous=is_anonymous,
+            active=True
+        )
 
 class LessonForumPostDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = PostSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
 
     def get_queryset(self):
         lesson_id = self.kwargs['lesson_id']
@@ -5403,15 +5471,19 @@ class LessonForumCommentListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         post_id = self.kwargs['post_id']
-        return Comment.objects.filter(post_id=post_id, active=True).order_by('created_at')
+        return Comment.objects.filter(post_field_id=post_id, active=True).order_by('created_at')
 
     def perform_create(self, serializer):
         post_id = self.kwargs['post_id']
-        serializer.save(creator=self.request.user, post_id=post_id)
+        # Validates post existence
+        get_object_or_404(Post, pk=post_id)
+        
+        is_anonymous = self.request.data.get('anonymous') == 'true' or self.request.data.get('anonymous') == True
+        serializer.save(creator=self.request.user, post_field_id=post_id, active=True, anonymous=is_anonymous)
 
 class LessonForumCommentDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = CommentSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
 
     def get_queryset(self):
         return Comment.objects.filter(active=True)

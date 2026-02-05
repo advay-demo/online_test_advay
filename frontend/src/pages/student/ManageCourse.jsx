@@ -157,7 +157,10 @@ const ManageCourseStudent = () => {
                             {activeTab === 'Modules' && <CourseModules />}
                             {activeTab === 'Discussions' && course && (
                                 <CourseDiscussion
-                                   
+                                   courseId={course.id} // Pass courseId
+                                   showAddPostModal={showAddPostModal} // Pass modal state
+                                   setShowAddPostModal={setShowAddPostModal} // Pass setter
+                                   closeCreatePost={closeCreatePost} // Pass close handler
                                 />
                             )}
                         </div>
