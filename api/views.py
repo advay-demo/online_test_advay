@@ -50,7 +50,7 @@ from api.serializers import (
     UserActivitySerializer, CourseProgressSerializer, CourseCatalogSerializer,
     LessonDetailSerializer, LearningModuleDetailSerializer, LearningUnitDetailSerializer, MinimalLearningUnitSerializer,
     SimpleUserSerializer, ProfileSerializer, AnswerDetailSerializer, AnswerPaperGradingSerializer, UserAttemptSerializer, GradeUpdateSerializer, GradingCourseSerializer,
-    MonitorAnswerPaperSerializer, StudentDashboardCourseSerializer
+    MonitorAnswerPaperSerializer, StudentDashboardCourseSerializer, CourseWithCompletionSerializer
 )
 
 from rest_framework import generics, permissions, status
@@ -1047,7 +1047,7 @@ def quiz_submission_status(request, answerpaper_id):
 
 
 # ============================================================
-#  STUDENT DASHBOARD & STATS APIs
+#  STUDENT DASHBOARD APIs
 # ============================================================
 
 
@@ -1067,7 +1067,6 @@ def student_dash(request):
         course_code = request.data.get('course_code')
         if course_code:
             try:
-                # Use the manager method if available, else filter manually
                 if hasattr(Course.objects, 'get_hidden_courses'):
                     courses = list(Course.objects.get_hidden_courses(code=course_code))
                 else:
@@ -1077,24 +1076,19 @@ def student_dash(request):
         else:
             return Response({'error': 'Course code is required for search'}, status=status.HTTP_400_BAD_REQUEST)
     else:
-        # GET Request logic
         enrolled_courses = user.students.filter(is_trial=False).order_by('-id')
-        
         remaining_courses = Course.objects.filter(
             active=True, is_trial=False, hidden=False
         ).exclude(
             id__in=enrolled_courses.values_list("id", flat=True)
         ).order_by('-id')
-        
-        # Combine lists: Enrolled first, then others
         courses = list(enrolled_courses) + list(remaining_courses)
 
-    # Calculate completion percentages for enrolled courses
     for course in courses:
         if course.is_enrolled(user):
             completion_percentages[course.id] = course.get_completion_percent(user)
         else:
-             completion_percentages[course.id] = None
+            completion_percentages[course.id] = None
 
     serializer = StudentDashboardCourseSerializer(
         courses, 
@@ -1102,80 +1096,150 @@ def student_dash(request):
         context={'user': user, 'completion_percentages': completion_percentages}
     )
 
+    # --- Add user stats to the response ---
+    user_stats, _ = UserStats.objects.get_or_create(user=user)
+    stats_serializer = UserStatsSerializer(user_stats)
+
+    # --- Enhanced statistics and highlights ---
+    total_enrolled = user.students.filter(is_trial=False).count()
+    active_enrolled = user.students.filter(is_trial=False, active=True).count()
+    avg_completion = (
+        sum([v for v in completion_percentages.values() if v is not None]) /
+        max(1, len([v for v in completion_percentages.values() if v is not None]))
+    ) if completion_percentages else 0
+
+    # Recent courses (last 5 enrolled)
+    recent_courses = user.students.filter(is_trial=False).order_by('-created_on')[:5]
+    recent_courses_data = StudentDashboardCourseSerializer(
+        recent_courses, many=True, context={'user': user, 'completion_percentages': completion_percentages}
+    ).data
+
+    # Top completed courses
+    top_courses = sorted(
+        [
+            (course, completion_percentages.get(course.id, 0) or 0)
+            for course in courses if completion_percentages.get(course.id) is not None
+        ],
+        key=lambda x: x[1], reverse=True
+    )[:5]
+    top_courses_data = StudentDashboardCourseSerializer(
+        [c[0] for c in top_courses], many=True, context={'user': user, 'completion_percentages': completion_percentages}
+    ).data
+
+    # Recent activities (last 5)
+    recent_activities = UserActivity.objects.filter(user=user).order_by('-timestamp')[:5]
+    recent_activities_data = UserActivitySerializer(recent_activities, many=True).data
+
+    # Badges
+    badges = UserBadge.objects.filter(user=user)
+    badges_data = UserBadgeSerializer(badges, many=True).data
+
+    # Upcoming quizzes (active, not attempted)
+    upcoming_quizzes = []
+    for course in courses[:10]:
+        for module in course.learning_module.all():
+            for unit in module.learning_unit.filter(type='quiz'):
+                quiz = unit.quiz
+                if quiz and quiz.active and (not AnswerPaper.objects.filter(user=user, question_paper__quiz=quiz, status='completed').exists()):
+                    upcoming_quizzes.append({
+                        'id': quiz.id,
+                        'course_id': course.id,
+                        'name': quiz.description,
+                        'course_name': course.name,
+                        'module_name': module.name
+                    })
+    upcoming_quizzes = upcoming_quizzes[:5]
+
     return Response({
         'courses': serializer.data,
         'user': {
             'id': user.id,
             'name': user.get_full_name(),
-            'username': user.username
+            'username': user.username,
+            'email': user.email
+        },
+        'stats': stats_serializer.data,
+        'dashboard': {
+            'total_enrolled': total_enrolled,
+            'active_enrolled': active_enrolled,
+            'avg_completion': round(avg_completion, 1),
+            'recent_courses': recent_courses_data,
+            'top_courses': top_courses_data,
+            'recent_activities': recent_activities_data,
+            'badges': badges_data,
+            'upcoming_quizzes': upcoming_quizzes
         }
     })
+    
+
+
+# ============================================================
+#  COURSES & ENROLLMENT APIs
+# ============================================================
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def student_dashboard(request):
-    """Get student dashboard data with stats, active courses, and recent activities"""
+def user_courselist(request):
+    """
+    API endpoint to get all quizzes/courses available to the logged-in user.
+    """
     user = request.user
-    
-    # Get or create user stats
-    user_stats, created = UserStats.objects.get_or_create(user=user)
-    if created:
-        # Initialize stats for new user
-        user_stats.save()
-    
-    # Reset weekly/monthly stats if needed
-    user_stats.reset_weekly_stats()
-    user_stats.reset_monthly_stats()
-    
-    # Serialize stats
-    stats_serializer = UserStatsSerializer(user_stats)
-    stats_data = stats_serializer.data
-    
-    # Add courses enrolled count
-    enrolled_courses = Course.objects.filter(students=user, active=True).count()
-    in_progress_courses = CourseStatus.objects.filter(
-        user=user, 
-        grade__isnull=True
-    ).count()
-    
-    stats_data['coursesEnrolled'] = enrolled_courses
-    stats_data['inProgress'] = in_progress_courses
-    
-    # Get active courses (enrolled and in progress)
-    active_courses = Course.objects.filter(
-        students=user, 
-        active=True
-    ).prefetch_related('learning_module', 'learning_module__learning_unit', 'creator').order_by('-created_on')[:3]
-    
-    courses_serializer = CourseProgressSerializer(
-        active_courses, many=True, context={'user': user}
-    )
-    
-    # Get recent activities
-    recent_activities = UserActivity.objects.filter(user=user).order_by('-timestamp')[:10]
-    activities_serializer = UserActivitySerializer(recent_activities, many=True)
-    
+    courses_data = []
+
+    enrolled_courses = user.students.filter(is_trial=False).order_by('-id')
+    remaining_courses = list(Course.objects.filter(
+        active=True, is_trial=False, hidden=False
+    ).exclude(
+        id__in=enrolled_courses.values_list("id", flat=True)
+    ).order_by('-id'))
+    courses = list(enrolled_courses)
+    courses.extend(remaining_courses)
+    title = 'All Courses'
+
+    for course in courses:
+        if course.students.filter(id=user.id).exists():
+            _percent = course.get_completion_percent(user)
+        else:
+            _percent = None
+        courses_data.append({
+            'data': course,
+            'completion_percentage': _percent,
+        })
+
+    serializer = CourseWithCompletionSerializer(courses_data, many=True, context={'request': request})
     return Response({
-        'stats': stats_data,
-        'activeCourses': courses_serializer.data,
-        'recentActivities': activities_serializer.data
-    }, status=status.HTTP_200_OK)
+        'user_id': user.id,
+        'courses': serializer.data,
+        'title': title
+    })
 
 
-@api_view(['GET'])
+@api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def student_stats(request):
-    """Get detailed student statistics"""
+def search_new_courses(request):
+    """
+    API endpoint to search for new (not enrolled) courses by course code.
+    """
     user = request.user
-    
-    user_stats, created = UserStats.objects.get_or_create(user=user)
-    serializer = UserStatsSerializer(user_stats)
-    
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    course_code = request.data.get('course_code')
+    enrolled_ids = user.students.filter(is_trial=False).values_list("id", flat=True)
+    new_courses = Course.objects.get_hidden_courses(code=course_code).exclude(id__in=enrolled_ids)
+
+    courses_data = []
+    for course in new_courses:
+        courses_data.append({
+            'data': course,
+            'completion_percentage': None,  # Not enrolled, so no completion
+        })
+
+    serializer = CourseWithCompletionSerializer(courses_data, many=True, context={'request': request})
+    return Response({
+        'courses': serializer.data,
+        'title': 'Search Results'
+    })
 
 
-# ============================================================
-#  COURSE CATALOG & ENROLLMENT APIs
-# ============================================================
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -1273,10 +1337,11 @@ def enroll_course(request, course_id):
 #  COURSE MODULES & LESSONS APIs
 # ============================================================
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def course_modules(request, course_id):
-    """Get all modules for a course"""
+    """Get all modules for a course with progress and grade"""
     user = request.user
     
     try:
@@ -1287,33 +1352,48 @@ def course_modules(request, course_id):
             status=status.HTTP_404_NOT_FOUND
         )
     
-    # Check if user is enrolled
+    # Check enrollment
     if not course.students.filter(id=user.id).exists():
         return Response(
-            {'error': 'Not enrolled in this course'},
+            {'error': 'You are not enrolled for this course!'},
             status=status.HTTP_403_FORBIDDEN
         )
+        
+    # Check active status
+    if not course.active or not course.is_active_enrollment():
+         return Response(
+             {'error': "{0} is either expired or not active".format(course.name)},
+             status=status.HTTP_403_FORBIDDEN
+         )
     
-    modules = course.learning_module.filter(active=True).order_by('order')
+    # Use model method to get modules (handles ordering and is_trial)
+    learning_modules = course.get_learning_modules()
+    
+    # Calculate global course progress
+    course_percentage = course.get_completion_percent(user)
+    
+    # Get grade if available
+    grade = None
+    course_status = CourseStatus.objects.filter(course=course, user=user).first()
+    if course_status:
+        if not course_status.grade:
+            course_status.set_grade()
+        grade = course_status.get_grade()
+
+    # Pass course object in context so serializer can calculate module progress efficiently
+    context = {'user': user, 'course': course}
     serializer = LearningModuleDetailSerializer(
-        modules, many=True, context={'user': user, 'course_id': course_id}
+        learning_modules, many=True, context=context
     )
-    
-    # Get overall course progress
-    try:
-        course_status = CourseStatus.objects.get(user=user, course=course)
-        total_units = sum(module.learning_unit.count() for module in modules)
-        completed_units = course_status.completed_units.count()
-        progress = int((completed_units / total_units) * 100) if total_units > 0 else 0
-    except CourseStatus.DoesNotExist:
-        progress = 0
     
     return Response({
         'course': {
             'id': course.id,
             'name': course.name,
             'code': course.code,
-            'progress': progress
+            'progress': course_percentage,
+            'grade': grade,
+            'instructions': course.instructions,
         },
         'modules': serializer.data
     }, status=status.HTTP_200_OK)
@@ -1333,26 +1413,38 @@ def module_detail(request, module_id):
             status=status.HTTP_404_NOT_FOUND
         )
     
-    # Find course that contains this module
-    course = Course.objects.filter(learning_module=module).first()
+    # Find course that contains this module AND the user is enrolled in
+    courses = Course.objects.filter(learning_module=module, students=user)
+    course = courses.first()
+
     if not course:
-        return Response(
-            {'error': 'Course not found for this module'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    
-    # Check enrollment
-    if not course.students.filter(id=user.id).exists():
-        return Response(
-            {'error': 'Not enrolled in this course'},
-            status=status.HTTP_403_FORBIDDEN
-        )
-    
+         # Fallback to checking any course if user not enrolled (for consistent error messaging)
+         course = Course.objects.filter(learning_module=module).first()
+         if not course:
+            return Response(
+                {'error': 'Course not found for this module'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+         # If we found a course but user isn't in it (logic above failed), return 403
+         if not course.students.filter(id=user.id).exists():
+            return Response(
+                {'error': 'Not enrolled in this course'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+            
+    # Check active status of the course
+    if not course.active or not course.is_active_enrollment():
+         return Response(
+             {'error': "{0} is either expired or not active".format(course.name)},
+             status=status.HTTP_403_FORBIDDEN
+         )
+
     serializer = LearningModuleDetailSerializer(
-        module, context={'user': user, 'course_id': course.id}
+        module, context={'user': user, 'course': course}
     )
     
     return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 
 @api_view(['GET'])
@@ -5333,26 +5425,68 @@ class GradingSystemDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 # --- Course Forum Views  ---
+class IsOwnerOrReadOnly(permissions.BasePermission):
+    """
+    Object-level permission to only allow owners of an object to edit it.
+    Assumes the model instance has an `owner` or `creator` attribute.
+    """
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        # Instance must have an attribute named `creator`.
+        return obj.creator == request.user or is_moderator(request.user)
+
+# --- Course Forum Views ---
 
 class ForumPostListCreateView(generics.ListCreateAPIView):
     serializer_class = PostSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def get_queryset(self):
+    def get_course(self):
         course_id = self.kwargs['course_id']
-        return Post.objects.filter(target_id=course_id, active=True).order_by('-modified_at')
+        course = get_object_or_404(Course, pk=course_id)
+        user = self.request.user
+        # Strict enrollment check
+        if not (course.is_student(user) or course.is_teacher(user) or course.is_creator(user) or is_moderator(user)):
+             raise PermissionDenied("You are not enrolled in this course.")
+        return course
+
+    def get_queryset(self):
+        course = self.get_course()
+        course_ct = ContentType.objects.get_for_model(Course)
+        
+        # We retrieve both correctly tagged posts AND posts that might correspond to this ID 
+        # but are missing the ContentType tag (legacy data support)
+        # WARNING: Ideally we should migrate the data, but this allows viewing the old broken posts
+        return Post.objects.filter(
+            target_id=course.id, 
+            active=True
+        ).filter(
+            Q(target_ct=course_ct) | Q(target_ct__isnull=True)
+        ).order_by('-modified_at')
 
     def perform_create(self, serializer):
-        course_id = self.kwargs['course_id']
-        serializer.save(creator=self.request.user, target_id=course_id, active=True)
+        course = self.get_course()
+        course_ct = ContentType.objects.get_for_model(Course)
+        # Handle Anonymous posts
+        is_anonymous = self.request.data.get('anonymous') == 'true' or self.request.data.get('anonymous') == True
+        
+        serializer.save(
+            creator=self.request.user, 
+            target_id=course.id, 
+            target_ct=course_ct, 
+            active=True,
+            anonymous=is_anonymous
+        )
 
 class ForumPostDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = PostSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
     lookup_field = 'id'
 
     def get_queryset(self):
         course_id = self.kwargs['course_id']
+        # Relaxed filtering to allow Deleting/Getting the legacy (null CT) posts too
         return Post.objects.filter(target_id=course_id, active=True)
 
 class ForumCommentListCreateView(generics.ListCreateAPIView):
@@ -5361,15 +5495,27 @@ class ForumCommentListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         post_id = self.kwargs['post_id']
+        # Check if user has access to the course of this post (if linked)
+        # This is a bit expensive but necessary for security
         return Comment.objects.filter(post_field_id=post_id, active=True).order_by('created_at')
 
     def perform_create(self, serializer):
         post_id = self.kwargs['post_id']
-        serializer.save(creator=self.request.user, post_field_id=post_id)
+        post = get_object_or_404(Post, pk=post_id)
+        
+        # Security: Check if user is enrolled in the course this post belongs to
+        if post.target_ct and post.target_ct.model == 'course':
+             course = Course.objects.get(id=post.target_id)
+             user = self.request.user
+             if not (course.is_student(user) or course.is_teacher(user) or course.is_creator(user) or is_moderator(user)):
+                 raise PermissionDenied("You do not have permission to comment in this course.")
+
+        is_anonymous = self.request.data.get('anonymous') == 'true' or self.request.data.get('anonymous') == True
+        serializer.save(creator=self.request.user, post_field_id=post_id, active=True, anonymous=is_anonymous)
 
 class ForumCommentDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = CommentSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
     lookup_field = 'id'
     lookup_url_kwarg = 'comment_id'
 
@@ -5377,23 +5523,37 @@ class ForumCommentDetailView(generics.RetrieveUpdateDestroyAPIView):
         return Comment.objects.filter(active=True)
 
 # --- Lesson Forum Views ---
+
 class LessonForumPostListCreateView(generics.ListCreateAPIView):
     serializer_class = PostSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         lesson_id = self.kwargs['lesson_id']
+        # Ensure lesson exists
+        get_object_or_404(Lesson, pk=lesson_id)
+        
         lesson_ct = ContentType.objects.get_for_model(Lesson)
         return Post.objects.filter(target_ct=lesson_ct, target_id=lesson_id, active=True).order_by('-modified_at')
 
     def perform_create(self, serializer):
         lesson_id = self.kwargs['lesson_id']
+        get_object_or_404(Lesson, pk=lesson_id)
+        
         lesson_ct = ContentType.objects.get_for_model(Lesson)
-        serializer.save(creator=self.request.user, target_id=lesson_id, target_ct=lesson_ct)
+        is_anonymous = self.request.data.get('anonymous') == 'true' or self.request.data.get('anonymous') == True
+
+        serializer.save(
+            creator=self.request.user, 
+            target_id=lesson_id, 
+            target_ct=lesson_ct,
+            anonymous=is_anonymous,
+            active=True
+        )
 
 class LessonForumPostDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = PostSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
 
     def get_queryset(self):
         lesson_id = self.kwargs['lesson_id']
@@ -5406,15 +5566,19 @@ class LessonForumCommentListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         post_id = self.kwargs['post_id']
-        return Comment.objects.filter(post_id=post_id, active=True).order_by('created_at')
+        return Comment.objects.filter(post_field_id=post_id, active=True).order_by('created_at')
 
     def perform_create(self, serializer):
         post_id = self.kwargs['post_id']
-        serializer.save(creator=self.request.user, post_id=post_id)
+        # Validates post existence
+        get_object_or_404(Post, pk=post_id)
+        
+        is_anonymous = self.request.data.get('anonymous') == 'true' or self.request.data.get('anonymous') == True
+        serializer.save(creator=self.request.user, post_field_id=post_id, active=True, anonymous=is_anonymous)
 
 class LessonForumCommentDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = CommentSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
 
     def get_queryset(self):
         return Comment.objects.filter(active=True)

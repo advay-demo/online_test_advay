@@ -117,33 +117,37 @@ export const patchUserProfile = async (profileData) => {
 // STUDENT DASHBOARD & STATS APIs
 // ============================================================
 
-export const fetchDashboardData = async () => {
-  const response = await api.get('/api/student/dashboard/');
-  return response.data;
-};
-
-export const fetchUserStats = async () => {
-  const response = await api.get('/api/student/stats/');
-  return response.data;
-};
 
 export const fetchStudentDashboardCourses = async (courseCode = null) => {
   if (courseCode) {
     // POST request to search hidden courses by code
-    const response = await api.post('/api/student/dash/', {
+    const response = await api.post('/api/student/dashboard/', {
       course_code: courseCode
     });
     return response.data;
   } else {
     // GET request to fetch all courses
-    const response = await api.get('/api/student/dash/');
+    const response = await api.get('/api/student/dashboard/');
     return response.data;
   }
 };
 
 // ============================================================
-// COURSE CATALOG & ENROLLMENT APIs
+// COURSES & ENROLLMENT APIs
 // ============================================================
+
+
+export const fetchCoursesList = async () => {
+  const response = await api.get('/api/student/courses/');
+  return response.data;
+};
+
+export const searchNewCourses = async (courseCode) => {
+  const response = await api.post('/api/student/new-courses/', {course_code: courseCode});
+  return response.data;
+};  
+
+//---------------------------------------------------------------------------------------------------
 
 export const fetchCourseCatalog = async (filters = {}) => {
   const params = new URLSearchParams();

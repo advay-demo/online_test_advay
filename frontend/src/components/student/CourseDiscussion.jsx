@@ -1,42 +1,32 @@
+/* filepath: /home/bhotto/projects04/online_test/frontend/src/components/student/CourseDiscussion.jsx */
 import React, { useEffect, useState } from 'react';
-import useForumStore from '../../store/forumStore';
+import useStudentForumStore from '../../store/student/forumStore';
 import { FaPlus, FaChevronDown, FaTimes, FaPaperPlane, FaComments, FaEllipsisV, FaEdit, FaTrash } from 'react-icons/fa';
 
-export default function CourseDiscussionsTab({ courseId, showAddPostModal, setShowAddPostModal, closeCreatePost }) {
+export default function CourseDiscussion({ courseId, showAddPostModal, setShowAddPostModal, closeCreatePost }) {
   const {
     coursePosts,
-    lessonPosts,
     comments,
     loadCoursePosts,
-    loadLessonPosts,
     loadCourseComments,
     addCoursePost,
     deleteCoursePost,
     addCourseComment,
     clearComments,
     deleteCourseComment,
-    // loading,
-    // error,
-  } = useForumStore();
+  } = useStudentForumStore();
 
   const [selectedPostId, setSelectedPostId] = useState(null);
   const [actionMenuOpen, setActionMenuOpen] = useState(null);
-  const [activeForumTab, setActiveForumTab] = useState('Course Forum');
   const [showAddCommentModal, setShowAddCommentModal] = useState(false);
 
   useEffect(() => {
     if (courseId) {
-      if (activeForumTab === 'Course Forum') {
-        loadCoursePosts(courseId);
-      } else {
-        loadLessonPosts(courseId);
-      }
+      loadCoursePosts(courseId);
       clearComments();
       setSelectedPostId(null);
     }
-  }, [courseId, activeForumTab, loadCoursePosts, loadLessonPosts, clearComments]);
-
-  const posts = activeForumTab === 'Course Forum' ? coursePosts : lessonPosts;
+  }, [courseId, loadCoursePosts, clearComments]);
 
   const handleShowComments = (postId) => {
     if (selectedPostId === postId) {
@@ -63,8 +53,9 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
       }
     }
     await addCoursePost(courseId, formData);
-    await loadCoursePosts(courseId);
-    setShowAddPostModal(false);
+    // Modal closing is handled by parent or here if prop provided
+    if (closeCreatePost) closeCreatePost();
+    if (setShowAddPostModal) setShowAddPostModal(false);
   };
 
   // Delete Post
@@ -98,7 +89,6 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
         DISCUSSION FORUM <span>&rarr;</span>
       </div>
 
-      
       {showAddPostModal && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm px-1 sm:px-2">
           <div className="card-strong w-full max-w-full sm:max-w-2xl p-2 sm:p-6 relative rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
@@ -120,7 +110,7 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
                   Create New Post
                 </h2>
                 <p className="text-xs sm:text-sm muted line-clamp-2">
-                  Add a new discussion post to your course.
+                  Ask a question or share something with the class.
                 </p>
               </div>
             </div>
@@ -131,7 +121,6 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
                 const formData = new FormData(e.target);
                 formData.set('anonymous', formData.get('anonymous') ? 'true' : 'false');
                 await handleAddPost(formData);
-                closeCreatePost();
               }}
               className="space-y-4 mt-2"
             >
@@ -157,7 +146,7 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium mb-1" htmlFor="post-image">Image:</label>
+                <label className="text-sm font-medium mb-1" htmlFor="post-image">Image (Optional):</label>
                 <input
                   type="file"
                   name="image"
@@ -173,7 +162,7 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
                   id="post-anonymous"
                   className="toggle-checkbox"
                 />
-                <label htmlFor="post-anonymous" className="text-sm">Anonymous</label>
+                <label htmlFor="post-anonymous" className="text-sm">Post Anonymously</label>
               </div>
               <div className="flex gap-2 justify-end mt-6 flex-wrap">
                 <button
@@ -195,34 +184,21 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
         </div>
       )}
 
-      {/* Forum Tabs */}
-      <div className="flex bg-black/20 p-1 rounded-lg mb-6 w-max">
-        {['Course Forum', 'Lesson Forum'].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveForumTab(tab)}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 whitespace-nowrap ${
-              activeForumTab === tab
-                ? 'bg-white/10 text-white shadow-sm'
-                : 'text-muted hover:text-white hover:bg-white/5'
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
-      {/* MAIN UI */}
+      {/* Posts List */}
       <div className="p-2 sm:p-4 bg-[var(--surface)] rounded-lg border border-[var(--border-subtle)] mt-4 space-y-8">
         <div>
           <h3 className="text-base sm:text-lg font-bold mb-4 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-            Posts ({posts.length})
+            Recent Discussions ({coursePosts.length})
           </h3>
-          {posts.length === 0 ? (
-            <div className="text-center py-8 text-muted">No posts yet.</div>
+          {coursePosts.length === 0 ? (
+             <div className="text-center py-12 text-muted border border-dashed border-[var(--border-color)] rounded-xl">
+                <p>No discussions yet.</p>
+                <p className="text-sm mt-1">Be the first to start a topic!</p>
+             </div>
           ) : (
             <div className="space-y-4">
-              {posts.map((post) => (
+              {coursePosts.map((post) => (
                 <div
                   key={post.id}
                   className="card p-2 sm:p-4 flex flex-col gap-2 border border-[var(--border-color)] rounded-lg group"
@@ -236,7 +212,6 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
                         <h3 className="font-semibold text-base sm:text-lg line-clamp-1 group-hover:text-blue-400 transition-colors duration-200">
                           {post.title}
                         </h3>
-                        {/* UPDATE: Conditional anonymous display */}
                         <span className="text-xs text-gray-400 ml-2">
                            by {post.anonymous ? (post.is_me ? "Anonymous (You)" : "Anonymous") : post.author}
                         </span>
@@ -270,28 +245,34 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
                       >
                         {selectedPostId === post.id ? 'Hide Comments' : 'Comments'}
                       </button>
-                      <div className="relative post-action-menu">
-                        <button
-                          className="p-2 border border-[var(--border-color)] rounded-lg hover:bg-[var(--input-bg)] active:scale-95 transition-all duration-200 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-                          onClick={() => setActionMenuOpen(actionMenuOpen === post.id ? null : post.id)}
-                          aria-label="Actions"
-                          tabIndex={0}
-                        >
-                          <FaEllipsisV className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        </button>
-                        {actionMenuOpen === post.id && (
-                          <div className="absolute right-0 mt-2 z-50 w-32 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg shadow-lg py-1 flex flex-col text-sm animate-fade-in">
-                            <button
-                              className="flex items-center gap-2 px-4 py-2 text-red-500 hover:bg-red-500/10 transition"
-                              onClick={() => handleDelete(post)}
-                            >
-                              <FaTrash className="w-4 h-4" /> Delete
-                            </button>
-                          </div>
-                        )}
-                      </div>
+                      
+                      {/* Show Actions ONLY if it's MY post */}
+                      {post.is_me && (
+                        <div className="relative post-action-menu">
+                          <button
+                            className="p-2 border border-[var(--border-color)] rounded-lg hover:bg-[var(--input-bg)] active:scale-95 transition-all duration-200 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                            onClick={() => setActionMenuOpen(actionMenuOpen === post.id ? null : post.id)}
+                            aria-label="Actions"
+                            tabIndex={0}
+                          >
+                            <FaEllipsisV className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          </button>
+                          {actionMenuOpen === post.id && (
+                            <div className="absolute right-0 mt-2 z-50 w-32 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg shadow-lg py-1 flex flex-col text-sm animate-fade-in">
+                              <button
+                                className="flex items-center gap-2 px-4 py-2 text-red-500 hover:bg-red-500/10 transition"
+                                onClick={() => handleDelete(post)}
+                              >
+                                <FaTrash className="w-4 h-4" /> Delete
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
+                  
+                  {/* Comments Section */}
                   {selectedPostId === post.id && (
                     <div className="mt-2 border-t pt-2">
                       <h4 className="text-xs sm:text-sm font-semibold mb-2 flex items-center gap-1">
@@ -302,7 +283,7 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
                         style={{ maxHeight: '220px' }}
                       >
                         {comments.length === 0 ? (
-                          <div className="text-xs text-gray-400">No comments.</div>
+                          <div className="text-xs text-gray-400">No comments yet.</div>
                         ) : (
                           <ul className="space-y-3">
                             {comments.map((comment) => (
@@ -319,19 +300,21 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
                                       {new Date(comment.created_at).toLocaleString()}
                                     </span>
                                   )}
-                                  {/* UPDATE: Conditional anonymous display for comments */}
                                   <span>-- {comment.anonymous ? (comment.is_me ? "Anonymous (You)" : "Anonymous") : comment.author}</span>
                                 </div>
-                                <div className="absolute top-2 right-2">
-                                  <button
-                                    className="p-1 rounded hover:bg-red-100/20 text-red-500"
-                                    onClick={() => handleDeleteComment(comment)}
-                                    aria-label="Delete Comment"
-                                    title="Delete Comment"
-                                  >
-                                    <FaTrash />
-                                  </button>
-                                </div>
+                                {/* Show delete only if comment is mine */}
+                                {comment.is_me && (
+                                  <div className="absolute top-2 right-2">
+                                    <button
+                                        className="p-1 rounded hover:bg-red-100/20 text-red-500"
+                                        onClick={() => handleDeleteComment(comment)}
+                                        aria-label="Delete Comment"
+                                        title="Delete Comment"
+                                    >
+                                        <FaTrash />
+                                    </button>
+                                  </div>
+                                )}
                               </li>
                             ))}
                           </ul>
@@ -352,57 +335,46 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
         </div>
       </div>
 
-      
       {showAddCommentModal && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm px-1 sm:px-2">
           <div className="card-strong w-full max-w-full sm:max-w-md p-2 sm:p-6 relative rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
-            {/* Close Button */}
             <button
               className="absolute right-4 top-4 text-lg sm:text-xl p-2 rounded-full border border-[var(--border-color)] bg-[var(--input-bg)] hover:bg-white/10 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"
               onClick={() => setShowAddCommentModal(false)}
-              aria-label="Close"
             >
               <FaTimes />
             </button>
-            {/* Header */}
             <div className="flex flex-col sm:flex-row items-center gap-4 mb-4 sm:mt-0">
               <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
                 <FaComments className="w-7 h-7 sm:w-8 sm:h-8 text-blue-400" />
               </div>
               <div className="flex-1 min-w-0">
-                <h2 className="text-lg sm:text-2xl font-bold mb-1 line-clamp-1">
-                  Add Comment
-                </h2>
-                <p className="text-xs sm:text-sm muted line-clamp-2">
-                  Share your thoughts on this post.
-                </p>
+                <h2 className="text-lg sm:text-2xl font-bold mb-1">Add Comment</h2>
+                <p className="text-xs sm:text-sm muted">Share your thoughts.</p>
               </div>
             </div>
-            {/* Form */}
             <form
               onSubmit={async e => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
-                // UPDATE: Handle anonymous flag in submission
                 await handleAddComment({
-                  description: formData.get('description'),
-                  anonymous: formData.get('anonymous') ? 'true' : 'false'
+                   description: formData.get('description'),
+                   anonymous: formData.get('anonymous') ? 'true' : 'false'
                 });
               }}
               className="space-y-4 mt-2"
             >
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium mb-1" htmlFor="comment-description">Comment:</label>
+                <label className="text-sm font-medium mb-1" htmlFor="comment-desc">Comment:</label>
                 <textarea
                   name="description"
-                  id="comment-description"
+                  id="comment-desc"
                   className="input bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-sm focus-visible:outline-none"
                   placeholder="Write your comment..."
                   rows={4}
                   required
                 />
               </div>
-              {/* UPDATE: Added Anonymous checkbox */}
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -412,18 +384,17 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
                 />
                 <label htmlFor="comment-anonymous" className="text-sm">Anonymous</label>
               </div>
-
               <div className="flex gap-2 justify-end mt-6 flex-wrap">
                 <button
                   type="button"
-                  className="px-4 py-2 rounded-lg border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/10 font-medium transition"
                   onClick={() => setShowAddCommentModal(false)}
+                  className="px-4 py-2 rounded-lg border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-muted)] hover:text-[var(--text-primary)] font-medium transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition disabled:opacity-60"
+                  className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
                 >
                   Submit
                 </button>

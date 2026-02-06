@@ -73,23 +73,60 @@ class GradingSystemSerializer(serializers.ModelSerializer):
         return instance
 
 class PostSerializer(serializers.ModelSerializer):
-    author = serializers.CharField(source='creator.username', read_only=True)
+    author = serializers.SerializerMethodField()
+    is_me = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
         fields = '__all__'
-        read_only_fields = ['creator']
+        read_only_fields = ['uid', 'creator', 'created_at', 'modified_at', 'target_ct', 'target_id', 'target']
+
+    def get_author(self, obj):
+        # If the requester is the creator, show their name even if anon (so they know it's theirs)
+        # Or if they are a moderator
+        request = self.context.get('request')
+        user = request.user if request else None
         
+        if obj.anonymous:
+            # If user is the creator or a moderator, reveal the name
+            # Otherwise, hide it
+            if user and (obj.creator == user or user.groups.filter(name='moderator').exists()):
+                return obj.creator.get_full_name() or obj.creator.username
+            return "Anonymous"
+        
+        return obj.creator.get_full_name() or obj.creator.username
+
+    def get_is_me(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.creator == request.user
+        return False
 
 class CommentSerializer(serializers.ModelSerializer):
-    author = serializers.CharField(source='creator.username', read_only=True)
-    # or use 'get_full_name' if you want full name
+    author = serializers.SerializerMethodField()
+    is_me = serializers.SerializerMethodField()
 
     class Meta:
         model = Comment
-        fields = ['id', 'description', 'created_at', 'modified_at', 'author']
+        fields = '__all__'
+        read_only_fields = ['uid', 'creator', 'created_at', 'modified_at', 'post_field']
 
+    def get_author(self, obj):
+        request = self.context.get('request')
+        user = request.user if request else None
 
+        if obj.anonymous:
+            if user and (obj.creator == user or user.groups.filter(name='moderator').exists()):
+                 return obj.creator.get_full_name() or obj.creator.username
+            return "Anonymous"
+        
+        return obj.creator.get_full_name() or obj.creator.username
+
+    def get_is_me(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.creator == request.user
+        return False
 
 class ProfileSerializer(serializers.ModelSerializer):
     """Serializer for user profile with nested user fields"""
@@ -469,6 +506,10 @@ class CourseCatalogSerializer(serializers.ModelSerializer):
     progress = serializers.SerializerMethodField()
     color = serializers.SerializerMethodField()
     is_enrolled = serializers.SerializerMethodField()
+    modules = LearningModuleSerializer(source='learning_module', many=True, read_only=True)
+    instructions = serializers.CharField(read_only=True)
+    start_date = serializers.DateTimeField(source='start_enroll_time', read_only=True)
+    end_date = serializers.DateTimeField(source='end_enroll_time', read_only=True)
     
     def get_instructor(self, obj):
         creator = obj.creator
@@ -522,9 +563,11 @@ class CourseCatalogSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Course
-        fields = ['id', 'name', 'instructor', 'level', 'rating', 'students_count',
-                 'duration', 'progress', 'color', 'is_enrolled', 'code']
-
+        fields = [
+            'id', 'name', 'instructor', 'level', 'rating', 'students_count',
+            'duration', 'progress', 'color', 'is_enrolled', 'code', 'modules',
+            'instructions', 'start_date', 'end_date'
+        ]
 
 ###############################################################################
 # Enhanced Lesson & Module Serializers
@@ -547,7 +590,11 @@ class LessonDetailSerializer(serializers.ModelSerializer):
     
     def get_is_completed(self, obj):
         user = self.context.get('user')
+        course = self.context.get('course')
         course_id = self.context.get('course_id')
+
+        if course and not course_id:
+            course_id = course.id
         
         if not user or not course_id:
             return False
@@ -581,23 +628,31 @@ class LearningUnitDetailSerializer(serializers.ModelSerializer):
     
     def get_status(self, obj):
         user = self.context.get('user')
+        course = self.context.get('course')
         course_id = self.context.get('course_id')
         
-        if not user or not course_id:
+        if not user:
             return "not_attempted"
-        
-        try:
-            from yaksh.models import Course
-            course = Course.objects.get(id=course_id)
+
+        if course:
             return obj.get_completion_status(user, course)
-        except:
-            return "not_attempted"
+
+        if course_id:
+            try:
+                from yaksh.models import Course
+                course = Course.objects.get(id=course_id)
+                return obj.get_completion_status(user, course)
+            except:
+                pass
+            
+        return "not_attempted"
     
     class Meta:
         model = LearningUnit
         fields = ['id', 'order', 'type', 'lesson', 'quiz', 'status', 'check_prerequisite']
 
 
+        
 class LearningModuleDetailSerializer(serializers.ModelSerializer):
     """Detailed module serializer with units and progress"""
     units = serializers.SerializerMethodField()
@@ -612,26 +667,20 @@ class LearningModuleDetailSerializer(serializers.ModelSerializer):
     
     def get_progress(self, obj):
         user = self.context.get('user')
+        course = self.context.get('course')
         course_id = self.context.get('course_id')
         
-        if not user or not course_id:
-            return 0
+        # Fallback if course object not passed but ID is
+        if not course and course_id:
+             try:
+                 course = Course.objects.get(id=course_id)
+             except Course.DoesNotExist:
+                 pass
         
-        try:
-            course_status = CourseStatus.objects.get(user=user, course_id=course_id)
-            total_units = obj.learning_unit.count()
-            
-            if total_units == 0:
-                return 0
-            
-            completed_units = 0
-            for unit in obj.learning_unit.all():
-                if course_status.completed_units.filter(id=unit.id).exists():
-                    completed_units += 1
-            
-            return int((completed_units / total_units) * 100)
-        except CourseStatus.DoesNotExist:
-            return 0
+        if user and course:
+            return obj.get_module_complete_percent(course, user)
+        
+        return 0
     
     class Meta:
         model = LearningModule
@@ -785,41 +834,74 @@ class StudentDashboardLearningModuleSerializer(serializers.ModelSerializer):
         fields = ['id', 'name']
 
 class StudentDashboardCourseSerializer(serializers.ModelSerializer):
-    """Serializer for student dashboard course listing"""
     completion_percentage = serializers.SerializerMethodField()
     instructor = serializers.SerializerMethodField()
     is_enrolled = serializers.SerializerMethodField()
-    
-    # Explicitly map legacy/API field names to actual model fields
     start_date = serializers.DateTimeField(source='start_enroll_time', read_only=True)
     end_date = serializers.DateTimeField(source='end_enroll_time', read_only=True)
     description = serializers.CharField(source='instructions', read_only=True)
-    
-    # Map the ManyToMany field 'learning_module' to our new serializer
     course_content = StudentDashboardLearningModuleSerializer(source='learning_module', many=True, read_only=True)
+    # Add new fields below as needed:
+    lessons = serializers.SerializerMethodField()
+    recent_activities = serializers.SerializerMethodField()
+    badges = serializers.SerializerMethodField()
+    instructor_email = serializers.SerializerMethodField()
 
     class Meta:
         model = Course
-        fields = ['id', 'name', 'code', 'start_date', 'end_date', 'active', 
-                  'description', 'completion_percentage', 'instructor', 'is_enrolled',
-                  'course_content']
+        fields = [
+            'id', 'name', 'code', 'start_date', 'end_date', 'active', 
+            'description', 'completion_percentage', 'instructor', 'instructor_email',
+            'is_enrolled', 'course_content', 'lessons', 'recent_activities', 'badges'
+        ]
 
     def get_completion_percentage(self, obj):
-        # The view will pass the pre-calculated percentage in the context if available
-        # OR we can calculate it here if passed a user object
         if 'completion_percentages' in self.context:
             return self.context['completion_percentages'].get(obj.id)
-        
         user = self.context.get('user')
         if user and obj.is_enrolled(user):
             return obj.get_completion_percent(user)
         return None
 
     def get_instructor(self, obj):
-        return obj.creator.get_full_name()
+        return obj.creator.get_full_name() if obj.creator else ""
+
+    def get_instructor_email(self, obj):
+        return obj.creator.email if obj.creator else ""
 
     def get_is_enrolled(self, obj):
         user = self.context.get('user')
-        if user:
-            return obj.is_enrolled(user)
-        return False
+        return obj.is_enrolled(user) if user else False
+
+    def get_lessons(self, obj):
+        user = self.context.get('user')
+        lessons = []
+        for module in obj.learning_module.all():
+            for unit in module.learning_unit.all():
+                if unit.lesson:
+                    lessons.append({
+                        "id": unit.lesson.id,
+                        "name": unit.lesson.name,
+                        "completed": unit.lesson.is_completed_by(user) if hasattr(unit.lesson, "is_completed_by") else False
+                    })
+        return lessons
+
+    def get_recent_activities(self, obj):
+        user = self.context.get('user')
+        activities = UserActivity.objects.filter(
+            user=user, related_course_id=obj.id
+        ).order_by('-timestamp')[:5]
+        return UserActivitySerializer(activities, many=True).data
+
+    def get_badges(self, obj):
+        user = self.context.get('user')
+        # Remove badge__course=obj if Badge does not have a course field
+        badges = UserBadge.objects.filter(user=user)
+        return UserBadgeSerializer(badges, many=True).data
+        
+
+
+
+class CourseWithCompletionSerializer(serializers.Serializer):
+    data = CourseCatalogSerializer()
+    completion_percentage = serializers.FloatField(allow_null=True)        
