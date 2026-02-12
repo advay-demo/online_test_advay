@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import useForumStore from '../../store/forumStore';
+import useManageCourseStore from '../../store/manageCourseStore';
 import { FaPlus, FaChevronDown, FaTimes, FaPaperPlane, FaComments, FaEllipsisV, FaEdit, FaTrash } from 'react-icons/fa';
 
 export default function CourseDiscussionsTab({ courseId, showAddPostModal, setShowAddPostModal, closeCreatePost }) {
@@ -15,13 +16,18 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
     addCourseComment,
     clearComments,
     deleteCourseComment,
+    // Lesson Forum Functions
+    loadLessonComments,
+    addLessonComment,
+    deleteLessonComment,
     // loading,
     // error,
   } = useForumStore();
 
+  const { activeForumTab, setActiveForumTab } = useManageCourseStore();
+
   const [selectedPostId, setSelectedPostId] = useState(null);
   const [actionMenuOpen, setActionMenuOpen] = useState(null);
-  const [activeForumTab, setActiveForumTab] = useState('Course Forum');
   const [showAddCommentModal, setShowAddCommentModal] = useState(false);
 
   useEffect(() => {
@@ -38,18 +44,26 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
 
   const posts = activeForumTab === 'Course Forum' ? coursePosts : lessonPosts;
 
-  const handleShowComments = (postId) => {
-    if (selectedPostId === postId) {
+  const handleShowComments = (post) => {
+    if (selectedPostId === post.id) {
       setSelectedPostId(null);
       clearComments();
     } else {
-      setSelectedPostId(postId);
-      loadCourseComments(courseId, postId);
+      setSelectedPostId(post.id);
+      if (activeForumTab === 'Course Forum') {
+        loadCourseComments(courseId, post.id);
+      } else {
+        // use target_id as lessonId for lesson posts
+        loadLessonComments(courseId, post.target_id);
+      }
     }
   };
 
   // Add Post
   const handleAddPost = async (postData) => {
+    // Only allow adding posts to Course Forum manually. Lesson posts are auto-generated.
+    // If active tab is Lesson Forum, user might be confused, but we still post to Course Forum.
+    // Ideally we should switch tab or show notification.
     let formData;
     if (postData instanceof FormData) {
       formData = postData;
@@ -63,13 +77,21 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
       }
     }
     await addCoursePost(courseId, formData);
-    await loadCoursePosts(courseId);
+    if (activeForumTab === 'Course Forum') {
+      await loadCoursePosts(courseId);
+    } else {
+      // Maybe switch to Course Forum to show the new post?
+      setActiveForumTab('Course Forum');
+    }
     setShowAddPostModal(false);
   };
 
   // Delete Post
   const handleDelete = async (post) => {
     setActionMenuOpen(null);
+    // Only allow deleting Course Forum posts as Lesson posts are auto-generated/managed
+    if (activeForumTab !== 'Course Forum') return;
+
     if (window.confirm(`Are you sure you want to delete the post "${post.title}"?`)) {
       await deleteCoursePost(courseId, post.id);
       if (selectedPostId === post.id) {
@@ -81,14 +103,30 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
 
   // Add Comment
   const handleAddComment = async (commentData) => {
-    await addCourseComment(courseId, selectedPostId, commentData);
+    if (activeForumTab === 'Course Forum') {
+      await addCourseComment(courseId, selectedPostId, commentData);
+    } else {
+      // Find the lessonId (target_id) from the selected post
+      const post = posts.find((p) => p.id === selectedPostId);
+      if (post && post.target_id) {
+        await addLessonComment(courseId, post.target_id, commentData);
+      }
+    }
     setShowAddCommentModal(false);
   };
 
   // Delete Comment
   const handleDeleteComment = async (comment) => {
     if (window.confirm('Are you sure you want to delete this comment?')) {
-      await deleteCourseComment(courseId, selectedPostId, comment.id);
+      if (activeForumTab === 'Course Forum') {
+        await deleteCourseComment(courseId, selectedPostId, comment.id);
+      } else {
+         // Find the lessonId (target_id) from the selected post
+        const post = posts.find((p) => p.id === selectedPostId);
+        if (post && post.target_id) {
+          await deleteLessonComment(courseId, post.target_id, comment.id);
+        }
+      }
     }
   };
 
@@ -265,31 +303,35 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
                     </div>
                     <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto sm:self-start mt-2 sm:mt-0">
                       <button
-                        onClick={() => handleShowComments(post.id)}
+                        onClick={() => handleShowComments(post)}
                         className="w-full sm:w-auto px-3 sm:px-4 py-2 border border-[var(--border-color)] rounded-lg text-xs sm:text-sm font-medium hover:bg-[var(--input-bg)] active:scale-95 transition-all duration-200 text-center whitespace-nowrap"
                       >
                         {selectedPostId === post.id ? 'Hide Comments' : 'Comments'}
                       </button>
-                      <div className="relative post-action-menu">
-                        <button
-                          className="p-2 border border-[var(--border-color)] rounded-lg hover:bg-[var(--input-bg)] active:scale-95 transition-all duration-200 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-                          onClick={() => setActionMenuOpen(actionMenuOpen === post.id ? null : post.id)}
-                          aria-label="Actions"
-                          tabIndex={0}
-                        >
-                          <FaEllipsisV className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        </button>
-                        {actionMenuOpen === post.id && (
-                          <div className="absolute right-0 mt-2 z-50 w-32 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg shadow-lg py-1 flex flex-col text-sm animate-fade-in">
-                            <button
-                              className="flex items-center gap-2 px-4 py-2 text-red-500 hover:bg-red-500/10 transition"
-                              onClick={() => handleDelete(post)}
-                            >
-                              <FaTrash className="w-4 h-4" /> Delete
-                            </button>
-                          </div>
-                        )}
-                      </div>
+                      
+                      {/* Hide delete option for lesson posts as they are auto-generated */}
+                      {activeForumTab === 'Course Forum' && (
+                        <div className="relative post-action-menu">
+                          <button
+                            className="p-2 border border-[var(--border-color)] rounded-lg hover:bg-[var(--input-bg)] active:scale-95 transition-all duration-200 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                            onClick={() => setActionMenuOpen(actionMenuOpen === post.id ? null : post.id)}
+                            aria-label="Actions"
+                            tabIndex={0}
+                          >
+                            <FaEllipsisV className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          </button>
+                          {actionMenuOpen === post.id && (
+                            <div className="absolute right-0 mt-2 z-50 w-32 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg shadow-lg py-1 flex flex-col text-sm animate-fade-in">
+                              <button
+                                className="flex items-center gap-2 px-4 py-2 text-red-500 hover:bg-red-500/10 transition"
+                                onClick={() => handleDelete(post)}
+                              >
+                                <FaTrash className="w-4 h-4" /> Delete
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                   {selectedPostId === post.id && (

@@ -39,6 +39,7 @@ const initialQuizForm = {
 const useManageCourseStore = create((set, get) => ({
     // State
     activeTab: 'Modules',
+    activeForumTab: 'Course Forum',
     course: null,
     modules: [],
     loading: true,
@@ -64,6 +65,7 @@ const useManageCourseStore = create((set, get) => ({
 
     // Actions
     setActiveTab: (tab) => set({ activeTab: tab }),
+    setActiveForumTab: (tab) => set({ activeForumTab: tab }),
     setShowQuizQuestionManager: (val) => set({ showQuizQuestionManager: val }),
     setSelectedQuizId: (id) => set({ selectedQuizId: id }),
 

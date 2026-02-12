@@ -6,11 +6,11 @@ import {
   deleteCourseForumPost,
   getForumPostComments,
   createForumPostComment,
-  getLessonForumPosts,
-  createLessonForumPost,
-  getLessonForumPostComments,
-  createLessonForumPostComment,
   deleteForumPostComment,
+  getCourseLessonForumPosts,
+  getLessonForumComments,
+  createLessonForumComment,
+  deleteLessonForumComment,
 } from '../../api/api'; // Adjust path if necessary
 
 const useStudentForumStore = create((set, get) => ({
@@ -90,18 +90,54 @@ const useStudentForumStore = create((set, get) => ({
     }
   },
 
-  // Lesson forum (Optional for this component, but good to have)
-  loadLessonPosts: async (lessonId) => {
-    set({ loading: true, error: null });
-    try {
-      const res = await getLessonForumPosts(lessonId);
-      set({ lessonPosts: res.data || res, loading: false });
-    } catch (error) {
-      set({ error: 'Failed to load lesson posts', loading: false });
-    }
-  },
+  // Lesson forum
+    loadLessonPosts: async (courseId) => {
+      set({ loading: true, error: null });
+      try {
+        const res = await getCourseLessonForumPosts(courseId);
+        set({ lessonPosts: res.data || res, loading: false });
+      } catch (error) {
+        set({ error: 'Failed to load lesson posts', loading: false });
+      }
+    },
   
-  clearComments: () => set({ comments: [] }),
+    // Note: We don't manually add lesson posts anymore; they are auto-created when accessed via detail view.
+    // The list view is read-only for the threads that exist.
+  
+    loadLessonComments: async (courseId, lessonId) => {
+      set({ loading: true, error: null });
+      try {
+        // Logic uses lessonId (which is target_id) to get comments
+        const res = await getLessonForumComments(courseId, lessonId);
+        set({ comments: res.data || res, loading: false });
+      } catch (error) {
+        set({ error: 'Failed to load lesson comments', loading: false });
+      }
+    },
+  
+    addLessonComment: async (courseId, lessonId, commentData) => {
+      set({ loading: true, error: null });
+      try {
+        await createLessonForumComment(courseId, lessonId, commentData);
+        await get().loadLessonComments(courseId, lessonId);
+        set({ loading: false });
+      } catch (error) {
+        set({ error: 'Failed to add lesson comment', loading: false });
+      }
+    },
+    
+    deleteLessonComment: async (courseId, lessonId, commentId) => {
+      set({ loading: true, error: null });
+      try {
+        await deleteLessonForumComment(courseId, commentId);
+        await get().loadLessonComments(courseId, lessonId);
+        set({ loading: false });
+      } catch (error) {
+        set({ error: 'Failed to delete lesson comment', loading: false });
+      }
+    },
+  
+    clearComments: () => set({ comments: [] }),
 }));
 
 export default useStudentForumStore;
