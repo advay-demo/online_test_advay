@@ -1001,6 +1001,13 @@ export const getLessonForumPostDetail = async (courseId, lessonId) => {
   return response.data;
 };
 
+// Delete a specific lesson post (Teacher/Creator only)
+export const deleteLessonForumPost = async (courseId, lessonId) => {
+  const response = await api.delete(`/api/forum/courses/${courseId}/lessons/${lessonId}/post/`);
+  return response.data;
+};
+
+
 // Get all comments for a specific lesson's post
 export const getLessonForumComments = async (courseId, lessonId) => {
   const response = await api.get(`/api/forum/courses/${courseId}/lessons/${lessonId}/comments/`);

@@ -5467,16 +5467,18 @@ class LessonForumPostListView(generics.ListAPIView):
         serializer = self.get_serializer(unique_posts, many=True)
         return Response(serializer.data)
 
-class LessonForumPostDetailView(generics.RetrieveAPIView):
+class LessonForumPostDetailView(generics.RetrieveDestroyAPIView):
     """
     Retrieves the SINGLE discussion post for a specific LESSON in a COURSE context.
-    Auto-creates it if it doesn't exist.
+    Auto-creates it if it doesn't exist (on GET).
+    Allows Teachers/Creators to delete (soft-delete) the post.
     """
     serializer_class = PostSerializer
     permission_classes = [permissions.IsAuthenticated]
-    lookup_field = 'pk' 
+    # No lookup_field needed as we override get_object
 
     def get_object(self):
+        from rest_framework.exceptions import PermissionDenied
         course_id = self.kwargs['course_id']
         lesson_id = self.kwargs['lesson_id']
         
@@ -5496,16 +5498,34 @@ class LessonForumPostDetailView(generics.RetrieveAPIView):
             ).order_by('-created_at').first()
             
         if not post:
-            title = lesson.name
-            post = Post.objects.create(
-                target_ct=lesson_ct,
-                target_id=lesson.id,
-                active=True,
-                title=title,
-                creator=user,
-                description=f'Discussion on {title} lesson',
-            )
+            if self.request.method == 'GET':
+                title = lesson.name
+                post = Post.objects.create(
+                    target_ct=lesson_ct,
+                    target_id=lesson.id,
+                    active=True,
+                    title=title,
+                    creator=user,
+                    description=f'Discussion on {title} lesson',
+                )
+            else:
+                 raise Http404("Post not found")
         return post
+
+    def perform_destroy(self, instance):
+        from rest_framework.exceptions import PermissionDenied
+        course_id = self.kwargs['course_id']
+        course = get_object_or_404(Course, pk=course_id)
+        user = self.request.user
+        
+        # Only creators/teachers (or moderators) can delete the lesson forum post
+        if not (course.is_creator(user) or course.is_teacher(user) or is_moderator(user)):
+            raise PermissionDenied("Only a course creator or a teacher can delete the post.")
+            
+        instance.active = False
+        instance.save()
+        # Soft delete associated comments
+        instance.comment.filter(active=True).update(active=False)
 
 class LessonForumCommentListCreateView(generics.ListCreateAPIView):
     """

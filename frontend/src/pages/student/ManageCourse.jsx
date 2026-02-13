@@ -20,6 +20,7 @@ const ManageCourseStudent = () => {
         courseError,
         loadCourseData,
         activeTab,
+        activeForumTab,
         setActiveTab,
     } = useManageCourseStore();
 
@@ -122,7 +123,7 @@ const ManageCourseStudent = () => {
                                     <FaEllipsisV className="w-4 h-4" />
                                 </button>
 
-                                {activeTab === 'Discussions' && (
+                                {activeTab === 'Discussions' && activeForumTab === 'Course Forum' && (
                                     <button
                                         onClick={openCreatePost}
                                         className="bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-700 transition flex items-center gap-2"

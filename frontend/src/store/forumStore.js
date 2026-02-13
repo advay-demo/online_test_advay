@@ -10,6 +10,7 @@ import {
   getLessonForumComments,
   createLessonForumComment,
   deleteLessonForumComment,
+  deleteLessonForumPost,
 } from '../api/api';
 
 const useForumStore = create((set, get) => ({
@@ -108,6 +109,20 @@ const useForumStore = create((set, get) => ({
       set({ comments: res.data || res, loading: false });
     } catch (error) {
       set({ error: 'Failed to load lesson comments', loading: false });
+    }
+  },
+
+  deleteLessonPost: async (courseId, lessonId) => {
+    set({ loading: true, error: null });
+    try {
+      // The API endpoint relies on the lesson_id (which is the target_id in the post response)
+      await deleteLessonForumPost(courseId, lessonId);
+      // Reload posts to reflect deletion
+      await get().loadLessonPosts(courseId);
+      set({ loading: false });
+    } catch (error) {
+      console.error('Failed to delete lesson post:', error);
+      set({ error: 'Failed to delete lesson post', loading: false });
     }
   },
 

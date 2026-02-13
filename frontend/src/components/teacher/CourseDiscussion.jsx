@@ -20,6 +20,7 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
     loadLessonComments,
     addLessonComment,
     deleteLessonComment,
+    deleteLessonPost, 
     // loading,
     // error,
   } = useForumStore();
@@ -61,9 +62,7 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
 
   // Add Post
   const handleAddPost = async (postData) => {
-    // Only allow adding posts to Course Forum manually. Lesson posts are auto-generated.
-    // If active tab is Lesson Forum, user might be confused, but we still post to Course Forum.
-    // Ideally we should switch tab or show notification.
+    
     let formData;
     if (postData instanceof FormData) {
       formData = postData;
@@ -80,7 +79,7 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
     if (activeForumTab === 'Course Forum') {
       await loadCoursePosts(courseId);
     } else {
-      // Maybe switch to Course Forum to show the new post?
+      
       setActiveForumTab('Course Forum');
     }
     setShowAddPostModal(false);
@@ -89,11 +88,15 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
   // Delete Post
   const handleDelete = async (post) => {
     setActionMenuOpen(null);
-    // Only allow deleting Course Forum posts as Lesson posts are auto-generated/managed
-    if (activeForumTab !== 'Course Forum') return;
-
+    
     if (window.confirm(`Are you sure you want to delete the post "${post.title}"?`)) {
-      await deleteCoursePost(courseId, post.id);
+      if (activeForumTab === 'Course Forum') {
+        await deleteCoursePost(courseId, post.id);
+      } else {
+        // For lesson posts, use target_id which corresponds to the lessonId
+        await deleteLessonPost(courseId, post.target_id);
+      }
+
       if (selectedPostId === post.id) {
         setSelectedPostId(null);
         clearComments();
@@ -254,7 +257,7 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
         <div>
           <h3 className="text-base sm:text-lg font-bold mb-4 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-            Posts ({posts.length})
+            {activeForumTab === 'Course Forum' ? 'Course Discussions' : 'Lesson Discussions'} ({posts.length})
           </h3>
           {posts.length === 0 ? (
             <div className="text-center py-8 text-muted">No posts yet.</div>
@@ -309,29 +312,27 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
                         {selectedPostId === post.id ? 'Hide Comments' : 'Comments'}
                       </button>
                       
-                      {/* Hide delete option for lesson posts as they are auto-generated */}
-                      {activeForumTab === 'Course Forum' && (
-                        <div className="relative post-action-menu">
-                          <button
-                            className="p-2 border border-[var(--border-color)] rounded-lg hover:bg-[var(--input-bg)] active:scale-95 transition-all duration-200 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-                            onClick={() => setActionMenuOpen(actionMenuOpen === post.id ? null : post.id)}
-                            aria-label="Actions"
-                            tabIndex={0}
-                          >
-                            <FaEllipsisV className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                          </button>
-                          {actionMenuOpen === post.id && (
-                            <div className="absolute right-0 mt-2 z-50 w-32 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg shadow-lg py-1 flex flex-col text-sm animate-fade-in">
-                              <button
-                                className="flex items-center gap-2 px-4 py-2 text-red-500 hover:bg-red-500/10 transition"
-                                onClick={() => handleDelete(post)}
-                              >
-                                <FaTrash className="w-4 h-4" /> Delete
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      )}
+                      
+                      <div className="relative post-action-menu">
+                        <button
+                          className="p-2 border border-[var(--border-color)] rounded-lg hover:bg-[var(--input-bg)] active:scale-95 transition-all duration-200 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                          onClick={() => setActionMenuOpen(actionMenuOpen === post.id ? null : post.id)}
+                          aria-label="Actions"
+                          tabIndex={0}
+                        >
+                          <FaEllipsisV className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        </button>
+                        {actionMenuOpen === post.id && (
+                          <div className="absolute right-0 mt-2 z-50 w-32 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg shadow-lg py-1 flex flex-col text-sm animate-fade-in">
+                            <button
+                              className="flex items-center gap-2 px-4 py-2 text-red-500 hover:bg-red-500/10 transition"
+                              onClick={() => handleDelete(post)}
+                            >
+                              <FaTrash className="w-4 h-4" /> Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                   {selectedPostId === post.id && (
@@ -361,7 +362,7 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
                                       {new Date(comment.created_at).toLocaleString()}
                                     </span>
                                   )}
-                                  {/* UPDATE: Conditional anonymous display for comments */}
+                                 
                                   <span>-- {comment.anonymous ? (comment.is_me ? "Anonymous (You)" : "Anonymous") : comment.author}</span>
                                 </div>
                                 <div className="absolute top-2 right-2">
@@ -425,7 +426,7 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
               onSubmit={async e => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
-                // UPDATE: Handle anonymous flag in submission
+               
                 await handleAddComment({
                   description: formData.get('description'),
                   anonymous: formData.get('anonymous') ? 'true' : 'false'
@@ -444,7 +445,7 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
                   required
                 />
               </div>
-              {/* UPDATE: Added Anonymous checkbox */}
+              
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"

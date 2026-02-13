@@ -100,11 +100,10 @@ urlpatterns = [
     url(r'^forum/courses/(?P<course_id>\d+)/comments/(?P<comment_id>\d+)/$', views.ForumCommentDetailView.as_view(), name='api_forum_comment_detail'), #ok
 
     # --- Lesson Forum Routes ---
-    url(r'^forum/courses/(?P<course_id>\d+)/lesson-posts/$', views.LessonForumPostListView.as_view(), name='api_lesson_forum_post_list'),
-    url(r'^forum/courses/(?P<course_id>\d+)/lessons/(?P<lesson_id>\d+)/post/$', views.LessonForumPostDetailView.as_view(), name='api_lesson_forum_post_detail'),
-    url(r'^forum/courses/(?P<course_id>\d+)/lessons/(?P<lesson_id>\d+)/comments/$', views.LessonForumCommentListCreateView.as_view(), name='api_lesson_forum_comment_list_create'),
-    # Note: Comment detail can share the same pattern or use course context if needed
-    url(r'^forum/courses/(?P<course_id>\d+)/comments/(?P<comment_id>\d+)/$', views.LessonForumCommentDetailView.as_view(), name='api_lesson_forum_comment_detail'),
+    url(r'^forum/courses/(?P<course_id>\d+)/lesson-posts/$', views.LessonForumPostListView.as_view(), name='api_lesson_forum_post_list'), #ok
+    url(r'^forum/courses/(?P<course_id>\d+)/lessons/(?P<lesson_id>\d+)/post/$', views.LessonForumPostDetailView.as_view(), name='api_lesson_forum_post_detail'), #ok
+    url(r'^forum/courses/(?P<course_id>\d+)/lessons/(?P<lesson_id>\d+)/comments/$', views.LessonForumCommentListCreateView.as_view(), name='api_lesson_forum_comment_list_create'), #ok
+    url(r'^forum/courses/(?P<course_id>\d+)/comments/(?P<comment_id>\d+)/$', views.LessonForumCommentDetailView.as_view(), name='api_lesson_forum_comment_detail'), #ok
 
     
    
