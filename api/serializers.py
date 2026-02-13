@@ -510,6 +510,12 @@ class CourseCatalogSerializer(serializers.ModelSerializer):
     instructions = serializers.CharField(read_only=True)
     start_date = serializers.DateTimeField(source='start_enroll_time', read_only=True)
     end_date = serializers.DateTimeField(source='end_enroll_time', read_only=True)
+    enrollment = serializers.SerializerMethodField()
+
+    def get_enrollment(self, obj):
+        if not obj.is_active_enrollment():
+            return "No Enrollment Allowed"
+        return obj.enrollment
     
     def get_instructor(self, obj):
         creator = obj.creator
@@ -558,15 +564,21 @@ class CourseCatalogSerializer(serializers.ModelSerializer):
     def get_is_enrolled(self, obj):
         user = self.context.get('user')
         if not user:
-            return False
-        return obj.students.filter(id=user.id).exists()
+            # If called primarily from a context where request is available (like viewset)
+            request = self.context.get('request')
+            if request:
+                user = request.user
+        
+        if user and user.is_authenticated:
+            return obj.students.filter(id=user.id).exists()
+        return False
     
     class Meta:
         model = Course
         fields = [
-            'id', 'name', 'instructor', 'level', 'rating', 'students_count',
-            'duration', 'progress', 'color', 'is_enrolled', 'code', 'modules',
-            'instructions', 'start_date', 'end_date'
+            'id', 'name', 'instructor', 'level', 'rating', 'students_count', 
+            'duration', 'progress', 'color', 'is_enrolled', 'code', 
+            'modules', 'instructions', 'start_date', 'end_date', 'enrollment'
         ]
 
 ###############################################################################

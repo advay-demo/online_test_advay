@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import useForumStore from '../../store/forumStore';
+import useManageCourseStore from '../../store/manageCourseStore';
 import { FaPlus, FaChevronDown, FaTimes, FaPaperPlane, FaComments, FaEllipsisV, FaEdit, FaTrash } from 'react-icons/fa';
 
 export default function CourseDiscussionsTab({ courseId, showAddPostModal, setShowAddPostModal, closeCreatePost }) {
@@ -15,13 +16,19 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
     addCourseComment,
     clearComments,
     deleteCourseComment,
+    // Lesson Forum Functions
+    loadLessonComments,
+    addLessonComment,
+    deleteLessonComment,
+    deleteLessonPost, 
     // loading,
     // error,
   } = useForumStore();
 
+  const { activeForumTab, setActiveForumTab } = useManageCourseStore();
+
   const [selectedPostId, setSelectedPostId] = useState(null);
   const [actionMenuOpen, setActionMenuOpen] = useState(null);
-  const [activeForumTab, setActiveForumTab] = useState('Course Forum');
   const [showAddCommentModal, setShowAddCommentModal] = useState(false);
 
   useEffect(() => {
@@ -38,18 +45,24 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
 
   const posts = activeForumTab === 'Course Forum' ? coursePosts : lessonPosts;
 
-  const handleShowComments = (postId) => {
-    if (selectedPostId === postId) {
+  const handleShowComments = (post) => {
+    if (selectedPostId === post.id) {
       setSelectedPostId(null);
       clearComments();
     } else {
-      setSelectedPostId(postId);
-      loadCourseComments(courseId, postId);
+      setSelectedPostId(post.id);
+      if (activeForumTab === 'Course Forum') {
+        loadCourseComments(courseId, post.id);
+      } else {
+        // use target_id as lessonId for lesson posts
+        loadLessonComments(courseId, post.target_id);
+      }
     }
   };
 
   // Add Post
   const handleAddPost = async (postData) => {
+    
     let formData;
     if (postData instanceof FormData) {
       formData = postData;
@@ -63,15 +76,27 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
       }
     }
     await addCoursePost(courseId, formData);
-    await loadCoursePosts(courseId);
+    if (activeForumTab === 'Course Forum') {
+      await loadCoursePosts(courseId);
+    } else {
+      
+      setActiveForumTab('Course Forum');
+    }
     setShowAddPostModal(false);
   };
 
   // Delete Post
   const handleDelete = async (post) => {
     setActionMenuOpen(null);
+    
     if (window.confirm(`Are you sure you want to delete the post "${post.title}"?`)) {
-      await deleteCoursePost(courseId, post.id);
+      if (activeForumTab === 'Course Forum') {
+        await deleteCoursePost(courseId, post.id);
+      } else {
+        // For lesson posts, use target_id which corresponds to the lessonId
+        await deleteLessonPost(courseId, post.target_id);
+      }
+
       if (selectedPostId === post.id) {
         setSelectedPostId(null);
         clearComments();
@@ -81,14 +106,30 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
 
   // Add Comment
   const handleAddComment = async (commentData) => {
-    await addCourseComment(courseId, selectedPostId, commentData);
+    if (activeForumTab === 'Course Forum') {
+      await addCourseComment(courseId, selectedPostId, commentData);
+    } else {
+      // Find the lessonId (target_id) from the selected post
+      const post = posts.find((p) => p.id === selectedPostId);
+      if (post && post.target_id) {
+        await addLessonComment(courseId, post.target_id, commentData);
+      }
+    }
     setShowAddCommentModal(false);
   };
 
   // Delete Comment
   const handleDeleteComment = async (comment) => {
     if (window.confirm('Are you sure you want to delete this comment?')) {
-      await deleteCourseComment(courseId, selectedPostId, comment.id);
+      if (activeForumTab === 'Course Forum') {
+        await deleteCourseComment(courseId, selectedPostId, comment.id);
+      } else {
+         // Find the lessonId (target_id) from the selected post
+        const post = posts.find((p) => p.id === selectedPostId);
+        if (post && post.target_id) {
+          await deleteLessonComment(courseId, post.target_id, comment.id);
+        }
+      }
     }
   };
 
@@ -216,7 +257,7 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
         <div>
           <h3 className="text-base sm:text-lg font-bold mb-4 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-            Posts ({posts.length})
+            {activeForumTab === 'Course Forum' ? 'Course Discussions' : 'Lesson Discussions'} ({posts.length})
           </h3>
           {posts.length === 0 ? (
             <div className="text-center py-8 text-muted">No posts yet.</div>
@@ -265,11 +306,13 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
                     </div>
                     <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto sm:self-start mt-2 sm:mt-0">
                       <button
-                        onClick={() => handleShowComments(post.id)}
+                        onClick={() => handleShowComments(post)}
                         className="w-full sm:w-auto px-3 sm:px-4 py-2 border border-[var(--border-color)] rounded-lg text-xs sm:text-sm font-medium hover:bg-[var(--input-bg)] active:scale-95 transition-all duration-200 text-center whitespace-nowrap"
                       >
                         {selectedPostId === post.id ? 'Hide Comments' : 'Comments'}
                       </button>
+                      
+                      
                       <div className="relative post-action-menu">
                         <button
                           className="p-2 border border-[var(--border-color)] rounded-lg hover:bg-[var(--input-bg)] active:scale-95 transition-all duration-200 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
@@ -319,7 +362,7 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
                                       {new Date(comment.created_at).toLocaleString()}
                                     </span>
                                   )}
-                                  {/* UPDATE: Conditional anonymous display for comments */}
+                                 
                                   <span>-- {comment.anonymous ? (comment.is_me ? "Anonymous (You)" : "Anonymous") : comment.author}</span>
                                 </div>
                                 <div className="absolute top-2 right-2">
@@ -383,7 +426,7 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
               onSubmit={async e => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
-                // UPDATE: Handle anonymous flag in submission
+               
                 await handleAddComment({
                   description: formData.get('description'),
                   anonymous: formData.get('anonymous') ? 'true' : 'false'
@@ -402,7 +445,7 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
                   required
                 />
               </div>
-              {/* UPDATE: Added Anonymous checkbox */}
+              
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"

@@ -7,6 +7,7 @@ import {
 const useManageCourseStore = create((set, get) => ({
   // State
   activeTab: 'Modules',
+  activeForumTab: 'Course Forum',
   course: null,
   courseLoading: false,
   courseError: null,
@@ -20,6 +21,7 @@ const useManageCourseStore = create((set, get) => ({
 
   // Actions
   setActiveTab: (tab) => set({ activeTab: tab }),
+  setActiveForumTab: (tab) => set({ activeForumTab: tab }),
 
   // Load course data and modules (API returns both in one call)
   loadCourseData: async (courseId) => {

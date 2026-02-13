@@ -5524,64 +5524,172 @@ class ForumCommentDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 # --- Lesson Forum Views ---
 
-class LessonForumPostListCreateView(generics.ListCreateAPIView):
+# ...existing code...
+# --- Lesson Forum Views ---
+
+class LessonForumPostListView(generics.ListAPIView):
+    """
+    Lists all lesson discussion threads for a specific COURSE.
+    """
     serializer_class = PostSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    def get_course(self):
+        course_id = self.kwargs['course_id']
+        course = get_object_or_404(Course, pk=course_id)
+        user = self.request.user
+        # Strict enrollment check
+        if not (course.is_student(user) or course.is_teacher(user) or course.is_creator(user) or is_moderator(user)):
+             raise PermissionDenied("You are not enrolled in this course.")
+        return course
+
     def get_queryset(self):
-        lesson_id = self.kwargs['lesson_id']
-        # Ensure lesson exists
-        get_object_or_404(Lesson, pk=lesson_id)
+        # We override list() to handle the list return, but get_queryset serves for structure
+        return Post.objects.none()
+
+    def list(self, request, *args, **kwargs):
+        course = self.get_course()
+        posts = course.get_lesson_posts() # Returns a list of Post objects
         
-        lesson_ct = ContentType.objects.get_for_model(Lesson)
-        return Post.objects.filter(target_ct=lesson_ct, target_id=lesson_id, active=True).order_by('-modified_at')
+        # Deduplicate posts (Fix for lessons appearing in multiple units causing duplicates)
+        unique_posts = []
+        seen_ids = set()
+        for post in posts:
+            if post.id not in seen_ids:
+                unique_posts.append(post)
+                seen_ids.add(post.id)
+                
+        serializer = self.get_serializer(unique_posts, many=True)
+        return Response(serializer.data)
 
-    def perform_create(self, serializer):
-        lesson_id = self.kwargs['lesson_id']
-        get_object_or_404(Lesson, pk=lesson_id)
-        
-        lesson_ct = ContentType.objects.get_for_model(Lesson)
-        is_anonymous = self.request.data.get('anonymous') == 'true' or self.request.data.get('anonymous') == True
-
-        serializer.save(
-            creator=self.request.user, 
-            target_id=lesson_id, 
-            target_ct=lesson_ct,
-            anonymous=is_anonymous,
-            active=True
-        )
-
-class LessonForumPostDetailView(generics.RetrieveUpdateDestroyAPIView):
+class LessonForumPostDetailView(generics.RetrieveDestroyAPIView):
+    """
+    Retrieves the SINGLE discussion post for a specific LESSON in a COURSE context.
+    Auto-creates it if it doesn't exist (on GET).
+    Allows Teachers/Creators to delete (soft-delete) the post.
+    """
     serializer_class = PostSerializer
-    permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated]
+    # No lookup_field needed as we override get_object
 
-    def get_queryset(self):
+    def get_object(self):
+        from rest_framework.exceptions import PermissionDenied
+        course_id = self.kwargs['course_id']
         lesson_id = self.kwargs['lesson_id']
+        
+        course = get_object_or_404(Course, pk=course_id)
+        user = self.request.user
+        if not (course.is_student(user) or course.is_teacher(user) or course.is_creator(user) or is_moderator(user)):
+             raise PermissionDenied("You are not enrolled in this course.")
+
+        lesson = get_object_or_404(Lesson, pk=lesson_id)
         lesson_ct = ContentType.objects.get_for_model(Lesson)
-        return Post.objects.filter(target_ct=lesson_ct, target_id=lesson_id, active=True)
+
+        # Match yaksh logic: Get or Create
+        post = Post.objects.filter(
+                target_ct=lesson_ct,
+                target_id=lesson.id,
+                active=True
+            ).order_by('-created_at').first()
+            
+        if not post:
+            if self.request.method == 'GET':
+                title = lesson.name
+                post = Post.objects.create(
+                    target_ct=lesson_ct,
+                    target_id=lesson.id,
+                    active=True,
+                    title=title,
+                    creator=user,
+                    description=f'Discussion on {title} lesson',
+                )
+            else:
+                 raise Http404("Post not found")
+        return post
+
+    def perform_destroy(self, instance):
+        from rest_framework.exceptions import PermissionDenied
+        course_id = self.kwargs['course_id']
+        course = get_object_or_404(Course, pk=course_id)
+        user = self.request.user
+        
+        # Only creators/teachers (or moderators) can delete the lesson forum post
+        if not (course.is_creator(user) or course.is_teacher(user) or is_moderator(user)):
+            raise PermissionDenied("Only a course creator or a teacher can delete the post.")
+            
+        instance.active = False
+        instance.save()
+        # Soft delete associated comments
+        instance.comment.filter(active=True).update(active=False)
 
 class LessonForumCommentListCreateView(generics.ListCreateAPIView):
+    """
+    List or Create comments for a specific LESSON.
+    """
     serializer_class = CommentSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        post_id = self.kwargs['post_id']
-        return Comment.objects.filter(post_field_id=post_id, active=True).order_by('created_at')
+        course_id = self.kwargs['course_id']
+        course = get_object_or_404(Course, pk=course_id)
+        user = self.request.user
+        if not (course.is_student(user) or course.is_teacher(user) or course.is_creator(user) or is_moderator(user)):
+             raise PermissionDenied("You are not enrolled in this course.")
+
+        lesson_id = self.kwargs['lesson_id']
+        lesson_ct = ContentType.objects.get_for_model(Lesson)
+        post = Post.objects.filter(target_ct=lesson_ct, target_id=lesson_id, active=True).first()
+        if not post:
+             return Comment.objects.none()
+        return Comment.objects.filter(post_field=post, active=True).order_by('created_at')
 
     def perform_create(self, serializer):
-        post_id = self.kwargs['post_id']
-        # Validates post existence
-        get_object_or_404(Post, pk=post_id)
+        course_id = self.kwargs['course_id']
+        course = get_object_or_404(Course, pk=course_id)
+        user = self.request.user
+        if not (course.is_student(user) or course.is_teacher(user) or course.is_creator(user) or is_moderator(user)):
+             raise PermissionDenied("You are not enrolled in this course.")
+             
+        lesson_id = self.kwargs['lesson_id']
+        lesson = get_object_or_404(Lesson, pk=lesson_id)
+        lesson_ct = ContentType.objects.get_for_model(Lesson)
+        title = lesson.name
+        
+        # Ensure post exists
+        post, created = Post.objects.get_or_create(
+            target_ct=lesson_ct,
+            target_id=lesson.id,
+            active=True,
+            defaults={
+                'title': title,
+                'creator': user,
+                'description': f'Discussion on {title} lesson'
+            }
+        )
         
         is_anonymous = self.request.data.get('anonymous') == 'true' or self.request.data.get('anonymous') == True
-        serializer.save(creator=self.request.user, post_field_id=post_id, active=True, anonymous=is_anonymous)
+        serializer.save(creator=user, post_field=post, active=True, anonymous=is_anonymous)
+
 
 class LessonForumCommentDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = CommentSerializer
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
+    lookup_field = 'id'
+    lookup_url_kwarg = 'comment_id'
 
     def get_queryset(self):
+        # We can add course check here if we want strict read security on single comments
+        # But generally identifying by ID and relying on IsOwnerOrReadOnly for writes is standard
         return Comment.objects.filter(active=True)
+    
+    def perform_destroy(self, instance):
+        # Soft delete
+        instance.active = False
+        instance.save()
+
+
+
+
 
 
 # ============================================================

@@ -24,7 +24,7 @@ const ManageCourse = () => {
     const { courseId } = useParams();
     const {
         course, modules, loading, error, enrollments, loadingEnrollments, analytics, loadingAnalytics,
-        activeTab, setActiveTab, showQuizQuestionManager, setShowQuizQuestionManager, selectedQuizId, setSelectedQuizId,
+        activeTab, setActiveTab, activeForumTab, showQuizQuestionManager, setShowQuizQuestionManager, selectedQuizId, setSelectedQuizId,
         moduleOrder, unitOrders, savingOrder, showModuleForm, editingModule, showLessonForm, showQuizForm,
         selectedModule, editingLesson, editingQuiz, moduleFormData, lessonFormData, quizFormData,
         setShowModuleForm, setEditingModule, setModuleFormData, handleModuleFormChange, handleCreateModule, handleUpdateModule, handleDeleteModule,
@@ -164,7 +164,7 @@ const ManageCourse = () => {
                                     </button>
                                 )}
 
-                                {activeTab === 'Discussions' && (
+                                {activeTab === 'Discussions' && activeForumTab === 'Course Forum' && (
                                     <button
                                         onClick={openCreatePost}
                                         className="bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-700 transition flex items-center gap-2"

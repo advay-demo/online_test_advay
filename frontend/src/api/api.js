@@ -986,31 +986,47 @@ export const deleteForumPostComment = async (courseId, commentId) => {
 
 
 
+
+
 // LESSON FORUM APIs ============================================================
 
-// Get all posts for a lesson
-export const getLessonForumPosts = async (lessonId) => {
-  const response = await api.get(`/api/forum/lessons/${lessonId}/posts/`);
+export const getCourseLessonForumPosts = async (courseId) => {
+  const response = await api.get(`/api/forum/courses/${courseId}/lesson-posts/`);
   return response.data;
 };
 
-// Create a new post for a lesson
-export const createLessonForumPost = async (lessonId, postData) => {
-  const response = await api.post(`/api/forum/lessons/${lessonId}/posts/`, postData);
+// Get the SINGLE post details for a specific lesson (Auto-creates if missing)
+export const getLessonForumPostDetail = async (courseId, lessonId) => {
+  const response = await api.get(`/api/forum/courses/${courseId}/lessons/${lessonId}/post/`);
   return response.data;
 };
 
-// Get all comments for a lesson post
-export const getLessonForumPostComments = async (lessonId, postId) => {
-  const response = await api.get(`/api/forum/lessons/${lessonId}/posts/${postId}/comments/`);
+// Delete a specific lesson post (Teacher/Creator only)
+export const deleteLessonForumPost = async (courseId, lessonId) => {
+  const response = await api.delete(`/api/forum/courses/${courseId}/lessons/${lessonId}/post/`);
   return response.data;
 };
 
-// Create a new comment for a lesson post
-export const createLessonForumPostComment = async (lessonId, postId, commentData) => {
-  const response = await api.post(`/api/forum/lessons/${lessonId}/posts/${postId}/comments/`, commentData);
+
+// Get all comments for a specific lesson's post
+export const getLessonForumComments = async (courseId, lessonId) => {
+  const response = await api.get(`/api/forum/courses/${courseId}/lessons/${lessonId}/comments/`);
   return response.data;
 };
+
+// Create a new comment for a lesson's post
+export const createLessonForumComment = async (courseId, lessonId, commentData) => {
+  const response = await api.post(`/api/forum/courses/${courseId}/lessons/${lessonId}/comments/`, commentData);
+  return response.data;
+};
+
+// Delete a specific comment from a lesson post
+export const deleteLessonForumComment = async (courseId, commentId) => {
+  const response = await api.delete(`/api/forum/courses/${courseId}/comments/${commentId}/`);
+  return response.data;
+};
+
+
 
 //=======================================================================
 //======================================================================

@@ -1,20 +1,27 @@
-/* filepath: /home/bhotto/projects04/online_test/frontend/src/components/student/CourseDiscussion.jsx */
 import React, { useEffect, useState } from 'react';
 import useStudentForumStore from '../../store/student/forumStore';
-import { FaPlus, FaChevronDown, FaTimes, FaPaperPlane, FaComments, FaEllipsisV, FaEdit, FaTrash } from 'react-icons/fa';
+import useManageCourseStore from '../../store/student/manageCourseStore';
+import { FaTimes, FaPaperPlane, FaComments, FaEllipsisV, FaTrash } from 'react-icons/fa';
 
 export default function CourseDiscussion({ courseId, showAddPostModal, setShowAddPostModal, closeCreatePost }) {
   const {
     coursePosts,
+    lessonPosts,
     comments,
     loadCoursePosts,
+    loadLessonPosts,
     loadCourseComments,
     addCoursePost,
     deleteCoursePost,
     addCourseComment,
     clearComments,
     deleteCourseComment,
+    loadLessonComments,
+    addLessonComment,
+    deleteLessonComment,
   } = useStudentForumStore();
+
+  const { activeForumTab, setActiveForumTab } = useManageCourseStore();
 
   const [selectedPostId, setSelectedPostId] = useState(null);
   const [actionMenuOpen, setActionMenuOpen] = useState(null);
@@ -22,23 +29,34 @@ export default function CourseDiscussion({ courseId, showAddPostModal, setShowAd
 
   useEffect(() => {
     if (courseId) {
-      loadCoursePosts(courseId);
+      if (activeForumTab === 'Course Forum') {
+        loadCoursePosts(courseId);
+      } else {
+        loadLessonPosts(courseId);
+      }
       clearComments();
       setSelectedPostId(null);
     }
-  }, [courseId, loadCoursePosts, clearComments]);
+  }, [courseId, activeForumTab, loadCoursePosts, loadLessonPosts, clearComments]);
 
-  const handleShowComments = (postId) => {
-    if (selectedPostId === postId) {
+  const posts = activeForumTab === 'Course Forum' ? coursePosts : lessonPosts;
+
+  const handleShowComments = (post) => {
+    if (selectedPostId === post.id) {
       setSelectedPostId(null);
       clearComments();
     } else {
-      setSelectedPostId(postId);
-      loadCourseComments(courseId, postId);
+      setSelectedPostId(post.id);
+      if (activeForumTab === 'Course Forum') {
+        loadCourseComments(courseId, post.id);
+      } else {
+        // use target_id as lessonId for lesson posts
+        loadLessonComments(courseId, post.target_id);
+      }
     }
   };
 
-  // Add Post
+  // Add Post (only for Course Forum)
   const handleAddPost = async (postData) => {
     let formData;
     if (postData instanceof FormData) {
@@ -53,16 +71,17 @@ export default function CourseDiscussion({ courseId, showAddPostModal, setShowAd
       }
     }
     await addCoursePost(courseId, formData);
-    // Modal closing is handled by parent or here if prop provided
-    if (closeCreatePost) closeCreatePost();
-    if (setShowAddPostModal) setShowAddPostModal(false);
+    await loadCoursePosts(courseId);
+    setShowAddPostModal(false);
   };
 
-  // Delete Post
+  // Delete Post (only for Course Forum posts owned by student)
   const handleDelete = async (post) => {
     setActionMenuOpen(null);
+    
     if (window.confirm(`Are you sure you want to delete the post "${post.title}"?`)) {
       await deleteCoursePost(courseId, post.id);
+      
       if (selectedPostId === post.id) {
         setSelectedPostId(null);
         clearComments();
@@ -72,14 +91,30 @@ export default function CourseDiscussion({ courseId, showAddPostModal, setShowAd
 
   // Add Comment
   const handleAddComment = async (commentData) => {
-    await addCourseComment(courseId, selectedPostId, commentData);
+    if (activeForumTab === 'Course Forum') {
+      await addCourseComment(courseId, selectedPostId, commentData);
+    } else {
+      // Find the lessonId (target_id) from the selected post
+      const post = posts.find((p) => p.id === selectedPostId);
+      if (post && post.target_id) {
+        await addLessonComment(courseId, post.target_id, commentData);
+      }
+    }
     setShowAddCommentModal(false);
   };
 
   // Delete Comment
   const handleDeleteComment = async (comment) => {
     if (window.confirm('Are you sure you want to delete this comment?')) {
-      await deleteCourseComment(courseId, selectedPostId, comment.id);
+      if (activeForumTab === 'Course Forum') {
+        await deleteCourseComment(courseId, selectedPostId, comment.id);
+      } else {
+        // Find the lessonId (target_id) from the selected post
+        const post = posts.find((p) => p.id === selectedPostId);
+        if (post && post.target_id) {
+          await deleteLessonComment(courseId, post.target_id, comment.id);
+        }
+      }
     }
   };
 
@@ -89,10 +124,10 @@ export default function CourseDiscussion({ courseId, showAddPostModal, setShowAd
         DISCUSSION FORUM <span>&rarr;</span>
       </div>
 
+      {/* Add Post Modal (Only for Course Forum) */}
       {showAddPostModal && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm px-1 sm:px-2">
           <div className="card-strong w-full max-w-full sm:max-w-2xl p-2 sm:p-6 relative rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
-            {/* Close Button */}
             <button
               className="absolute right-4 top-4 text-lg sm:text-xl p-2 rounded-full border border-[var(--border-color)] bg-[var(--input-bg)] hover:bg-white/10 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"
               onClick={closeCreatePost}
@@ -100,7 +135,6 @@ export default function CourseDiscussion({ courseId, showAddPostModal, setShowAd
             >
               <FaTimes />
             </button>
-            {/* Header */}
             <div className="flex flex-col sm:flex-row items-center gap-4 mb-4 sm:mt-0">
               <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
                 <FaPaperPlane className="w-7 h-7 sm:w-8 sm:h-8 text-blue-400" />
@@ -114,13 +148,13 @@ export default function CourseDiscussion({ courseId, showAddPostModal, setShowAd
                 </p>
               </div>
             </div>
-            {/* Form */}
             <form
               onSubmit={async e => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
                 formData.set('anonymous', formData.get('anonymous') ? 'true' : 'false');
                 await handleAddPost(formData);
+                closeCreatePost();
               }}
               className="space-y-4 mt-2"
             >
@@ -184,21 +218,40 @@ export default function CourseDiscussion({ courseId, showAddPostModal, setShowAd
         </div>
       )}
 
+      {/* Forum Tabs */}
+      <div className="flex bg-black/20 p-1 rounded-lg mb-6 w-max">
+        {['Course Forum', 'Lesson Forum'].map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveForumTab(tab)}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+              activeForumTab === tab
+                ? 'bg-white/10 text-white shadow-sm'
+                : 'text-muted hover:text-white hover:bg-white/5'
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
       {/* Posts List */}
       <div className="p-2 sm:p-4 bg-[var(--surface)] rounded-lg border border-[var(--border-subtle)] mt-4 space-y-8">
         <div>
           <h3 className="text-base sm:text-lg font-bold mb-4 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-            Recent Discussions ({coursePosts.length})
+            {activeForumTab === 'Course Forum' ? 'Course Discussions' : 'Lesson Discussions'} ({posts.length})
           </h3>
-          {coursePosts.length === 0 ? (
+          {posts.length === 0 ? (
              <div className="text-center py-12 text-muted border border-dashed border-[var(--border-color)] rounded-xl">
-                <p>No discussions yet.</p>
-                <p className="text-sm mt-1">Be the first to start a topic!</p>
+                <p>No posts yet.</p>
+                {activeForumTab === 'Course Forum' && (
+                  <p className="text-sm mt-1">Be the first to start a topic!</p>
+                )}
              </div>
           ) : (
             <div className="space-y-4">
-              {coursePosts.map((post) => (
+              {posts.map((post) => (
                 <div
                   key={post.id}
                   className="card p-2 sm:p-4 flex flex-col gap-2 border border-[var(--border-color)] rounded-lg group"
@@ -240,14 +293,14 @@ export default function CourseDiscussion({ courseId, showAddPostModal, setShowAd
                     </div>
                     <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto sm:self-start mt-2 sm:mt-0">
                       <button
-                        onClick={() => handleShowComments(post.id)}
+                        onClick={() => handleShowComments(post)}
                         className="w-full sm:w-auto px-3 sm:px-4 py-2 border border-[var(--border-color)] rounded-lg text-xs sm:text-sm font-medium hover:bg-[var(--input-bg)] active:scale-95 transition-all duration-200 text-center whitespace-nowrap"
                       >
                         {selectedPostId === post.id ? 'Hide Comments' : 'Comments'}
                       </button>
                       
-                      {/* Show Actions ONLY if it's MY post */}
-                      {post.is_me && (
+                      {/* Only show delete for Course Forum posts owned by student */}
+                      {activeForumTab === 'Course Forum' && post.is_me && (
                         <div className="relative post-action-menu">
                           <button
                             className="p-2 border border-[var(--border-color)] rounded-lg hover:bg-[var(--input-bg)] active:scale-95 transition-all duration-200 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
@@ -302,7 +355,7 @@ export default function CourseDiscussion({ courseId, showAddPostModal, setShowAd
                                   )}
                                   <span>-- {comment.anonymous ? (comment.is_me ? "Anonymous (You)" : "Anonymous") : comment.author}</span>
                                 </div>
-                                {/* Show delete only if comment is mine */}
+                                {/* Students can delete their own comments */}
                                 {comment.is_me && (
                                   <div className="absolute top-2 right-2">
                                     <button
@@ -335,6 +388,7 @@ export default function CourseDiscussion({ courseId, showAddPostModal, setShowAd
         </div>
       </div>
 
+      {/* Add Comment Modal */}
       {showAddCommentModal && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm px-1 sm:px-2">
           <div className="card-strong w-full max-w-full sm:max-w-md p-2 sm:p-6 relative rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
@@ -358,8 +412,8 @@ export default function CourseDiscussion({ courseId, showAddPostModal, setShowAd
                 e.preventDefault();
                 const formData = new FormData(e.target);
                 await handleAddComment({
-                   description: formData.get('description'),
-                   anonymous: formData.get('anonymous') ? 'true' : 'false'
+                  description: formData.get('description'),
+                  anonymous: formData.get('anonymous') ? 'true' : 'false'
                 });
               }}
               className="space-y-4 mt-2"
