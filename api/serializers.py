@@ -495,7 +495,6 @@ class CourseProgressSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'progress', 'lessons', 'instructor', 'color', 
                  'next_lesson', 'is_enrolled', 'code', 'created_on']
 
-
 class CourseCatalogSerializer(serializers.ModelSerializer):
     """Serializer for course catalog with enrollment info"""
     instructor = serializers.SerializerMethodField()
@@ -511,11 +510,59 @@ class CourseCatalogSerializer(serializers.ModelSerializer):
     start_date = serializers.DateTimeField(source='start_enroll_time', read_only=True)
     end_date = serializers.DateTimeField(source='end_enroll_time', read_only=True)
     enrollment = serializers.SerializerMethodField()
+    enrollment_status = serializers.SerializerMethodField()  # NEW FIELD
 
     def get_enrollment(self, obj):
         if not obj.is_active_enrollment():
             return "No Enrollment Allowed"
         return obj.enrollment
+    
+    def get_enrollment_status(self, obj):
+        """
+        Get detailed enrollment status for the current user.
+        Returns:
+        - "enrolled" : User is enrolled (show Start/Continue button)
+        - "request_pending" : User has requested enrollment
+        - "request_rejected" : User's request was rejected
+        - "can_enroll_open" : User can enroll (open enrollment)
+        - "can_enroll_request" : User can request enrollment
+        - "no_enrollment_allowed" : Enrollment period has ended
+        - "inactive_course" : Course is not active
+        """
+        user = self.context.get('user')
+        if not user:
+            request = self.context.get('request')
+            if request:
+                user = request.user
+        
+        if not user or not user.is_authenticated:
+            return "unauthenticated"
+        
+        # Check if course is active
+        if not obj.active:
+            return "inactive_course"
+        
+        # Check if user is already enrolled
+        if obj.students.filter(id=user.id).exists():
+            return "enrolled"
+        
+        # Check if user has pending request
+        if obj.requests.filter(id=user.id).exists():
+            return "request_pending"
+        
+        # Check if user was rejected
+        if obj.rejected.filter(id=user.id).exists():
+            return "request_rejected"
+        
+        # Check if enrollment is active
+        if not obj.is_active_enrollment():
+            return "no_enrollment_allowed"
+        
+        # Check enrollment method
+        if obj.is_self_enroll():
+            return "can_enroll_open"
+        else:
+            return "can_enroll_request"
     
     def get_instructor(self, obj):
         creator = obj.creator
@@ -578,8 +625,10 @@ class CourseCatalogSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'instructor', 'level', 'rating', 'students_count', 
             'duration', 'progress', 'color', 'is_enrolled', 'code', 
-            'modules', 'instructions', 'start_date', 'end_date', 'enrollment'
+            'modules', 'instructions', 'start_date', 'end_date', 'enrollment',
+            'enrollment_status'  # ADD THIS TO FIELDS
         ]
+
 
 ###############################################################################
 # Enhanced Lesson & Module Serializers

@@ -147,6 +147,18 @@ export const searchNewCourses = async (courseCode) => {
   return response.data;
 };  
 
+
+
+export const requestCourseEnrollment = async (courseId) => {
+  const response = await api.post(`/api/student/courses/${courseId}/enroll-request/`);
+  return response.data;
+};
+
+export const selfEnrollInCourse = async (courseId) => {
+  const response = await api.post(`/api/student/courses/${courseId}/self-enroll/`);
+  return response.data;
+};
+
 //---------------------------------------------------------------------------------------------------
 
 export const fetchCourseCatalog = async (filters = {}) => {
@@ -172,7 +184,7 @@ export const enrollInCourse = async (courseId) => {
 
 
 // ============================================================
-// COURSE MODULES & LESSONS APIs
+// COURSE & MODULES  APIs
 // ============================================================
 
 export const fetchCourseModules = async (courseId) => {
@@ -184,6 +196,10 @@ export const fetchModuleDetail = async (moduleId) => {
   const response = await api.get(`/api/student/modules/${moduleId}/`);
   return response.data;
 };
+
+
+//---------------------------------------------------------------------------------------------------
+
 
 export const fetchLessonDetail = async (lessonId) => {
   const response = await api.get(`/api/student/lessons/${lessonId}/`);
@@ -734,7 +750,7 @@ export const getCourseEnrollments = async (courseId) => {
 export const approveEnrollment = async (courseId, userIds, wasRejected = false) => {
   // userIds: array of user IDs (can be single or multiple)
   // wasRejected: true if approving from rejected list
-  const response = await api.post(`/api/teacher/courses/${courseId}/enrollments/`, {
+  const response = await api.post(`/api/teacher/courses/${courseId}/enrollments/approve/`, {
     user_ids: Array.isArray(userIds) ? userIds : [userIds],
     was_rejected: wasRejected,
   });

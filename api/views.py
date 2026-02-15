@@ -1241,6 +1241,134 @@ def search_new_courses(request):
 
 
 
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def enroll_request_api(request, course_id):
+    """
+    API endpoint for students to request enrollment in a course.
+    This is used when the course requires approval from instructors.
+    """
+    user = request.user
+    
+    try:
+        course = Course.objects.get(id=course_id)
+    except Course.DoesNotExist:
+        return Response(
+            {'error': 'Course not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    # Check if enrollment is allowed
+    if not course.is_active_enrollment() and course.hidden:
+        return Response(
+            {
+                'error': 'Unable to add enrollments for this course',
+                'message': 'Please contact your instructor/administrator.'
+            },
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    # Check if already enrolled
+    if course.students.filter(id=user.id).exists():
+        return Response(
+            {'message': 'You are already enrolled in this course'},
+            status=status.HTTP_200_OK
+        )
+    
+    # Check if already requested
+    if course.requests.filter(id=user.id).exists():
+        return Response(
+            {'message': 'Enrollment request already pending'},
+            status=status.HTTP_200_OK
+        )
+    
+    # Send enrollment request
+    course.request(user)
+    
+    # Log activity
+    UserActivity.create_activity(
+        user=user,
+        activity_type='enrollment_requested',
+        title=f'Requested enrollment in {course.name}',
+        description=f'Awaiting approval from {course.creator.get_full_name()}',
+        icon='clock',
+        color='yellow',
+        course_id=course.id
+    )
+    
+    return Response(
+        {
+            'message': f'Enrollment request sent for {course.name}',
+            'instructor': course.creator.get_full_name(),
+            'course_name': course.name
+        },
+        status=status.HTTP_200_OK
+    )
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def self_enroll_api(request, course_id):
+    """
+    API endpoint for students to self-enroll in a course.
+    This is used when the course allows self-enrollment without approval.
+    """
+    user = request.user
+    
+    try:
+        course = Course.objects.get(id=course_id)
+    except Course.DoesNotExist:
+        return Response(
+            {'error': 'Course not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    # Check if course allows self-enrollment
+    if not course.is_self_enroll():
+        return Response(
+            {
+                'error': 'This course does not allow self-enrollment',
+                'message': 'Please request enrollment instead.'
+            },
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    # Check if already enrolled
+    if course.students.filter(id=user.id).exists():
+        return Response(
+            {'message': 'You are already enrolled in this course'},
+            status=status.HTTP_200_OK
+        )
+    
+    # Self-enroll the user
+    was_rejected = False
+    course.enroll(was_rejected, user)
+    
+    # Create or get course status
+    CourseStatus.objects.get_or_create(user=user, course=course)
+    
+    # Log activity
+    UserActivity.create_activity(
+        user=user,
+        activity_type='course_enrolled',
+        title=f'Enrolled in {course.name}',
+        description=f'Started learning with {course.creator.get_full_name()}',
+        icon='check',
+        color='green',
+        course_id=course.id
+    )
+    
+    return Response(
+        {
+            'message': f'Successfully enrolled in {course.name}',
+            'instructor': course.creator.get_full_name(),
+            'course_name': course.name,
+            'course_id': course.id
+        },
+        status=status.HTTP_201_CREATED
+    )
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def course_catalog(request):
