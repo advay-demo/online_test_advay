@@ -1,18 +1,33 @@
 import React, { useState } from 'react';
-import { FaSearch, FaBook, FaCalendarAlt, FaUser, FaInfoCircle, FaTimes, FaCheckCircle, FaSpinner } from 'react-icons/fa';
+import { 
+  FaSearch, FaTimes, FaBook, FaSpinner, FaCheckCircle, 
+  FaInfoCircle, FaUser, FaCalendarAlt, FaClock, FaExclamationTriangle,
+  FaBan, FaHourglassHalf
+} from 'react-icons/fa';
 import { AiOutlineClockCircle, AiOutlineBarChart } from 'react-icons/ai';
 import Sidebar from '../../components/layout/Sidebar';
 import Header from '../../components/layout/Header';
 import CourseActionButtons from '../../components/student/CourseActionButtons';
 import useCourseStore from '../../store/student/courseStore';
-import { enrollInCourse } from '../../api/api';
-
+import toast from 'react-hot-toast';
 
 const AddNewCourseStudent = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [enrollingCourseId, setEnrollingCourseId] = useState(null);
   const [expandedCourse, setExpandedCourse] = useState(null);
-  const { newCourses, loading, error, searchCourses, clearSearch } = useCourseStore();
+  
+  const { 
+    newCourses, 
+    loading, 
+    error, 
+    enrollmentLoading,
+    enrollmentError,
+    enrollmentSuccess,
+    searchCourses, 
+    clearSearch,
+    requestEnrollment,
+    selfEnroll,
+    clearEnrollmentMessages
+  } = useCourseStore();
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -26,19 +41,34 @@ const AddNewCourseStudent = () => {
     clearSearch();
   };
 
-  const handleEnroll = async (courseId, courseName) => {
-    try {
-      setEnrollingCourseId(courseId);
-      await enrollInCourse(courseId);
-      
-      // Remove the enrolled course from the list
-      setTimeout(() => {
-        clearSearch();
-        setEnrollingCourseId(null);
-      }, 1000);
-    } catch (err) {
-     
-      setEnrollingCourseId(null);
+  const handleEnroll = async (course) => {
+    clearEnrollmentMessages();
+    
+    let result;
+    
+    // Determine the enrollment type based on status
+    if (course.enrollment_status === 'can_enroll_open') {
+      // Self-enrollment
+      result = await selfEnroll(course.id);
+    } else if (course.enrollment_status === 'can_enroll_request') {
+      // Request enrollment
+      result = await requestEnrollment(course.id);
+    } else {
+      toast.error('Enrollment is not available for this course');
+      return;
+    }
+
+    // Handle result
+    if (result.success) {
+      toast.success(result.data.message);
+      // Optionally refresh the search results
+      if (searchTerm.trim()) {
+        setTimeout(() => {
+          searchCourses(searchTerm.trim());
+        }, 1000);
+      }
+    } else {
+      toast.error(result.error);
     }
   };
 
@@ -50,13 +80,110 @@ const AddNewCourseStudent = () => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
     return date.toLocaleString('en-US', { 
-        month: 'short', 
-        day: 'numeric', 
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     });
-    };
+  };
+
+  // Function to render enrollment button/badge based on status
+  const renderEnrollmentAction = (course) => {
+    const status = course.enrollment_status;
+
+    switch (status) {
+      case 'enrolled':
+        return (
+          <div className="px-3 sm:px-6 py-2 sm:py-2.5 bg-green-600/20 text-green-400 border border-green-500/30 text-sm font-semibold rounded-lg sm:rounded-xl flex items-center justify-center gap-2 flex-shrink-0">
+            <FaCheckCircle className="w-4 h-4" />
+            <span className="hidden sm:inline">Enrolled</span>
+          </div>
+        );
+
+      case 'request_pending':
+        return (
+          <div className="px-3 sm:px-6 py-2 sm:py-2.5 bg-yellow-600/20 text-yellow-400 border border-yellow-500/30 text-sm font-semibold rounded-lg sm:rounded-xl flex items-center justify-center gap-2 flex-shrink-0">
+            <FaHourglassHalf className="w-4 h-4" />
+            <span className="hidden sm:inline">Request Pending</span>
+          </div>
+        );
+
+      case 'request_rejected':
+        return (
+          <div className="px-3 sm:px-6 py-2 sm:py-2.5 bg-red-600/20 text-red-400 border border-red-500/30 text-sm font-semibold rounded-lg sm:rounded-xl flex items-center justify-center gap-2 flex-shrink-0">
+            <FaBan className="w-4 h-4" />
+            <span className="hidden sm:inline">Request Rejected</span>
+          </div>
+        );
+
+      case 'can_enroll_open':
+        return (
+          <button
+            onClick={() => handleEnroll(course)}
+            disabled={enrollmentLoading}
+            className="px-3 sm:px-6 py-2 sm:py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg sm:rounded-xl shadow-lg shadow-blue-600/25 hover:shadow-xl hover:shadow-blue-600/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-95 flex-shrink-0"
+          >
+            {enrollmentLoading ? (
+              <>
+                <FaSpinner className="animate-spin w-4 h-4" />
+                <span className="hidden sm:inline">Enrolling...</span>
+              </>
+            ) : (
+              <>
+                <FaCheckCircle className="w-4 h-4" />
+                <span className="hidden sm:inline">Enroll Now</span>
+              </>
+            )}
+          </button>
+        );
+
+      case 'can_enroll_request':
+        return (
+          <button
+            onClick={() => handleEnroll(course)}
+            disabled={enrollmentLoading}
+            className="px-3 sm:px-6 py-2 sm:py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold rounded-lg sm:rounded-xl shadow-lg shadow-purple-600/25 hover:shadow-xl hover:shadow-purple-600/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-95 flex-shrink-0"
+          >
+            {enrollmentLoading ? (
+              <>
+                <FaSpinner className="animate-spin w-4 h-4" />
+                <span className="hidden sm:inline">Requesting...</span>
+              </>
+            ) : (
+              <>
+                <FaHourglassHalf className="w-4 h-4" />
+                <span className="hidden sm:inline">Request Enrollment</span>
+              </>
+            )}
+          </button>
+        );
+
+      case 'no_enrollment_allowed':
+        return (
+          <div className="px-3 sm:px-6 py-2 sm:py-2.5 bg-gray-600/20 text-gray-400 border border-gray-500/30 text-sm font-semibold rounded-lg sm:rounded-xl flex items-center justify-center gap-2 flex-shrink-0">
+            <FaBan className="w-4 h-4" />
+            <span className="hidden sm:inline">Enrollment Closed</span>
+          </div>
+        );
+
+      case 'inactive_course':
+        return (
+          <div className="px-3 sm:px-6 py-2 sm:py-2.5 bg-red-600/20 text-red-400 border border-red-500/30 text-sm font-semibold rounded-lg sm:rounded-xl flex items-center justify-center gap-2 flex-shrink-0">
+            <FaExclamationTriangle className="w-4 h-4" />
+            <span className="hidden sm:inline">Inactive Course</span>
+          </div>
+        );
+
+      default:
+        return (
+          <div className="px-3 sm:px-6 py-2 sm:py-2.5 bg-gray-600/20 text-gray-400 border border-gray-500/30 text-sm font-semibold rounded-lg sm:rounded-xl flex items-center justify-center gap-2 flex-shrink-0">
+            <FaInfoCircle className="w-4 h-4" />
+            <span className="hidden sm:inline">Unknown Status</span>
+          </div>
+        );
+    }
+  };
 
   return (
     <div className="flex min-h-screen relative grid-texture">
@@ -82,53 +209,53 @@ const AddNewCourseStudent = () => {
 
               <form className="flex flex-row gap-2 sm:gap-3 mt-4" onSubmit={handleSearch}>
                 <div className="relative flex-1">
-                    <input
+                  <input
                     type="text"
                     className="input input-bordered w-full pl-10 pr-10 py-2.5 text-sm focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all"
                     placeholder="Enter course code (e.g., CS101, 0002)"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                    <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
-                    {searchTerm && (
+                  />
+                  <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
+                  {searchTerm && (
                     <button
-                        type="button"
-                        onClick={() => setSearchTerm('')}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors p-1 hover:bg-white/10 rounded"
+                      type="button"
+                      onClick={() => setSearchTerm('')}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors p-1 hover:bg-white/10 rounded"
                     >
-                        <FaTimes className="w-3.5 h-3.5" />
+                      <FaTimes className="w-3.5 h-3.5" />
                     </button>
-                    )}
+                  )}
                 </div>
                 <div className="flex gap-2 sm:gap-3">
-                    <button 
-                        type="submit" 
-                        disabled={!searchTerm.trim() || loading}
-                        className="flex-1 sm:flex-none px-3 sm:px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-lg shadow-blue-600/25 hover:shadow-xl hover:shadow-blue-600/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 flex items-center justify-center gap-2"
-                    >
-                        {loading ? (
-                        <>
-                            <FaSpinner className="animate-spin w-3.5 h-3.5" />
-                            <span className="hidden sm:inline">Searching...</span>
-                        </>
-                        ) : (
-                        <>
-                            <FaSearch className="w-3.5 h-3.5" />
-                            <span className="hidden sm:inline">Search</span>
-                        </>
-                        )}
-                    </button>
-                    <button 
-                        type="button" 
-                        onClick={handleClearSearch}
-                        disabled={loading || (newCourses.length === 0 && !searchTerm)}
-                        className="flex-1 sm:flex-none px-3 sm:px-6 py-2.5 bg-red-600/80 hover:bg-red-600 text-white text-sm font-semibold rounded-lg shadow-lg shadow-red-600/25 hover:shadow-xl hover:shadow-red-600/30 transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 flex items-center justify-center gap-2"
-                    >
-                        <FaTimes className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">Clear</span>
-                    </button>
+                  <button 
+                    type="submit" 
+                    disabled={!searchTerm.trim() || loading}
+                    className="flex-1 sm:flex-none px-3 sm:px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-lg shadow-blue-600/25 hover:shadow-xl hover:shadow-blue-600/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 flex items-center justify-center gap-2"
+                  >
+                    {loading ? (
+                      <>
+                        <FaSpinner className="animate-spin w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Searching...</span>
+                      </>
+                    ) : (
+                      <>
+                        <FaSearch className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Search</span>
+                      </>
+                    )}
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={handleClearSearch}
+                    disabled={loading || (newCourses.length === 0 && !searchTerm)}
+                    className="flex-1 sm:flex-none px-3 sm:px-6 py-2.5 bg-red-600/80 hover:bg-red-600 text-white text-sm font-semibold rounded-lg shadow-lg shadow-red-600/25 hover:shadow-xl hover:shadow-red-600/30 transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 flex items-center justify-center gap-2"
+                  >
+                    <FaTimes className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Clear</span>
+                  </button>
                 </div>
-            </form>
+              </form>
               
               {/* Search Tips */}
               <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
@@ -140,6 +267,25 @@ const AddNewCourseStudent = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Enrollment Success/Error Messages */}
+              {enrollmentSuccess && (
+                <div className="mt-4 p-4 bg-green-500/10 border border-green-500/30 rounded-lg animate-fade-in">
+                  <div className="flex items-center gap-2">
+                    <FaCheckCircle className="text-green-400 flex-shrink-0" />
+                    <p className="text-sm text-green-200">{enrollmentSuccess}</p>
+                  </div>
+                </div>
+              )}
+
+              {enrollmentError && (
+                <div className="mt-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg animate-fade-in">
+                  <div className="flex items-center gap-2">
+                    <FaExclamationTriangle className="text-red-400 flex-shrink-0" />
+                    <p className="text-sm text-red-200">{enrollmentError}</p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Loading State */}
@@ -164,7 +310,7 @@ const AddNewCourseStudent = () => {
               </div>
             )}
 
-            {/* Empty State - No Search Yet */}
+            {/* Empty State - No search yet */}
             {!loading && !error && newCourses.length === 0 && !searchTerm && (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <div className="mb-4 p-6 bg-blue-500/10 rounded-full">
@@ -177,7 +323,7 @@ const AddNewCourseStudent = () => {
               </div>
             )}
 
-            {/* Empty State - No Results Found */}
+            {/* Empty State - No results */}
             {!loading && !error && newCourses.length === 0 && searchTerm && (
               <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in">
                 <div className="mb-4 p-6 bg-orange-500/10 rounded-full">
@@ -208,94 +354,72 @@ const AddNewCourseStudent = () => {
                 {newCourses.map((item) => {
                   const course = item.data;
                   const isExpanded = expandedCourse === course.id;
-                  const isEnrolling = enrollingCourseId === course.id;
                   
                   return (
                     <div
-                        key={course.id}
-                        className="card p-4 sm:p-6 hover:bg-white/[0.02] transition-all duration-300 group border-l-4 border-blue-500"
-                        >
-                        {/* Course Header and Enroll Button */}
-                        <div className="flex flex-row items-center justify-between gap-3 sm:gap-4 mb-4">
-                            <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-blue-500/10 flex items-center justify-center flex-shrink-0 border border-blue-500/20 group-hover:border-blue-500/30 transition-all duration-200">
-                                <FaBook className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                <div className="flex flex-wrap items-center gap-2 mb-1">
-                                    <h3 className="font-semibold text-base sm:text-lg line-clamp-1 group-hover:text-blue-400 transition-colors duration-200">
-                                    {course.name}
-                                    </h3>
-                                    <span className="text-[10px] px-2 py-0.5 rounded border bg-green-500/20 text-green-400 border-green-500/30 uppercase font-bold tracking-wider whitespace-nowrap flex-shrink-0 transition-all duration-200">
-                                    Available
-                                    </span>
-                                </div>
-                                {course.code && (
-                                    <p className="text-xs sm:text-sm muted mb-2 sm:mb-3 line-clamp-2">
-                                    Code: {course.code}
-                                    </p>
-                                )}
-                                </div>
+                      key={course.id}
+                      className="card p-4 sm:p-6 hover:bg-white/[0.02] transition-all duration-300 group border-l-4 border-blue-500"
+                    >
+                      {/* Course Header and Enrollment Action */}
+                      <div className="flex flex-row items-center justify-between gap-3 sm:gap-4 mb-4">
+                        <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-blue-500/10 flex items-center justify-center flex-shrink-0 border border-blue-500/20 group-hover:border-blue-500/30 transition-all duration-200">
+                            <FaBook className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2 mb-1">
+                              <h3 className="font-semibold text-base sm:text-lg line-clamp-1 group-hover:text-blue-400 transition-colors duration-200">
+                                {course.name}
+                              </h3>
                             </div>
-                        
-                            {/* Enroll Button */}
-                            <button
-                                onClick={() => handleEnroll(course.id, course.name)}
-                                disabled={isEnrolling}
-                                className="px-3 sm:px-6 py-2 sm:py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg sm:rounded-xl shadow-lg shadow-blue-600/25 hover:shadow-xl hover:shadow-blue-600/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-95 flex-shrink-0"
-                            >
-                                {isEnrolling ? (
-                                <>
-                                    <FaSpinner className="animate-spin w-4 h-4" />
-                                    <span className="hidden sm:inline">Enrolling...</span>
-                                </>
-                                ) : (
-                                <>
-                                    <FaCheckCircle className="w-4 h-4" />
-                                    <span className="hidden sm:inline">Enroll</span>
-                                </>
-                                )}
-                            </button>
-                        </div>
-
-                        {/* Course Metadata - Separate Section */}
-                        <div className="mb-4">
-                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-                            {course.instructor && (
-                                <div className="flex items-center gap-2 text-gray-300">
-                                    <FaUser className="w-4 h-4 text-purple-400 flex-shrink-0" />
-                                    <span className="truncate">
-                                    <span className="font-semibold">Instructor:</span> {course.instructor}
-                                    </span>
-                                </div>
+                            {course.code && (
+                              <p className="text-xs sm:text-sm muted mb-2 sm:mb-3 line-clamp-2">
+                                Code: {course.code}
+                              </p>
                             )}
-                            
+                          </div>
+                        </div>
+                      
+                        {/* Dynamic Enrollment Action */}
+                        {renderEnrollmentAction(course)}
+                      </div>
+
+                      {/* Course Metadata */}
+                      <div className="mb-4">
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                          {course.instructor && (
                             <div className="flex items-center gap-2 text-gray-300">
-                                <FaCalendarAlt className="w-4 h-4 text-green-400 flex-shrink-0" />
-                                <span className="truncate">
-                                    <span className="font-semibold">Start:</span> {formatDateTime(course.start_date)}
-                                </span>
-                                </div>
-                                
-                                <div className="flex items-center gap-2 text-gray-300">
-                                    <AiOutlineClockCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
-                                    <span className="truncate">
-                                    <span className="font-semibold">End:</span> {formatDateTime(course.end_date)}
-                                    </span>
-                                </div>
-                                
-                                {course.modules && (
-                                <div className="flex items-center gap-2 text-gray-300">
-                                    <FaBook className="w-4 h-4 text-blue-400 flex-shrink-0" />
-                                    <span>
-                                        <span className="font-semibold">Modules:</span> {course.modules.length}
-                                    </span>
-                                </div>
-                            )}
+                              <FaUser className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                              <span className="truncate">
+                                <span className="font-semibold">Instructor:</span> {course.instructor}
+                              </span>
                             </div>
+                          )}
+                          
+                          <div className="flex items-center gap-2 text-gray-300">
+                            <FaCalendarAlt className="w-4 h-4 text-green-400 flex-shrink-0" />
+                            <span className="truncate">
+                              <span className="font-semibold">Start:</span> {formatDateTime(course.start_date)}
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 text-gray-300">
+                            <AiOutlineClockCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+                            <span className="truncate">
+                              <span className="font-semibold">End:</span> {formatDateTime(course.end_date)}
+                            </span>
+                          </div>
+                          
+                          {course.modules && (
+                            <div className="flex items-center gap-2 text-gray-300">
+                              <FaBook className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                              <span>
+                                <span className="font-semibold">Modules:</span> {course.modules.length}
+                              </span>
+                            </div>
+                          )}
                         </div>
-
-                        
+                      </div>
 
                       {/* Course Details Toggle */}
                       <button
@@ -357,7 +481,7 @@ const AddNewCourseStudent = () => {
                             </div>
                           )}
 
-                          {/* Progress Info (if applicable) */}
+                          {/* Progress Info */}
                           {course.completion_percent !== undefined && course.completion_percent > 0 && (
                             <div>
                               <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
