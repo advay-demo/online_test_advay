@@ -97,6 +97,9 @@ urlpatterns = [
     url(r'auth/password-change/confirm/$', views.confirm_password_change, name='confirm_password_change'),
     url(r'auth/moderator/status/$', views.get_moderator_status, name='get_moderator_status'),
     url(r'auth/toggle_moderator/$', views.toggle_moderator_role_api, name='toggle_moderator_role'),
+    url(r'auth/password-reset/request/$', views.forgot_password, name='forgot_password'),
+    url(r'auth/password-reset/confirm/$', views.confirm_forgot_password, name='confirm_forgot_password'),
+    
     
 
 
