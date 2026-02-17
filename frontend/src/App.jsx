@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Home from './pages/Home';
 import Signup from './pages/Signup';
 import Signin from './pages/Signin';
+import ForgotPassword from './pages/ForgotPassword';
 import DashboardHome from './pages/DashboardHome';
 import CourseStudent from './pages/student/Courses';
 import AddNewCourseStudent from './pages/student/AddCourse';
@@ -38,6 +39,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/signin" element={<Signin />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
         {/* Protected Routes */}
         <Route element={<PrivateRoute />}>
@@ -49,8 +51,8 @@ function App() {
           <Route path="/courses" element={<CourseStudent />} />
           <Route path="/add-course" element={<AddNewCourseStudent />} />
           <Route path="/courses/:courseId/manage" element={<ManageCourseStudent />} />
-          
-          
+
+
           <Route path="/lessons/:lessonId" element={<Lesson />} />
           <Route path="/courses/:courseId/quizzes/:quizId" element={<Quiz />} />
           <Route path="/quizzes/:quizId" element={<Quiz />} />
@@ -58,7 +60,7 @@ function App() {
           <Route path="/insights" element={<Insights />} />
 
           {/* Legacy routes for backward compatibility */}
-          
+
           <Route path="/quiz" element={<Quiz />} />
           <Route path="/lesson" element={<Lesson />} />
           <Route path="/submission" element={<Submission />} />
@@ -78,7 +80,7 @@ function App() {
           <Route path="/teacher/test-question/:questionpaperId/:moduleId/:courseId" element={<TestQuestion />} />
 
           <Route path="/teacher/quizzes" element={<TeacherQuizzes />} />
-          
+
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

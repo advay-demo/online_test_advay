@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create axios instance with base URL and default headers
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
+  baseURL: import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -78,6 +78,23 @@ export const confirmPasswordChange = async (otp, newPassword) => {
   return response.data;
 };
 
+
+// Forgot Password APIs
+export const requestPasswordResetOTP = async (email) => {
+
+  const response = await api.post('/api/auth/password-reset/request/', { email });
+  return response.data;
+};
+
+export const confirmPasswordResetOTP = async (email, otp, newPassword) => {
+  const response = await api.post('/api/auth/password-reset/confirm/', {
+    email,
+    code: otp,
+    new_password: newPassword
+  });
+  return response.data;
+};
+
 // ============================================================
 // MODERATOR ROLE APIS
 // ============================================================
@@ -143,9 +160,9 @@ export const fetchCoursesList = async () => {
 };
 
 export const searchNewCourses = async (courseCode) => {
-  const response = await api.post('/api/student/new-courses/', {course_code: courseCode});
+  const response = await api.post('/api/student/new-courses/', { course_code: courseCode });
   return response.data;
-};  
+};
 
 
 
@@ -827,7 +844,7 @@ export const downloadCourseMD = async (courseId) => {
   const response = await api.get(`/api/teacher/courses/${courseId}/md/download/`, {
     responseType: 'blob', // Important for binary file download
   });
-  
+
   // Create a blob URL and trigger download
   const url = window.URL.createObjectURL(new Blob([response.data]));
   const link = document.createElement('a');
@@ -837,14 +854,14 @@ export const downloadCourseMD = async (courseId) => {
   link.click();
   link.remove();
   window.URL.revokeObjectURL(url);
-  
+
   return { success: true };
 };
 
 export const uploadCourseMD = async (courseId, file) => {
   const formData = new FormData();
   formData.append('course_upload_md', file);
-  
+
   const response = await api.post(`/api/teacher/courses/${courseId}/md/upload/`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
@@ -1192,7 +1209,7 @@ export const getUserAttempts = async (quizId, userId, courseId) => {
 
 export const gradeUserAttempt = async (quizId, userId, attemptNumber, courseId, gradesData = null) => {
   const url = `/api/teacher/grading/${quizId}/${userId}/${attemptNumber}/${courseId}/`;
-  
+
   if (gradesData) {
     // POST request to update grades
     const response = await api.post(url, gradesData);
@@ -1243,11 +1260,11 @@ export const getMonitorList = async () => {
 
 export const monitorQuizProgress = async (quizId, courseId, attemptNumber = null) => {
   let url = `/api/teacher/monitor/${quizId}/${courseId}/`;
-  
+
   if (attemptNumber !== null) {
     url = `/api/teacher/monitor/${quizId}/${courseId}/${attemptNumber}/`;
   }
-  
+
   const response = await api.get(url);
   return response.data;
 };
@@ -1259,11 +1276,11 @@ export const monitorQuizProgress = async (quizId, courseId, attemptNumber = null
 
 export const getQuizStatistics = async (questionpaperId, courseId, attemptNumber = null) => {
   let url = `/api/teacher/statistics/question/${questionpaperId}/${courseId}/`;
-  
+
   if (attemptNumber !== null) {
     url = `/api/teacher/statistics/question/${questionpaperId}/${courseId}/${attemptNumber}/`;
   }
-  
+
   const response = await api.get(url);
   return response.data;
 };
@@ -1279,29 +1296,29 @@ export const downloadQuizCSV = async (courseId, quizId, attemptNumber) => {
     { attempt_number: attemptNumber },
     { responseType: 'blob' }
   );
-  
+
   // Create a blob URL and trigger download
   const url = window.URL.createObjectURL(new Blob([response.data]));
   const link = document.createElement('a');
   link.href = url;
-  
+
   // Extract filename from response headers if available
   const contentDisposition = response.headers['content-disposition'];
   let filename = `quiz_${quizId}_attempt_${attemptNumber}.csv`;
-  
+
   if (contentDisposition) {
     const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
     if (filenameMatch) {
       filename = filenameMatch[1];
     }
   }
-  
+
   link.setAttribute('download', filename);
   document.body.appendChild(link);
   link.click();
   link.remove();
   window.URL.revokeObjectURL(url);
-  
+
   return { success: true };
 };
 
@@ -1309,7 +1326,7 @@ export const downloadQuizCSV = async (courseId, quizId, attemptNumber) => {
 export const uploadMarksCSV = async (courseId, questionpaperId, csvFile) => {
   const formData = new FormData();
   formData.append('csv_file', csvFile);
-  
+
   const response = await api.post(
     `/api/teacher/upload_marks/${courseId}/${questionpaperId}/`,
     formData,
@@ -1329,11 +1346,11 @@ export const uploadMarksCSV = async (courseId, questionpaperId, csvFile) => {
 
 export const getUserData = async (userId, questionpaperId = null, courseId = null) => {
   let url = `/api/teacher/user_data/${userId}/`;
-  
+
   if (questionpaperId && courseId) {
     url = `/api/teacher/user_data/${userId}/${questionpaperId}/${courseId}/`;
   }
-  
+
   const response = await api.get(url);
   return response.data;
 };

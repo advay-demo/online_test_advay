@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import api from '../api/api';
+import api, { requestPasswordResetOTP, confirmPasswordResetOTP } from '../api/api';
 
 // Auth store using Zustand
 export const useAuthStore = create(
@@ -19,24 +19,24 @@ export const useAuthStore = create(
         try {
           const response = await api.post('api/auth/login/', credentials);
           const { user, token } = response.data;
-          
+
           // Store token and user data
           localStorage.setItem('authToken', token);
           localStorage.setItem('user', JSON.stringify(user));
-          
-          set({ 
-            user, 
-            token, 
-            isAuthenticated: true, 
-            isLoading: false 
+
+          set({
+            user,
+            token,
+            isAuthenticated: true,
+            isLoading: false
           });
-          
+
           return { success: true };
         } catch (error) {
           const errorMessage = error.response?.data?.error || 'Login failed';
-          set({ 
-            isLoading: false, 
-            error: errorMessage 
+          set({
+            isLoading: false,
+            error: errorMessage
           });
           return { success: false, error: errorMessage };
         }
@@ -47,60 +47,88 @@ export const useAuthStore = create(
         try {
           const response = await api.post('api/auth/register/', userData);
           const { user, token } = response.data;
-          
+
           // Store token and user data
           localStorage.setItem('authToken', token);
           localStorage.setItem('user', JSON.stringify(user));
-          
-          set({ 
-            user, 
-            token, 
-            isAuthenticated: true, 
-            isLoading: false 
+
+          set({
+            user,
+            token,
+            isAuthenticated: true,
+            isLoading: false
           });
-          
+
           return { success: true };
         } catch (error) {
           const errorMessage = error.response?.data?.error || 'Registration failed';
-          set({ 
-            isLoading: false, 
-            error: errorMessage 
+          set({
+            isLoading: false,
+            error: errorMessage
           });
+          return { success: false, error: errorMessage };
+        }
+      },
+
+
+
+      requestPasswordReset: async (email) => {
+        set({ isLoading: true, error: null });
+        try {
+          await requestPasswordResetOTP(email);
+          set({ isLoading: false });
+          return { success: true };
+        } catch (error) {
+          const errorMessage = error.response?.data?.error || 'Failed to send OTP';
+          set({ isLoading: false, error: errorMessage });
+          return { success: false, error: errorMessage };
+        }
+      },
+
+      confirmPasswordReset: async (email, otp, newPassword) => {
+        set({ isLoading: true, error: null });
+        try {
+          await confirmPasswordResetOTP(email, otp, newPassword);
+          set({ isLoading: false });
+          return { success: true };
+        } catch (error) {
+          const errorMessage = error.response?.data?.error || 'Failed to reset password';
+          set({ isLoading: false, error: errorMessage });
           return { success: false, error: errorMessage };
         }
       },
 
       logout: async () => {
         set({ isLoading: true });
-        
+
         try {
           // Call logout API
           await api.post('api/auth/logout/');
-          
+
           // Clear localStorage
           localStorage.removeItem('authToken');
           localStorage.removeItem('user');
-          
+
           // Clear all auth state
-          set({ 
-            user: null, 
-            token: null, 
-            isAuthenticated: false, 
+          set({
+            user: null,
+            token: null,
+            isAuthenticated: false,
             isLoading: false,
-            error: null 
+            error: null
           });
-          
+
           return { success: true };
         } catch (error) {
           console.error('Logout API error:', error);
           // Even if API call fails, clear local state
           localStorage.removeItem('authToken');
           localStorage.removeItem('user');
-          
-          set({ 
-            user: null, 
-            token: null, 
-            isAuthenticated: false, 
+
+          set({
+            user: null,
+            token: null,
+            isAuthenticated: false,
             isLoading: false,
             error: 'Logout failed but local state cleared'
           });
@@ -111,14 +139,14 @@ export const useAuthStore = create(
       initializeAuth: () => {
         const token = localStorage.getItem('authToken');
         const userStr = localStorage.getItem('user');
-        
+
         if (token && userStr) {
           try {
             const user = JSON.parse(userStr);
-            set({ 
-              user, 
-              token, 
-              isAuthenticated: true 
+            set({
+              user,
+              token,
+              isAuthenticated: true
             });
           } catch (error) {
             console.error('Failed to parse user data:', error);

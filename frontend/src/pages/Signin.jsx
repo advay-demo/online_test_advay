@@ -84,7 +84,7 @@ const Signin = () => {
     alert(`${provider} login coming soon!`);
   };
 
-   return (
+  return (
     <div className="min-h-screen flex flex-col lg:flex-row overflow-hidden">
       {/* Left side (Brand / Illustration) */}
       <div className="hidden lg:flex flex-col justify-center items-center w-full lg:w-1/2 min-h-screen bg-gradient-to-br from-[#0e0e14] to-[#1a1a2e] text-white relative overflow-hidden">
@@ -157,9 +157,8 @@ const Signin = () => {
                   type="text"
                   value={formData.username}
                   onChange={handleChange}
-                  className={`w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 sm:py-3 bg-[var(--input-bg)] border ${
-                    formErrors.username ? 'border-red-500' : 'border-[var(--border-color)]'
-                  } text-[var(--text-primary)] rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-gray-400 dark:placeholder-gray-500 text-sm sm:text-base`}
+                  className={`w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 sm:py-3 bg-[var(--input-bg)] border ${formErrors.username ? 'border-red-500' : 'border-[var(--border-color)]'
+                    } text-[var(--text-primary)] rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-gray-400 dark:placeholder-gray-500 text-sm sm:text-base`}
                   placeholder="Enter your username"
                   required
                   disabled={isLoading}
@@ -185,9 +184,8 @@ const Signin = () => {
                   type={showPassword ? "text" : "password"}
                   value={formData.password}
                   onChange={handleChange}
-                  className={`w-full pl-9 sm:pl-10 pr-10 sm:pr-12 py-2.5 sm:py-3 bg-[var(--input-bg)] border ${
-                    formErrors.password ? 'border-red-500' : 'border-[var(--border-color)]'
-                  } text-[var(--text-primary)] rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-gray-400 dark:placeholder-gray-500 text-sm sm:text-base`}
+                  className={`w-full pl-9 sm:pl-10 pr-10 sm:pr-12 py-2.5 sm:py-3 bg-[var(--input-bg)] border ${formErrors.password ? 'border-red-500' : 'border-[var(--border-color)]'
+                    } text-[var(--text-primary)] rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-gray-400 dark:placeholder-gray-500 text-sm sm:text-base`}
                   placeholder="Enter your password"
                   required
                   disabled={isLoading}
@@ -209,7 +207,7 @@ const Signin = () => {
                 <p className="text-red-500 text-xs mt-1">{formErrors.password}</p>
               )}
               <div className="text-right mt-1.5 sm:mt-2">
-                <Link to="#" className="text-xs sm:text-sm text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300 transition">
+                <Link to="/forgot-password" className="text-xs sm:text-sm text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300 transition">
                   Forgot password?
                 </Link>
               </div>

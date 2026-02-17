@@ -472,6 +472,78 @@ def confirm_password_change(request):
 
 
 
+# Forget Password APIs
+
+def send_password_otp(user):
+    code = str(random.randint(100000, 999999))
+    cache_key = f"pwd_change_otp:{user.id}"
+    OTP_TTL = 120
+
+    cache.set(cache_key, hash_code(code), timeout=OTP_TTL)
+
+    send_mail(
+        subject="Password change verification",
+        message=f"Your code is {code}. Valid for 1 minute.",
+        from_email="no-reply@yourapp.com",
+        recipient_list=[user.email],
+    )
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def forgot_password(request):
+    email = request.data.get("email")
+    user = User.objects.filter(email=email).first()
+    if user:
+        send_password_otp(user)
+    else:
+        print("user not found")
+
+    # Always same response → anti-enumeration
+    return Response(
+        {"message": "If the email exists, an OTP has been sent"}
+    )
+
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def confirm_forgot_password(request):
+    email = request.data.get("email")
+    code = request.data.get("code")
+    new_password = request.data.get("new_password")
+
+    if not email or not code or not new_password:
+        return Response({"error": "Invalid request"}, status=400)
+
+    user = User.objects.filter(email=email).first()
+    if not user:
+        # anti-enumeration
+        return Response({"error": "Invalid request"}, status=400)
+
+    cache_key = f"pwd_change_otp:{user.id}"
+    cached_hash = cache.get(cache_key)
+
+    if not cached_hash:
+        return Response({"error": "OTP expired or invalid"}, status=400)
+
+    if not constant_time_compare(cached_hash, hash_code(code)):
+        return Response({"error": "OTP expired or invalid"}, status=400)
+
+    try:
+        validate_password(new_password, user)
+    except Exception:
+        # keep it vague on purpose
+        return Response({"error": "Invalid password"}, status=400)
+
+    user.set_password(new_password)
+    user.save()
+
+    cache.delete(cache_key)
+
+    return Response({"success": True})
+
+
+
+
 
 
 
