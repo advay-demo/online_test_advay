@@ -1,19 +1,161 @@
-import React from 'react';
-import { FaPlus, FaBook, FaCalendarAlt, FaEdit, FaTrash } from 'react-icons/fa';
+import React, { useState, useEffect, useRef } from 'react';
+import { FaPlus, FaBook, FaCalendarAlt, FaEdit, FaTrash, FaCheckCircle, FaEllipsisV, FaVideo, FaTimes, FaUpload, FaFileAlt, FaExternalLinkAlt } from 'react-icons/fa';
 import useManageCourseStore from '../../store/manageCourseStore';
 import { useParams } from 'react-router-dom';
-import { FaBookOpen, FaTimes } from 'react-icons/fa';
+import { FaBookOpen } from 'react-icons/fa';
 
 const CourseModules = () => {
     const {
-        modules, showModuleForm, editingModule, moduleFormData, handleModuleFormChange, handleCreateModule, handleUpdateModule, setShowModuleForm, setEditingModule,
-        showLessonForm, editingLesson, lessonFormData, handleLessonFormChange, handleCreateLesson, setShowLessonForm, setSelectedModule, setEditingLesson,
-        showQuizForm, editingQuiz, quizFormData, handleQuizFormChange, handleCreateQuiz, setShowQuizForm, setSelectedModule: setSelectedModuleQuiz, setEditingQuiz,
-        openCreateLesson, openCreateQuiz, openEditModule, handleDeleteModule, openEditLesson, handleDeleteLesson, openQuizQuestionManager, openEditQuiz, handleDeleteQuiz
+        modules, 
+        showModuleForm, 
+        editingModule, 
+        moduleFormData, 
+        handleModuleFormChange, 
+        handleCreateModule, 
+        handleUpdateModule, 
+        setShowModuleForm, 
+        setEditingModule,
+        showLessonForm, 
+        editingLesson, 
+        lessonFormData, 
+        handleLessonFormChange, 
+        handleCreateLesson, 
+        handleUpdateLesson, 
+        setShowLessonForm, 
+        setSelectedModule, 
+        setEditingLesson,
+        showQuizForm, 
+        editingQuiz, 
+        quizFormData, 
+        handleQuizFormChange, 
+        handleCreateQuiz, 
+        setShowQuizForm, 
+        setSelectedModule: setSelectedModuleQuiz, 
+        setEditingQuiz,
+        openCreateLesson, 
+        openCreateQuiz, 
+        openEditModule, 
+        handleDeleteModule, 
+        openEditLesson, 
+        handleDeleteLesson, 
+        openQuizQuestionManager, 
+        openEditQuiz, 
+        handleDeleteQuiz,
+        setModuleFormData,
+        setLessonFormData
     } = useManageCourseStore();
 
     const { courseId } = useParams();
 
+    // Dropdown state management
+    const [openDropdownId, setOpenDropdownId] = useState(null);
+    const dropdownRef = useRef(null);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setOpenDropdownId(null);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const toggleDropdown = (moduleId) => {
+        setOpenDropdownId(openDropdownId === moduleId ? null : moduleId);
+    };
+
+    // Toggle handlers for the module form
+    const handleToggleActive = () => {
+        setModuleFormData({
+            ...moduleFormData,
+            active: !moduleFormData.active
+        });
+    };
+
+    // Toggle handler for lesson form
+    const handleLessonToggleActive = () => {
+        setLessonFormData({
+            ...lessonFormData,
+            active: !lessonFormData.active
+        });
+    };
+
+    // Handle lesson form submission
+    const handleLessonSubmit = (e) => {
+        e.preventDefault();
+        if (editingLesson) {
+            handleUpdateLesson();
+        } else {
+            handleCreateLesson();
+        }
+    };
+
+    // Helper to get embed URL
+    const getVideoEmbedUrl = (url) => {
+        if (!url) return null;
+        
+        // YouTube
+        const youtubeRegex = /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+        const ytMatch = url.match(youtubeRegex);
+        if (ytMatch && ytMatch[1]) {
+            return { type: 'iframe', url: `https://www.youtube.com/embed/${ytMatch[1]}` };
+        }
+
+        // Vimeo
+        const vimeoRegex = /^(?:https?:\/\/)?(?:www\.)?(?:vimeo\.com\/)(\d+)/;
+        const vimeoMatch = url.match(vimeoRegex);
+        if (vimeoMatch && vimeoMatch[1]) {
+            return { type: 'iframe', url: `https://player.vimeo.com/video/${vimeoMatch[1]}` };
+        }
+
+        // Direct Video File (simple check for extension or if it looks like a url)
+        if (url.match(/\.(mp4|webm|ogg)$/i) || url.startsWith('http')) {
+            return { type: 'video', url: url };
+        }
+
+        return null;
+    };
+
+    const videoPreview = getVideoEmbedUrl(lessonFormData.video_path);
+
+    const handleClearVideo = () => {
+        setLessonFormData({
+            ...lessonFormData,
+            video_path: ''
+        });
+    };
+
+     
+
+    const handleRemoveExistingFile = (fileId) => {
+        if(!window.confirm("Mark this file for deletion logic? (Will be deleted on Save)")) return;
+        
+        const updatedFiles = lessonFormData.files.filter(f => f.id !== fileId);
+        const filesToDelete = [...(lessonFormData.filesToDelete || []), fileId];
+        
+        setLessonFormData({
+            ...lessonFormData,
+            files: updatedFiles,
+            filesToDelete: filesToDelete
+        });
+    };
+
+    const handleClearUploadedVideo = () => {
+         // Clears selected file input and marks existing video for removal
+         setLessonFormData({
+             ...lessonFormData,
+             video_file: null,
+             newVideoFile: null,
+             existing_video_file_url: null,
+             clearVideoFile: true 
+         });
+         
+         // Helper to reset file input value visually
+         const fileInput = document.getElementById('video-file-upload');
+         if(fileInput) fileInput.value = "";
+    };
 
 
     return (
@@ -23,6 +165,7 @@ const CourseModules = () => {
             </div>
 
             
+            {/* MODULE FORM MODAL */}
             {showModuleForm && (
             <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm px-2">
                 <div className="card-strong w-full max-w-full sm:max-w-2xl p-4 sm:p-6 relative rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
@@ -83,8 +226,8 @@ const CourseModules = () => {
                         rows={4}
                     />
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
+                        <label className="block text-sm font-semibold mb-2">Order</label>
                         <input
                         className="input bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-sm w-full focus-visible:outline-none"
                         type="number"
@@ -94,31 +237,30 @@ const CourseModules = () => {
                         onChange={handleModuleFormChange}
                         />
                     </div>
-                    <div className="flex items-center pt-2">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            name="active"
-                            checked={moduleFormData.active}
-                            onChange={handleModuleFormChange}
-                            className="toggle-checkbox"
-                        />
-                        <span className="text-sm">Active</span>
-                        </label>
+                    
+                    {/* Toggle Switches */}
+                    <div className="space-y-3 pt-2">
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--input-bg)] border border-[var(--border-color)]">
+                            <div className="flex-1">
+                                <label className="text-sm font-semibold block">Active</label>
+                                <p className="text-xs muted mt-0.5">Make this module visible to students</p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={handleToggleActive}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-[var(--bg-primary)] ${
+                                    moduleFormData.active ? 'bg-blue-600' : 'bg-gray-600'
+                                }`}
+                            >
+                                <span
+                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                        moduleFormData.active ? 'translate-x-6' : 'translate-x-1'
+                                    }`}
+                                />
+                            </button>
+                        </div>
                     </div>
-                    </div>
-                    <div>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                        type="checkbox"
-                        name="check_prerequisite"
-                        checked={moduleFormData.check_prerequisite}
-                        onChange={handleModuleFormChange}
-                        className="toggle-checkbox"
-                        />
-                        <span className="text-sm">Check Prerequisite</span>
-                    </label>
-                    </div>
+
                     <div className="flex gap-2 justify-end mt-6 flex-wrap">
                     <button
                         type="button"
@@ -142,111 +284,302 @@ const CourseModules = () => {
             </div>
             )}
 
-
-
-
-            {/* Lesson Form Modal */}
+            {/* LESSON FORM MODAL - Enhanced UI with File Upload */}
             {showLessonForm && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-                    <div className="card-strong rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto shadow-2xl">
-                        <h3 className="text-xl font-bold mb-4">
-                            {editingLesson ? 'Edit Lesson' : 'Create New Lesson'}
-                        </h3>
-                        <form onSubmit={handleCreateLesson}>
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-semibold mb-2">
-                                        Lesson Name *
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-2">
+                    <div className="card-strong w-full max-w-full sm:max-w-2xl p-4 sm:p-6 relative rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
+                        {/* Close Button */}
+                        <button
+                            className="absolute right-4 top-4 text-lg sm:text-xl p-2 rounded-full border border-[var(--border-color)] bg-[var(--input-bg)] hover:bg-white/10 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"
+                            onClick={() => {
+                                setShowLessonForm(false);
+                                setSelectedModule(null);
+                                setEditingLesson(null);
+                            }}
+                            aria-label="Close"
+                        >
+                            <FaTimes />
+                        </button>
+
+                        {/* Header */}
+                        <div className="flex flex-row items-center gap-4 mb-4 sm:mt-0">
+                            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-cyan-500/10 flex items-center justify-center border border-cyan-500/20">
+                                <FaVideo className="w-7 h-7 sm:w-8 sm:h-8 text-cyan-400" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <h2 className="text-xl sm:text-2xl font-bold mb-1 line-clamp-1">
+                                    {editingLesson ? 'Edit Lesson' : 'Create New Lesson'}
+                                </h2>
+                                <p className="text-xs sm:text-sm muted line-clamp-2">
+                                    {editingLesson
+                                        ? 'Update the details of this lesson.'
+                                        : 'Add a new lesson to your module.'}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Form */}
+                        <form onSubmit={handleLessonSubmit} className="space-y-6 mt-2">
+                            {/* Lesson Name */}
+                            <div className="flex flex-col gap-2">
+                                <input
+                                    className="input bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg px-4 py-3 text-base focus-visible:outline-none"
+                                    name="name"
+                                    placeholder="Lesson Name *"
+                                    value={lessonFormData.name}
+                                    onChange={handleLessonFormChange}
+                                    required
+                                />
+
+                                {/* Description */}
+                                <textarea
+                                    className="input bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg px-4 py-3 text-sm focus-visible:outline-none"
+                                    name="description"
+                                    placeholder="Description (HTML/Markdown supported)"
+                                    value={lessonFormData.description}
+                                    onChange={handleLessonFormChange}
+                                    rows={4}
+                                />
+                            </div>
+
+                            {/* --- VIDEO FILE UPLOAD SECTION --- */}
+                            <div className="bg-[var(--input-bg)] bg-opacity-50 border border-[var(--border-color)] rounded-xl p-4">
+                                <label className="block text-sm font-bold text-cyan-400 mb-2">
+                                    Video Source (Select one)
+                                </label>
+                                
+                                {/* Option A: Video File Upload */}
+                                <div className="mb-4">
+                                    <label className="text-xs font-semibold text-gray-300 block mb-1">
+                                        Upload Video File (MP4, OGV, WEBM)
                                     </label>
-                                    <input
-                                        type="text"
-                                        name="name"
-                                        value={lessonFormData.name}
-                                        onChange={handleLessonFormChange}
-                                        required
-                                        className="w-full px-4 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50"
-                                        placeholder="Enter lesson name"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-semibold mb-2">
-                                        Description
-                                    </label>
-                                    <textarea
-                                        name="description"
-                                        value={lessonFormData.description}
-                                        onChange={handleLessonFormChange}
-                                        rows="6"
-                                        className="w-full px-4 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50 resize-none"
-                                        placeholder="Enter lesson description (markdown supported)"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-semibold mb-2">
-                                        Video URL/Path
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="video_path"
-                                        value={lessonFormData.video_path}
-                                        onChange={handleLessonFormChange}
-                                        className="w-full px-4 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50"
-                                        placeholder="YouTube ID, Vimeo ID, or video URL"
-                                    />
-                                    <p className="text-xs muted mt-1">Enter YouTube ID, Vimeo ID, or direct video URL</p>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-semibold mb-2">
-                                            Order
-                                        </label>
-                                        <input
-                                            type="number"
-                                            name="order"
-                                            value={lessonFormData.order}
-                                            onChange={handleLessonFormChange}
-                                            className="w-full px-4 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50"
-                                        />
-                                    </div>
-                                    <div className="flex items-center pt-8">
-                                        <label className="flex items-center gap-2 cursor-pointer">
+                                    
+                                    {(lessonFormData.existing_video_file_url && !lessonFormData.clearVideoFile) ? (
+                                        <div className="flex items-center gap-3 bg-green-500/10 border border-green-500/20 rounded-lg p-3">
+                                            <div className="bg-green-500/20 p-2 rounded-full">
+                                                <FaVideo className="text-green-400 w-4 h-4" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-medium text-green-400 truncate">
+                                                    Current Video Uploaded
+                                                </p>
+                                                <a href={lessonFormData.existing_video_file_url} target="_blank" rel="noreferrer" className="text-xs text-green-300/70 hover:underline truncate block">
+                                                    View current video
+                                                </a>
+                                            </div>
+                                            <button 
+                                                type="button" 
+                                                onClick={handleClearUploadedVideo}
+                                                className="text-gray-400 hover:text-red-400 p-2 hover:bg-red-500/10 rounded-lg transition"
+                                                title="Remove Video"
+                                            >
+                                                <FaTimes />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-2">
                                             <input
-                                                type="checkbox"
-                                                name="active"
-                                                checked={lessonFormData.active}
+                                                type="file"
+                                                id="video-file-upload"
+                                                name="video_file"
+                                                accept=".mp4,.ogv,.webm"
                                                 onChange={handleLessonFormChange}
-                                                className="toggle-checkbox"
+                                                className="block w-full text-sm text-gray-400
+                                                    file:mr-4 file:py-2 file:px-4
+                                                    file:rounded-lg file:border-0
+                                                    file:text-sm file:font-semibold
+                                                    file:bg-cyan-600 file:text-white
+                                                    hover:file:bg-cyan-700
+                                                    cursor-pointer bg-black/20 rounded-lg border border-white/10"
                                             />
-                                            <span className="text-sm">Active</span>
+                                            {lessonFormData.newVideoFile && (
+                                                <button
+                                                    type="button"
+                                                    onClick={handleClearUploadedVideo}
+                                                    className="p-2 text-gray-400 hover:text-red-400 rounded-lg border border-red-500/30 transition"
+                                                    title="Clear selection"
+                                                >
+                                                    <FaTimes />
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="flex items-center gap-4 my-2">
+                                    <div className="h-px bg-white/10 flex-1"></div>
+                                    <span className="text-xs text-gray-500 uppercase font-bold">AND</span>
+                                    <div className="h-px bg-white/10 flex-1"></div>
+                                </div>
+
+                                {/* Option B: Video Link */}
+                                <div>
+                                    <label className="text-xs font-semibold text-gray-300 block mb-1">
+                                        Video Link (YouTube, Vimeo)
+                                    </label>
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            name="video_path"
+                                            value={lessonFormData.video_path || ''}
+                                            onChange={handleLessonFormChange}
+                                            className="w-full px-4 py-2 pr-10 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg focus:outline-none focus:border-cyan-500/50 text-sm"
+                                            placeholder="https://youtube.com/..."
+                                        />
+                                        {lessonFormData.video_path && (
+                                            <button
+                                                type="button"
+                                                onClick={handleClearVideo}
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-400 p-1"
+                                            >
+                                                <FaTimes />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                 {/* Video Preview (Link) */}
+                                 {lessonFormData.video_path && videoPreview && (
+                                    <div className="mt-3 relative rounded-lg overflow-hidden bg-black aspect-video border border-white/10">
+                                        {videoPreview.type === 'iframe' ? (
+                                            <iframe
+                                                src={videoPreview.url}
+                                                title="Preview"
+                                                className="w-full h-full"
+                                                allowFullScreen
+                                            />
+                                        ) : (
+                                            <video src={videoPreview.url} controls className="w-full h-full" />
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+
+                            {/* --- FILE ATTACHMENTS SECTION --- */}
+                            <div className="bg-[var(--input-bg)] bg-opacity-50 border border-[var(--border-color)] rounded-xl p-4">
+                                <label className="block text-sm font-bold text-gray-200 mb-2">
+                                    Attached Files
+                                </label>
+                                
+                                <div className="space-y-4">
+                                     {/* Existing Files List */}
+                                    {editingLesson && lessonFormData.files && lessonFormData.files.length > 0 && (
+                                        <div className="space-y-2">
+                                            {lessonFormData.files.map((file) => (
+                                                <div key={file.id} className="flex items-center justify-between p-2 rounded bg-black/20 border border-white/5 group">
+                                                    <a
+                                                        href={file.url}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        className="flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 truncate"
+                                                    >
+                                                        <FaFileAlt />
+                                                        <span className="truncate max-w-[200px] sm:max-w-xs">{file.name}</span>
+                                                        <FaExternalLinkAlt className="w-3 h-3 opacity-50" />
+                                                    </a>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleRemoveExistingFile(file.id)}
+                                                        className="text-gray-500 hover:text-red-400 p-1.5 transition"
+                                                        title="Remove File on Save"
+                                                    >
+                                                        <FaTrash className="w-3.5 h-3.5" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* File Input */}
+                                    <div className="relative">
+                                        <input
+                                            type="file"
+                                            id="lesson-files-upload"
+                                            name="Lesson_files"
+                                            multiple
+                                            onChange={handleLessonFormChange}
+                                            className="hidden"
+                                        />
+                                        <label 
+                                            htmlFor="lesson-files-upload"
+                                            className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-600 rounded-lg cursor-pointer hover:border-cyan-500 hover:bg-cyan-500/5 transition-all"
+                                        >
+                                            <div className="flex flex-col items-center justify-center pt-2 pb-3">
+                                                <FaUpload className="w-6 h-6 text-gray-400 mb-2" />
+                                                <p className="text-xs text-gray-400">
+                                                    <span className="font-semibold text-cyan-400">Click to upload</span> or drag and drop
+                                                </p>
+                                                <p className="text-[10px] text-gray-500 mt-1">PDF, DOC, ZIP (Multiple allowed)</p>
+                                            </div>
                                         </label>
                                     </div>
+
+                                    {/* New Files Preview */}
+                                    {lessonFormData.newFiles && lessonFormData.newFiles.length > 0 && (
+                                        <div className="mt-2 space-y-1">
+                                            <p className="text-xs font-bold text-green-400">Selected for upload:</p>
+                                            {Array.from(lessonFormData.newFiles).map((file, idx) => (
+                                                <div key={idx} className="flex items-center gap-2 text-xs text-gray-300 pl-2">
+                                                    <FaCheckCircle className="text-green-500 w-3 h-3" />
+                                                    <span className="truncate">{file.name}</span>
+                                                    <span className="text-gray-500">({(file.size / 1024).toFixed(0)}KB)</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
-                            <div className="flex justify-end gap-3 mt-6">
+
+                            {/* Active Toggle */}
+                            <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--input-bg)] border border-[var(--border-color)]">
+                                <div className="flex-1">
+                                    <span className="text-sm font-semibold text-gray-200">Active Status</span>
+                                    <p className="text-xs muted mt-0.5">
+                                        Make visible to students
+                                    </p>
+                                </div>
                                 <button
                                     type="button"
+                                    onClick={handleLessonToggleActive}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 focus:ring-offset-[var(--bg-primary)] ${
+                                        lessonFormData.active ? 'bg-cyan-600' : 'bg-gray-600'
+                                    }`}
+                                >
+                                    <span
+                                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                            lessonFormData.active ? 'translate-x-6' : 'translate-x-1'
+                                        }`}
+                                    />
+                                </button>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex gap-3 justify-end pt-2">
+                                <button
+                                    type="button"
+                                    className="px-5 py-2.5 rounded-lg border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-muted)] hover:text-white hover:bg-white/10 font-medium transition"
                                     onClick={() => {
                                         setShowLessonForm(false);
                                         setSelectedModule(null);
                                         setEditingLesson(null);
                                     }}
-                                    className="px-4 py-2 border border-white/10 rounded-lg hover:bg-white/5 transition"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+
+                                    className="px-6 py-2.5 rounded-lg bg-blue-600 text-white font-bold hover:from-cyan-500 hover:to-blue-500 shadow-lg shadow-cyan-500/20 transition-all transform hover:scale-[1.02]"
                                 >
-                                    {editingLesson ? 'Update' : 'Create'}
+                                    {editingLesson ? 'Save' : 'Create Lesson'}
                                 </button>
                             </div>
                         </form>
                     </div>
                 </div>
             )}
-
-            {/* Quiz Form Modal */}
+            {/* QUIZ FORM MODAL */}
             {showQuizForm && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
                     <div className="card-strong rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto shadow-2xl">
@@ -427,62 +760,115 @@ const CourseModules = () => {
                 </div>
             )}
 
-            {/* Modules List */}
+            {/* MODULES LIST */}
             {modules.length > 0 ? (
             modules.map((module) => (
                 <div key={module.id} className="bg-white/5 rounded-xl border border-white/10 overflow-hidden">
                     <div className="p-4 border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between bg-white/5 gap-4">
                         <div className="flex-1">
-                            <div className="flex items-center gap-3">
-                                <h3 className="font-bold text-lg">{module.name}</h3>
-                                {!module.active && (
-                                    <span className="px-2 py-1 bg-gray-500/20 text-gray-400 border border-gray-500/30 rounded text-xs">
-                                        Inactive
-                                    </span>
-                                )}
+                            <div className="flex flex-wrap items-center gap-2 mb-1">
+                                <h3 className="font-bold text-lg line-clamp-1">{module.name}</h3>
+                                <span
+                                    className={`text-[10px] px-2 py-0.5 rounded border uppercase font-bold tracking-wider whitespace-nowrap flex-shrink-0 transition-all duration-200 ${
+                                        module.active
+                                            ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                                            : 'bg-orange-500/20 text-orange-400 border-orange-500/30'
+                                    }`}
+                                >
+                                    {module.active ? 'Active' : 'Inactive'}
+                                </span>
                             </div>
                             {module.description && (
                                 <p className="text-xs muted mt-1 line-clamp-2">
                                     {module.description}
                                 </p>
                             )}
-                            <p className="text-xs muted mt-1 hidden sm:inline ">
-                                {module.units_count} learning unit{module.units_count !== 1 ? 's' : ''}
-                            </p>
+                            <div className="flex items-center gap-3 text-xs muted mt-2">
+                                <div className="flex items-center gap-1.5">
+                                    <FaBook className="w-3 h-3" />
+                                    <span>{module.units_count} unit{module.units_count !== 1 ? 's' : ''}</span>
+                                </div>
+                                <span>•</span>
+                                <span>Order: {module.order}</span>
+                            </div>
                         </div>
                         <div className="flex flex-wrap gap-2">
                             <button
                                 onClick={() => openCreateLesson(module)}
-                                className="px-3 py-1.5 bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded text-xs font-bold hover:bg-cyan-500/30 transition flex items-center gap-1"
+                                className="px-2 py-1 sm:px-3 sm:py-1.5 bg-gradient-to-r from-cyan-500/20 to-cyan-600/20 text-cyan-400 border border-cyan-500/30 rounded-lg text-xs font-bold hover:from-cyan-500/30 hover:to-cyan-600/30 hover:border-cyan-500/50 transition-all duration-200 flex items-center gap-1 sm:gap-1.5 shadow-sm hover:shadow-cyan-500/20"
                             >
-                                <FaPlus className="w-2 h-2" />
-                                <span className="inline sm:hidden">Lesson</span>
+                                <FaPlus className="w-3 h-3 hidden sm:inline" />
                                 <span className="hidden sm:inline">Add Lesson</span>
+                                <span className="inline sm:hidden">Lesson</span>
                             </button>
                             <button
                                 onClick={() => openCreateQuiz(module)}
-                                className="px-3 py-1.5 bg-green-500/20 text-green-400 border border-green-500/30 rounded text-xs font-bold hover:bg-green-500/30 transition flex items-center gap-1"
+                                className="px-2 py-1 sm:px-3 sm:py-1.5 bg-gradient-to-r from-green-500/20 to-green-600/20 text-green-400 border border-green-500/30 rounded-lg text-xs font-bold hover:from-green-500/30 hover:to-green-600/30 hover:border-green-500/50 transition-all duration-200 flex items-center gap-1 sm:gap-1.5 shadow-sm hover:shadow-green-500/20"
                             >
-                                <FaPlus className="w-2 h-2" />
+                                <FaPlus className="w-3 h-3 hidden sm:inline" />
+                                <span className="hidden sm:inline ">Add Quiz</span>
                                 <span className="inline sm:hidden">Quiz</span>
-                                <span className="hidden sm:inline">Add Quiz</span>
                             </button>
                             <button
-                                onClick={() => openEditModule(module)}
-                                className="px-3 py-1.5 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded text-xs font-bold hover:bg-blue-500/30 transition flex items-center gap-1"
+                                onClick={() => {
+                                    console.log('Create exercise for module:', module.id);
+                                }}
+                                className="px-2 py-1 sm:px-3 sm:py-1.5 bg-gradient-to-r from-purple-500/20 to-purple-600/20 text-purple-400 border border-purple-500/30 rounded-lg text-xs font-bold hover:from-purple-500/30 hover:to-purple-600/30 hover:border-purple-500/50 transition-all duration-200 flex items-center gap-1 sm:gap-1.5 shadow-sm hover:shadow-purple-500/20"
                             >
-                                <FaEdit className="w-3 h-3" />
-                                <span className="inline sm:hidden">Edit</span>
-                                <span className="hidden sm:inline">Edit</span>
+                                <FaPlus className="w-3 h-3 hidden sm:inline" />
+                                <span className="hidden sm:inline">Add Exercise</span>
+                                <span className="inline sm:hidden">Exercise</span>
                             </button>
                             <button
-                                onClick={() => handleDeleteModule(courseId, module.id)}
-                                className="px-3 py-1.5 bg-red-500/20 text-red-400 border border-red-500/30 rounded text-xs font-bold hover:bg-red-500/30 transition flex items-center gap-1"
+                                onClick={() => {
+                                    console.log('Design module:', module.id);
+                                }}
+                                className="px-2 py-1 sm:px-3 sm:py-1.5 bg-gradient-to-r from-amber-500/20 to-amber-600/20 text-amber-400 border border-amber-500/30 rounded-lg text-xs font-bold hover:from-amber-500/30 hover:to-amber-600/30 hover:border-amber-500/50 transition-all duration-200 flex items-center gap-1 sm:gap-1.5 shadow-sm hover:shadow-amber-500/20"
                             >
-                                <FaTrash className="w-3 h-3" />
-                                <span className="inline sm:hidden">Delete</span>
-                                <span className="hidden sm:inline">Delete</span>
+                                <svg className="w-3 h-3 hidden sm:inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" />
+                                </svg>
+                                <span className="hidden sm:inline">Design</span>
+                                <span className="inline sm:hidden">Design</span>
                             </button>
+                            
+                            {/* Three-dot dropdown menu */}
+                            <div className="relative" ref={openDropdownId === module.id ? dropdownRef : null}>
+                                <button 
+                                    onClick={() => toggleDropdown(module.id)}
+                                    className="p-2 border border-[var(--border-color)] rounded-lg hover:bg-[var(--input-bg)] active:scale-95 transition-all duration-200 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                                >
+                                    <FaEllipsisV className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                </button>
+                                
+                                {/* Dropdown Menu */}
+                                {openDropdownId === module.id && (
+                                    <div className="absolute right-0 mt-2 z-50 w-32 bg-gray-900 border border-[var(--border-color)] rounded-lg shadow-lg py-1 flex flex-col text-sm animate-fade-in">
+                                        <button
+                                            className="flex items-center gap-2 px-4 py-2 hover:bg-blue-500/10 transition text-left"
+                                            onClick={() => {
+                                                openEditModule(module);
+                                                setOpenDropdownId(null);
+                                            }}
+                                        >
+                                            <FaEdit className="w-4 h-4 text-blue-400" /> 
+                                            <span>Edit</span>
+                                        </button>
+                                        <button
+                                            className="flex items-center gap-2 px-4 py-2 hover:bg-red-500/10 transition text-left"
+                                            onClick={() => {
+                                                if (window.confirm(`Delete module "${module.name}"?`)) {
+                                                    handleDeleteModule(courseId, module.id);
+                                                }
+                                                setOpenDropdownId(null);
+                                            }}
+                                        >
+                                            <FaTrash className="w-4 h-4 text-red-400" /> 
+                                            <span>Delete</span>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
 
@@ -510,7 +896,7 @@ const CourseModules = () => {
                                             </div>
                                             <div className="text-xs muted flex items-center gap-3 mt-0.5">
                                                 <span className="uppercase">{unit.type}</span>
-                                                <span>Order: {unit.order}</span>
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -524,7 +910,11 @@ const CourseModules = () => {
                                                     Edit
                                                 </button>
                                                 <button
-                                                    onClick={() => handleDeleteLesson(module.id, unit.lesson_id)}
+                                                    onClick={() => {
+                                                        if (window.confirm(`Delete lesson "${unit.name}"?`)) {
+                                                            handleDeleteLesson(module.id, unit.lesson_id);
+                                                        }
+                                                    }}
                                                     className="px-3 py-1 border border-red-500/30 text-red-400 rounded text-xs hover:bg-red-500/20 transition"
                                                 >
                                                     Delete
@@ -545,7 +935,11 @@ const CourseModules = () => {
                                                     Edit
                                                 </button>
                                                 <button
-                                                    onClick={() => handleDeleteQuiz(module.id, unit.quiz_id)}
+                                                    onClick={() => {
+                                                        if (window.confirm(`Delete quiz "${unit.name}"?`)) {
+                                                            handleDeleteQuiz(module.id, unit.quiz_id);
+                                                        }
+                                                    }}
                                                     className="px-3 py-1 border border-red-500/30 text-red-400 rounded text-xs hover:bg-red-500/20 transition"
                                                 >
                                                     Delete

@@ -510,40 +510,17 @@ export const deleteModule = async (courseId, moduleId) => {
 // Lesson APIs ============================================================
 
 
-// not reqd 
-export const createLesson = async (moduleId, lessonData) => {
-  const response = await api.post(`/api/teacher/modules/${moduleId}/lessons/create/`, lessonData);
-  return response.data;
-};
 
-export const updateLesson = async (moduleId, lessonId, lessonData) => {
-  const response = await api.put(`/api/teacher/modules/${moduleId}/lessons/${lessonId}/update/`, lessonData);
-  return response.data;
-};
-
-export const deleteLesson = async (moduleId, lessonId) => {
-  const response = await api.delete(`/api/teacher/modules/${moduleId}/lessons/${lessonId}/delete/`);
-  return response.data;
-};
-
-export const uploadLessonFiles = async (lessonId, files) => {
-  const formData = new FormData();
-  files.forEach(file => {
-    formData.append('files', file);
-  });
-  const response = await api.post(`/api/teacher/lessons/${lessonId}/files/upload/`, formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
-  return response.data;
-};
-// not reqd 
 
 export const createTeacherLesson = async (courseId, moduleId, lessonData) => {
   const response = await api.post(
     `/api/teacher/courses/${courseId}/modules/${moduleId}/lessons/`,
-    lessonData
+    lessonData,
+    {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    }
   );
   return response.data;
 };
@@ -559,12 +536,13 @@ export const getTeacherLesson = async (courseId, moduleId, lessonId) => {
 
 // Update a particular lesson 
 
-export const updateTeacherLesson = async (courseId, moduleId, lessonId, lessonData) => {
-  const response = await api.put(
-    `/api/teacher/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/`,
-    lessonData
-  );
-  return response.data;
+export const updateTeacherLesson = async (courseId, moduleId, lessonId, formData) => {
+    // We pass null or delete the header so Axios sets the boundary correctly for FormData
+    return api.put(`/api/teacher/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/`, formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    });
 };
 
 // Delete a lesson 

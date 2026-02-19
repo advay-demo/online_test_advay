@@ -1,9 +1,10 @@
 import { create } from 'zustand';
 import {
     getTeacherCourse, getCourseModules, createModule, updateModule, deleteModule,
-    createLesson, updateLesson, deleteLesson, createQuiz, updateQuiz, deleteQuiz,
+    updateQuiz, deleteQuiz,
     getCourseEnrollments, approveEnrollment, rejectEnrollment, removeEnrollment,
-    reorderCourseModules, reorderModuleUnits, getCourseAnalytics, getTeacherLesson,
+    reorderCourseModules, reorderModuleUnits, getCourseAnalytics, 
+    getTeacherLesson, createTeacherLesson, updateTeacherLesson, deleteTeacherLesson, // ✅ ADD THESE
     getTeacherQuiz, getCourseDesign, addModulesToCourse, changeCourseModuleOrder, removeModulesFromCourse,
     changeCourseModulePrerequisiteCompletion, changeCourseModulePrerequisitePassing
 } from '../api/api';
@@ -15,6 +16,7 @@ const initialModuleForm = {
     check_prerequisite: false,
     active: true,
 };
+
 const initialLessonForm = {
     name: '',
     description: '',
@@ -22,6 +24,7 @@ const initialLessonForm = {
     active: true,
     order: 1,
 };
+
 const initialQuizForm = {
     description: '',
     instructions: '',
@@ -103,16 +106,11 @@ const useManageCourseStore = create((set, get) => ({
         }
     },
 
-    //============================================================
-
-
     // Enrollments tab ============================================================
-
     enrollments: { enrolled: [], pending_requests: [], rejected: [] },
     loadingEnrollments: false,
     enrollmentsError: null,
 
-    // Load all enrollments for a course
     loadEnrollments: async (courseId) => {
         set({ loadingEnrollments: true, enrollmentsError: null });
         try {
@@ -131,7 +129,6 @@ const useManageCourseStore = create((set, get) => ({
         }
     },
 
-    // Approve enrollments (single or bulk)
     approveEnrollments: async (courseId, userIds, wasRejected = false) => {
         set({ loadingEnrollments: true, enrollmentsError: null });
         try {
@@ -144,7 +141,6 @@ const useManageCourseStore = create((set, get) => ({
         }
     },
 
-    // Reject enrollments (single or bulk)
     rejectEnrollments: async (courseId, userIds, wasEnrolled = false) => {
         set({ loadingEnrollments: true, enrollmentsError: null });
         try {
@@ -157,7 +153,6 @@ const useManageCourseStore = create((set, get) => ({
         }
     },
 
-    // Remove enrollments (single or bulk)
     removeEnrollments: async (courseId, userIds) => {
         set({ loadingEnrollments: true, enrollmentsError: null });
         try {
@@ -170,13 +165,7 @@ const useManageCourseStore = create((set, get) => ({
         }
     },
 
-
-    //============================================================
-
-
-
     // DESIGN COURSE TAB ============================================================
-
     designCourse: null,
     loadingDesignCourse: false,
     designCourseError: null,
@@ -198,7 +187,7 @@ const useManageCourseStore = create((set, get) => ({
         try {
             await addModulesToCourse(courseId, moduleList);
             await get().loadDesignCourse(courseId);
-            await get().loadCourseData(courseId); // keep modules in sync
+            await get().loadCourseData(courseId);
         } catch (err) {
             set({ designCourseError: err.message });
         } finally {
@@ -256,15 +245,7 @@ const useManageCourseStore = create((set, get) => ({
         }
     },
 
-    //============================================================
-
-
-
-
-
-
     // Module tab ============================================================
-
     initializeOrdering: () => {
         const modules = get().modules;
         const orderedModules = [...modules].sort((a, b) => (a.order || 0) - (b.order || 0));
@@ -281,6 +262,7 @@ const useManageCourseStore = create((set, get) => ({
         });
         set({ unitOrders: orders });
     },
+
     moveModule: (moduleId, direction) => {
         const moduleOrder = [...get().moduleOrder];
         const currentIndex = moduleOrder.indexOf(moduleId);
@@ -290,6 +272,7 @@ const useManageCourseStore = create((set, get) => ({
         [moduleOrder[currentIndex], moduleOrder[newIndex]] = [moduleOrder[newIndex], moduleOrder[currentIndex]];
         set({ moduleOrder });
     },
+
     saveModuleOrder: async (courseId) => {
         set({ savingOrder: true });
         try {
@@ -304,6 +287,7 @@ const useManageCourseStore = create((set, get) => ({
             set({ savingOrder: false });
         }
     },
+
     moveUnit: (moduleId, unitId, direction) => {
         const unitOrders = { ...get().unitOrders };
         const units = unitOrders[moduleId] || [];
@@ -315,6 +299,7 @@ const useManageCourseStore = create((set, get) => ({
         unitOrders[moduleId] = units;
         set({ unitOrders });
     },
+
     saveUnitOrder: async (moduleId) => {
         set({ savingOrder: true });
         try {
@@ -330,10 +315,11 @@ const useManageCourseStore = create((set, get) => ({
         }
     },
 
-    // Module CRUD
+    // Module CRUD ============================================================
     setShowModuleForm: (val) => set({ showModuleForm: val }),
     setEditingModule: (mod) => set({ editingModule: mod }),
     setModuleFormData: (data) => set({ moduleFormData: data }),
+    
     handleModuleFormChange: (e) => {
         const { name, value, type, checked } = e.target;
         set(state => ({
@@ -343,20 +329,24 @@ const useManageCourseStore = create((set, get) => ({
             }
         }));
     },
+
     handleCreateModule: async (courseId) => {
         await createModule(courseId, get().moduleFormData);
         set({ showModuleForm: false, moduleFormData: { ...initialModuleForm } });
         await get().loadCourseData(courseId);
     },
+
     handleUpdateModule: async (courseId) => {
         await updateModule(courseId, get().editingModule.id, get().moduleFormData);
         set({ showModuleForm: false, editingModule: null, moduleFormData: { ...initialModuleForm } });
         await get().loadCourseData(courseId);
     },
+
     handleDeleteModule: async (courseId, moduleId) => {
         await deleteModule(courseId, moduleId);
         await get().loadCourseData(courseId);
     },
+
     openEditModule: (module) => {
         set({
             editingModule: module,
@@ -370,6 +360,7 @@ const useManageCourseStore = create((set, get) => ({
             showModuleForm: true
         });
     },
+
     openCreateModule: (modules) => {
         set({
             editingModule: null,
@@ -378,22 +369,35 @@ const useManageCourseStore = create((set, get) => ({
         });
     },
 
-    // 
-
-    // Lesson CRUD
+    // ============================================================
+    //  LESSON CRUD 
+    // ============================================================
+    
     setShowLessonForm: (val) => set({ showLessonForm: val }),
     setSelectedModule: (mod) => set({ selectedModule: mod }),
     setEditingLesson: (lesson) => set({ editingLesson: lesson }),
     setLessonFormData: (data) => set({ lessonFormData: data }),
+    
     handleLessonFormChange: (e) => {
-        const { name, value, type, checked } = e.target;
+        const { name, value, type, checked, files } = e.target;
         set(state => ({
             lessonFormData: {
                 ...state.lessonFormData,
-                [name]: type === 'checkbox' ? checked : value
+                
+                ...(type !== 'file' && { [name]: type === 'checkbox' ? checked : value }),
+                
+                ...(name === 'video_file' && files && files.length > 0
+                    ? { newVideoFile: files[0], video_file: files }
+                    : {}),
+                
+                ...(name === 'Lesson_files' && files
+                    ? { Lesson_files: files, newFiles: files }
+                    : {}),
             }
         }));
     },
+
+    
     openCreateLesson: (module) => {
         const lastUnit = module.units && module.units.length > 0
             ? Math.max(...module.units.map(u => u.order))
@@ -405,21 +409,37 @@ const useManageCourseStore = create((set, get) => ({
             showLessonForm: true
         });
     },
+
+   
+    
     openEditLesson: async (module, unit) => {
-        set({ selectedModule: module, editingLesson: unit });
+        const courseId = get().course?.id;
+        if (!courseId) {
+            console.error('Course ID not found');
+            return;
+        }
+
+        set({ selectedModule: module, editingLesson: unit, loading: true });
+        
         try {
-            const lessonData = await getTeacherLesson(module.id, unit.lesson_id);
+            
+            const lessonData = await getTeacherLesson(courseId, module.id, unit.lesson_id);
             set({
                 lessonFormData: {
                     name: lessonData.name || '',
                     description: lessonData.description || '',
                     video_path: lessonData.video_path || '',
+                    existing_video_file_url: lessonData.video_file || null, 
                     active: lessonData.active !== undefined ? lessonData.active : true,
                     order: lessonData.order || unit.order,
+                    files: lessonData.files || [], // Existing attached files
                 },
-                showLessonForm: true
+                showLessonForm: true,
+                loading: false
             });
-        } catch {
+        } catch (error) {
+            console.error('Failed to load lesson:', error);
+            
             set({
                 lessonFormData: {
                     name: unit.name || '',
@@ -428,24 +448,130 @@ const useManageCourseStore = create((set, get) => ({
                     active: true,
                     order: unit.order,
                 },
-                showLessonForm: true
+                showLessonForm: true,
+                loading: false
             });
         }
     },
-    handleCreateLesson: async (moduleId) => {
-        await createLesson(moduleId, get().lessonFormData);
-        set({ showLessonForm: false, selectedModule: null, lessonFormData: { ...initialLessonForm } });
-        await get().loadCourseData(get().course.id);
-    },
-    handleDeleteLesson: async (moduleId, lessonId) => {
-        await deleteLesson(moduleId, lessonId);
-        await get().loadCourseData(get().course.id);
+
+    handleCreateLesson: async () => {
+        const { selectedModule, lessonFormData, course } = get();
+        if (!selectedModule || !course) return;
+
+        try {
+            set({ loading: true });
+            
+            const payload = new FormData();
+            payload.append('name', lessonFormData.name);
+            payload.append('description', lessonFormData.description || '');
+            payload.append('video_path', lessonFormData.video_path || '');
+            payload.append('active', lessonFormData.active);
+            
+            
+            const fileToUpload = lessonFormData.newVideoFile || (lessonFormData.video_file && lessonFormData.video_file[0]);
+            
+            if (fileToUpload instanceof File) {
+                payload.append('video_file', fileToUpload);
+            }
+
+            if (lessonFormData.Lesson_files && lessonFormData.Lesson_files.length > 0) {
+                Array.from(lessonFormData.Lesson_files).forEach(file => {
+                    payload.append('Lesson_files', file);
+                });
+            }
+            
+            await createTeacherLesson(course.id, selectedModule.id, payload);
+            set({ showLessonForm: false, selectedModule: null, lessonFormData: { ...initialLessonForm }, loading: false });
+            await get().loadCourseData(course.id);
+        } catch (error) {
+            console.error('Failed to create lesson:', error);
+            set({ loading: false, error: error.message });
+        }
     },
 
-    // Quiz CRUD
+
+    
+    handleUpdateLesson: async () => {
+        const { selectedModule, editingLesson, lessonFormData, course } = get();
+        if (!selectedModule || !editingLesson || !course) return;
+
+        try {
+            set({ loading: true });
+            
+            const payload = new FormData();
+            payload.append('name', lessonFormData.name);
+            payload.append('description', lessonFormData.description || '');
+            payload.append('video_path', lessonFormData.video_path || '');
+            payload.append('active', lessonFormData.active);
+
+            
+            const fileToUpload = lessonFormData.newVideoFile || (lessonFormData.video_file && lessonFormData.video_file[0]);
+            
+            if (fileToUpload instanceof File) {
+                payload.append('video_file', fileToUpload);
+            }
+
+            if (lessonFormData.clearVideoFile) {
+                payload.append('video_file-clear', 'true');
+            }
+
+            
+            if (lessonFormData.Lesson_files && lessonFormData.Lesson_files.length > 0) {
+                Array.from(lessonFormData.Lesson_files).forEach(file => {
+                     payload.append('Lesson_files', file);
+                });
+            }
+
+           
+            if (lessonFormData.filesToDelete && lessonFormData.filesToDelete.length > 0) {
+                lessonFormData.filesToDelete.forEach(id => {
+                    payload.append('delete_files', id);
+                });
+            }
+
+            await updateTeacherLesson(
+                course.id, 
+                selectedModule.id, 
+                editingLesson.lesson_id, 
+                payload
+            );
+            set({ 
+                showLessonForm: false, 
+                selectedModule: null,
+                editingLesson: null,
+                lessonFormData: { ...initialLessonForm },
+                loading: false
+            });
+            await get().loadCourseData(course.id);
+        } catch (error) {
+            console.error('Failed to update lesson:', error);
+            set({ loading: false, error: error.message });
+        }
+    },
+
+    handleDeleteLesson: async (moduleId, lessonId) => {
+        const { course } = get();
+        if (!moduleId || !course) {
+            console.error('Module ID or Course not found');
+            return;
+        }
+
+        try {
+            set({ loading: true });
+            await deleteTeacherLesson(course.id, moduleId, lessonId);
+            set({ loading: false });
+            await get().loadCourseData(course.id);
+        } catch (error) {
+            console.error('Failed to delete lesson:', error);
+            set({ loading: false, error: error.message });
+        }
+    },
+
+    // Quiz CRUD ============================================================
     setShowQuizForm: (val) => set({ showQuizForm: val }),
     setEditingQuiz: (quiz) => set({ editingQuiz: quiz }),
     setQuizFormData: (data) => set({ quizFormData: data }),
+    
     handleQuizFormChange: (e) => {
         const { name, value, type, checked } = e.target;
         set(state => ({
@@ -455,6 +581,7 @@ const useManageCourseStore = create((set, get) => ({
             }
         }));
     },
+
     openCreateQuiz: (module) => {
         const lastUnit = module.units && module.units.length > 0
             ? Math.max(...module.units.map(u => u.order))
@@ -466,6 +593,7 @@ const useManageCourseStore = create((set, get) => ({
             showQuizForm: true
         });
     },
+
     openEditQuiz: async (module, unit) => {
         set({ selectedModule: module, editingQuiz: unit });
         try {
@@ -505,23 +633,19 @@ const useManageCourseStore = create((set, get) => ({
             });
         }
     },
+
     handleCreateQuiz: async (moduleId) => {
         await createQuiz(moduleId, get().quizFormData);
         set({ showQuizForm: false, selectedModule: null, quizFormData: { ...initialQuizForm } });
         await get().loadCourseData(get().course.id);
     },
+
     handleDeleteQuiz: async (moduleId, quizId) => {
         await deleteQuiz(moduleId, quizId);
         await get().loadCourseData(get().course.id);
     },
 
-
-
-
-
-
-
-    // Quiz Question Manager
+    // Quiz Question Manager ============================================================
     openQuizQuestionManager: (quizId) => set({ selectedQuizId: quizId, showQuizQuestionManager: true }),
     handleQuizQuestionsUpdate: () => get().loadCourseData(get().course.id),
 }));
