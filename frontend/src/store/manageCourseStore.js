@@ -1,11 +1,11 @@
 import { create } from 'zustand';
 import {
     getTeacherCourse, getCourseModules, createModule, updateModule, deleteModule,
-    updateQuiz, deleteQuiz,
+    updateQuiz, deleteQuiz, createQuiz, getTeacherQuiz, 
     getCourseEnrollments, approveEnrollment, rejectEnrollment, removeEnrollment,
     reorderCourseModules, reorderModuleUnits, getCourseAnalytics, 
-    getTeacherLesson, createTeacherLesson, updateTeacherLesson, deleteTeacherLesson, // ✅ ADD THESE
-    getTeacherQuiz, getCourseDesign, addModulesToCourse, changeCourseModuleOrder, removeModulesFromCourse,
+    getTeacherLesson, createTeacherLesson, updateTeacherLesson, deleteTeacherLesson, 
+    getCourseDesign, addModulesToCourse, changeCourseModuleOrder, removeModulesFromCourse,
     changeCourseModulePrerequisiteCompletion, changeCourseModulePrerequisitePassing
 } from '../api/api';
 
@@ -34,8 +34,11 @@ const initialQuizForm = {
     pass_criteria: 40.0,
     weightage: 100.0,
     allow_skip: true,
+    view_answerpaper: true, // Added
     is_exercise: false,
     active: true,
+    start_date_time: '', // Added
+    end_date_time: '',   // Added
     order: 1,
 };
 
@@ -586,47 +589,70 @@ const useManageCourseStore = create((set, get) => ({
         const lastUnit = module.units && module.units.length > 0
             ? Math.max(...module.units.map(u => u.order))
             : 0;
+        
+        // Default dates: Start now, End in 1 year
+        const now = new Date();
+        const nextYear = new Date();
+        nextYear.setFullYear(now.getFullYear() + 1);
+
         set({
             selectedModule: module,
             editingQuiz: null,
-            quizFormData: { ...initialQuizForm, order: lastUnit + 1 },
+            quizFormData: { 
+                ...initialQuizForm, 
+                order: lastUnit + 1,
+                start_date_time: now.toISOString().slice(0, 16), // Format for datetime-local input
+                end_date_time: nextYear.toISOString().slice(0, 16)
+            },
             showQuizForm: true
         });
     },
 
     openEditQuiz: async (module, unit) => {
+        const courseId = get().course?.id;
+        if (!courseId) return;
+
         set({ selectedModule: module, editingQuiz: unit });
         try {
-            const quizData = await getTeacherQuiz(module.id, unit.quiz_id);
+            const quizData = await getTeacherQuiz(courseId, module.id, unit.quiz_id);
+            
+            // Helper to format API date string to input datetime-local format
+            const formatDateForInput = (dateStr) => {
+                if (!dateStr) return '';
+                const date = new Date(dateStr);
+                // Adjust to local timezone string for input
+                const offset = date.getTimezoneOffset() * 60000;
+                const localISOTime = (new Date(date - offset)).toISOString().slice(0, 16);
+                return localISOTime;
+            };
+
             set({
                 quizFormData: {
+                    id: quizData.id,
                     description: quizData.description || '',
                     instructions: quizData.instructions || '',
-                    duration: quizData.duration || 20,
+                    duration: quizData.duration || 30,
                     attempts_allowed: quizData.attempts_allowed || 1,
                     time_between_attempts: quizData.time_between_attempts || 0.0,
                     pass_criteria: quizData.pass_criteria || 40.0,
                     weightage: quizData.weightage || 100.0,
                     allow_skip: quizData.allow_skip !== undefined ? quizData.allow_skip : true,
+                    view_answerpaper: quizData.view_answerpaper !== undefined ? quizData.view_answerpaper : true, // Added
                     is_exercise: quizData.is_exercise !== undefined ? quizData.is_exercise : false,
                     active: quizData.active !== undefined ? quizData.active : true,
+                    start_date_time: formatDateForInput(quizData.start_date_time), // Added
+                    end_date_time: formatDateForInput(quizData.end_date_time),     // Added
                     order: quizData.order || unit.order,
                 },
                 showQuizForm: true
             });
-        } catch {
+        } catch (error) {
+            console.error("Error fetching quiz:", error);
+            // Fallback
             set({
                 quizFormData: {
+                    ...initialQuizForm,
                     description: unit.name || '',
-                    instructions: '',
-                    duration: 20,
-                    attempts_allowed: 1,
-                    time_between_attempts: 0.0,
-                    pass_criteria: 40.0,
-                    weightage: 100.0,
-                    allow_skip: true,
-                    is_exercise: false,
-                    active: true,
                     order: unit.order,
                 },
                 showQuizForm: true
@@ -634,17 +660,47 @@ const useManageCourseStore = create((set, get) => ({
         }
     },
 
-    handleCreateQuiz: async (moduleId) => {
-        await createQuiz(moduleId, get().quizFormData);
-        set({ showQuizForm: false, selectedModule: null, quizFormData: { ...initialQuizForm } });
-        await get().loadCourseData(get().course.id);
+    handleCreateQuiz: async () => {
+        const { selectedModule, quizFormData, course } = get();
+        if (!selectedModule || !course) return;
+
+        try {
+            set({ loading: true });
+            
+            // Ensure dates are sent in ISO format for the API
+            const payload = { ...quizFormData };
+            if (payload.start_date_time) payload.start_date_time = new Date(payload.start_date_time).toISOString();
+            if (payload.end_date_time) payload.end_date_time = new Date(payload.end_date_time).toISOString();
+
+            await createQuiz(course.id, selectedModule.id, payload);
+            set({ showQuizForm: false, selectedModule: null, quizFormData: { ...initialQuizForm }, loading: false });
+            await get().loadCourseData(course.id);
+        } catch (err) {
+            console.error(err);
+            set({ loading: false, error: err.message });
+        }
     },
 
-    handleDeleteQuiz: async (moduleId, quizId) => {
-        await deleteQuiz(moduleId, quizId);
-        await get().loadCourseData(get().course.id);
-    },
+    handleUpdateQuiz: async () => {
+        const { selectedModule, editingQuiz, quizFormData, course } = get();
+        if (!selectedModule || !editingQuiz || !course) return;
 
+        try {
+            set({ loading: true });
+            
+             // Ensure dates are sent in ISO format for the API
+            const payload = { ...quizFormData };
+            if (payload.start_date_time) payload.start_date_time = new Date(payload.start_date_time).toISOString();
+            if (payload.end_date_time) payload.end_date_time = new Date(payload.end_date_time).toISOString();
+
+            await updateQuiz(course.id, selectedModule.id, editingQuiz.quiz_id, payload);
+            set({ showQuizForm: false, selectedModule: null, editingQuiz: null, quizFormData: { ...initialQuizForm }, loading: false });
+            await get().loadCourseData(course.id);
+        } catch (err) {
+            console.error(err);
+            set({ loading: false, error: err.message });
+        }
+    },
     // Quiz Question Manager ============================================================
     openQuizQuestionManager: (quizId) => set({ selectedQuizId: quizId, showQuizQuestionManager: true }),
     handleQuizQuestionsUpdate: () => get().loadCourseData(get().course.id),

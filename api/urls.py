@@ -56,8 +56,8 @@ urlpatterns = [
     url(r'get_courses/$', views.CourseList.as_view(), name='get_courses'),
     url(r'start_quiz/(?P<course_id>[0-9]+)/(?P<quiz_id>[0-9]+)/$', views.StartQuiz.as_view(),
         name='start_quiz'),
-    url(r'quizzes/$', views.QuizList.as_view(), name='quizzes'),
-    url(r'quizzes/(?P<pk>[0-9]+)/$', views.QuizDetail.as_view(), name='quiz'),
+    url(r'^quizzes/$', views.QuizList.as_view(), name='quizzes'), # IMP : DONT USE  ^ for this, otherwise it will not work with the teacher routes which also have quizzes in the url
+    url(r'quizzes/(?P<pk>[0-9]+)/$', views.QuizDetail.as_view(), name='quiz'), # IMP :  USE  ^ for this, otherwise it will not work with the teacher routes which also have quizzes in the url
     url(r'questionpapers/$', views.QuestionPaperList.as_view(),
         name='questionpapers'),
     url(r'questionpapers/(?P<pk>[0-9]+)/$',
@@ -168,8 +168,8 @@ urlpatterns = [
     url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/(?P<module_id>[0-9]+)/update/$', views.teacher_update_module, name='teacher_update_module'), #ok
     url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/(?P<module_id>[0-9]+)/delete/$', views.teacher_delete_module, name='teacher_delete_module'), #ok
     
-    url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/(?P<module_id>[0-9]+)/lessons/$', views.api_lesson_handler, name='api_lesson_handler'),
-    url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/(?P<module_id>[0-9]+)/lessons/(?P<lesson_id>[0-9]+)/$', views.api_lesson_handler, name='api_lesson_handler'),
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/(?P<module_id>[0-9]+)/lessons/$', views.api_lesson_handler, name='api_lesson_handler'), #ok
+    url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/(?P<module_id>[0-9]+)/lessons/(?P<lesson_id>[0-9]+)/$', views.api_lesson_handler, name='api_lesson_handler'), #ok
 
     url(r'teacher/modules/(?P<module_id>[0-9]+)/design/$', views.api_design_module, name='api_design_module'),
     url(r'teacher/modules/(?P<module_id>[0-9]+)/design/(?P<course_id>[0-9]+)/$', views.api_design_module, name='api_design_module'),
@@ -177,8 +177,8 @@ urlpatterns = [
     url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/(?P<module_id>[0-9]+)/exercises/$', views.api_exercise_handler, name='api_exercise_handler'),
     url(r'teacher/courses/(?P<course_id>[0-9]+)/modules/(?P<module_id>[0-9]+)/exercises/(?P<quiz_id>[0-9]+)/$', views.api_exercise_handler, name='api_exercise_handler'),
 
-    url(r'teacher/courses/(?P<course_id>\d+)/modules/(?P<module_id>\d+)/quizzes/$', views.teacher_create_quiz, name='teacher_create_quiz_handler'),
-    url(r'teacher/courses/(?P<course_id>\d+)/modules/(?P<module_id>\d+)/quizzes/(?P<quiz_id>\d+)/$', views.teacher_update_quiz, name='teacher_update_quiz_handler'),
+    url(r'^teacher/courses/(?P<course_id>\d+)/modules/(?P<module_id>\d+)/quizzes/$', views.api_quiz_handler, name='api_quiz_handler_create'),  # IMP USE ^ for this, otherwise it will conflict with the update route which also has quizzes in the url
+    url(r'^teacher/courses/(?P<course_id>\d+)/modules/(?P<module_id>\d+)/quizzes/(?P<quiz_id>\d+)/$', views.api_quiz_handler, name='api_quiz_handler_update'), #IMP USE ^ for this, otherwise it will conflict with the create route which also has quizzes in the url
 
 
     url(r'teacher/courses/(?P<course_id>\d+)/designcourse/$', views.api_design_course, name='api_design_course'), #ok
@@ -255,14 +255,6 @@ urlpatterns = [
 
 
 
-
-    
-   
-    url(r'teacher/modules/(?P<module_id>[0-9]+)/quizzes/create/$', views.teacher_create_quiz, name='teacher_create_quiz'), #have to check if this is correct
-    url(r'teacher/modules/(?P<module_id>[0-9]+)/quizzes/(?P<quiz_id>[0-9]+)/update/$', views.teacher_update_quiz, name='teacher_update_quiz'), #///////// done till here
-
-    url(r'teacher/modules/(?P<module_id>[0-9]+)/quizzes/(?P<quiz_id>[0-9]+)/delete/$', views.teacher_delete_quiz, name='teacher_delete_quiz'),
-    
     url(r'teacher/quizzes/(?P<quiz_id>[0-9]+)/questions/$', views.teacher_get_quiz_questions, name='teacher_get_quiz_questions'), #have to check if this is correct
     url(r'teacher/quizzes/(?P<quiz_id>[0-9]+)/questions/add/$', views.teacher_add_question_to_quiz, name='teacher_add_question_to_quiz'), #have to check if this is correct
     url(r'teacher/quizzes/(?P<quiz_id>[0-9]+)/questions/(?P<question_id>[0-9]+)/remove/$', views.teacher_remove_question_from_quiz, name='teacher_remove_question_from_quiz'),

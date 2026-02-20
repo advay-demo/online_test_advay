@@ -29,6 +29,7 @@ const CourseModules = () => {
         quizFormData, 
         handleQuizFormChange, 
         handleCreateQuiz, 
+        handleUpdateQuiz, 
         setShowQuizForm, 
         setSelectedModule: setSelectedModuleQuiz, 
         setEditingQuiz,
@@ -580,180 +581,304 @@ const CourseModules = () => {
                 </div>
             )}
             {/* QUIZ FORM MODAL */}
+                        {/* QUIZ FORM MODAL */}
             {showQuizForm && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-                    <div className="card-strong rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto shadow-2xl">
-                        <h3 className="text-xl font-bold mb-4">
-                            {editingQuiz ? 'Edit Quiz' : 'Create New Quiz'}
-                        </h3>
-                        <form onSubmit={handleCreateQuiz}>
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-semibold mb-2">
-                                        Quiz Name/Description *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="description"
-                                        value={quizFormData.description}
-                                        onChange={handleQuizFormChange}
-                                        required
-                                        className="w-full px-4 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50"
-                                        placeholder="Enter quiz name/description"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-semibold mb-2">
-                                        Instructions
-                                    </label>
-                                    <textarea
-                                        name="instructions"
-                                        value={quizFormData.instructions}
-                                        onChange={handleQuizFormChange}
-                                        rows="3"
-                                        className="w-full px-4 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50 resize-none"
-                                        placeholder="Enter quiz instructions for students"
-                                    />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-2">
+                    <div className="card-strong w-full max-w-full sm:max-w-2xl p-4 sm:p-6 relative rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
+                        
+                        {/* Close Button */}
+                        <button
+                            className="absolute right-4 top-4 text-lg sm:text-xl p-2 rounded-full border border-[var(--border-color)] bg-[var(--input-bg)] hover:bg-white/10 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"
+                            onClick={() => {
+                                setShowQuizForm(false);
+                                setSelectedModuleQuiz(null);
+                                setEditingQuiz(null);
+                            }}
+                            aria-label="Close"
+                        >
+                            <FaTimes />
+                        </button>
+
+                        {/* Header */}
+                        <div className="flex flex-row items-center gap-4 mb-4 sm:mt-0">
+                            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-green-500/10 flex items-center justify-center border border-green-500/20">
+                                <svg className="w-7 h-7 sm:w-8 sm:h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <h2 className="text-xl sm:text-2xl font-bold mb-1 line-clamp-1">
+                                    {editingQuiz ? 'Edit Quiz' : 'Create New Quiz'}
+                                </h2>
+                                <p className="text-xs sm:text-sm muted line-clamp-2">
+                                    {editingQuiz
+                                        ? 'Update quiz settings'
+                                        : 'Set up a new quiz for this module.'}
+                                </p>
+                            </div>
+                        </div>
+
+                        <form onSubmit={(e) => {
+                            e.preventDefault();
+                            if (editingQuiz) {
+                                handleUpdateQuiz();
+                            } else {
+                                handleCreateQuiz();
+                            }
+                        }} className="space-y-6 mt-2">
+                            
+                            {/* Quiz Name & Description */}
+                            <div className="flex flex-col gap-2">
+                                <input
+                                    type="text"
+                                    name="description"
+                                    value={quizFormData.description}
+                                    onChange={handleQuizFormChange}
+                                    required
+                                    className="input bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg px-4 py-3 text-base focus-visible:outline-none"
+                                    placeholder="Quiz Name/Title *"
+                                />
+                                <textarea
+                                    name="instructions"
+                                    value={quizFormData.instructions}
+                                    onChange={handleQuizFormChange}
+                                    rows="3"
+                                    className="input bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg px-4 py-3 text-sm focus-visible:outline-none resize-none"
+                                    placeholder="Instructions for students (e.g. 'No calculators allowed')"
+                                />
+                            </div>
+
+                            {/* Settings Grid */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-[var(--input-bg)] bg-opacity-50 border border-[var(--border-color)] rounded-xl p-4">
+                                
+                                {/* Dates Row */}
+                                <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 pb-2 border-b border-white/5 mb-2">
                                     <div>
-                                        <label className="block text-sm font-semibold mb-2">
-                                            Duration (minutes) *
+                                        <label className="block text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">
+                                            Start Date & Time
                                         </label>
                                         <input
-                                            type="number"
-                                            name="duration"
-                                            value={quizFormData.duration}
+                                            type="datetime-local"
+                                            name="start_date_time"
+                                            value={quizFormData.start_date_time}
                                             onChange={handleQuizFormChange}
                                             required
-                                            min="1"
-                                            className="w-full px-4 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50"
+                                            className="w-full px-3 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-purple-500/50 text-sm [color-scheme:dark]"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-semibold mb-2">
-                                            Attempts Allowed
+                                        <label className="block text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">
+                                            End Date & Time
                                         </label>
+                                        <input
+                                            type="datetime-local"
+                                            name="end_date_time"
+                                            value={quizFormData.end_date_time}
+                                            onChange={handleQuizFormChange}
+                                            required
+                                            className="w-full px-3 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-purple-500/50 text-sm [color-scheme:dark]"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">
+                                        Duration (min)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        name="duration"
+                                        value={quizFormData.duration}
+                                        onChange={handleQuizFormChange}
+                                        required
+                                        min="1"
+                                        className="w-full px-3 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-purple-500/50 text-sm"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">
+                                        Attempts Allowed
+                                    </label>
+                                    <div className="relative">
                                         <input
                                             type="number"
                                             name="attempts_allowed"
                                             value={quizFormData.attempts_allowed}
                                             onChange={handleQuizFormChange}
                                             min="-1"
-                                            className="w-full px-4 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50"
+                                            className="w-full px-3 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-purple-500/50 text-sm"
                                         />
-                                        <p className="text-xs muted mt-1">-1 for unlimited</p>
+                                        <span className="absolute right-10 top-1/2 -translate-y-1/2 text-[15px] text-gray-500 pointer-events-none">
+                                            -1 = ∞
+                                        </span>
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-semibold mb-2">
-                                            Time Between Attempts (hours)
-                                        </label>
-                                        <input
-                                            type="number"
-                                            name="time_between_attempts"
-                                            value={quizFormData.time_between_attempts}
-                                            onChange={handleQuizFormChange}
-                                            min="0"
-                                            step="0.5"
-                                            className="w-full px-4 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-semibold mb-2">
-                                            Pass Criteria (%)
-                                        </label>
-                                        <input
-                                            type="number"
-                                            name="pass_criteria"
-                                            value={quizFormData.pass_criteria}
-                                            onChange={handleQuizFormChange}
-                                            min="0"
-                                            max="100"
-                                            className="w-full px-4 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50"
-                                        />
-                                    </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">
+                                        Pass %
+                                    </label>
+                                    <input
+                                        type="number"
+                                        name="pass_criteria"
+                                        value={quizFormData.pass_criteria}
+                                        onChange={handleQuizFormChange}
+                                        min="0"
+                                        max="100"
+                                        className="w-full px-3 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-purple-500/50 text-sm"
+                                    />
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-semibold mb-2">
-                                            Weightage (%)
-                                        </label>
-                                        <input
-                                            type="number"
-                                            name="weightage"
-                                            value={quizFormData.weightage}
-                                            onChange={handleQuizFormChange}
-                                            min="0"
-                                            max="100"
-                                            className="w-full px-4 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-semibold mb-2">
-                                            Order
-                                        </label>
-                                        <input
-                                            type="number"
-                                            name="order"
-                                            value={quizFormData.order}
-                                            onChange={handleQuizFormChange}
-                                            className="w-full px-4 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50"
-                                        />
-                                    </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">
+                                        Wait time (hrs)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        name="time_between_attempts"
+                                        value={quizFormData.time_between_attempts}
+                                        onChange={handleQuizFormChange}
+                                        min="0"
+                                        step="0.5"
+                                        className="w-full px-3 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-purple-500/50 text-sm"
+                                    />
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            name="allow_skip"
-                                            checked={quizFormData.allow_skip}
-                                            onChange={handleQuizFormChange}
-                                            className="toggle-checkbox"
-                                        />
-                                        <span className="text-sm">Allow Skip Questions</span>
+                                
+                                <div >
+                                    <label className="block text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">
+                                        Weightage %
                                     </label>
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            name="is_exercise"
-                                            checked={quizFormData.is_exercise}
-                                            onChange={handleQuizFormChange}
-                                            className="toggle-checkbox"
-                                        />
-                                        <span className="text-sm">Is Exercise (Practice Mode)</span>
+                                    <input
+                                        type="number"
+                                        name="weightage"
+                                        value={quizFormData.weightage}
+                                        onChange={handleQuizFormChange}
+                                        min="0"
+                                        max="100"
+                                        className="w-full px-3 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-purple-500/50 text-sm"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">
+                                        Order
                                     </label>
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            name="active"
-                                            checked={quizFormData.active}
-                                            onChange={handleQuizFormChange}
-                                            className="toggle-checkbox"
-                                        />
-                                        <span className="text-sm">Active</span>
-                                    </label>
+                                    <input
+                                        type="number"
+                                        name="order"
+                                        value={quizFormData.order}
+                                        onChange={handleQuizFormChange}
+                                        className="w-full px-3 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-purple-500/50 text-sm"
+                                    />
+                                </div>
+                                
+                            </div>
+
+                            {/* Toggles */}
+                            <div className="space-y-3 pt-2">
+                                {/* Allow Skip */}
+                                <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--input-bg)] border border-[var(--border-color)]">
+                                    <div className="flex-1">
+                                        <span className="text-sm font-semibold text-gray-200">Allow Skipping</span>
+                                        <p className="text-xs muted mt-0.5">Students can skip questions and return later</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleQuizFormChange({ target: { name: 'allow_skip', type: 'checkbox', checked: !quizFormData.allow_skip } })}
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-[var(--bg-primary)] ${
+                                            quizFormData.allow_skip ? 'bg-yellow-600' : 'bg-gray-600'
+                                        }`}
+                                    >
+                                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${quizFormData.allow_skip ? 'translate-x-6' : 'translate-x-1'}`} />
+                                    </button>
+                                </div>
+
+                                {/* View Answer Paper */}
+                                <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--input-bg)] border border-[var(--border-color)]">
+                                    <div className="flex-1">
+                                        <span className="text-sm font-semibold text-gray-200">View Answer Paper</span>
+                                        <p className="text-xs muted mt-0.5">Allow students to see correct answers after submission</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleQuizFormChange({ target: { name: 'view_answerpaper', type: 'checkbox', checked: !quizFormData.view_answerpaper } })}
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-[var(--bg-primary)] ${
+                                            quizFormData.view_answerpaper ? 'bg-purple-600' : 'bg-gray-600'
+                                        }`}
+                                    >
+                                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${quizFormData.view_answerpaper ? 'translate-x-6' : 'translate-x-1'}`} />
+                                    </button>
+                                </div>
+
+                                {/* Active Status */}
+                                <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--input-bg)] border border-[var(--border-color)]">
+                                    <div className="flex-1">
+                                        <span className="text-sm font-semibold text-gray-200">Active Status</span>
+                                        <p className="text-xs muted mt-0.5">Make visible to students immediately</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleQuizFormChange({ target: { name: 'active', type: 'checkbox', checked: !quizFormData.active } })}
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-[var(--bg-primary)] ${
+                                            quizFormData.active ? 'bg-green-600' : 'bg-gray-600'
+                                        }`}
+                                    >
+                                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${quizFormData.active ? 'translate-x-6' : 'translate-x-1'}`} />
+                                    </button>
                                 </div>
                             </div>
-                            <div className="flex justify-end gap-3 mt-6">
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setShowQuizForm(false);
-                                        setSelectedModuleQuiz(null);
-                                        setEditingQuiz(null);
-                                    }}
-                                    className="px-4 py-2 border border-white/10 rounded-lg hover:bg-white/5 transition"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                                >
-                                    {editingQuiz ? 'Update' : 'Create'}
-                                </button>
+
+                            {/* Footer Buttons */}
+                            <div className="flex flex-col sm:flex-row gap-3 sm:gap-3 justify-between pt-2">
+                                {/* Left side - Try buttons (only show when editing) */}
+                                {editingQuiz && (
+                                    <div className="flex flex-wrap gap-2 sm:mt-3 ">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                // TODO: Implement try as student
+                                                console.log('Try as student');
+                                            }}
+                                            className="flex-1 sm:flex-none px-4 py-2 rounded-lg border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 text-xs sm:text-sm font-medium hover:bg-cyan-500/20 transition flex items-center justify-center gap-2"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                            </svg>
+                                            <span>Try as Student</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                // TODO: Implement try as teacher
+                                                console.log('Try as teacher');
+                                            }}
+                                            className="flex-1 sm:flex-none px-4 py-2 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-400 text-xs sm:text-sm font-medium hover:bg-amber-500/20 transition flex items-center justify-center gap-2"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                            </svg>
+                                            <span>Try as Teacher</span>
+                                        </button>
+                                    </div>
+                                )}
+
+                                {/* Action Buttons Row */}
+                                <div className="flex gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setShowQuizForm(false);
+                                            setSelectedModuleQuiz(null);
+                                            setEditingQuiz(null);
+                                        }}
+                                        className="flex-1 sm:flex-none px-5 py-2.5 rounded-lg border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-muted)] hover:text-white hover:bg-white/10 font-medium transition"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="flex-1 sm:flex-none px-6 py-2.5 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold hover:from-blue-700 hover:to-blue-800 shadow-lg shadow-blue-500/20 transition-all transform hover:scale-[1.02]"
+                                    >
+                                        {editingQuiz ? 'Update' : 'Create'}
+                                    </button>
+                                </div>
                             </div>
                         </form>
                     </div>

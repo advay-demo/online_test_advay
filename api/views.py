@@ -2920,325 +2920,159 @@ def api_exercise_handler(request, course_id, module_id, quiz_id=None):
 
     return Response({'error': 'Invalid request'}, status=400)
 
-
-
-
-
-
-
-
-
 # ============================================================
 #  QUIZ APIs
 # ============================================================
 
-@api_view(['POST'])
+@api_view(['GET', 'POST', 'PUT', 'DELETE'])
 @permission_classes([IsAuthenticated])
-def teacher_create_quiz(request, course_id, module_id):
-    """Create a new quiz in a module"""
+def api_quiz_handler(request, course_id, module_id, quiz_id=None):
+    """
+    Unified API handler for managing quizzes (Create, Retrieve, Update, Delete)
+    within a specific course module.
+    """
     user = request.user
     
+    # Permission check
     if not _check_teacher_permission(user):
-        return Response(
-            {'error': 'You are not authorized'},
-            status=status.HTTP_403_FORBIDDEN
-        )
+        return Response({'error': 'You are not authorized'}, status=status.HTTP_403_FORBIDDEN)
     
     try:
-        module = LearningModule.objects.get(id=module_id)
+        course = get_object_or_404(Course, id=course_id)
+        if not course.is_creator(user) and not course.is_teacher(user):
+            return Response({'error': 'This course does not belong to you'}, status=status.HTTP_403_FORBIDDEN)
+            
+        module = get_object_or_404(LearningModule, id=module_id)
         
-        # Verify ownership
-        if module.creator != user:
-            return Response(
-                {'error': 'You do not have permission to modify this module'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        # Get form data
-        description = request.data.get('description')
-        instructions = request.data.get('instructions', '')
-        duration = request.data.get('duration', 20)  # in minutes
-        attempts_allowed = request.data.get('attempts_allowed', 1)
-        time_between_attempts = request.data.get('time_between_attempts', 0.0)  # in hours
-        pass_criteria = request.data.get('pass_criteria', 40.0)  # percentage
-        weightage = request.data.get('weightage', 100.0)
-        allow_skip = request.data.get('allow_skip', True)
-        is_exercise = request.data.get('is_exercise', False)
-        active = request.data.get('active', True)
-        order = request.data.get('order')
-        
-        if not description:
-            return Response(
-                {'error': 'Quiz description/name is required'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Auto-calculate order if not provided
-        if order is None:
-            last_unit = module.get_learning_units().last()
-            order = (last_unit.order + 1) if last_unit else 1
-        
-        # Create quiz
-        quiz = Quiz.objects.create(
-            description=description,
-            instructions=instructions,
-            duration=duration,
-            attempts_allowed=attempts_allowed,
-            time_between_attempts=time_between_attempts,
-            pass_criteria=pass_criteria,
-            weightage=weightage,
-            allow_skip=allow_skip,
-            is_exercise=is_exercise,
-            active=active,
-            creator=user
-        )
-        
-        # Create empty question paper and link to quiz
-        # Ensure no previous paper exists (defensive)
-        if hasattr(quiz, 'question_paper') and quiz.question_paper:
-             quiz.question_paper.delete()
+        # GET: Retrieve quiz details
+        if request.method == "GET":
+            if not quiz_id:
+                return Response({'error': 'quiz_id required for retrieval'}, status=status.HTTP_400_BAD_REQUEST)
+                
+            quiz = get_object_or_404(Quiz, id=quiz_id)
+            if quiz.creator != user:
+                return Response({'error': 'This quiz does not belong to you'}, status=status.HTTP_403_FORBIDDEN)
+                
+            unit = module.learning_unit.filter(type='quiz', quiz=quiz).first()
+            if not unit:
+                return Response({'error': 'Quiz not attached to this module'}, status=status.HTTP_400_BAD_REQUEST)
+                
+            return Response({
+                'id': quiz.id,
+                'description': quiz.description,
+                'instructions': quiz.instructions or '',
+                'duration': quiz.duration,
+                'attempts_allowed': quiz.attempts_allowed,
+                'time_between_attempts': quiz.time_between_attempts,
+                'pass_criteria': quiz.pass_criteria,
+                'weightage': quiz.weightage,
+                'allow_skip': quiz.allow_skip,
+                'is_exercise': quiz.is_exercise,
+                'active': quiz.active,
+                'order': unit.order
+            })
 
-        question_paper = QuestionPaper.objects.create(quiz=quiz)
-        question_paper.fixed_questions.clear()
-        question_paper.random_questions.clear()
-        quiz.question_paper = question_paper
-        quiz.save()
-        
-        # Create learning unit and add to module
-        unit = LearningUnit.objects.create(
-            type='quiz',
-            quiz=quiz,
-            order=order
-        )
-        module.learning_unit.add(unit)
-        
-        return Response({
-            'id': quiz.id,
-            'description': quiz.description,
-            'instructions': quiz.instructions,
-            'duration': quiz.duration,
-            'attempts_allowed': quiz.attempts_allowed,
-            'pass_criteria': quiz.pass_criteria,
-            'active': quiz.active,
-            'unit_id': unit.id,
-            'order': order,
-            'question_paper_id': question_paper.id,
-            'message': 'Quiz created successfully'
-        }, status=status.HTTP_201_CREATED)
-        
-    except LearningModule.DoesNotExist:
-        return Response(
-            {'error': 'Module not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
+        # POST: Create new quiz
+        if request.method == "POST":
+            if quiz_id:
+                return Response({'error': 'Use PUT to update existing quiz'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Form data extraction
+            description = request.data.get('description')
+            if not description:
+                return Response({'error': 'Quiz description/name is required'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            try:
+                quiz = Quiz.objects.create(
+                    description=description,
+                    instructions=request.data.get('instructions', ''),
+                    duration=request.data.get('duration', 20),
+                    attempts_allowed=request.data.get('attempts_allowed', 1),
+                    time_between_attempts=request.data.get('time_between_attempts', 0.0),
+                    pass_criteria=request.data.get('pass_criteria', 40.0),
+                    weightage=request.data.get('weightage', 100.0),
+                    allow_skip=request.data.get('allow_skip', True),
+                    is_exercise=request.data.get('is_exercise', False),
+                    active=request.data.get('active', True),
+                    creator=user
+                )
+
+                # Create QuestionPaper
+                QuestionPaper.objects.create(quiz=quiz)
+                
+                # Determine order
+                order = request.data.get('order')
+                if order is None:
+                    last_unit = module.get_learning_units().last()
+                    order = (last_unit.order + 1) if (last_unit and last_unit.order is not None) else 1
+                
+                # Create unit and add to module (same as lesson handler)
+                unit = LearningUnit.objects.create(
+                    type='quiz',
+                    quiz=quiz,
+                    order=order
+                )
+                module.learning_unit.add(unit)
+                
+                return Response({
+                    'id': quiz.id,
+                    'message': 'Quiz created successfully',
+                    'order': order,
+                    'unit_id': unit.id,
+                }, status=status.HTTP_201_CREATED)
+            except Exception as e:
+                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        # PUT: Update existing quiz
+        if request.method == "PUT":
+            if not quiz_id:
+                return Response({'error': 'quiz_id required for update'}, status=status.HTTP_400_BAD_REQUEST)
+                
+            quiz = get_object_or_404(Quiz, id=quiz_id)
+            if quiz.creator != user:
+                return Response({'error': 'You do not have permission'}, status=status.HTTP_403_FORBIDDEN)
+                
+            unit = module.learning_unit.filter(type='quiz', quiz=quiz).first()
+            if not unit:
+                return Response({'error': 'Quiz not in this module'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Update fields
+            if 'description' in request.data: quiz.description = request.data['description']
+            if 'instructions' in request.data: quiz.instructions = request.data['instructions']
+            if 'duration' in request.data: quiz.duration = request.data['duration']
+            if 'attempts_allowed' in request.data: quiz.attempts_allowed = request.data['attempts_allowed']
+            if 'time_between_attempts' in request.data: quiz.time_between_attempts = request.data['time_between_attempts']
+            if 'pass_criteria' in request.data: quiz.pass_criteria = request.data['pass_criteria']
+            if 'weightage' in request.data: quiz.weightage = request.data['weightage']
+            if 'allow_skip' in request.data: quiz.allow_skip = request.data['allow_skip']
+            if 'is_exercise' in request.data: quiz.is_exercise = request.data['is_exercise']
+            if 'active' in request.data: quiz.active = request.data['active']
+            
+            if 'order' in request.data:
+                unit.order = request.data['order']
+                unit.save()
+            
+            quiz.save()
+            return Response({'message': 'Quiz updated', 'id': quiz.id})
+
+        # DELETE: Delete quiz
+        if request.method == "DELETE":
+            if not quiz_id:
+                return Response({'error': 'quiz_id required'}, status=status.HTTP_400_BAD_REQUEST)
+
+            quiz = get_object_or_404(Quiz, id=quiz_id)
+            if quiz.creator != user:
+                return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+                
+            unit = module.learning_unit.filter(type='quiz', quiz=quiz).first()
+            if unit:
+                module.learning_unit.remove(unit)
+                unit.delete()
+                
+            quiz.delete()
+            return Response({'message': 'Quiz deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+
     except Exception as e:
-        return Response(
-            {'error': 'Failed to create quiz', 'details': str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-
-
-@api_view(['PUT'])
-@permission_classes([IsAuthenticated])
-def teacher_update_quiz(request, course_id, module_id, quiz_id):
-    """Update an existing quiz"""
-    user = request.user
-    
-    if not _check_teacher_permission(user):
-        return Response(
-            {'error': 'You are not authorized'},
-            status=status.HTTP_403_FORBIDDEN
-        )
-    
-    try:
-        module = LearningModule.objects.get(id=module_id)
-        quiz = Quiz.objects.get(id=quiz_id)
-        
-        # Verify ownership
-        if module.creator != user or quiz.creator != user:
-            return Response(
-                {'error': 'You do not have permission to modify this quiz'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        # Verify quiz belongs to module
-        unit = module.learning_unit.filter(type='quiz', quiz=quiz).first()
-        if not unit:
-            return Response(
-                {'error': 'Quiz does not belong to this module'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Update fields
-        if 'description' in request.data:
-            quiz.description = request.data['description']
-        if 'instructions' in request.data:
-            quiz.instructions = request.data['instructions']
-        if 'duration' in request.data:
-            quiz.duration = request.data['duration']
-        if 'attempts_allowed' in request.data:
-            quiz.attempts_allowed = request.data['attempts_allowed']
-        if 'time_between_attempts' in request.data:
-            quiz.time_between_attempts = request.data['time_between_attempts']
-        if 'pass_criteria' in request.data:
-            quiz.pass_criteria = request.data['pass_criteria']
-        if 'weightage' in request.data:
-            quiz.weightage = request.data['weightage']
-        if 'allow_skip' in request.data:
-            quiz.allow_skip = request.data['allow_skip']
-        if 'is_exercise' in request.data:
-            quiz.is_exercise = request.data['is_exercise']
-        if 'active' in request.data:
-            quiz.active = request.data['active']
-        if 'order' in request.data:
-            unit.order = request.data['order']
-            unit.save()
-        
-        quiz.save()
-        
-        return Response({
-            'id': quiz.id,
-            'description': quiz.description,
-            'instructions': quiz.instructions,
-            'duration': quiz.duration,
-            'attempts_allowed': quiz.attempts_allowed,
-            'pass_criteria': quiz.pass_criteria,
-            'active': quiz.active,
-            'order': unit.order,
-            'message': 'Quiz updated successfully'
-        }, status=status.HTTP_200_OK)
-        
-    except LearningModule.DoesNotExist:
-        return Response(
-            {'error': 'Module not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    except Quiz.DoesNotExist:
-        return Response(
-            {'error': 'Quiz not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    except Exception as e:
-        return Response(
-            {'error': 'Failed to update quiz', 'details': str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-
-
-@api_view(['DELETE'])
-@permission_classes([IsAuthenticated])
-def teacher_delete_quiz(request, module_id, quiz_id):
-    """Delete a quiz from a module"""
-    user = request.user
-    
-    if not _check_teacher_permission(user):
-        return Response(
-            {'error': 'You are not authorized'},
-            status=status.HTTP_403_FORBIDDEN
-        )
-    
-    try:
-        module = LearningModule.objects.get(id=module_id)
-        quiz = Quiz.objects.get(id=quiz_id)
-        
-        # Verify ownership
-        if module.creator != user or quiz.creator != user:
-            return Response(
-                {'error': 'You do not have permission to delete this quiz'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        # Find and remove learning unit
-        unit = module.learning_unit.filter(type='quiz', quiz=quiz).first()
-        if unit:
-            module.learning_unit.remove(unit)
-            unit.delete()
-        
-        # Delete quiz (cascade will delete question papers, etc.)
-        quiz.delete()
-        
-        return Response({
-            'message': 'Quiz deleted successfully'
-        }, status=status.HTTP_200_OK)
-        
-    except LearningModule.DoesNotExist:
-        return Response(
-            {'error': 'Module not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    except Quiz.DoesNotExist:
-        return Response(
-            {'error': 'Quiz not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    except Exception as e:
-        return Response(
-            {'error': 'Failed to delete quiz', 'details': str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def teacher_get_quiz(request, module_id, quiz_id):
-    """Get quiz details for editing"""
-    user = request.user
-    
-    if not _check_teacher_permission(user):
-        return Response(
-            {'error': 'You are not authorized'},
-            status=status.HTTP_403_FORBIDDEN
-        )
-    
-    try:
-        module = LearningModule.objects.get(id=module_id)
-        quiz = Quiz.objects.get(id=quiz_id)
-        
-        # Verify ownership
-        if module.creator != user or quiz.creator != user:
-            return Response(
-                {'error': 'You do not have permission to access this quiz'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        # Verify quiz belongs to module
-        unit = module.learning_unit.filter(type='quiz', quiz=quiz).first()
-        if not unit:
-            return Response(
-                {'error': 'Quiz does not belong to this module'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        return Response({
-            'id': quiz.id,
-            'description': quiz.description,
-            'instructions': quiz.instructions or '',
-            'duration': quiz.duration,
-            'attempts_allowed': quiz.attempts_allowed,
-            'time_between_attempts': quiz.time_between_attempts,
-            'pass_criteria': quiz.pass_criteria,
-            'weightage': quiz.weightage,
-            'allow_skip': quiz.allow_skip,
-            'is_exercise': quiz.is_exercise,
-            'active': quiz.active,
-            'order': unit.order
-        }, status=status.HTTP_200_OK)
-        
-    except LearningModule.DoesNotExist:
-        return Response(
-            {'error': 'Module not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    except Quiz.DoesNotExist:
-        return Response(
-            {'error': 'Quiz not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    except Exception as e:
-        return Response(
-            {'error': 'Failed to get quiz', 'details': str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # ============================================================

@@ -660,31 +660,25 @@ export const deleteTeacherExercise = async (courseId, moduleId, quizId) => {
 
 // Quiz APIs ============================================================
 
-export const getTeacherQuiz = async (moduleId, quizId) => {
-  const response = await api.get(`/api/teacher/modules/${moduleId}/quizzes/${quizId}/`);
+export const getTeacherQuiz = async (courseId, moduleId, quizId) => {
+  const response = await api.get(`/api/teacher/courses/${courseId}/modules/${moduleId}/quizzes/${quizId}/`);
   return response.data;
 };
 
-export const createQuiz = async (moduleId, quizData) => {
-  const response = await api.post(`/api/teacher/modules/${moduleId}/quizzes/create/`, quizData);
+export const createQuiz = async (courseId, moduleId, quizData) => {
+  const response = await api.post(`/api/teacher/courses/${courseId}/modules/${moduleId}/quizzes/`, quizData);
   return response.data;
 };
 
-export const updateQuiz = async (moduleId, quizId, quizData) => {
-  const response = await api.put(`/api/teacher/modules/${moduleId}/quizzes/${quizId}/update/`, quizData);
+export const updateQuiz = async (courseId, moduleId, quizId, quizData) => {
+  const response = await api.put(`/api/teacher/courses/${courseId}/modules/${moduleId}/quizzes/${quizId}/`, quizData);
   return response.data;
 };
 
-export const deleteQuiz = async (moduleId, quizId) => {
-  const response = await api.delete(`/api/teacher/modules/${moduleId}/quizzes/${quizId}/delete/`);
+export const deleteQuiz = async (courseId, moduleId, quizId) => {
+  const response = await api.delete(`/api/teacher/courses/${courseId}/modules/${moduleId}/quizzes/${quizId}/`);
   return response.data;
 };
-
-
-
-
-
-
 
 
 
