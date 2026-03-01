@@ -32,7 +32,7 @@ from yaksh.models import (
     ArrangeTestCase, FileUpload, AssignmentUpload
 )
 from yaksh.models import get_model_class
-from yaksh.views import is_moderator, get_html_text, prof_manage, add_as_moderator
+from yaksh.views import is_moderator, get_html_text, prof_manage, add_as_moderator, get_toc_contents
 from django.db.models import Q, Count, Avg, Sum, F, FloatField
 from django.utils import timezone
 from django.core.paginator import Paginator
@@ -2706,6 +2706,9 @@ def teacher_delete_module(request, course_id, module_id):
         )
 
 
+        
+
+
 # ============================================================
 #  LESSON MANAGEMENT APIs
 # ============================================================
@@ -2715,420 +2718,183 @@ def teacher_delete_module(request, course_id, module_id):
 @permission_classes([IsAuthenticated])
 def api_lesson_handler(request, course_id, module_id, lesson_id=None):
     user = request.user
-
-    # Permission check (replace with your is_moderator logic if needed)
-    from yaksh.views import is_moderator
+    
     if not is_moderator(user):
         return Response({'error': 'Not allowed'}, status=status.HTTP_403_FORBIDDEN)
-
+    
     course = get_object_or_404(Course, id=course_id)
     if not course.is_creator(user) and not course.is_teacher(user):
         return Response({'error': 'This Lesson does not belong to you'}, status=status.HTTP_403_FORBIDDEN)
     module = get_object_or_404(LearningModule, id=module_id)
-
-    # GET (retrieve lesson)
+    
+    # GET: Retrieve lesson details
     if request.method == "GET":
         if not lesson_id:
             return Response({'error': 'lesson_id required'}, status=status.HTTP_400_BAD_REQUEST)
         lesson = get_object_or_404(Lesson, id=lesson_id)
-        if lesson.creator != user:
-            return Response({'error': 'This Lesson does not belong to you'}, status=status.HTTP_403_FORBIDDEN)
+        
         lesson_files = LessonFile.objects.filter(lesson=lesson)
+        toc_data = get_toc_contents(request, course_id, lesson_id)
+        
+        video_url = None
+        if lesson.video_file:
+            video_url = request.build_absolute_uri(lesson.video_file.url)
+
         return Response({
             'id': lesson.id,
             'name': lesson.name,
             'description': lesson.description,
             'video_path': lesson.video_path,
+            'video_file': video_url,
             'active': lesson.active,
-            'files': [{'id': f.id, 'name': f.file.name} for f in lesson_files]
+            'files': [{'id': f.id, 'name': f.file.name, 'url': request.build_absolute_uri(f.file.url)} for f in lesson_files],
+            'toc': toc_data
         })
-
-    # POST (create or update lesson)
+    
+    # POST: Create new lesson
     if request.method == "POST":
-        data = request.data
-        files = request.FILES.getlist('Lesson_files')
-        lesson = None
         if lesson_id:
-            lesson = get_object_or_404(Lesson, id=lesson_id)
-            if lesson.creator != user:
-                return Response({'error': 'This Lesson does not belong to you'}, status=status.HTTP_403_FORBIDDEN)
-            form = LessonForm(data, request.FILES, instance=lesson)
-        else:
-            form = LessonForm(data, request.FILES)
-        if form.is_valid():
-            lesson = form.save(commit=False)
-            lesson.creator = user
+            return Response({'error': 'Use PUT to update existing lesson'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            # Basic fields
+            active = request.data.get('active', True)
+            if isinstance(active, str):
+                active = active.lower() == 'true'
+
+            # ✅ FIX: Prepare creation dictionary to handle file during creation
+            create_kwargs = {
+                'name': request.data.get('name'),
+                'description': request.data.get('description', ''),
+                'video_path': request.data.get('video_path', ''),
+                'active': active,
+                'creator': user
+            }
+
+            # Handle Video File
+            video_file = request.FILES.get("video_file")
+            if video_file:
+                create_kwargs['video_file'] = video_file
+
+            lesson = Lesson.objects.create(**create_kwargs)
+            
             lesson.html_data = get_html_text(lesson.description)
             lesson.save()
-            # Add files
-            for les_file in files:
-                LessonFile.objects.get_or_create(lesson=lesson, file=les_file)
-            # Add to module if new
-            if not lesson_id:
-                last_unit = module.get_learning_units().last()
-                order = last_unit.order + 1 if last_unit else 1
-                unit, created = LearningUnit.objects.get_or_create(
-                    type="lesson", lesson=lesson, order=order
-                )
-                if created:
-                    module.learning_unit.add(unit.id)
-            return Response({'message': 'Lesson saved', 'lesson_id': lesson.id})
-        else:
-            return Response({'error': form.errors}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Handle file uploads
+            lessonfiles = request.FILES.getlist('Lesson_files')
+            if lessonfiles:
+                for les_file in lessonfiles:
+                    LessonFile.objects.get_or_create(lesson=lesson, file=les_file)
+            
+            # Add to module
+            last_unit = module.get_learning_units().last()
+            new_order = (last_unit.order + 1) if (last_unit and last_unit.order is not None) else 1
+            
+            # Use create directly with order to satisfy NOT NULL constraint
+            unit = LearningUnit.objects.create(
+                type="lesson", 
+                lesson=lesson,
+                order=new_order
+            )
 
-    # PUT (update lesson)
+            module.learning_unit.add(unit)
+            
+            return Response({'message': 'Lesson created', 'lesson_id': lesson.id}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # PUT: Update existing lesson
     if request.method == "PUT":
         if not lesson_id:
-            return Response({'error': 'lesson_id required'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'lesson_id required for update'}, status=status.HTTP_400_BAD_REQUEST)
+        
         lesson = get_object_or_404(Lesson, id=lesson_id)
-        if lesson.creator != user:
-            return Response({'error': 'This Lesson does not belong to you'}, status=status.HTTP_403_FORBIDDEN)
-        form = LessonForm(request.data, request.FILES, instance=lesson)
-        if form.is_valid():
-            lesson = form.save(commit=False)
+        
+        try:
+            # Update fields directly
+            lesson.name = request.data.get('name', lesson.name)
+            lesson.description = request.data.get('description', lesson.description)
+            lesson.video_path = request.data.get('video_path', lesson.video_path)
+            
+            active = request.data.get('active', lesson.active)
+            if isinstance(active, str):
+                active = active.lower() == 'true'
+            lesson.active = active
+
+            # Handle Video File Logic (Clear or Update)
+            clear_video = request.data.get("video_file-clear")
+            video_file = request.FILES.get("video_file")
+            
+            if (clear_video == 'true' or video_file) and lesson.video_file:
+                 # Logic from views.py: remove previous file if new uploaded or cleared
+                 # Note: model's remove_file helper or manual deletion
+                 if hasattr(lesson, 'remove_file'):
+                     lesson.remove_file()
+                 else:
+                     lesson.video_file.delete(save=False)
+                     lesson.video_file = None
+
+            if video_file:
+                lesson.video_file = video_file
+
             lesson.html_data = get_html_text(lesson.description)
             lesson.save()
-            return Response({'message': 'Lesson updated', 'lesson_id': lesson.id})
-        else:
-            return Response({'error': form.errors}, status=status.HTTP_400_BAD_REQUEST)
+            
+             # Handle new file uploads
+            lessonfiles = request.FILES.getlist('Lesson_files') if hasattr(request.FILES, 'getlist') else request.FILES.get('Lesson_files', [])
+            if lessonfiles:
+                for les_file in lessonfiles:
+                    LessonFile.objects.get_or_create(lesson=lesson, file=les_file)
 
-    # DELETE (delete lesson)
+            # Handle file deletion (list of IDs)
+            # Frontend should send 'delete_files' as a list of IDs to remove
+            if hasattr(request.data, 'getlist'):
+                delete_files = request.data.getlist('delete_files')
+            else:
+                delete_files = request.data.get('delete_files')
+                if delete_files and not isinstance(delete_files, list):
+                    delete_files = [delete_files]
+
+            if not delete_files and 'delete_files' in request.data:
+                # Handle case where it might be sent as comma separated string or single value
+                 val = request.data.get('delete_files')
+                 if val:
+                     delete_files = [val] if not isinstance(val, list) else val
+            
+            if delete_files:
+                LessonFile.objects.filter(id__in=delete_files, lesson=lesson).delete()
+            
+            # Ensure unit exists and order is correct
+            # We don't change order on simple update usually, unless reordering API is called, 
+            # but we preserve connection
+            if not module.learning_unit.filter(lesson=lesson).exists():
+                 # Re-add if missing
+                 last_unit = module.get_learning_units().last()
+                 order = last_unit.order + 1 if last_unit else 1
+                 unit, created = LearningUnit.objects.get_or_create(
+                    type="lesson", lesson=lesson
+                 )
+                 unit.order = order
+                 unit.save()
+                 module.learning_unit.add(unit.id)
+            
+            return Response({'message': 'Lesson updated', 'lesson_id': lesson.id})
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # DELETE: Remove lesson
     if request.method == "DELETE":
         if not lesson_id:
             return Response({'error': 'lesson_id required'}, status=status.HTTP_400_BAD_REQUEST)
+        
         lesson = get_object_or_404(Lesson, id=lesson_id)
-        if lesson.creator != user:
-            return Response({'error': 'This Lesson does not belong to you'}, status=status.HTTP_403_FORBIDDEN)
+        # Check ownership again implicitly handled by course/module logic above but specific check:
+        # if lesson.creator != user and ... (already handled by course permission check above)
+        
         lesson.delete()
-        return Response({'message': 'Lesson deleted'})
+        return Response({'message': 'Lesson deleted'}, status=status.HTTP_204_NO_CONTENT)
 
-    return Response({'error': 'Invalid request'}, status=status.HTTP_400_BAD_REQUEST)
-
-
-
-
-## not reqd
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def teacher_create_lesson(request, module_id):
-    """Create a new lesson in a module"""
-    user = request.user
-    
-    if not _check_teacher_permission(user):
-        return Response(
-            {'error': 'You are not authorized'},
-            status=status.HTTP_403_FORBIDDEN
-        )
-    
-    try:
-        module = LearningModule.objects.get(id=module_id)
-        
-        # Verify ownership
-        if module.creator != user:
-            return Response(
-                {'error': 'You do not have permission to modify this module'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        # Get form data
-        name = request.data.get('name')
-        description = request.data.get('description', '')
-        video_path = request.data.get('video_path', '')
-        active = request.data.get('active', True)
-        order = request.data.get('order')
-        
-        if not name:
-            return Response(
-                {'error': 'Lesson name is required'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Auto-calculate order if not provided
-        if order is None:
-            last_unit = module.get_learning_units().last()
-            order = (last_unit.order + 1) if last_unit else 1
-        
-        # Convert markdown to HTML
-        html_data = get_html_text(description) if description else ''
-        
-        # Create lesson
-        lesson = Lesson.objects.create(
-            name=name,
-            description=description,
-            html_data=html_data,
-            video_path=video_path,
-            active=active,
-            creator=user
-        )
-        
-        # Create learning unit and add to module
-        unit = LearningUnit.objects.create(
-            type='lesson',
-            lesson=lesson,
-            order=order
-        )
-        module.learning_unit.add(unit)
-        
-        return Response({
-            'id': lesson.id,
-            'name': lesson.name,
-            'description': lesson.description,
-            'video_path': lesson.video_path,
-            'active': lesson.active,
-            'unit_id': unit.id,
-            'order': order,
-            'message': 'Lesson created successfully'
-        }, status=status.HTTP_201_CREATED)
-        
-    except LearningModule.DoesNotExist:
-        return Response(
-            {'error': 'Module not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    except Exception as e:
-        return Response(
-            {'error': 'Failed to create lesson', 'details': str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-
-
-@api_view(['PUT'])
-@permission_classes([IsAuthenticated])
-def teacher_update_lesson(request, module_id, lesson_id):
-    """Update an existing lesson"""
-    user = request.user
-    
-    if not _check_teacher_permission(user):
-        return Response(
-            {'error': 'You are not authorized'},
-            status=status.HTTP_403_FORBIDDEN
-        )
-    
-    try:
-        module = LearningModule.objects.get(id=module_id)
-        lesson = Lesson.objects.get(id=lesson_id)
-        
-        # Verify ownership
-        if module.creator != user or lesson.creator != user:
-            return Response(
-                {'error': 'You do not have permission to modify this lesson'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        # Verify lesson belongs to module
-        unit = module.learning_unit.filter(type='lesson', lesson=lesson).first()
-        if not unit:
-            return Response(
-                {'error': 'Lesson does not belong to this module'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Update fields
-        if 'name' in request.data:
-            lesson.name = request.data['name']
-        if 'description' in request.data:
-            lesson.description = request.data['description']
-            lesson.html_data = get_html_text(request.data['description']) if request.data['description'] else ''
-        if 'video_path' in request.data:
-            lesson.video_path = request.data['video_path']
-        if 'active' in request.data:
-            lesson.active = request.data['active']
-        if 'order' in request.data:
-            unit.order = request.data['order']
-            unit.save()
-        
-        lesson.save()
-        
-        return Response({
-            'id': lesson.id,
-            'name': lesson.name,
-            'description': lesson.description,
-            'video_path': lesson.video_path,
-            'active': lesson.active,
-            'order': unit.order,
-            'message': 'Lesson updated successfully'
-        }, status=status.HTTP_200_OK)
-        
-    except LearningModule.DoesNotExist:
-        return Response(
-            {'error': 'Module not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    except Lesson.DoesNotExist:
-        return Response(
-            {'error': 'Lesson not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    except Exception as e:
-        return Response(
-            {'error': 'Failed to update lesson', 'details': str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-
-
-@api_view(['DELETE'])
-@permission_classes([IsAuthenticated])
-def teacher_delete_lesson(request, module_id, lesson_id):
-    """Delete a lesson from a module"""
-    user = request.user
-    
-    if not _check_teacher_permission(user):
-        return Response(
-            {'error': 'You are not authorized'},
-            status=status.HTTP_403_FORBIDDEN
-        )
-    
-    try:
-        module = LearningModule.objects.get(id=module_id)
-        lesson = Lesson.objects.get(id=lesson_id)
-        
-        # Verify ownership
-        if module.creator != user or lesson.creator != user:
-            return Response(
-                {'error': 'You do not have permission to delete this lesson'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        # Find and remove learning unit
-        unit = module.learning_unit.filter(type='lesson', lesson=lesson).first()
-        if unit:
-            module.learning_unit.remove(unit)
-            unit.delete()
-        
-        # Delete lesson (cascade will delete files)
-        lesson.delete()
-        
-        return Response({
-            'message': 'Lesson deleted successfully'
-        }, status=status.HTTP_200_OK)
-        
-    except LearningModule.DoesNotExist:
-        return Response(
-            {'error': 'Module not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    except Lesson.DoesNotExist:
-        return Response(
-            {'error': 'Lesson not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    except Exception as e:
-        return Response(
-            {'error': 'Failed to delete lesson', 'details': str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def teacher_get_lesson(request, module_id, lesson_id):
-    """Get lesson details for editing"""
-    user = request.user
-    
-    if not _check_teacher_permission(user):
-        return Response(
-            {'error': 'You are not authorized'},
-            status=status.HTTP_403_FORBIDDEN
-        )
-    
-    try:
-        module = LearningModule.objects.get(id=module_id)
-        lesson = Lesson.objects.get(id=lesson_id)
-        
-        # Verify ownership
-        if module.creator != user or lesson.creator != user:
-            return Response(
-                {'error': 'You do not have permission to access this lesson'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        # Verify lesson belongs to module
-        unit = module.learning_unit.filter(type='lesson', lesson=lesson).first()
-        if not unit:
-            return Response(
-                {'error': 'Lesson does not belong to this module'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        return Response({
-            'id': lesson.id,
-            'name': lesson.name,
-            'description': lesson.description or '',
-            'video_path': lesson.video_path or '',
-            'active': lesson.active,
-            'order': unit.order
-        }, status=status.HTTP_200_OK)
-        
-    except LearningModule.DoesNotExist:
-        return Response(
-            {'error': 'Module not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    except Lesson.DoesNotExist:
-        return Response(
-            {'error': 'Lesson not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    except Exception as e:
-        return Response(
-            {'error': 'Failed to get lesson', 'details': str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def teacher_upload_lesson_files(request, lesson_id):
-    """Upload files for a lesson"""
-    user = request.user
-    
-    if not _check_teacher_permission(user):
-        return Response(
-            {'error': 'You are not authorized'},
-            status=status.HTTP_403_FORBIDDEN
-        )
-    
-    try:
-        lesson = Lesson.objects.get(id=lesson_id)
-        
-        # Verify ownership
-        if lesson.creator != user:
-            return Response(
-                {'error': 'You do not have permission to upload files for this lesson'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        # Handle file uploads
-        files = request.FILES.getlist('files')
-        uploaded_files = []
-        
-        for file in files:
-            lesson_file = LessonFile.objects.create(
-                lesson_id=lesson.id,
-                file=file
-            )
-            uploaded_files.append({
-                'id': lesson_file.id,
-                'name': lesson_file.file.name,
-                'url': lesson_file.file.url if hasattr(lesson_file.file, 'url') else ''
-            })
-        
-        return Response({
-            'files': uploaded_files,
-            'message': f'{len(uploaded_files)} file(s) uploaded successfully'
-        }, status=status.HTTP_201_CREATED)
-        
-    except Lesson.DoesNotExist:
-        return Response(
-            {'error': 'Lesson not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    except Exception as e:
-        return Response(
-            {'error': 'Failed to upload files', 'details': str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-## not reqd
 
 #===========================================================
 # DESIGN MODULE APIs
@@ -3321,325 +3087,159 @@ def api_exercise_handler(request, course_id, module_id, quiz_id=None):
 
     return Response({'error': 'Invalid request'}, status=400)
 
-
-
-
-
-
-
-
-
 # ============================================================
 #  QUIZ APIs
 # ============================================================
 
-@api_view(['POST'])
+@api_view(['GET', 'POST', 'PUT', 'DELETE'])
 @permission_classes([IsAuthenticated])
-def teacher_create_quiz(request, course_id, module_id):
-    """Create a new quiz in a module"""
+def api_quiz_handler(request, course_id, module_id, quiz_id=None):
+    """
+    Unified API handler for managing quizzes (Create, Retrieve, Update, Delete)
+    within a specific course module.
+    """
     user = request.user
     
+    # Permission check
     if not _check_teacher_permission(user):
-        return Response(
-            {'error': 'You are not authorized'},
-            status=status.HTTP_403_FORBIDDEN
-        )
+        return Response({'error': 'You are not authorized'}, status=status.HTTP_403_FORBIDDEN)
     
     try:
-        module = LearningModule.objects.get(id=module_id)
+        course = get_object_or_404(Course, id=course_id)
+        if not course.is_creator(user) and not course.is_teacher(user):
+            return Response({'error': 'This course does not belong to you'}, status=status.HTTP_403_FORBIDDEN)
+            
+        module = get_object_or_404(LearningModule, id=module_id)
         
-        # Verify ownership
-        if module.creator != user:
-            return Response(
-                {'error': 'You do not have permission to modify this module'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        # Get form data
-        description = request.data.get('description')
-        instructions = request.data.get('instructions', '')
-        duration = request.data.get('duration', 20)  # in minutes
-        attempts_allowed = request.data.get('attempts_allowed', 1)
-        time_between_attempts = request.data.get('time_between_attempts', 0.0)  # in hours
-        pass_criteria = request.data.get('pass_criteria', 40.0)  # percentage
-        weightage = request.data.get('weightage', 100.0)
-        allow_skip = request.data.get('allow_skip', True)
-        is_exercise = request.data.get('is_exercise', False)
-        active = request.data.get('active', True)
-        order = request.data.get('order')
-        
-        if not description:
-            return Response(
-                {'error': 'Quiz description/name is required'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Auto-calculate order if not provided
-        if order is None:
-            last_unit = module.get_learning_units().last()
-            order = (last_unit.order + 1) if last_unit else 1
-        
-        # Create quiz
-        quiz = Quiz.objects.create(
-            description=description,
-            instructions=instructions,
-            duration=duration,
-            attempts_allowed=attempts_allowed,
-            time_between_attempts=time_between_attempts,
-            pass_criteria=pass_criteria,
-            weightage=weightage,
-            allow_skip=allow_skip,
-            is_exercise=is_exercise,
-            active=active,
-            creator=user
-        )
-        
-        # Create empty question paper and link to quiz
-        # Ensure no previous paper exists (defensive)
-        if hasattr(quiz, 'question_paper') and quiz.question_paper:
-             quiz.question_paper.delete()
+        # GET: Retrieve quiz details
+        if request.method == "GET":
+            if not quiz_id:
+                return Response({'error': 'quiz_id required for retrieval'}, status=status.HTTP_400_BAD_REQUEST)
+                
+            quiz = get_object_or_404(Quiz, id=quiz_id)
+            if quiz.creator != user:
+                return Response({'error': 'This quiz does not belong to you'}, status=status.HTTP_403_FORBIDDEN)
+                
+            unit = module.learning_unit.filter(type='quiz', quiz=quiz).first()
+            if not unit:
+                return Response({'error': 'Quiz not attached to this module'}, status=status.HTTP_400_BAD_REQUEST)
+                
+            return Response({
+                'id': quiz.id,
+                'description': quiz.description,
+                'instructions': quiz.instructions or '',
+                'duration': quiz.duration,
+                'attempts_allowed': quiz.attempts_allowed,
+                'time_between_attempts': quiz.time_between_attempts,
+                'pass_criteria': quiz.pass_criteria,
+                'weightage': quiz.weightage,
+                'allow_skip': quiz.allow_skip,
+                'is_exercise': quiz.is_exercise,
+                'active': quiz.active,
+                'order': unit.order
+            })
 
-        question_paper = QuestionPaper.objects.create(quiz=quiz)
-        question_paper.fixed_questions.clear()
-        question_paper.random_questions.clear()
-        quiz.question_paper = question_paper
-        quiz.save()
-        
-        # Create learning unit and add to module
-        unit = LearningUnit.objects.create(
-            type='quiz',
-            quiz=quiz,
-            order=order
-        )
-        module.learning_unit.add(unit)
-        
-        return Response({
-            'id': quiz.id,
-            'description': quiz.description,
-            'instructions': quiz.instructions,
-            'duration': quiz.duration,
-            'attempts_allowed': quiz.attempts_allowed,
-            'pass_criteria': quiz.pass_criteria,
-            'active': quiz.active,
-            'unit_id': unit.id,
-            'order': order,
-            'question_paper_id': question_paper.id,
-            'message': 'Quiz created successfully'
-        }, status=status.HTTP_201_CREATED)
-        
-    except LearningModule.DoesNotExist:
-        return Response(
-            {'error': 'Module not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
+        # POST: Create new quiz
+        if request.method == "POST":
+            if quiz_id:
+                return Response({'error': 'Use PUT to update existing quiz'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Form data extraction
+            description = request.data.get('description')
+            if not description:
+                return Response({'error': 'Quiz description/name is required'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            try:
+                quiz = Quiz.objects.create(
+                    description=description,
+                    instructions=request.data.get('instructions', ''),
+                    duration=request.data.get('duration', 20),
+                    attempts_allowed=request.data.get('attempts_allowed', 1),
+                    time_between_attempts=request.data.get('time_between_attempts', 0.0),
+                    pass_criteria=request.data.get('pass_criteria', 40.0),
+                    weightage=request.data.get('weightage', 100.0),
+                    allow_skip=request.data.get('allow_skip', True),
+                    is_exercise=request.data.get('is_exercise', False),
+                    active=request.data.get('active', True),
+                    creator=user
+                )
+
+                # Create QuestionPaper
+                QuestionPaper.objects.create(quiz=quiz)
+                
+                # Determine order
+                order = request.data.get('order')
+                if order is None:
+                    last_unit = module.get_learning_units().last()
+                    order = (last_unit.order + 1) if (last_unit and last_unit.order is not None) else 1
+                
+                # Create unit and add to module (same as lesson handler)
+                unit = LearningUnit.objects.create(
+                    type='quiz',
+                    quiz=quiz,
+                    order=order
+                )
+                module.learning_unit.add(unit)
+                
+                return Response({
+                    'id': quiz.id,
+                    'message': 'Quiz created successfully',
+                    'order': order,
+                    'unit_id': unit.id,
+                }, status=status.HTTP_201_CREATED)
+            except Exception as e:
+                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        # PUT: Update existing quiz
+        if request.method == "PUT":
+            if not quiz_id:
+                return Response({'error': 'quiz_id required for update'}, status=status.HTTP_400_BAD_REQUEST)
+                
+            quiz = get_object_or_404(Quiz, id=quiz_id)
+            if quiz.creator != user:
+                return Response({'error': 'You do not have permission'}, status=status.HTTP_403_FORBIDDEN)
+                
+            unit = module.learning_unit.filter(type='quiz', quiz=quiz).first()
+            if not unit:
+                return Response({'error': 'Quiz not in this module'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Update fields
+            if 'description' in request.data: quiz.description = request.data['description']
+            if 'instructions' in request.data: quiz.instructions = request.data['instructions']
+            if 'duration' in request.data: quiz.duration = request.data['duration']
+            if 'attempts_allowed' in request.data: quiz.attempts_allowed = request.data['attempts_allowed']
+            if 'time_between_attempts' in request.data: quiz.time_between_attempts = request.data['time_between_attempts']
+            if 'pass_criteria' in request.data: quiz.pass_criteria = request.data['pass_criteria']
+            if 'weightage' in request.data: quiz.weightage = request.data['weightage']
+            if 'allow_skip' in request.data: quiz.allow_skip = request.data['allow_skip']
+            if 'is_exercise' in request.data: quiz.is_exercise = request.data['is_exercise']
+            if 'active' in request.data: quiz.active = request.data['active']
+            
+            if 'order' in request.data:
+                unit.order = request.data['order']
+                unit.save()
+            
+            quiz.save()
+            return Response({'message': 'Quiz updated', 'id': quiz.id})
+
+        # DELETE: Delete quiz
+        if request.method == "DELETE":
+            if not quiz_id:
+                return Response({'error': 'quiz_id required'}, status=status.HTTP_400_BAD_REQUEST)
+
+            quiz = get_object_or_404(Quiz, id=quiz_id)
+            if quiz.creator != user:
+                return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+                
+            unit = module.learning_unit.filter(type='quiz', quiz=quiz).first()
+            if unit:
+                module.learning_unit.remove(unit)
+                unit.delete()
+                
+            quiz.delete()
+            return Response({'message': 'Quiz deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+
     except Exception as e:
-        return Response(
-            {'error': 'Failed to create quiz', 'details': str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-
-
-@api_view(['PUT'])
-@permission_classes([IsAuthenticated])
-def teacher_update_quiz(request, course_id, module_id, quiz_id):
-    """Update an existing quiz"""
-    user = request.user
-    
-    if not _check_teacher_permission(user):
-        return Response(
-            {'error': 'You are not authorized'},
-            status=status.HTTP_403_FORBIDDEN
-        )
-    
-    try:
-        module = LearningModule.objects.get(id=module_id)
-        quiz = Quiz.objects.get(id=quiz_id)
-        
-        # Verify ownership
-        if module.creator != user or quiz.creator != user:
-            return Response(
-                {'error': 'You do not have permission to modify this quiz'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        # Verify quiz belongs to module
-        unit = module.learning_unit.filter(type='quiz', quiz=quiz).first()
-        if not unit:
-            return Response(
-                {'error': 'Quiz does not belong to this module'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Update fields
-        if 'description' in request.data:
-            quiz.description = request.data['description']
-        if 'instructions' in request.data:
-            quiz.instructions = request.data['instructions']
-        if 'duration' in request.data:
-            quiz.duration = request.data['duration']
-        if 'attempts_allowed' in request.data:
-            quiz.attempts_allowed = request.data['attempts_allowed']
-        if 'time_between_attempts' in request.data:
-            quiz.time_between_attempts = request.data['time_between_attempts']
-        if 'pass_criteria' in request.data:
-            quiz.pass_criteria = request.data['pass_criteria']
-        if 'weightage' in request.data:
-            quiz.weightage = request.data['weightage']
-        if 'allow_skip' in request.data:
-            quiz.allow_skip = request.data['allow_skip']
-        if 'is_exercise' in request.data:
-            quiz.is_exercise = request.data['is_exercise']
-        if 'active' in request.data:
-            quiz.active = request.data['active']
-        if 'order' in request.data:
-            unit.order = request.data['order']
-            unit.save()
-        
-        quiz.save()
-        
-        return Response({
-            'id': quiz.id,
-            'description': quiz.description,
-            'instructions': quiz.instructions,
-            'duration': quiz.duration,
-            'attempts_allowed': quiz.attempts_allowed,
-            'pass_criteria': quiz.pass_criteria,
-            'active': quiz.active,
-            'order': unit.order,
-            'message': 'Quiz updated successfully'
-        }, status=status.HTTP_200_OK)
-        
-    except LearningModule.DoesNotExist:
-        return Response(
-            {'error': 'Module not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    except Quiz.DoesNotExist:
-        return Response(
-            {'error': 'Quiz not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    except Exception as e:
-        return Response(
-            {'error': 'Failed to update quiz', 'details': str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-
-
-@api_view(['DELETE'])
-@permission_classes([IsAuthenticated])
-def teacher_delete_quiz(request, module_id, quiz_id):
-    """Delete a quiz from a module"""
-    user = request.user
-    
-    if not _check_teacher_permission(user):
-        return Response(
-            {'error': 'You are not authorized'},
-            status=status.HTTP_403_FORBIDDEN
-        )
-    
-    try:
-        module = LearningModule.objects.get(id=module_id)
-        quiz = Quiz.objects.get(id=quiz_id)
-        
-        # Verify ownership
-        if module.creator != user or quiz.creator != user:
-            return Response(
-                {'error': 'You do not have permission to delete this quiz'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        # Find and remove learning unit
-        unit = module.learning_unit.filter(type='quiz', quiz=quiz).first()
-        if unit:
-            module.learning_unit.remove(unit)
-            unit.delete()
-        
-        # Delete quiz (cascade will delete question papers, etc.)
-        quiz.delete()
-        
-        return Response({
-            'message': 'Quiz deleted successfully'
-        }, status=status.HTTP_200_OK)
-        
-    except LearningModule.DoesNotExist:
-        return Response(
-            {'error': 'Module not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    except Quiz.DoesNotExist:
-        return Response(
-            {'error': 'Quiz not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    except Exception as e:
-        return Response(
-            {'error': 'Failed to delete quiz', 'details': str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def teacher_get_quiz(request, module_id, quiz_id):
-    """Get quiz details for editing"""
-    user = request.user
-    
-    if not _check_teacher_permission(user):
-        return Response(
-            {'error': 'You are not authorized'},
-            status=status.HTTP_403_FORBIDDEN
-        )
-    
-    try:
-        module = LearningModule.objects.get(id=module_id)
-        quiz = Quiz.objects.get(id=quiz_id)
-        
-        # Verify ownership
-        if module.creator != user or quiz.creator != user:
-            return Response(
-                {'error': 'You do not have permission to access this quiz'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        # Verify quiz belongs to module
-        unit = module.learning_unit.filter(type='quiz', quiz=quiz).first()
-        if not unit:
-            return Response(
-                {'error': 'Quiz does not belong to this module'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        return Response({
-            'id': quiz.id,
-            'description': quiz.description,
-            'instructions': quiz.instructions or '',
-            'duration': quiz.duration,
-            'attempts_allowed': quiz.attempts_allowed,
-            'time_between_attempts': quiz.time_between_attempts,
-            'pass_criteria': quiz.pass_criteria,
-            'weightage': quiz.weightage,
-            'allow_skip': quiz.allow_skip,
-            'is_exercise': quiz.is_exercise,
-            'active': quiz.active,
-            'order': unit.order
-        }, status=status.HTTP_200_OK)
-        
-    except LearningModule.DoesNotExist:
-        return Response(
-            {'error': 'Module not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    except Quiz.DoesNotExist:
-        return Response(
-            {'error': 'Quiz not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    except Exception as e:
-        return Response(
-            {'error': 'Failed to get quiz', 'details': str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # ============================================================

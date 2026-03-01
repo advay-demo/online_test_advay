@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { FaPlus, FaSearch, FaFilter, FaBook, FaClock, FaUserFriends, FaEllipsisV } from 'react-icons/fa';
+import { FaPlus, FaSearch, FaFilter, FaBook, FaClock, FaUserFriends, FaEllipsisV, FaEdit, FaTimes } from 'react-icons/fa';
 import TeacherSidebar from '../../components/layout/TeacherSidebar';
 import Header from '../../components/layout/Header';
 import CourseActionButtons from '../../components/teacher/CourseActionButtons';
-import { fetchTeacherCourses } from '../../api/api';
+import { fetchTeacherCourses, getTeacherCourse, updateCourse } from '../../api/api';
+import useGradingSystemStore from '../../store/teacherGradeStore';
+
 
 const Courses = () => {
     const [activeTab, setActiveTab] = useState('All Quizzes');
@@ -12,11 +14,46 @@ const Courses = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
+    
+    // Edit Modal States
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [editingCourseId, setEditingCourseId] = useState(null);
+    const [editForm, setEditForm] = useState({
+        name: '',
+        enrollment: '',
+        code: '',
+        instructions: '',
+        start_enroll_time: '',
+        end_enroll_time: '',
+        grading_system_id: '',
+        view_grade: false,
+        active: true,
+    });
+    const [editError, setEditError] = useState(null);
+    const [saving, setSaving] = useState(false);
+    
+    // Dropdown States
+    const [openDropdownId, setOpenDropdownId] = useState(null);
+    const dropdownRef = useRef(null);
+    
+    const { gradingSystems, loadGradingSystems, loading: gradingLoading } = useGradingSystemStore();
 
     useEffect(() => {
         loadCourses();
+        loadGradingSystems();
         // eslint-disable-next-line
     }, [activeTab, searchQuery]);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setOpenDropdownId(null);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const loadCourses = async () => {
         try {
@@ -47,6 +84,67 @@ const Courses = () => {
         }
     };
 
+    const toggleDropdown = (courseId) => {
+        setOpenDropdownId(openDropdownId === courseId ? null : courseId);
+    };
+
+    const handleEditClick = async (courseId) => {
+        try {
+            setOpenDropdownId(null);
+            setEditingCourseId(courseId);
+            setEditError(null);
+            
+            const course = await getTeacherCourse(courseId);
+            setEditForm({
+                name: course.name || '',
+                enrollment: course.enrollment || 'default',
+                code: course.code || '',
+                instructions: course.instructions || '',
+                start_enroll_time: course.start_enroll_time ? new Date(course.start_enroll_time).toISOString().slice(0, 16) : '',
+                end_enroll_time: course.end_enroll_time ? new Date(course.end_enroll_time).toISOString().slice(0, 16) : '',
+                grading_system_id: course.grading_system_id || '',
+                view_grade: course.view_grade || false,
+                active: course.active !== undefined ? course.active : true,
+            });
+            
+            setShowEditModal(true);
+        } catch (err) {
+            console.error('Failed to load course:', err);
+            alert('Failed to load course data');
+        }
+    };
+
+    const handleEditChange = (e) => {
+        const { name, value, type, checked } = e.target;
+        setEditForm(prev => ({
+            ...prev,
+            [name]: type === 'checkbox' ? checked : value
+        }));
+    };
+
+    const handleEditSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            setSaving(true);
+            setEditError(null);
+
+            const submitData = {
+                ...editForm,
+                start_enroll_time: editForm.start_enroll_time ? new Date(editForm.start_enroll_time).toISOString() : null,
+                end_enroll_time: editForm.end_enroll_time ? new Date(editForm.end_enroll_time).toISOString() : null,
+            };
+
+            await updateCourse(editingCourseId, submitData);
+            setShowEditModal(false);
+            loadCourses(); // Reload courses to show updated data
+        } catch (err) {
+            console.error('Failed to update course:', err);
+            setEditError(err.response?.data?.error || 'Failed to update course');
+        } finally {
+            setSaving(false);
+        }
+    };
+
     return (
         <div className="flex min-h-screen relative grid-texture">
             <TeacherSidebar />
@@ -72,7 +170,7 @@ const Courses = () => {
                         {/* Filters and Search */}
                         <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3 sm:gap-4 mb-6">
                             <div className="flex bg-black/20 p-1 rounded-lg overflow-x-auto scrollbar-hide">
-                                {['All Quizzes', 'Active', 'Drafts'].map((tab) => (
+                                {['All Quizzes', 'Active'].map((tab) => (
                                     <button
                                         key={tab}
                                         onClick={() => setActiveTab(tab)}
@@ -97,11 +195,7 @@ const Courses = () => {
                                         className="w-full pl-9 pr-3 sm:pr-4 py-2 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg text-sm focus:outline-none focus:border-blue-500/50 transition-colors"
                                     />
                                 </div>
-                                <button className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-black/20 border border-white/10 rounded-lg text-xs sm:text-sm font-medium hover:bg-white/5 transition-all duration-200 whitespace-nowrap">
-                                    <FaFilter className="w-3 h-3" />
-                                    <span className="hidden sm:inline">Filter</span>
-                                    <span className="sm:hidden">Filter</span>
-                                </button>
+                                
                             </div>
                         </div>
 
@@ -185,9 +279,28 @@ const Courses = () => {
                                                     >
                                                         Manage
                                                     </Link>
-                                                    <button className="p-2 border border-[var(--border-color)] rounded-lg hover:bg-[var(--input-bg)] active:scale-95 transition-all duration-200 text-[var(--text-muted)] hover:text-[var(--text-primary)]">
-                                                        <FaEllipsisV className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                                                    </button>
+                                                    <div className="relative" ref={openDropdownId === course.id ? dropdownRef : null}>
+                                                        <button 
+                                                            onClick={() => toggleDropdown(course.id)}
+                                                            className="p-2 border border-[var(--border-color)] rounded-lg hover:bg-[var(--input-bg)] active:scale-95 transition-all duration-200 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                                                        >
+                                                            <FaEllipsisV className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                                        </button>
+                                                        
+                                                        {/* Dropdown Menu */}
+                                                        {openDropdownId === course.id && (
+                                                            
+                                                            <div className="absolute right-0 mt-2 z-50 w-32 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg shadow-lg py-1 flex flex-col text-sm animate-fade-in">
+                                                                <button
+                                                                    className="flex items-center gap-2 px-4 py-2 hover:bg-blue-500/10 transition"
+                                                                    onClick={() => handleEditClick(course.id)}
+                                                                >
+                                                                    <FaEdit className="w-4 h-4" /> Edit
+                                                                </button>
+                                                                
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -198,6 +311,223 @@ const Courses = () => {
                     </div>
                 </div>
             </main>
+
+            {/* Edit Modal */}
+            {showEditModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-2 sm:p-4">
+                <div className="card-strong w-full max-w-full sm:max-w-2xl lg:max-w-4xl my-4 sm:my-8 p-3 sm:p-4 md:p-6 relative rounded-xl shadow-2xl max-h-[85vh] sm:max-h-[90vh] overflow-y-auto">
+                    {/* Close Button */}
+                    <button
+                        className="absolute right-2 top-2 sm:right-4 sm:top-4 z-10 text-base sm:text-lg p-1.5 sm:p-2 rounded-full border border-[var(--border-color)] bg-[var(--input-bg)] hover:bg-white/10 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"
+                        onClick={() => setShowEditModal(false)}
+                        aria-label="Close"
+                    >
+                        <FaTimes />
+                    </button>
+                    
+                    {/* Header */}
+                    <div className="flex flex-row items-center gap-3 sm:gap-4 mb-3 sm:mb-4 pr-8 sm:pr-0">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 flex-shrink-0">
+                            <FaEdit className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-blue-400" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-0.5 sm:mb-1 line-clamp-1">
+                                Edit Course
+                            </h2>
+                            <p className="text-xs sm:text-sm muted line-clamp-2">
+                                Update the details of this course.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    {/* Error */}
+                    {editError && (
+                        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 sm:p-4 text-red-300 mb-3 sm:mb-4 text-sm">
+                            {editError}
+                        </div>
+                    )}
+                    
+                    {/* Form */}
+                    <form onSubmit={handleEditSubmit} className="space-y-3 sm:space-y-4">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 lg:gap-6">
+                            {/* Left Column */}
+                            <div className="space-y-3 sm:space-y-4">
+                                <div>
+                                    <label className="block text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+                                        Course Title *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="name"
+                                        value={editForm.name}
+                                        onChange={handleEditChange}
+                                        required
+                                        placeholder="Enter course title"
+                                        className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50 text-sm sm:text-base transition-colors"
+                                    />
+                                </div>
+                                
+                                <div>
+                                    <label className="block text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+                                        Instructions
+                                    </label>
+                                    <textarea
+                                        name="instructions"
+                                        rows="10"
+                                        value={editForm.instructions}
+                                        onChange={handleEditChange}
+                                        placeholder="Enter course instructions"
+                                        className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50 resize-none text-sm sm:text-base transition-colors"
+                                    />
+                                </div>
+                                
+                                <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                                    <div>
+                                        <label className="block text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+                                            Code
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="code"
+                                            value={editForm.code}
+                                            onChange={handleEditChange}
+                                            placeholder="xxxx"
+                                            className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50 text-sm sm:text-base transition-colors"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+                                            Enrollment
+                                        </label>
+                                        <select
+                                            name="enrollment"
+                                            value={editForm.enrollment}
+                                            onChange={handleEditChange}
+                                            className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50 text-sm sm:text-base transition-colors"
+                                        >
+                                            <option value="">---------</option>
+                                            <option value="default">Enroll Request</option>
+                                            <option value="open">Open Enrollment</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {/* Right Column */}
+                            <div className="space-y-3 sm:space-y-4">
+                                <div>
+                                    <label className="block text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+                                        Start Enrollment Date & Time
+                                    </label>
+                                    <input
+                                        type="datetime-local"
+                                        name="start_enroll_time"
+                                        value={editForm.start_enroll_time}
+                                        onChange={handleEditChange}
+                                        className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50 text-sm sm:text-base transition-colors"
+                                    />
+                                </div>
+                                
+                                <div>
+                                    <label className="block text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+                                        End Enrollment Date & Time
+                                    </label>
+                                    <input
+                                        type="datetime-local"
+                                        name="end_enroll_time"
+                                        value={editForm.end_enroll_time}
+                                        onChange={handleEditChange}
+                                        className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50 text-sm sm:text-base transition-colors"
+                                    />
+                                </div>
+                                
+                                <div>
+                                    <label className="block text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+                                        Grading System
+                                    </label>
+                                    <select
+                                        name="grading_system_id"
+                                        value={editForm.grading_system_id}
+                                        onChange={handleEditChange}
+                                        className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50 text-sm sm:text-base transition-colors"
+                                    >
+                                        <option value="">---------</option>
+                                        {gradingSystems.map(gs => (
+                                            <option key={gs.id} value={gs.id}>
+                                                {gs.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <p className="text-xs muted mt-1">Leave empty if not using a grading system</p>
+                                </div>
+                                
+                                
+                                
+                                    
+                                    <div className="flex flex-col gap-3 sm:gap-4">
+                                        <div className="p-3 sm:p-4 rounded-lg bg-[var(--input-bg)] border border-[var(--border-color)] mb-5">
+                                            <div className="flex items-center justify-between gap-3">
+                                                <div>
+                                                    <div className="text-sm sm:text-base font-semibold mb-1">View Grade</div>
+                                                    <div className="text-xs muted">Allow students to view their grades</div>
+                                                </div>
+                                                <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                                                    <input
+                                                        type="checkbox"
+                                                        name="view_grade"
+                                                        checked={editForm.view_grade}
+                                                        onChange={handleEditChange}
+                                                        className="sr-only peer"
+                                                    />
+                                                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div className="p-3 sm:p-4 rounded-lg bg-[var(--input-bg)] border border-[var(--border-color)]">
+                                            <div className="flex items-center justify-between gap-3">
+                                                <div>
+                                                    <div className="text-sm sm:text-base font-semibold mb-1">Active</div>
+                                                    <div className="text-xs muted">Course ready for Enrollment</div>
+                                                </div>
+                                                <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                                                    <input
+                                                        type="checkbox"
+                                                        name="active"
+                                                        checked={editForm.active}
+                                                        onChange={handleEditChange}
+                                                        className="sr-only peer"
+                                                    />
+                                                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        
+                                        
+                                    </div>
+                                
+                            </div>
+                        </div>
+                        
+                        <div className="flex flex-row gap-2 sm:gap-3 justify-end mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-white/10">
+                            <button
+                                type="button"
+                                className="w-full sm:w-auto px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/10 font-medium transition text-sm sm:text-base"
+                                onClick={() => setShowEditModal(false)}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                className="w-full sm:w-auto px-5 sm:px-6 py-2 sm:py-2.5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition disabled:opacity-60 text-sm sm:text-base"
+                                disabled={saving}
+                            >
+                                {saving ? 'Updating...' : 'Update'}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            )}
         </div>
     );
 };
