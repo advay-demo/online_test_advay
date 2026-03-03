@@ -6,7 +6,9 @@ import {
     reorderCourseModules, reorderModuleUnits, getCourseAnalytics, 
     getTeacherLesson, createTeacherLesson, updateTeacherLesson, deleteTeacherLesson, 
     getCourseDesign, addModulesToCourse, changeCourseModuleOrder, removeModulesFromCourse,
-    changeCourseModulePrerequisiteCompletion, changeCourseModulePrerequisitePassing
+    changeCourseModulePrerequisiteCompletion, changeCourseModulePrerequisitePassing,
+    getModuleDesign, addUnitsToModule, changeModuleUnitOrder, removeUnitsFromModule,
+    changeModuleUnitPrerequisite
 } from '../api/api';
 
 const initialModuleForm = {
@@ -704,6 +706,212 @@ const useManageCourseStore = create((set, get) => ({
     // Quiz Question Manager ============================================================
     openQuizQuestionManager: (quizId) => set({ selectedQuizId: quizId, showQuizQuestionManager: true }),
     handleQuizQuestionsUpdate: () => get().loadCourseData(get().course.id),
+
+
+    // DESIGN MODULE TAB ============================================================
+    designModule: null,
+    loadingDesignModule: false,
+    designModuleError: null,
+    showDesignModuleModal: false, // Added
+    designingModuleId: null,      // Added
+
+    openDesignModule: (moduleId) => {
+        set({ showDesignModuleModal: true, designingModuleId: moduleId });
+        const courseId = get().course?.id;
+        get().loadModuleDesign(moduleId, courseId);
+    },
+
+    closeDesignModule: () => {
+        set({ showDesignModuleModal: false, designingModuleId: null, designModule: null });
+    },
+
+    // Load module design data (Available items vs Added items)
+    loadModuleDesign: async (moduleId, courseId = null) => {
+        set({ loadingDesignModule: true, designModuleError: null });
+        try {
+            const data = await getModuleDesign(moduleId, courseId);
+            set({ designModule: data });
+        } catch (err) {
+            set({ designModuleError: err.message, designModule: null });
+        } finally {
+            set({ loadingDesignModule: false });
+        }
+    },
+
+    // Add items (quizzes/lessons) to the module
+    handleAddUnitsToModule: async (moduleId, chosenList, courseId = null) => {
+        set({ loadingDesignModule: true });
+        try {
+            await addUnitsToModule(moduleId, chosenList, courseId);
+            // Refresh design data to show new list
+            await get().loadModuleDesign(moduleId, courseId);
+            // Also refresh main course data to reflect hierarchy changes if needed
+            if (courseId) await get().loadCourseData(courseId);
+        } catch (err) {
+            set({ designModuleError: err.message });
+        } finally {
+            set({ loadingDesignModule: false });
+        }
+    },
+
+    // Reorder items within the module
+    handleChangeModuleUnitOrder: async (moduleId, orderedList, courseId = null) => {
+        set({ loadingDesignModule: true });
+        try {
+            await changeModuleUnitOrder(moduleId, orderedList, courseId);
+            await get().loadModuleDesign(moduleId, courseId);
+            if (courseId) await get().loadCourseData(courseId);
+        } catch (err) {
+            set({ designModuleError: err.message });
+        } finally {
+            set({ loadingDesignModule: false });
+        }
+    },
+
+    // Remove items from the module
+    handleRemoveUnitsFromModule: async (moduleId, deleteList, courseId = null) => {
+        set({ loadingDesignModule: true });
+        try {
+            await removeUnitsFromModule(moduleId, deleteList, courseId);
+            await get().loadModuleDesign(moduleId, courseId);
+            if (courseId) await get().loadCourseData(courseId);
+        } catch (err) {
+            set({ designModuleError: err.message });
+        } finally {
+            set({ loadingDesignModule: false });
+        }
+    },
+
+    // Toggle prerequisite check for specific units
+    handleChangeModuleUnitPrerequisite: async (moduleId, checkPrereqList, courseId = null) => {
+        set({ loadingDesignModule: true });
+        try {
+            await changeModuleUnitPrerequisite(moduleId, checkPrereqList, courseId);
+            await get().loadModuleDesign(moduleId, courseId);
+        } catch (err) {
+            set({ designModuleError: err.message });
+        } finally {
+            set({ loadingDesignModule: false });
+        }
+    },
+
+    // EXERCISE APIs (Reusing quiz form state generally, but separate actions) ========
+    // Note: Exercises often share structure with Quizzes but might have specific endpoints based on your API.
+
+    handleCreateExercise: async () => {
+        const { selectedModule, quizFormData, course } = get();
+        if (!selectedModule || !course) return;
+
+        try {
+            set({ loading: true });
+            // Ensure payload has is_exercise=true
+            const payload = { 
+                ...quizFormData,
+                is_exercise: true 
+            };
+            
+            // Date handling if applicable
+            if (payload.start_date_time) payload.start_date_time = new Date(payload.start_date_time).toISOString();
+            if (payload.end_date_time) payload.end_date_time = new Date(payload.end_date_time).toISOString();
+
+            await createTeacherExercise(course.id, selectedModule.id, payload);
+            
+            set({ showQuizForm: false, selectedModule: null, quizFormData: { ...initialQuizForm }, loading: false });
+            await get().loadCourseData(course.id);
+        } catch (err) {
+            console.error(err);
+            set({ loading: false, error: err.message });
+        }
+    },
+
+    openEditExercise: async (module, unit) => {
+        const courseId = get().course?.id;
+        if (!courseId) return;
+
+        set({ selectedModule: module, editingQuiz: unit }); // Reusing editingQuiz state variable
+        try {
+            // Using specific Exercise getter
+            const exerciseData = await getTeacherExercise(courseId, module.id, unit.quiz_id);
+            
+            const formatDateForInput = (dateStr) => {
+                if (!dateStr) return '';
+                const date = new Date(dateStr);
+                const offset = date.getTimezoneOffset() * 60000;
+                return (new Date(date - offset)).toISOString().slice(0, 16);
+            };
+
+            set({
+                quizFormData: {
+                    id: exerciseData.id,
+                    description: exerciseData.description || '',
+                    instructions: exerciseData.instructions || '',
+                    duration: exerciseData.duration || 30,
+                    attempts_allowed: exerciseData.attempts_allowed || 1,
+                    time_between_attempts: exerciseData.time_between_attempts || 0.0,
+                    pass_criteria: exerciseData.pass_criteria || 40.0,
+                    weightage: exerciseData.weightage || 100.0,
+                    allow_skip: exerciseData.allow_skip ?? true,
+                    view_answerpaper: exerciseData.view_answerpaper ?? true,
+                    is_exercise: true, // Force true
+                    active: exerciseData.active ?? true,
+                    start_date_time: formatDateForInput(exerciseData.start_date_time),
+                    end_date_time: formatDateForInput(exerciseData.end_date_time),
+                    order: exerciseData.order || unit.order,
+                },
+                showQuizForm: true // We can reuse the Quiz Form UI for exercises
+            });
+        } catch (error) {
+            console.error("Error fetching exercise:", error);
+            set({
+                quizFormData: {
+                    ...initialQuizForm,
+                    is_exercise: true,
+                    description: unit.name || '',
+                    order: unit.order,
+                },
+                showQuizForm: true
+            });
+        }
+    },
+
+    handleUpdateExercise: async () => {
+        const { selectedModule, editingQuiz, quizFormData, course } = get();
+        if (!selectedModule || !editingQuiz || !course) return;
+
+        try {
+            set({ loading: true });
+            
+            const payload = { ...quizFormData, is_exercise: true };
+            if (payload.start_date_time) payload.start_date_time = new Date(payload.start_date_time).toISOString();
+            if (payload.end_date_time) payload.end_date_time = new Date(payload.end_date_time).toISOString();
+
+            await updateTeacherExercise(course.id, selectedModule.id, editingQuiz.quiz_id, payload);
+            
+            set({ showQuizForm: false, selectedModule: null, editingQuiz: null, quizFormData: { ...initialQuizForm }, loading: false });
+            await get().loadCourseData(course.id);
+        } catch (err) {
+            console.error(err);
+            set({ loading: false, error: err.message });
+        }
+    },
+
+    handleDeleteExercise: async (moduleId, quizId) => {
+        const { course } = get();
+        if (!course) return;
+        try {
+            set({ loading: true });
+            await deleteTeacherExercise(course.id, moduleId, quizId);
+            set({ loading: false });
+            await get().loadCourseData(course.id);
+        } catch (err) {
+             set({ loading: false, error: err.message });
+        }
+    },
+
+
+
+
+
 }));
 
 export default useManageCourseStore;

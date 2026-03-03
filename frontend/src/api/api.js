@@ -558,6 +558,8 @@ export const deleteTeacherLesson = async (courseId, moduleId, lessonId) => {
 
 // DESIGN MODULE APIS ============================================================
 
+
+
 export const getModuleDesign = async (moduleId, courseId = null) => {
   let url = `/api/teacher/modules/${moduleId}/design/`;
   if (courseId) {
@@ -567,7 +569,7 @@ export const getModuleDesign = async (moduleId, courseId = null) => {
   return response.data;
 };
 
-
+// Add Quizzes/Lessons to Module
 export const addUnitsToModule = async (moduleId, chosenList, courseId = null) => {
   let url = `/api/teacher/modules/${moduleId}/design/`;
   if (courseId) {
@@ -580,45 +582,47 @@ export const addUnitsToModule = async (moduleId, chosenList, courseId = null) =>
   return response.data;
 };
 
-
+// Change Unit (Quiz/Lesson) order in Module
 export const changeModuleUnitOrder = async (moduleId, orderedList, courseId = null) => {
+  // orderedList: array of "unitId:order" strings, e.g. ["12:1", "13:2"]
   let url = `/api/teacher/modules/${moduleId}/design/`;
   if (courseId) {
     url = `/api/teacher/modules/${moduleId}/design/${courseId}/`;
   }
   const response = await api.post(url, {
     action: "change",
-    ordered_list: orderedList, // array of "unitId:order" strings, e.g. ["12:1", "13:2"]
+    ordered_list: orderedList, // Pass array directly, backend handles list or string
   });
   return response.data;
 };
 
-
+// Remove Units from Module
 export const removeUnitsFromModule = async (moduleId, deleteList, courseId = null) => {
+  // deleteList: array of unit IDs to remove
   let url = `/api/teacher/modules/${moduleId}/design/`;
   if (courseId) {
     url = `/api/teacher/modules/${moduleId}/design/${courseId}/`;
   }
   const response = await api.post(url, {
     action: "remove",
-    delete_list: deleteList, // array of unit IDs to remove
+    delete_list: deleteList,
   });
   return response.data;
 };
 
-
+// Toggle prerequisite check for units
 export const changeModuleUnitPrerequisite = async (moduleId, checkPrereqList, courseId = null) => {
+  // checkPrereqList: array of unit IDs to toggle
   let url = `/api/teacher/modules/${moduleId}/design/`;
   if (courseId) {
     url = `/api/teacher/modules/${moduleId}/design/${courseId}/`;
   }
   const response = await api.post(url, {
     action: "change_prerequisite",
-    check_prereq: checkPrereqList, // array of unit IDs to toggle prerequisite
+    check_prereq: checkPrereqList,
   });
   return response.data;
 };
-
 
 
 // Exerise APIs ============================================================

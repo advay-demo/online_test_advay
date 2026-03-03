@@ -2734,6 +2734,21 @@ def api_lesson_handler(request, course_id, module_id, lesson_id=None):
 #===========================================================
 
 
+def get_quiz_les_display_name(item):
+    """Helper to get display name for quiz/lesson tuple (type, id)"""
+    typ, obj_id = item
+    if typ == "quiz":
+        try:
+            return f"{Quiz.objects.get(id=obj_id).description} (quiz)"
+        except Quiz.DoesNotExist:
+            return "Unknown Quiz"
+    elif typ == "lesson":
+        try:
+            return f"{Lesson.objects.get(id=obj_id).name} (lesson)"
+        except Lesson.DoesNotExist:
+            return "Unknown Lesson"
+    return ""
+
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
 def api_design_module(request, module_id, course_id=None):
@@ -2742,45 +2757,91 @@ def api_design_module(request, module_id, course_id=None):
         return Response({'error': 'Not allowed'}, status=status.HTTP_403_FORBIDDEN)
 
     # Get course if course_id is provided
-    course = None
+    # Note: Even if course_id isn't provided, we might want to ensure the user owns the module
+    # The original view checks course ownership if course_id is passed, otherwise assumes module ownership check later
+    # implied by fetching LearningModule and modifying it.
     if course_id:
-        course = Course.objects.get(id=course_id)
-        if not course.is_creator(user) and not course.is_teacher(user):
-            return Response({'error': 'This course does not belong to you'}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            course = Course.objects.get(id=course_id)
+            if not course.is_creator(user) and not course.is_teacher(user):
+                return Response({'error': 'This course does not belong to you'}, status=status.HTTP_403_FORBIDDEN)
+        except Course.DoesNotExist:
+             return Response({'error': 'Course not found'}, status=status.HTTP_404_NOT_FOUND)
 
-    learning_module = LearningModule.objects.get(id=module_id)
+    try:
+        learning_module = LearningModule.objects.get(id=module_id)
+    except LearningModule.DoesNotExist:
+        return Response({'error': 'Module not found'}, status=status.HTTP_404_NOT_FOUND)
 
-    # GET: Return current module design info
+    # 1. GET: Return current module design info (Available vs Chosen)
     if request.method == "GET":
+        # Get existing units in order
         units = learning_module.get_learning_units()
-        quizzes = Quiz.objects.filter(creator=user, is_trial=False)
-        lessons = Lesson.objects.filter(creator=user)
-        added_quiz_lesson = learning_module.get_added_quiz_lesson()
-        quiz_les_list = list(set([("quiz", q.id) for q in quizzes] + [("lesson", l.id) for l in lessons]) - set(added_quiz_lesson))
+        
+        # Calculate available quizzes/lessons not yet in module
+        # FIX: Manually collect IDs from units and use DB exclude instead of set subtraction helper
+        added_quiz_ids = set()
+        added_lesson_ids = set()
+        
+        for unit in units:
+            if unit.type == 'quiz' and unit.quiz_id:
+                added_quiz_ids.add(unit.quiz_id)
+            elif unit.type == 'lesson' and unit.lesson_id:
+                added_lesson_ids.add(unit.lesson_id)
+        
+        # Query strictly for items NOT in the added sets
+        quizzes = Quiz.objects.filter(creator=user, is_trial=False).exclude(id__in=added_quiz_ids)
+        lessons = Lesson.objects.filter(creator=user).exclude(id__in=added_lesson_ids)
+        
+        available_pool = []
+        for q in quizzes:
+            available_pool.append(("quiz", q.id))
+        for l in lessons:
+            available_pool.append(("lesson", l.id))
+        
+        # Sort or format for display
         quiz_les_display = [
             {
                 "type": typ,
                 "id": obj_id,
+                # Create a composite key often used by frontend (e.g., "15:quiz")
+                "value_key": f"{obj_id}:{typ}", 
                 "display_name": get_quiz_les_display_name((typ, obj_id))
             }
-            for typ, obj_id in quiz_les_list
+            for typ, obj_id in available_pool
         ]
+        
         return Response({
             'learning_units': MinimalLearningUnitSerializer(units, many=True).data,
             'quiz_les_list': quiz_les_display,
+            'module_id': learning_module.id,
+            'course_id': course_id
         })
 
-    # POST: Handle add, change, remove, change_prerequisite
+
+    # 2. POST: Handle actions (add, change, remove, change_prerequisite)
     if request.method == "POST":
         action = request.data.get("action")
+        
+        # --- ADD UNITS ---
         if action == "add":
+            # Support both list of strings ["1:quiz", "2:lesson"] or comma-sep string "1:quiz,2:lesson"
             add_values = request.data.get("chosen_list", [])
+            if isinstance(add_values, str):
+                add_values = add_values.split(',') if add_values else []
+                
             to_add_list = []
             if add_values:
                 ordered_units = learning_module.get_learning_units()
                 start_val = ordered_units.last().order + 1 if ordered_units.exists() else 1
+                
                 for order, value in enumerate(add_values, start_val):
-                    learning_id, type_ = value.split(":")
+                    # Value format expects "id:type" (e.g. "45:quiz")
+                    if ":" not in str(value):
+                        continue
+                        
+                    learning_id, type_ = str(value).split(":")
+                    
                     if type_ == "quiz":
                         unit, _ = LearningUnit.objects.get_or_create(
                             order=order, quiz_id=learning_id, type=type_
@@ -2790,45 +2851,73 @@ def api_design_module(request, module_id, course_id=None):
                             order=order, lesson_id=learning_id, type=type_
                         )
                     to_add_list.append(unit)
-                learning_module.learning_unit.add(*to_add_list)
-                return Response({'message': "Lesson/Quiz added successfully"})
+                
+                if to_add_list:
+                    learning_module.learning_unit.add(*to_add_list)
+                    return Response({'message': "Lesson/Quiz added successfully"})
+                return Response({'error': "Invalid data format for chosen_list"}, status=400)
             else:
                 return Response({'error': "Please select a lesson/quiz to add"}, status=400)
 
+        # --- REORDER UNITS ---
         elif action == "change":
+            # Expects "unit_id:order"
             order_list = request.data.get("ordered_list", [])
+            if isinstance(order_list, str):
+                order_list = order_list.split(',') if order_list else []
+
             if order_list:
-                for order in order_list:
-                    learning_unit_id, learning_order = order.split(":")
+                for order_str in order_list:
+                    if ":" not in str(order_str):
+                        continue
+                    learning_unit_id, learning_order = str(order_str).split(":")
                     if learning_order:
-                        learning_unit = learning_module.learning_unit.get(id=learning_unit_id)
-                        learning_unit.order = learning_order
-                        learning_unit.save()
+                        try:
+                            learning_unit = learning_module.learning_unit.get(id=learning_unit_id)
+                            learning_unit.order = learning_order
+                            learning_unit.save()
+                        except (LearningUnit.DoesNotExist, ValueError):
+                            continue
                 return Response({'message': "Order changed successfully"})
             else:
                 return Response({'error': "Please select a lesson/quiz to change"}, status=400)
 
+        # --- REMOVE UNITS ---
         elif action == "remove":
             remove_values = request.data.get("delete_list", [])
+            # Support list or single value
+            if not isinstance(remove_values, list):
+                remove_values = [remove_values]
+            
             if remove_values:
+                # Remove association from module first
                 learning_module.learning_unit.remove(*remove_values)
+                # Delete actual unit objects (as per original logic)
                 LearningUnit.objects.filter(id__in=remove_values).delete()
                 return Response({'message': "Lessons/quizzes deleted successfully"})
             else:
                 return Response({'error': "Please select a lesson/quiz to remove"}, status=400)
 
+        # --- CHECK PREREQUISITE ---
         elif action == "change_prerequisite":
             unit_list = request.data.get("check_prereq", [])
+            if not isinstance(unit_list, list):
+                unit_list = [unit_list]
+
             if unit_list:
                 for unit in unit_list:
-                    learning_unit = learning_module.learning_unit.get(id=unit)
-                    learning_unit.toggle_check_prerequisite()
-                    learning_unit.save()
+                    try:
+                        learning_unit = learning_module.learning_unit.get(id=unit)
+                        learning_unit.toggle_check_prerequisite()
+                        learning_unit.save()
+                    except LearningUnit.DoesNotExist:
+                        continue
                 return Response({'message': "Changed prerequisite status successfully"})
             else:
                 return Response({'error': "Please select a lesson/quiz to change prerequisite"}, status=400)
 
         return Response({'error': "Invalid action"}, status=400)
+
 
 
 #=============================================================

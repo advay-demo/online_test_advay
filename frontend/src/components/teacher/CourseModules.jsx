@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FaPlus, FaBook, FaCalendarAlt, FaEdit, FaTrash, FaCheckCircle, FaEllipsisV, FaVideo, FaTimes, FaUpload, FaFileAlt, FaExternalLinkAlt } from 'react-icons/fa';
+import { FaPlus, FaBook, FaCalendarAlt, FaEdit, FaTrash, FaCheckCircle, FaEllipsisV, FaVideo, FaTimes, FaUpload, FaFileAlt, FaExternalLinkAlt, FaArrowUp, FaArrowDown, FaSync } from 'react-icons/fa';
 import useManageCourseStore from '../../store/manageCourseStore';
 import { useParams } from 'react-router-dom';
 import { FaBookOpen } from 'react-icons/fa';
@@ -43,7 +43,18 @@ const CourseModules = () => {
         openEditQuiz, 
         handleDeleteQuiz,
         setModuleFormData,
-        setLessonFormData
+        setLessonFormData,
+        showDesignModuleModal,
+        designModule,
+        loadingDesignModule,
+        designModuleError,
+        designingModuleId,
+        openDesignModule,
+        closeDesignModule,
+        handleAddUnitsToModule,
+        handleRemoveUnitsFromModule,
+        handleChangeModuleUnitOrder,
+        handleChangeModuleUnitPrerequisite
     } = useManageCourseStore();
 
     const { courseId } = useParams();
@@ -157,6 +168,89 @@ const CourseModules = () => {
          const fileInput = document.getElementById('video-file-upload');
          if(fileInput) fileInput.value = "";
     };
+
+
+    // --- DESIGN MODULE LOCAL STATE ---
+    const [selectedInSelected, setSelectedInSelected] = useState(null); // ID of selected unit (Left side)
+    const [selectedInPool, setSelectedInPool] = useState(null); // ValueKey of selected pool item (Right side)
+    
+    // Local state for immediate UI updates before API refresh
+    const [localSelected, setLocalSelected] = useState([]);
+    const [localPool, setLocalPool] = useState([]);
+
+    // Sync local state with API data when modal opens or data changes
+    useEffect(() => {
+        if (designModule) {
+            // Sort units by order
+            const sortedUnits = [...(designModule.learning_units || [])].sort((a,b) => a.order - b.order);
+            setLocalSelected(sortedUnits);
+            setLocalPool(designModule.quiz_les_list || []);
+            setSelectedInSelected(null);
+            setSelectedInPool(null);
+        }
+    }, [designModule]);
+
+    // HANDLERS FOR DESIGN MODAL
+    
+    // Add item from Pool -> Module
+    const handleAddUnit = async () => {
+        if (selectedInPool && designingModuleId) {
+            // selectedInPool is the value_key (e.g., "5:lesson")
+            await handleAddUnitsToModule(designingModuleId, [selectedInPool], courseId);
+            setSelectedInPool(null);
+        }
+    };
+
+    // Remove item from Module -> Pool
+    const handleRemoveUnit = async () => {
+        if (selectedInSelected && designingModuleId) {
+            // selectedInSelected is the unit.id
+            await handleRemoveUnitsFromModule(designingModuleId, [selectedInSelected], courseId);
+            setSelectedInSelected(null);
+        }
+    };
+
+    // Reorder: Move Up
+    const moveUp = async () => {
+        if (selectedInSelected !== null) {
+            const idx = localSelected.findIndex(u => u.id === selectedInSelected);
+            if (idx > 0) {
+                const newOrderList = [...localSelected];
+                // Swap
+                [newOrderList[idx - 1], newOrderList[idx]] = [newOrderList[idx], newOrderList[idx - 1]];
+                setLocalSelected(newOrderList);
+                
+                // Construct API payload "unit_id:order"
+                const orderedListPayload = newOrderList.map((u, i) => `${u.id}:${i + 1}`);
+                await handleChangeModuleUnitOrder(designingModuleId, orderedListPayload, courseId);
+            }
+        }
+    };
+
+    // Reorder: Move Down
+    const moveDown = async () => {
+        if (selectedInSelected !== null) {
+            const idx = localSelected.findIndex(u => u.id === selectedInSelected);
+            if (idx < localSelected.length - 1) {
+                const newOrderList = [...localSelected];
+                // Swap
+                [newOrderList[idx], newOrderList[idx + 1]] = [newOrderList[idx + 1], newOrderList[idx]];
+                setLocalSelected(newOrderList);
+
+                // Construct API payload "unit_id:order"
+                const orderedListPayload = newOrderList.map((u, i) => `${u.id}:${i + 1}`);
+                await handleChangeModuleUnitOrder(designingModuleId, orderedListPayload, courseId);
+            }
+        }
+    };
+
+    // Toggle Prerequisite
+    const handleTogglePrereq = async (unitId) => {
+        if (designingModuleId) {
+            await handleChangeModuleUnitPrerequisite(designingModuleId, [unitId], courseId);
+        }
+    };
+
 
 
     return (
@@ -581,7 +675,6 @@ const CourseModules = () => {
                 </div>
             )}
             {/* QUIZ FORM MODAL */}
-                        {/* QUIZ FORM MODAL */}
             {showQuizForm && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-2">
                     <div className="card-strong w-full max-w-full sm:max-w-2xl p-4 sm:p-6 relative rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
@@ -885,6 +978,211 @@ const CourseModules = () => {
                 </div>
             )}
 
+            {/* DESIGN MODULE MODAL */}
+            {showDesignModuleModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-2 animate-fade-in">
+                    <div className="bg-[#1e1e24] w-full max-w-6xl h-[85vh] flex flex-col relative rounded-xl shadow-2xl overflow-hidden border border-white/10">
+                        {/* Modal Header */}
+                        <div className="p-4 border-b border-white/10 flex items-center justify-between bg-black/20">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-amber-500/10 rounded-lg text-amber-500 border border-amber-500/20">
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" /></svg>
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-bold text-white">Design Module Content</h2>
+                                    <p className="text-sm text-gray-400">Add, remove, and reorder lessons and quizzes</p>
+                                </div>
+                            </div>
+                            <button onClick={closeDesignModule} className="p-2 hover:bg-white/10 rounded-full transition text-gray-400 hover:text-white">
+                                <FaTimes className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div className="flex-1 overflow-hidden p-4 sm:p-6 bg-[#18181b]">
+                            {loadingDesignModule && !designModule ? (
+                                <div className="h-full flex flex-col items-center justify-center text-gray-400 gap-3">
+                                    <FaSync className="animate-spin text-3xl text-amber-500" />
+                                    <span>Loading module configuration...</span>
+                                </div>
+                            ) : designModuleError ? (
+                                <div className="h-full flex items-center justify-center text-red-400">
+                                    <p>{designModuleError}</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
+                                    
+                                    {/* Left Column: SELECTED UNITS (In Module) */}
+                                    <div className="flex flex-col h-full bg-black/20 rounded-xl border border-white/10 overflow-hidden shadow-inner">
+                                        <div className="p-2.5 sm:p-3 md:p-4 border-b border-white/10 bg-white/5">
+                                            <h3 className="font-bold text-sm sm:text-base md:text-lg text-white flex items-center gap-2">
+                                                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-blue-500"></span>
+                                                Included Content
+                                            </h3>
+                                            <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">Items currently in this module</p>
+                                        </div>
+                                        
+                                        <div className="flex-1 overflow-y-auto p-2 sm:p-2.5 md:p-3 space-y-1.5 sm:space-y-2 custom-scrollbar">
+                                            {localSelected.length > 0 ? (
+                                                localSelected.map((unit) => {
+                                                    const isSelected = selectedInSelected === unit.id;
+                                                    return (
+                                                        <div key={unit.id} className="group">
+                                                            <div 
+                                                                onClick={() => setSelectedInSelected(isSelected ? null : unit.id)}
+                                                                className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all border ${
+                                                                    isSelected 
+                                                                    ? 'bg-blue-600/20 border-blue-500/50' 
+                                                                    : 'bg-[#27272a] border-white/5 hover:border-white/10'
+                                                                }`}
+                                                            >
+                                                                <div className={`w-8 h-8 rounded flex items-center justify-center flex-shrink-0 ${
+                                                                    unit.type === 'lesson' ? 'bg-cyan-500/10 text-cyan-400' : 'bg-green-500/10 text-green-400'
+                                                                }`}>
+                                                                    {unit.type === 'lesson' ? <FaBook className="w-3.5 h-3.5" /> : <FaCheckCircle className="w-3.5 h-3.5" />}
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <div className="font-medium text-sm text-gray-200 truncate">{unit.display_name.replace(/\(quiz\)|\(lesson\)/gi, '')}</div>
+                                                                    <div className="flex items-center gap-2 mt-0.5">
+                                                                        <span className="text-[10px] uppercase font-bold text-gray-500 bg-black/30 px-1.5 py-0.5 rounded">{unit.type}</span>
+                                                                        {unit.check_prerequisite && <span className="text-[10px] text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded border border-purple-500/20">Prerequisite</span>}
+                                                                    </div>
+                                                                </div>
+                                                                <input 
+                                                                    type="radio" 
+                                                                    checked={isSelected}
+                                                                    readOnly
+                                                                    className="w-4 h-4 text-blue-500 bg-gray-700 border-gray-600 focus:ring-blue-500 focus:ring-offset-gray-800"
+                                                                />
+                                                            </div>
+
+                                                            {/* Context Actions (only visible when selected) */}
+                                                            <div className={`transition-all duration-300 overflow-hidden ${isSelected ? 'max-h-20 opacity-100 py-2' : 'max-h-0 opacity-0'}`}>
+                                                                <div className="mx-2 p-2 bg-black/30 rounded-lg flex items-center justify-between border border-white/5">
+                                                                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                                                                        <input 
+                                                                            type="checkbox"
+                                                                            checked={unit.check_prerequisite}
+                                                                            onChange={() => handleTogglePrereq(unit.id)}
+                                                                            className="rounded bg-gray-700 border-gray-600 text-purple-500 focus:ring-purple-500"
+                                                                        />
+                                                                        <span className="text-xs text-gray-400 font-medium">Check Prerequisite</span>
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })
+                                            ) : (
+                                                <div className="h-full flex flex-col items-center justify-center text-gray-500 opacity-50">
+                                                    <FaBookOpen className="w-8 h-8 mb-2" />
+                                                    <p className="text-sm">Module is empty</p>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Left Actions Footer */}
+                                        <div className="p-4 border-t border-white/10 bg-white/5 flex items-center justify-between gap-2">
+                                            <button 
+                                                onClick={handleRemoveUnit}
+                                                disabled={!selectedInSelected}
+                                                className="px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 bg-red-600 hover:bg-red-700 rounded-lg text-xs sm:text-sm font-medium transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 flex-shrink-0"
+                                            >
+                                                <FaTrash className="inline mr-1" /> Remove
+                                            </button>
+                                            <div className="flex gap-1.5 sm:gap-2">
+                                                <button 
+                                                    onClick={moveUp}
+                                                    disabled={!selectedInSelected}
+                                                    className="px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 border border-[var(--border-color)] rounded-lg text-xs sm:text-sm font-medium hover:bg-[var(--input-bg)] transition flex items-center justify-center gap-1 sm:gap-1.5 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+                                                >
+                                                    <FaArrowUp className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                                                    <span className="hidden md:inline">Up</span>
+                                                </button>
+                                                <button 
+                                                    onClick={moveDown}
+                                                    disabled={!selectedInSelected}
+                                                    className="px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 border border-[var(--border-color)] rounded-lg text-xs sm:text-sm font-medium hover:bg-[var(--input-bg)] transition flex items-center justify-center gap-1 sm:gap-1.5 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+                                                >
+                                                    <FaArrowDown className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                                                    <span className="hidden md:inline">Down</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Right Column: AVAILABLE POOL */}
+                                    <div className="flex flex-col h-full bg-black/20 rounded-xl border border-white/10 overflow-hidden shadow-inner">
+                                        <div className="p-2.5 sm:p-3 md:p-4 border-b border-white/10 bg-white/5">
+                                            <h3 className="font-bold text-sm sm:text-base md:text-lg text-white flex items-center gap-2">
+                                                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-green-500"></span>
+                                                Available Items
+                                            </h3>
+                                            <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">Unassigned lessons and quizzes</p>
+                                        </div>
+                                        
+                                        <div className="flex-1 overflow-y-auto p-2 sm:p-2.5 md:p-3 space-y-1.5 sm:space-y-2 custom-scrollbar">
+                                            {localPool.length > 0 ? (
+                                                localPool.map((item) => {
+                                                    const isSelected = selectedInPool === item.value_key;
+                                                    return (
+                                                        <div 
+                                                            key={item.value_key}
+                                                            onClick={() => setSelectedInPool(isSelected ? null : item.value_key)}
+                                                            className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all border ${
+                                                                isSelected 
+                                                                ? 'bg-green-600/20 border-green-500/50' 
+                                                                : 'bg-[#27272a] border-white/5 hover:border-white/10'
+                                                            }`}
+                                                        >
+                                                            <div className={`w-8 h-8 rounded flex items-center justify-center flex-shrink-0 ${
+                                                                item.type === 'lesson' ? 'bg-cyan-500/10 text-cyan-400' : 'bg-green-500/10 text-green-400'
+                                                            }`}>
+                                                                {item.type === 'lesson' ? <FaBook className="w-3.5 h-3.5"/> : <FaCheckCircle className="w-3.5 h-3.5"/>}
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="font-medium text-xs sm:text-sm text-gray-300 truncate">{item.display_name.replace(/\(quiz\)|\(lesson\)/gi, '')}</div>
+                                                                <div className="flex items-center gap-2 mt-0.5">
+                                                                    <span className="text-[10px] uppercase font-bold text-gray-600 bg-black/30 px-1.5 py-0.5 rounded">{item.type}</span>
+                                                                </div>
+                                                            </div>
+                                                            <input 
+                                                                type="radio" 
+                                                                checked={isSelected}
+                                                                readOnly
+                                                                className="w-4 h-4 text-green-500 bg-gray-700 border-gray-600 focus:ring-green-500 focus:ring-offset-gray-800 flex-shrink-0"
+                                                            />
+                                                        </div>
+                                                    );
+                                                })
+                                            ) : (
+                                                <div className="h-full flex flex-col items-center justify-center text-gray-500 opacity-50 py-8 sm:py-12">
+                                                    <FaCheckCircle className="w-6 h-6 sm:w-8 sm:h-8 mb-2" />
+                                                    <p className="text-xs sm:text-sm">No available items</p>
+                                                    <p className="text-[10px] sm:text-xs muted mt-1">All items are assigned</p>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Right Actions Footer */}
+                                        <div className="flex items-center justify-between p-4 border-t border-white/10 bg-white/5">
+                                            <button 
+                                                onClick={handleAddUnit}
+                                                disabled={!selectedInPool}
+                                                className="px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 bg-green-600 hover:bg-green-700 rounded-lg text-xs sm:text-sm font-medium transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 flex-shrink-0"
+                                            >
+                                                <FaPlus className="inline mr-1" /> Add
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* MODULES LIST */}
             {modules.length > 0 ? (
             modules.map((module) => (
@@ -946,7 +1244,7 @@ const CourseModules = () => {
                             </button>
                             <button
                                 onClick={() => {
-                                    console.log('Design module:', module.id);
+                                    openDesignModule(module.id);
                                 }}
                                 className="px-2 py-1 sm:px-3 sm:py-1.5 bg-gradient-to-r from-amber-500/20 to-amber-600/20 text-amber-400 border border-amber-500/30 rounded-lg text-xs font-bold hover:from-amber-500/30 hover:to-amber-600/30 hover:border-amber-500/50 transition-all duration-200 flex items-center gap-1 sm:gap-1.5 shadow-sm hover:shadow-amber-500/20"
                             >
