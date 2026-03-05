@@ -8,7 +8,7 @@ import {
     getCourseDesign, addModulesToCourse, changeCourseModuleOrder, removeModulesFromCourse,
     changeCourseModulePrerequisiteCompletion, changeCourseModulePrerequisitePassing,
     getModuleDesign, addUnitsToModule, changeModuleUnitOrder, removeUnitsFromModule,
-    changeModuleUnitPrerequisite
+    changeModuleUnitPrerequisite, createTeacherExercise, getTeacherExercise, updateTeacherExercise, deleteTeacherExercise
 } from '../api/api';
 
 const initialModuleForm = {
@@ -44,6 +44,12 @@ const initialQuizForm = {
     order: 1,
 };
 
+const initialExerciseForm = {
+    description: '',
+    view_answerpaper: false,
+    active: true,
+};
+
 const useManageCourseStore = create((set, get) => ({
     // State
     activeTab: 'Modules',
@@ -64,12 +70,15 @@ const useManageCourseStore = create((set, get) => ({
     editingModule: null,
     showLessonForm: false,
     showQuizForm: false,
+    showExerciseForm: false, // Added
     selectedModule: null,
     editingLesson: null,
     editingQuiz: null,
+    editingExercise: null,   // Added
     moduleFormData: { ...initialModuleForm },
     lessonFormData: { ...initialLessonForm },
     quizFormData: { ...initialQuizForm },
+    exerciseFormData: { ...initialExerciseForm }, // Added
 
     // Actions
     setActiveTab: (tab) => set({ activeTab: tab }),
@@ -795,102 +804,125 @@ const useManageCourseStore = create((set, get) => ({
         }
     },
 
-    // EXERCISE APIs (Reusing quiz form state generally, but separate actions) ========
-    // Note: Exercises often share structure with Quizzes but might have specific endpoints based on your API.
+    
+// EXERCISE TAB ===========================================================    
 
-    handleCreateExercise: async () => {
-        const { selectedModule, quizFormData, course } = get();
-        if (!selectedModule || !course) return;
 
-        try {
-            set({ loading: true });
-            // Ensure payload has is_exercise=true
-            const payload = { 
-                ...quizFormData,
-                is_exercise: true 
-            };
-            
-            // Date handling if applicable
-            if (payload.start_date_time) payload.start_date_time = new Date(payload.start_date_time).toISOString();
-            if (payload.end_date_time) payload.end_date_time = new Date(payload.end_date_time).toISOString();
+    setShowExerciseForm: (val) => set({ showExerciseForm: val }),
+    setEditingExercise: (exercise) => set({ editingExercise: exercise }),
+    setExerciseFormData: (data) => set({ exerciseFormData: data }),
 
-            await createTeacherExercise(course.id, selectedModule.id, payload);
-            
-            set({ showQuizForm: false, selectedModule: null, quizFormData: { ...initialQuizForm }, loading: false });
-            await get().loadCourseData(course.id);
-        } catch (err) {
-            console.error(err);
-            set({ loading: false, error: err.message });
-        }
+    handleExerciseFormChange: (e) => {
+        const { name, value, type, checked } = e.target;
+        set((state) => ({
+            exerciseFormData: {
+                ...state.exerciseFormData,
+                [name]: type === 'checkbox' ? checked : value,
+            },
+        }));
+    },
+
+    openCreateExercise: (module) => {
+        set({
+            selectedModule: module,
+            editingExercise: null,
+            exerciseFormData: { ...initialExerciseForm },
+            showExerciseForm: true,
+        });
     },
 
     openEditExercise: async (module, unit) => {
         const courseId = get().course?.id;
         if (!courseId) return;
 
-        set({ selectedModule: module, editingQuiz: unit }); // Reusing editingQuiz state variable
-        try {
-            // Using specific Exercise getter
-            const exerciseData = await getTeacherExercise(courseId, module.id, unit.quiz_id);
-            
-            const formatDateForInput = (dateStr) => {
-                if (!dateStr) return '';
-                const date = new Date(dateStr);
-                const offset = date.getTimezoneOffset() * 60000;
-                return (new Date(date - offset)).toISOString().slice(0, 16);
-            };
+        // Reset other form visibilities to be safe
+        set({ 
+            selectedModule: module, 
+            editingExercise: unit, 
+            showQuizForm: false, // Ensure Quiz form is hidden
+            showLessonForm: false, 
+            loading: true 
+        });
 
+        try {
+            const exerciseData = await getTeacherExercise(courseId, module.id, unit.quiz_id);
             set({
-                quizFormData: {
+                exerciseFormData: {
                     id: exerciseData.id,
                     description: exerciseData.description || '',
-                    instructions: exerciseData.instructions || '',
-                    duration: exerciseData.duration || 30,
-                    attempts_allowed: exerciseData.attempts_allowed || 1,
-                    time_between_attempts: exerciseData.time_between_attempts || 0.0,
-                    pass_criteria: exerciseData.pass_criteria || 40.0,
-                    weightage: exerciseData.weightage || 100.0,
-                    allow_skip: exerciseData.allow_skip ?? true,
-                    view_answerpaper: exerciseData.view_answerpaper ?? true,
-                    is_exercise: true, // Force true
-                    active: exerciseData.active ?? true,
-                    start_date_time: formatDateForInput(exerciseData.start_date_time),
-                    end_date_time: formatDateForInput(exerciseData.end_date_time),
-                    order: exerciseData.order || unit.order,
+                    view_answerpaper: exerciseData.view_answerpaper || false,
+                    active: exerciseData.active !== undefined ? exerciseData.active : true,
                 },
-                showQuizForm: true // We can reuse the Quiz Form UI for exercises
+                showExerciseForm: true, // Show ONLY exercise form
+                loading: false,
             });
         } catch (error) {
             console.error("Error fetching exercise:", error);
+            // Fallback if fetch fails
             set({
-                quizFormData: {
-                    ...initialQuizForm,
-                    is_exercise: true,
+                exerciseFormData: {
+                    ...initialExerciseForm,
                     description: unit.name || '',
-                    order: unit.order,
                 },
-                showQuizForm: true
+                showExerciseForm: true,
+                loading: false,
             });
         }
     },
 
-    handleUpdateExercise: async () => {
-        const { selectedModule, editingQuiz, quizFormData, course } = get();
-        if (!selectedModule || !editingQuiz || !course) return;
+    handleCreateExercise: async () => {
+        const { selectedModule, exerciseFormData, course } = get();
+        if (!selectedModule || !course) return;
 
         try {
             set({ loading: true });
             
-            const payload = { ...quizFormData, is_exercise: true };
-            if (payload.start_date_time) payload.start_date_time = new Date(payload.start_date_time).toISOString();
-            if (payload.end_date_time) payload.end_date_time = new Date(payload.end_date_time).toISOString();
+            // Send only the 3 editable properties
+            const payload = {
+                description: exerciseFormData.description,
+                view_answerpaper: exerciseFormData.view_answerpaper,
+                active: exerciseFormData.active,
+            };
 
-            await updateTeacherExercise(course.id, selectedModule.id, editingQuiz.quiz_id, payload);
-            
-            set({ showQuizForm: false, selectedModule: null, editingQuiz: null, quizFormData: { ...initialQuizForm }, loading: false });
+            await createTeacherExercise(course.id, selectedModule.id, payload);
+            set({
+                showExerciseForm: false,
+                selectedModule: null,
+                exerciseFormData: { ...initialExerciseForm },
+                loading: false,
+            });
             await get().loadCourseData(course.id);
         } catch (err) {
-            console.error(err);
+            console.error("Failed to create exercise:", err);
+            set({ loading: false, error: err.message });
+        }
+    },
+
+    handleUpdateExercise: async () => {
+        const { selectedModule, editingExercise, exerciseFormData, course } = get();
+        if (!selectedModule || !editingExercise || !course) return;
+
+        try {
+            set({ loading: true });
+
+            // Send only the 3 editable properties
+            const payload = {
+                description: exerciseFormData.description,
+                view_answerpaper: exerciseFormData.view_answerpaper,
+                active: exerciseFormData.active,
+            };
+
+            await updateTeacherExercise(course.id, selectedModule.id, editingExercise.quiz_id, payload);
+            set({
+                showExerciseForm: false,
+                selectedModule: null,
+                editingExercise: null,
+                exerciseFormData: { ...initialExerciseForm },
+                loading: false,
+            });
+            await get().loadCourseData(course.id);
+        } catch (err) {
+            console.error("Failed to update exercise:", err);
             set({ loading: false, error: err.message });
         }
     },
@@ -898,16 +930,17 @@ const useManageCourseStore = create((set, get) => ({
     handleDeleteExercise: async (moduleId, quizId) => {
         const { course } = get();
         if (!course) return;
+
         try {
             set({ loading: true });
             await deleteTeacherExercise(course.id, moduleId, quizId);
             set({ loading: false });
             await get().loadCourseData(course.id);
         } catch (err) {
-             set({ loading: false, error: err.message });
+            console.error("Failed to delete exercise:", err);
+            set({ loading: false, error: err.message });
         }
     },
-
 
 
 

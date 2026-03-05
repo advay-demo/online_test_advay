@@ -2138,7 +2138,8 @@ def teacher_get_course(request, course_id):
                         'order': unit.order,
                         'lesson_id': unit.lesson.id if unit.lesson else None,
                         'quiz_id': unit.quiz.id if unit.quiz else None,
-                        'name': unit.lesson.name if unit.lesson else (unit.quiz.description if unit.quiz else '')
+                        'name': unit.lesson.name if unit.lesson else (unit.quiz.description if unit.quiz else ''),
+                        'is_exercise': unit.quiz.is_exercise if unit.quiz else False # <--- ADD THIS LINE
                     }
                     for unit in units
                 ]
@@ -2303,6 +2304,7 @@ def teacher_get_course_modules(request, course_id):
                 elif unit.type == 'quiz' and unit.quiz:
                     unit_data['quiz_id'] = unit.quiz.id
                     unit_data['name'] = unit.quiz.description
+                    unit_data['is_exercise'] = unit.quiz.is_exercise # <--- ADD THIS LINE
                 units_data.append(unit_data)
             
             modules_data.append({
@@ -2918,6 +2920,12 @@ def api_design_module(request, module_id, course_id=None):
 
         return Response({'error': "Invalid action"}, status=400)
 
+#=============================================================
+# DESIGN QUESTION PAPER APIs
+#=============================================================
+
+
+
 
 
 #=============================================================
@@ -2934,32 +2942,42 @@ def api_exercise_handler(request, course_id, module_id, quiz_id=None):
     course = get_object_or_404(Course, pk=course_id)
     if not course.is_creator(user) and not course.is_teacher(user):
         return Response({'error': 'This Course does not belong to you'}, status=status.HTTP_403_FORBIDDEN)
+    
     module = get_object_or_404(LearningModule, id=module_id)
+
+    # Helper function to match the Yaksh backend's ownership allowance 
+    # (teachers on the same course can edit each other's course exercises)
+    def has_quiz_permission(quiz):
+        if quiz.creator != user and not (course.is_creator(user) or course.is_teacher(user)):
+            return False
+        return True
 
     # GET: Retrieve exercise details
     if request.method == "GET":
         if not quiz_id:
-            return Response({'error': 'quiz_id required'}, status=400)
+            return Response({'error': 'quiz_id required'}, status=status.HTTP_400_BAD_REQUEST)
         quiz = get_object_or_404(Quiz, pk=quiz_id)
-        if quiz.creator != user:
-            return Response({'error': 'This quiz does not belong to you'}, status=403)
-        # Return quiz details (customize as needed)
+        if not has_quiz_permission(quiz):
+            return Response({'error': 'This quiz does not belong to you'}, status=status.HTTP_403_FORBIDDEN)
+        
         serializer = QuizSerializer(quiz)
-        return Response(serializer.data)
+        data = serializer.data
+        
+        # Append QuestionPaper ID so frontend can redirect to paper design view
+        question_paper = quiz.questionpaper_set.first()
+        data['questionpaper_id'] = question_paper.id if question_paper else None
+        
+        return Response(data)
 
-    # POST: Create or update exercise
+    # POST: Create a new exercise
     if request.method == "POST":
-        data = request.data
-        quiz = None
         if quiz_id:
-            quiz = get_object_or_404(Quiz, pk=quiz_id)
-            if quiz.creator != user:
-                return Response({'error': 'This quiz does not belong to you'}, status=403)
-            form = ExerciseForm(data, instance=quiz)
-        else:
-            form = ExerciseForm(data)
+            return Response({'error': 'Use PUT for updating existing exercises'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        form = ExerciseForm(request.data)
         if form.is_valid():
             quiz = form.save(commit=False)
+            # Enforce parameters identical to Yaksh backend
             quiz.is_exercise = True
             quiz.time_between_attempts = 0
             quiz.weightage = 0
@@ -2969,45 +2987,79 @@ def api_exercise_handler(request, course_id, module_id, quiz_id=None):
             quiz.pass_criteria = 0
             quiz.creator = user
             quiz.save()
-            # Add to module if new
-            if not quiz_id:
-                last_unit = module.get_learning_units().last()
-                order = last_unit.order + 1 if last_unit else 1
-                unit, created = LearningUnit.objects.get_or_create(
-                    type="quiz", quiz=quiz, order=order
-                )
-                if created:
-                    module.learning_unit.add(unit.id)
-            return Response({'message': 'Exercise saved', 'quiz_id': quiz.id})
+            
+            # Setup module mapping
+            last_unit = module.get_learning_units().last()
+            order = last_unit.order + 1 if last_unit else 1
+            unit, created = LearningUnit.objects.get_or_create(
+                type="quiz", quiz=quiz, order=order
+            )
+            if created:
+                module.learning_unit.add(unit.id)
+                
+            # Guarantee a QuestionPaper exists
+            question_paper, _ = QuestionPaper.objects.get_or_create(quiz=quiz)
+                
+            return Response({
+                'message': 'Exercise saved', 
+                'quiz_id': quiz.id, 
+                'questionpaper_id': question_paper.id
+            }, status=status.HTTP_201_CREATED)
         else:
-            return Response({'error': form.errors}, status=400)
+            return Response({'error': form.errors}, status=status.HTTP_400_BAD_REQUEST)
 
-    # PUT: Update exercise
+    # PUT: Update an existing exercise
     if request.method == "PUT":
         if not quiz_id:
-            return Response({'error': 'quiz_id required'}, status=400)
+            return Response({'error': 'quiz_id required'}, status=status.HTTP_400_BAD_REQUEST)
+        
         quiz = get_object_or_404(Quiz, pk=quiz_id)
-        if quiz.creator != user:
-            return Response({'error': 'This quiz does not belong to you'}, status=403)
+        if not has_quiz_permission(quiz):
+            return Response({'error': 'This quiz does not belong to you'}, status=status.HTTP_403_FORBIDDEN)
+            
         form = ExerciseForm(request.data, instance=quiz)
         if form.is_valid():
             quiz = form.save(commit=False)
+            # Enforce the parameters again to match the robust setup in Yaksh
+            quiz.is_exercise = True
+            quiz.time_between_attempts = 0
+            quiz.weightage = 0
+            quiz.allow_skip = False
+            quiz.attempts_allowed = -1
+            quiz.duration = 1000
+            quiz.pass_criteria = 0
             quiz.save()
-            return Response({'message': 'Exercise updated', 'quiz_id': quiz.id})
+            
+            question_paper = quiz.questionpaper_set.first()
+            return Response({
+                'message': 'Exercise updated', 
+                'quiz_id': quiz.id,
+                'questionpaper_id': question_paper.id if question_paper else None
+            }, status=status.HTTP_200_OK)
         else:
-            return Response({'error': form.errors}, status=400)
+            return Response({'error': form.errors}, status=status.HTTP_400_BAD_REQUEST)
 
     # DELETE: Delete exercise
     if request.method == "DELETE":
         if not quiz_id:
-            return Response({'error': 'quiz_id required'}, status=400)
+            return Response({'error': 'quiz_id required'}, status=status.HTTP_400_BAD_REQUEST)
+            
         quiz = get_object_or_404(Quiz, pk=quiz_id)
-        if quiz.creator != user:
-            return Response({'error': 'This quiz does not belong to you'}, status=403)
+        if not has_quiz_permission(quiz):
+            return Response({'error': 'This quiz does not belong to you'}, status=status.HTTP_403_FORBIDDEN)
+            
+        # Optional: Standard clean up for Learning Unit relationships
+        unit = module.learning_unit.filter(type='quiz', quiz=quiz).first()
+        if unit:
+            module.learning_unit.remove(unit)
+            unit.delete()
+            
         quiz.delete()
-        return Response({'message': 'Exercise deleted'})
+        return Response({'message': 'Exercise deleted'}, status=status.HTTP_204_NO_CONTENT)
 
-    return Response({'error': 'Invalid request'}, status=400)
+    return Response({'error': 'Invalid request'}, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 # ============================================================
 #  QUIZ APIs
@@ -3056,6 +3108,7 @@ def api_quiz_handler(request, course_id, module_id, quiz_id=None):
                 'pass_criteria': quiz.pass_criteria,
                 'weightage': quiz.weightage,
                 'allow_skip': quiz.allow_skip,
+                'view_answerpaper': quiz.view_answerpaper,
                 'is_exercise': quiz.is_exercise,
                 'active': quiz.active,
                 'order': unit.order
@@ -3081,6 +3134,7 @@ def api_quiz_handler(request, course_id, module_id, quiz_id=None):
                     pass_criteria=request.data.get('pass_criteria', 40.0),
                     weightage=request.data.get('weightage', 100.0),
                     allow_skip=request.data.get('allow_skip', True),
+                    view_answerpaper=request.data.get('view_answerpaper', True),
                     is_exercise=request.data.get('is_exercise', False),
                     active=request.data.get('active', True),
                     creator=user
@@ -3133,6 +3187,7 @@ def api_quiz_handler(request, course_id, module_id, quiz_id=None):
             if 'pass_criteria' in request.data: quiz.pass_criteria = request.data['pass_criteria']
             if 'weightage' in request.data: quiz.weightage = request.data['weightage']
             if 'allow_skip' in request.data: quiz.allow_skip = request.data['allow_skip']
+            if 'view_answerpaper' in request.data: quiz.view_answerpaper = request.data['view_answerpaper']
             if 'is_exercise' in request.data: quiz.is_exercise = request.data['is_exercise']
             if 'active' in request.data: quiz.active = request.data['active']
             

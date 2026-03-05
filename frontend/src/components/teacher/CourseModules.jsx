@@ -42,6 +42,16 @@ const CourseModules = () => {
         openQuizQuestionManager, 
         openEditQuiz, 
         handleDeleteQuiz,
+        showExerciseForm,
+        editingExercise,
+        exerciseFormData,
+        handleExerciseFormChange,
+        handleCreateExercise,
+        handleUpdateExercise,
+        setShowExerciseForm,
+        openCreateExercise,
+        openEditExercise,
+        handleDeleteExercise,
         setModuleFormData,
         setLessonFormData,
         showDesignModuleModal,
@@ -103,6 +113,17 @@ const CourseModules = () => {
             handleCreateLesson();
         }
     };
+
+    const handleExerciseSubmit = (e) => {
+        e.preventDefault();
+        if (editingExercise) {
+            handleUpdateExercise();
+        } else {
+            handleCreateExercise();
+        }
+    };
+
+
 
     // Helper to get embed URL
     const getVideoEmbedUrl = (url) => {
@@ -978,6 +999,97 @@ const CourseModules = () => {
                 </div>
             )}
 
+            {/* EXERCISE FORM MODAL - Added Integration */}
+            {showExerciseForm && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-2">
+                    <div className="card-strong w-full max-w-full sm:max-w-xl p-4 sm:p-6 relative rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
+                        <button
+                            className="absolute right-4 top-4 text-lg sm:text-xl p-2 rounded-full border border-[var(--border-color)] bg-[var(--input-bg)] hover:bg-white/10 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"
+                            onClick={() => {
+                                setShowExerciseForm(false);
+                                setEditingExercise(null);
+                            }}
+                        >
+                            <FaTimes />
+                        </button>
+
+                        <div className="flex flex-row items-center gap-4 mb-6">
+                            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20 text-purple-400">
+                                <FaCheckCircle className="w-7 h-7 sm:w-8 sm:h-8" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <h2 className="text-xl sm:text-2xl font-bold mb-1">
+                                    {editingExercise ? 'Edit Exercise' : 'Add Exercise'}
+                                </h2>
+                                <p className="text-xs sm:text-sm muted">Set up a simple coding exercise/quiz.</p>
+                            </div>
+                        </div>
+
+                        <form onSubmit={handleExerciseSubmit} className="space-y-6">
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold text-gray-300">Description:</label>
+                                <input
+                                    className="input bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg px-4 py-3 text-base focus-visible:outline-none w-full"
+                                    name="description"
+                                    placeholder="e.g. NFT Marketplace"
+                                    value={exerciseFormData.description}
+                                    onChange={handleExerciseFormChange}
+                                    required
+                                />
+                            </div>
+
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between p-4 rounded-lg bg-[var(--input-bg)] border border-[var(--border-color)]">
+                                    <div className="flex-1">
+                                        <span className="text-sm font-semibold text-gray-200">Allow student to view their answer paper:</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleExerciseFormChange({ target: { name: 'view_answerpaper', type: 'checkbox', checked: !exerciseFormData.view_answerpaper } })}
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                                            exerciseFormData.view_answerpaper ? 'bg-purple-600' : 'bg-gray-600'
+                                        }`}
+                                    >
+                                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${exerciseFormData.view_answerpaper ? 'translate-x-6' : 'translate-x-1'}`} />
+                                    </button>
+                                </div>
+
+                                <div className="flex items-center justify-between p-4 rounded-lg bg-[var(--input-bg)] border border-[var(--border-color)]">
+                                    <div className="flex-1">
+                                        <span className="text-sm font-semibold text-gray-200">Active:</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleExerciseFormChange({ target: { name: 'active', type: 'checkbox', checked: !exerciseFormData.active } })}
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                                            exerciseFormData.active ? 'bg-green-600' : 'bg-gray-600'
+                                        }`}
+                                    >
+                                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${exerciseFormData.active ? 'translate-x-6' : 'translate-x-1'}`} />
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-3 justify-end pt-4">
+                                <button
+                                    type="button"
+                                    className="px-5 py-2.5 rounded-lg border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-muted)] hover:text-white hover:bg-white/10 font-medium transition"
+                                    onClick={() => setShowExerciseForm(false)}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-8 py-2.5 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all flex items-center justify-center min-w-[120px]"
+                                >
+                                    {editingExercise ? 'Update' : 'Save'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
             {/* DESIGN MODULE MODAL */}
             {showDesignModuleModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-2 animate-fade-in">
@@ -1233,9 +1345,7 @@ const CourseModules = () => {
                                 <span className="inline sm:hidden">Quiz</span>
                             </button>
                             <button
-                                onClick={() => {
-                                    console.log('Create exercise for module:', module.id);
-                                }}
+                                onClick={() =>  openCreateExercise(module)}
                                 className="px-2 py-1 sm:px-3 sm:py-1.5 bg-gradient-to-r from-purple-500/20 to-purple-600/20 text-purple-400 border border-purple-500/30 rounded-lg text-xs font-bold hover:from-purple-500/30 hover:to-purple-600/30 hover:border-purple-500/50 transition-all duration-200 flex items-center gap-1 sm:gap-1.5 shadow-sm hover:shadow-purple-500/20"
                             >
                                 <FaPlus className="w-3 h-3 hidden sm:inline" />
@@ -1336,6 +1446,31 @@ const CourseModules = () => {
                                                     onClick={() => {
                                                         if (window.confirm(`Delete lesson "${unit.name}"?`)) {
                                                             handleDeleteLesson(module.id, unit.lesson_id);
+                                                        }
+                                                    }}
+                                                    className="px-3 py-1 border border-red-500/30 text-red-400 rounded text-xs hover:bg-red-500/20 transition"
+                                                >
+                                                    Delete
+                                                </button>
+                                            </>
+                                        ) : unit.is_exercise ? (
+                                            <>
+                                                <button
+                                                    onClick={() => openQuizQuestionManager(unit.quiz_id)}
+                                                    className="px-3 py-1 border border-purple-500/30 text-purple-400 rounded text-xs hover:bg-purple-500/20 transition"
+                                                >
+                                                    Questions
+                                                </button>
+                                                <button
+                                                    onClick={() => openEditExercise(module, unit)}
+                                                    className="px-3 py-1 border border-white/10 rounded text-xs hover:bg-white/10 transition"
+                                                >
+                                                    Edit
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        if (window.confirm(`Delete exercise "${unit.name}"?`)) {
+                                                            handleDeleteExercise(module.id, unit.quiz_id);
                                                         }
                                                     }}
                                                     className="px-3 py-1 border border-red-500/30 text-red-400 rounded text-xs hover:bg-red-500/20 transition"
