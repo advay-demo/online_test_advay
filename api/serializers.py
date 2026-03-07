@@ -2,10 +2,12 @@ from rest_framework import serializers
 from yaksh.models import (
     Question, Quiz, QuestionPaper, AnswerPaper, Answer, Course,
     LearningModule, LearningUnit, Lesson, CourseStatus,
-    Badge, UserBadge, BadgeProgress, UserStats, DailyActivity, UserActivity, Post, Comment, User, Profile
+    Badge, UserBadge, BadgeProgress, UserStats, DailyActivity, UserActivity, Post, Comment, User, Profile,
+    QuestionSet
 )
 from grades.models import GradingSystem, GradeRange
 from notifications_plugin.models import Notification
+from taggit.models import Tag
 
 
 
@@ -965,4 +967,19 @@ class StudentDashboardCourseSerializer(serializers.ModelSerializer):
 
 class CourseWithCompletionSerializer(serializers.Serializer):
     data = CourseCatalogSerializer()
-    completion_percentage = serializers.FloatField(allow_null=True)        
+    completion_percentage = serializers.FloatField(allow_null=True)      
+
+
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = ['id', 'name']
+
+
+class QuestionSetSerializer(serializers.ModelSerializer):
+    # This renders the many-to-many relationship using full Question objects mapping
+    questions = QuestionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = QuestionSet
+        fields = '__all__'      

@@ -9,7 +9,7 @@ import {
 import TeacherSidebar from '../../components/layout/TeacherSidebar';
 import Header from '../../components/layout/Header';
 import CourseAnalytics from '../../components/teacher/CourseAnalytics';
-import QuizQuestionManager from '../../components/teacher/QuizQuestionManager';
+
 import CourseDiscussionsTab from '../../components/teacher/CourseDiscussion';
 import useManageCourseStore from '../../store/manageCourseStore';
 import CourseEnrollment from '../../components/teacher/CourseEnrollement';
@@ -32,7 +32,7 @@ const ManageCourse = () => {
         openCreateLesson, openEditLesson, handleCreateLesson, handleDeleteLesson,
         setShowQuizForm, setEditingQuiz, setQuizFormData, handleQuizFormChange, openCreateQuiz, openEditQuiz, handleCreateQuiz, handleDeleteQuiz,
         loadCourseData, loadEnrollments, loadAnalytics, initializeOrdering, moveModule, saveModuleOrder, moveUnit, saveUnitOrder,
-        handleApproveEnrollment, handleRejectEnrollment, handleRemoveEnrollment, openQuizQuestionManager, handleQuizQuestionsUpdate
+        handleApproveEnrollment, handleRejectEnrollment, handleRemoveEnrollment, handleQuizQuestionsUpdate
     } = useManageCourseStore();
 
 
@@ -224,17 +224,7 @@ const ManageCourse = () => {
                 </div>
             </main>
 
-            {/* Quiz Question Manager Modal */}
-            {showQuizQuestionManager && selectedQuizId && (
-                <QuizQuestionManager
-                    quizId={selectedQuizId}
-                    onClose={() => {
-                        setShowQuizQuestionManager(false);
-                        setSelectedQuizId(null);
-                    }}
-                    onUpdate={handleQuizQuestionsUpdate}
-                />
-            )}
+            
         </div>
     );
 };

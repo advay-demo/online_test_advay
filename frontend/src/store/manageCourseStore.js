@@ -6,7 +6,11 @@ import {
     reorderCourseModules, reorderModuleUnits, getCourseAnalytics, 
     getTeacherLesson, createTeacherLesson, updateTeacherLesson, deleteTeacherLesson, 
     getCourseDesign, addModulesToCourse, changeCourseModuleOrder, removeModulesFromCourse,
-    changeCourseModulePrerequisiteCompletion, changeCourseModulePrerequisitePassing
+    changeCourseModulePrerequisiteCompletion, changeCourseModulePrerequisitePassing,
+    getModuleDesign, addUnitsToModule, changeModuleUnitOrder, removeUnitsFromModule,
+    changeModuleUnitPrerequisite, createTeacherExercise, getTeacherExercise, updateTeacherExercise, deleteTeacherExercise,
+    getQuestionPaperDesign, addFixedQuestions, removeFixedQuestions, addRandomQuestionsSet, removeRandomQuestionsSet,
+    saveQuestionPaperOptions, filterQuestionPaperQuestions
 } from '../api/api';
 
 const initialModuleForm = {
@@ -42,6 +46,12 @@ const initialQuizForm = {
     order: 1,
 };
 
+const initialExerciseForm = {
+    description: '',
+    view_answerpaper: false,
+    active: true,
+};
+
 const useManageCourseStore = create((set, get) => ({
     // State
     activeTab: 'Modules',
@@ -62,12 +72,15 @@ const useManageCourseStore = create((set, get) => ({
     editingModule: null,
     showLessonForm: false,
     showQuizForm: false,
+    showExerciseForm: false, // Added
     selectedModule: null,
     editingLesson: null,
     editingQuiz: null,
+    editingExercise: null,   // Added
     moduleFormData: { ...initialModuleForm },
     lessonFormData: { ...initialLessonForm },
     quizFormData: { ...initialQuizForm },
+    exerciseFormData: { ...initialExerciseForm }, // Added
 
     // Actions
     setActiveTab: (tab) => set({ activeTab: tab }),
@@ -701,9 +714,360 @@ const useManageCourseStore = create((set, get) => ({
             set({ loading: false, error: err.message });
         }
     },
-    // Quiz Question Manager ============================================================
-    openQuizQuestionManager: (quizId) => set({ selectedQuizId: quizId, showQuizQuestionManager: true }),
-    handleQuizQuestionsUpdate: () => get().loadCourseData(get().course.id),
+    
+
+
+    // DESIGN MODULE TAB ============================================================
+    designModule: null,
+    loadingDesignModule: false,
+    designModuleError: null,
+    showDesignModuleModal: false, // Added
+    designingModuleId: null,      // Added
+
+    openDesignModule: (moduleId) => {
+        set({ showDesignModuleModal: true, designingModuleId: moduleId });
+        const courseId = get().course?.id;
+        get().loadModuleDesign(moduleId, courseId);
+    },
+
+    closeDesignModule: () => {
+        set({ showDesignModuleModal: false, designingModuleId: null, designModule: null });
+    },
+
+    // Load module design data (Available items vs Added items)
+    loadModuleDesign: async (moduleId, courseId = null) => {
+        set({ loadingDesignModule: true, designModuleError: null });
+        try {
+            const data = await getModuleDesign(moduleId, courseId);
+            set({ designModule: data });
+        } catch (err) {
+            set({ designModuleError: err.message, designModule: null });
+        } finally {
+            set({ loadingDesignModule: false });
+        }
+    },
+
+    // Add items (quizzes/lessons) to the module
+    handleAddUnitsToModule: async (moduleId, chosenList, courseId = null) => {
+        set({ loadingDesignModule: true });
+        try {
+            await addUnitsToModule(moduleId, chosenList, courseId);
+            // Refresh design data to show new list
+            await get().loadModuleDesign(moduleId, courseId);
+            // Also refresh main course data to reflect hierarchy changes if needed
+            if (courseId) await get().loadCourseData(courseId);
+        } catch (err) {
+            set({ designModuleError: err.message });
+        } finally {
+            set({ loadingDesignModule: false });
+        }
+    },
+
+    // Reorder items within the module
+    handleChangeModuleUnitOrder: async (moduleId, orderedList, courseId = null) => {
+        set({ loadingDesignModule: true });
+        try {
+            await changeModuleUnitOrder(moduleId, orderedList, courseId);
+            await get().loadModuleDesign(moduleId, courseId);
+            if (courseId) await get().loadCourseData(courseId);
+        } catch (err) {
+            set({ designModuleError: err.message });
+        } finally {
+            set({ loadingDesignModule: false });
+        }
+    },
+
+    // Remove items from the module
+    handleRemoveUnitsFromModule: async (moduleId, deleteList, courseId = null) => {
+        set({ loadingDesignModule: true });
+        try {
+            await removeUnitsFromModule(moduleId, deleteList, courseId);
+            await get().loadModuleDesign(moduleId, courseId);
+            if (courseId) await get().loadCourseData(courseId);
+        } catch (err) {
+            set({ designModuleError: err.message });
+        } finally {
+            set({ loadingDesignModule: false });
+        }
+    },
+
+    // Toggle prerequisite check for specific units
+    handleChangeModuleUnitPrerequisite: async (moduleId, checkPrereqList, courseId = null) => {
+        set({ loadingDesignModule: true });
+        try {
+            await changeModuleUnitPrerequisite(moduleId, checkPrereqList, courseId);
+            await get().loadModuleDesign(moduleId, courseId);
+        } catch (err) {
+            set({ designModuleError: err.message });
+        } finally {
+            set({ loadingDesignModule: false });
+        }
+    },
+
+    
+// EXERCISE TAB ===========================================================    
+
+
+    setShowExerciseForm: (val) => set({ showExerciseForm: val }),
+    setEditingExercise: (exercise) => set({ editingExercise: exercise }),
+    setExerciseFormData: (data) => set({ exerciseFormData: data }),
+
+    handleExerciseFormChange: (e) => {
+        const { name, value, type, checked } = e.target;
+        set((state) => ({
+            exerciseFormData: {
+                ...state.exerciseFormData,
+                [name]: type === 'checkbox' ? checked : value,
+            },
+        }));
+    },
+
+    openCreateExercise: (module) => {
+        set({
+            selectedModule: module,
+            editingExercise: null,
+            exerciseFormData: { ...initialExerciseForm },
+            showExerciseForm: true,
+        });
+    },
+
+    openEditExercise: async (module, unit) => {
+        const courseId = get().course?.id;
+        if (!courseId) return;
+
+        // Reset other form visibilities to be safe
+        set({ 
+            selectedModule: module, 
+            editingExercise: unit, 
+            showQuizForm: false, // Ensure Quiz form is hidden
+            showLessonForm: false, 
+            loading: true 
+        });
+
+        try {
+            const exerciseData = await getTeacherExercise(courseId, module.id, unit.quiz_id);
+            set({
+                exerciseFormData: {
+                    id: exerciseData.id,
+                    description: exerciseData.description || '',
+                    view_answerpaper: exerciseData.view_answerpaper || false,
+                    active: exerciseData.active !== undefined ? exerciseData.active : true,
+                },
+                showExerciseForm: true, // Show ONLY exercise form
+                loading: false,
+            });
+        } catch (error) {
+            console.error("Error fetching exercise:", error);
+            // Fallback if fetch fails
+            set({
+                exerciseFormData: {
+                    ...initialExerciseForm,
+                    description: unit.name || '',
+                },
+                showExerciseForm: true,
+                loading: false,
+            });
+        }
+    },
+
+    handleCreateExercise: async () => {
+        const { selectedModule, exerciseFormData, course } = get();
+        if (!selectedModule || !course) return;
+
+        try {
+            set({ loading: true });
+            
+            // Send only the 3 editable properties
+            const payload = {
+                description: exerciseFormData.description,
+                view_answerpaper: exerciseFormData.view_answerpaper,
+                active: exerciseFormData.active,
+            };
+
+            await createTeacherExercise(course.id, selectedModule.id, payload);
+            set({
+                showExerciseForm: false,
+                selectedModule: null,
+                exerciseFormData: { ...initialExerciseForm },
+                loading: false,
+            });
+            await get().loadCourseData(course.id);
+        } catch (err) {
+            console.error("Failed to create exercise:", err);
+            set({ loading: false, error: err.message });
+        }
+    },
+
+    handleUpdateExercise: async () => {
+        const { selectedModule, editingExercise, exerciseFormData, course } = get();
+        if (!selectedModule || !editingExercise || !course) return;
+
+        try {
+            set({ loading: true });
+
+            // Send only the 3 editable properties
+            const payload = {
+                description: exerciseFormData.description,
+                view_answerpaper: exerciseFormData.view_answerpaper,
+                active: exerciseFormData.active,
+            };
+
+            await updateTeacherExercise(course.id, selectedModule.id, editingExercise.quiz_id, payload);
+            set({
+                showExerciseForm: false,
+                selectedModule: null,
+                editingExercise: null,
+                exerciseFormData: { ...initialExerciseForm },
+                loading: false,
+            });
+            await get().loadCourseData(course.id);
+        } catch (err) {
+            console.error("Failed to update exercise:", err);
+            set({ loading: false, error: err.message });
+        }
+    },
+
+    handleDeleteExercise: async (moduleId, quizId) => {
+        const { course } = get();
+        if (!course) return;
+
+        try {
+            set({ loading: true });
+            await deleteTeacherExercise(course.id, moduleId, quizId);
+            set({ loading: false });
+            await get().loadCourseData(course.id);
+        } catch (err) {
+            console.error("Failed to delete exercise:", err);
+            set({ loading: false, error: err.message });
+        }
+    },
+
+// ============================================================
+// DESIGN QUESTION PAPER TAB 
+// ============================================================
+    questionPaperDesign: null,
+    filteredQuestions: null,     // Holds the results from the filter action
+    loadingQuestionPaper: false,
+    questionPaperError: null,
+    showDesignQuestionPaperModal: false,
+    designingQuizId: null,
+    designingQuestionPaperId: null,
+    designingQuizName: '', // <-- Add this
+
+    openDesignQuestionPaper: (quizId, questionPaperId = null, quizName = '') => {
+        set({ 
+            showDesignQuestionPaperModal: true, 
+            designingQuizId: quizId,
+            designingQuestionPaperId: questionPaperId,
+            designingQuizName: quizName // <-- Add this
+        });
+        const courseId = get().course?.id;
+        if (courseId) {
+            get().loadQuestionPaperDesign(courseId, quizId, questionPaperId);
+        }
+    },
+
+    closeDesignQuestionPaper: () => {
+        set({ 
+            showDesignQuestionPaperModal: false, 
+            designingQuizId: null, 
+            designingQuestionPaperId: null,
+            designingQuizName: '', // <-- Add this
+            questionPaperDesign: null,
+            filteredQuestions: null,
+            questionPaperError: null
+        });
+    },
+    
+    loadQuestionPaperDesign: async (courseId, quizId, questionPaperId = null) => {
+        set({ loadingQuestionPaper: true, questionPaperError: null });
+        try {
+            const data = await getQuestionPaperDesign(courseId, quizId, questionPaperId);
+            set({ questionPaperDesign: data });
+        } catch (err) {
+            set({ questionPaperError: err.response?.data?.error || err.message || 'Failed to load question paper design' });
+        } finally {
+            set({ loadingQuestionPaper: false });
+        }
+    },
+
+    handleAddFixedQuestions: async (courseId, quizId, questionPaperId, questionIds) => {
+        set({ loadingQuestionPaper: true });
+        try {
+            await addFixedQuestions(courseId, quizId, questionPaperId, questionIds);
+            await get().loadQuestionPaperDesign(courseId, quizId, questionPaperId);
+        } catch (err) {
+            set({ questionPaperError: err.response?.data?.error || err.message || 'Failed to add fixed questions' });
+        } finally {
+            set({ loadingQuestionPaper: false });
+        }
+    },
+
+    handleRemoveFixedQuestions: async (courseId, quizId, questionPaperId, questionIds) => {
+        set({ loadingQuestionPaper: true });
+        try {
+            await removeFixedQuestions(courseId, quizId, questionPaperId, questionIds);
+            await get().loadQuestionPaperDesign(courseId, quizId, questionPaperId);
+        } catch (err) {
+            set({ questionPaperError: err.response?.data?.error || err.message || 'Failed to remove fixed questions' });
+        } finally {
+            set({ loadingQuestionPaper: false });
+        }
+    },
+
+    handleAddRandomQuestionsSet: async (courseId, quizId, questionPaperId, questionIds, marks, numOfQuestions) => {
+        set({ loadingQuestionPaper: true });
+        try {
+            await addRandomQuestionsSet(courseId, quizId, questionPaperId, questionIds, marks, numOfQuestions);
+            await get().loadQuestionPaperDesign(courseId, quizId, questionPaperId);
+        } catch (err) {
+            set({ questionPaperError: err.response?.data?.error || err.message || 'Failed to add random question set' });
+        } finally {
+            set({ loadingQuestionPaper: false });
+        }
+    },
+
+    handleRemoveRandomQuestionsSet: async (courseId, quizId, questionPaperId, randomSetIds) => {
+        set({ loadingQuestionPaper: true });
+        try {
+            await removeRandomQuestionsSet(courseId, quizId, questionPaperId, randomSetIds);
+            await get().loadQuestionPaperDesign(courseId, quizId, questionPaperId);
+        } catch (err) {
+            set({ questionPaperError: err.response?.data?.error || err.message || 'Failed to remove random question set' });
+        } finally {
+            set({ loadingQuestionPaper: false });
+        }
+    },
+
+    handleSaveQuestionPaperOptions: async (courseId, quizId, questionPaperId, paperData) => {
+        set({ loadingQuestionPaper: true });
+        try {
+            await saveQuestionPaperOptions(courseId, quizId, questionPaperId, paperData);
+            await get().loadQuestionPaperDesign(courseId, quizId, questionPaperId);
+        } catch (err) {
+            set({ questionPaperError: err.response?.data?.error || err.message || 'Failed to save question paper options' });
+        } finally {
+            set({ loadingQuestionPaper: false });
+        }
+    },
+
+    handleFilterQuestionPaperQuestions: async (courseId, quizId, questionPaperId, filters = {}) => {
+        set({ loadingQuestionPaper: true });
+        try {
+            // Store the result directly in `filteredQuestions` so your UI can display the search results
+            const data = await filterQuestionPaperQuestions(courseId, quizId, questionPaperId, filters);
+            set({ filteredQuestions: data });
+            return data;
+        } catch (err) {
+            set({ questionPaperError: err.response?.data?.error || err.message || 'Failed to filter questions' });
+        } finally {
+            set({ loadingQuestionPaper: false });
+        }
+    },
+
+
+
+
 }));
 
 export default useManageCourseStore;

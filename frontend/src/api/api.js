@@ -575,6 +575,8 @@ export const deleteTeacherLesson = async (courseId, moduleId, lessonId) => {
 
 // DESIGN MODULE APIS ============================================================
 
+
+
 export const getModuleDesign = async (moduleId, courseId = null) => {
   let url = `/api/teacher/modules/${moduleId}/design/`;
   if (courseId) {
@@ -584,7 +586,7 @@ export const getModuleDesign = async (moduleId, courseId = null) => {
   return response.data;
 };
 
-
+// Add Quizzes/Lessons to Module
 export const addUnitsToModule = async (moduleId, chosenList, courseId = null) => {
   let url = `/api/teacher/modules/${moduleId}/design/`;
   if (courseId) {
@@ -597,45 +599,142 @@ export const addUnitsToModule = async (moduleId, chosenList, courseId = null) =>
   return response.data;
 };
 
-
+// Change Unit (Quiz/Lesson) order in Module
 export const changeModuleUnitOrder = async (moduleId, orderedList, courseId = null) => {
+  // orderedList: array of "unitId:order" strings, e.g. ["12:1", "13:2"]
   let url = `/api/teacher/modules/${moduleId}/design/`;
   if (courseId) {
     url = `/api/teacher/modules/${moduleId}/design/${courseId}/`;
   }
   const response = await api.post(url, {
     action: "change",
-    ordered_list: orderedList, // array of "unitId:order" strings, e.g. ["12:1", "13:2"]
+    ordered_list: orderedList, // Pass array directly, backend handles list or string
   });
   return response.data;
 };
 
-
+// Remove Units from Module
 export const removeUnitsFromModule = async (moduleId, deleteList, courseId = null) => {
+  // deleteList: array of unit IDs to remove
   let url = `/api/teacher/modules/${moduleId}/design/`;
   if (courseId) {
     url = `/api/teacher/modules/${moduleId}/design/${courseId}/`;
   }
   const response = await api.post(url, {
     action: "remove",
-    delete_list: deleteList, // array of unit IDs to remove
+    delete_list: deleteList,
   });
   return response.data;
 };
 
-
+// Toggle prerequisite check for units
 export const changeModuleUnitPrerequisite = async (moduleId, checkPrereqList, courseId = null) => {
+  // checkPrereqList: array of unit IDs to toggle
   let url = `/api/teacher/modules/${moduleId}/design/`;
   if (courseId) {
     url = `/api/teacher/modules/${moduleId}/design/${courseId}/`;
   }
   const response = await api.post(url, {
     action: "change_prerequisite",
-    check_prereq: checkPrereqList, // array of unit IDs to toggle prerequisite
+    check_prereq: checkPrereqList,
   });
   return response.data;
 };
 
+
+
+// DESIGN QUESTION PAPER APIs ============================================================
+
+export const getQuestionPaperDesign = async (courseId, quizId, questionPaperId = null) => {
+  let url = `/api/teacher/designquestionpaper/${courseId}/${quizId}/`;
+  if (questionPaperId) {
+    url = `/api/teacher/designquestionpaper/${courseId}/${quizId}/${questionPaperId}/`;
+  }
+  const response = await api.get(url);
+  return response.data;
+};
+
+// Add Fixed Questions to Question Paper
+export const addFixedQuestions = async (courseId, quizId, questionPaperId, questionIds) => {
+  let url = `/api/teacher/designquestionpaper/${courseId}/${quizId}/`;
+  if (questionPaperId) {
+    url = `/api/teacher/designquestionpaper/${courseId}/${quizId}/${questionPaperId}/`;
+  }
+  const response = await api.post(url, {
+    action: "add-fixed",
+    checked_ques: questionIds, // array of ID strings/ints
+  });
+  return response.data;
+};
+
+// Remove Fixed Questions from Question Paper
+export const removeFixedQuestions = async (courseId, quizId, questionPaperId, questionIds) => {
+  let url = `/api/teacher/designquestionpaper/${courseId}/${quizId}/`;
+  if (questionPaperId) {
+    url = `/api/teacher/designquestionpaper/${courseId}/${quizId}/${questionPaperId}/`;
+  }
+  const response = await api.post(url, {
+    action: "remove-fixed",
+    added_questions: questionIds, // array of ID strings/ints
+  });
+  return response.data;
+};
+
+// Add Random Question Set to Question Paper
+export const addRandomQuestionsSet = async (courseId, quizId, questionPaperId, questionIds, marks, numOfQuestions) => {
+  let url = `/api/teacher/designquestionpaper/${courseId}/${quizId}/`;
+  if (questionPaperId) {
+    url = `/api/teacher/designquestionpaper/${courseId}/${quizId}/${questionPaperId}/`;
+  }
+  const response = await api.post(url, {
+    action: "add-random",
+    random_questions: questionIds,
+    marks: marks,
+    num_of_questions: numOfQuestions,
+  });
+  return response.data;
+};
+
+// Remove Random Question Set from Question Paper
+export const removeRandomQuestionsSet = async (courseId, quizId, questionPaperId, randomSetIds) => {
+  let url = `/api/teacher/designquestionpaper/${courseId}/${quizId}/`;
+  if (questionPaperId) {
+    url = `/api/teacher/designquestionpaper/${courseId}/${quizId}/${questionPaperId}/`;
+  }
+  const response = await api.post(url, {
+    action: "remove-random",
+    random_sets: randomSetIds, // array of ID strings/ints
+  });
+  return response.data;
+};
+
+// Save general configurations for Question Paper
+export const saveQuestionPaperOptions = async (courseId, quizId, questionPaperId, paperData) => {
+  let url = `/api/teacher/designquestionpaper/${courseId}/${quizId}/`;
+  if (questionPaperId) {
+    url = `/api/teacher/designquestionpaper/${courseId}/${quizId}/${questionPaperId}/`;
+  }
+  const response = await api.post(url, {
+    action: "save",
+    ...paperData, 
+  });
+  return response.data;
+};
+
+// Filter available questions (by type, tag, or marks)
+export const filterQuestionPaperQuestions = async (courseId, quizId, questionPaperId, filters = {}) => {
+  let url = `/api/teacher/designquestionpaper/${courseId}/${quizId}/`;
+  if (questionPaperId) {
+    url = `/api/teacher/designquestionpaper/${courseId}/${quizId}/${questionPaperId}/`;
+  }
+  const response = await api.post(url, {
+    action: "filter",
+    marks: filters.marks || null,
+    question_tags: filters.tags || null,
+    question_type: filters.type || null,
+  });
+  return response.data;
+};
 
 
 // Exerise APIs ============================================================

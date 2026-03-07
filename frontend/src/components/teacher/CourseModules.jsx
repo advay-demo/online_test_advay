@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FaPlus, FaBook, FaCalendarAlt, FaEdit, FaTrash, FaCheckCircle, FaEllipsisV, FaVideo, FaTimes, FaUpload, FaFileAlt, FaExternalLinkAlt } from 'react-icons/fa';
+import { FaPlus, FaBook, FaCalendarAlt, FaEdit, FaTrash, FaCheckCircle, FaEllipsisV, FaVideo, FaTimes, FaUpload, FaFileAlt, FaExternalLinkAlt, FaArrowUp, FaArrowDown, FaCheck, FaCog, FaRandom, FaList, FaSync, FaSearch } from 'react-icons/fa';
 import useManageCourseStore from '../../store/manageCourseStore';
 import { useParams } from 'react-router-dom';
 import { FaBookOpen } from 'react-icons/fa';
@@ -38,12 +38,48 @@ const CourseModules = () => {
         openEditModule, 
         handleDeleteModule, 
         openEditLesson, 
-        handleDeleteLesson, 
-        openQuizQuestionManager, 
+        handleDeleteLesson,  
         openEditQuiz, 
         handleDeleteQuiz,
+        showExerciseForm,
+        editingExercise,
+        exerciseFormData,
+        handleExerciseFormChange,
+        handleCreateExercise,
+        handleUpdateExercise,
+        setShowExerciseForm,
+        openCreateExercise,
+        openEditExercise,
+        handleDeleteExercise,
         setModuleFormData,
-        setLessonFormData
+        setLessonFormData,
+        showDesignModuleModal,
+        designModule,
+        loadingDesignModule,
+        designModuleError,
+        designingModuleId,
+        openDesignModule,
+        closeDesignModule,
+        handleAddUnitsToModule,
+        handleRemoveUnitsFromModule,
+        handleChangeModuleUnitOrder,
+        handleChangeModuleUnitPrerequisite,
+        questionPaperDesign,
+        filteredQuestions,
+        loadingQuestionPaper,
+        questionPaperError,
+        showDesignQuestionPaperModal,
+        designingQuizId,
+        designingQuizName,
+        openDesignQuestionPaper,
+        closeDesignQuestionPaper,
+        handleAddFixedQuestions,
+        handleRemoveFixedQuestions,
+        handleAddRandomQuestionsSet,
+        handleRemoveRandomQuestionsSet,
+        handleSaveQuestionPaperOptions,
+        handleFilterQuestionPaperQuestions
+
     } = useManageCourseStore();
 
     const { courseId } = useParams();
@@ -92,6 +128,17 @@ const CourseModules = () => {
             handleCreateLesson();
         }
     };
+
+    const handleExerciseSubmit = (e) => {
+        e.preventDefault();
+        if (editingExercise) {
+            handleUpdateExercise();
+        } else {
+            handleCreateExercise();
+        }
+    };
+
+
 
     // Helper to get embed URL
     const getVideoEmbedUrl = (url) => {
@@ -157,6 +204,187 @@ const CourseModules = () => {
          const fileInput = document.getElementById('video-file-upload');
          if(fileInput) fileInput.value = "";
     };
+
+
+    // --- DESIGN MODULE LOCAL STATE ---
+    const [selectedInSelected, setSelectedInSelected] = useState(null); // ID of selected unit (Left side)
+    const [selectedInPool, setSelectedInPool] = useState(null); // ValueKey of selected pool item (Right side)
+    
+    // Local state for immediate UI updates before API refresh
+    const [localSelected, setLocalSelected] = useState([]);
+    const [localPool, setLocalPool] = useState([]);
+
+    // Sync local state with API data when modal opens or data changes
+    useEffect(() => {
+        if (designModule) {
+            // Sort units by order
+            const sortedUnits = [...(designModule.learning_units || [])].sort((a,b) => a.order - b.order);
+            setLocalSelected(sortedUnits);
+            setLocalPool(designModule.quiz_les_list || []);
+            setSelectedInSelected(null);
+            setSelectedInPool(null);
+        }
+    }, [designModule]);
+
+    // HANDLERS FOR DESIGN MODAL
+    
+    // Add item from Pool -> Module
+    const handleAddUnit = async () => {
+        if (selectedInPool && designingModuleId) {
+            // selectedInPool is the value_key (e.g., "5:lesson")
+            await handleAddUnitsToModule(designingModuleId, [selectedInPool], courseId);
+            setSelectedInPool(null);
+        }
+    };
+
+    // Remove item from Module -> Pool
+    const handleRemoveUnit = async () => {
+        if (selectedInSelected && designingModuleId) {
+            // selectedInSelected is the unit.id
+            await handleRemoveUnitsFromModule(designingModuleId, [selectedInSelected], courseId);
+            setSelectedInSelected(null);
+        }
+    };
+
+    // Reorder: Move Up
+    const moveUp = async () => {
+        if (selectedInSelected !== null) {
+            const idx = localSelected.findIndex(u => u.id === selectedInSelected);
+            if (idx > 0) {
+                const newOrderList = [...localSelected];
+                // Swap
+                [newOrderList[idx - 1], newOrderList[idx]] = [newOrderList[idx], newOrderList[idx - 1]];
+                setLocalSelected(newOrderList);
+                
+                // Construct API payload "unit_id:order"
+                const orderedListPayload = newOrderList.map((u, i) => `${u.id}:${i + 1}`);
+                await handleChangeModuleUnitOrder(designingModuleId, orderedListPayload, courseId);
+            }
+        }
+    };
+
+    // Reorder: Move Down
+    const moveDown = async () => {
+        if (selectedInSelected !== null) {
+            const idx = localSelected.findIndex(u => u.id === selectedInSelected);
+            if (idx < localSelected.length - 1) {
+                const newOrderList = [...localSelected];
+                // Swap
+                [newOrderList[idx], newOrderList[idx + 1]] = [newOrderList[idx + 1], newOrderList[idx]];
+                setLocalSelected(newOrderList);
+
+                // Construct API payload "unit_id:order"
+                const orderedListPayload = newOrderList.map((u, i) => `${u.id}:${i + 1}`);
+                await handleChangeModuleUnitOrder(designingModuleId, orderedListPayload, courseId);
+            }
+        }
+    };
+
+    // Toggle Prerequisite
+    const handleTogglePrereq = async (unitId) => {
+        if (designingModuleId) {
+            await handleChangeModuleUnitPrerequisite(designingModuleId, [unitId], courseId);
+        }
+    };
+
+    {/* DESIGN QUESTION PAPER MODAL */}
+
+    const [qPaperTab, setQPaperTab] = useState('FIXED');
+    const [shuffleQuestions, setShuffleQuestions] = useState(false);
+    const [shuffleTestcases, setShuffleTestcases] = useState(false);
+    
+    // Filtering State
+    const [filterMarks, setFilterMarks] = useState('');
+    const [filterTags, setFilterTags] = useState('');
+    const [filterType, setFilterType] = useState('');
+    
+    // Checkbox Selections
+    const [selectedPoolQs, setSelectedPoolQs] = useState([]);
+    const [selectedFixedQs, setSelectedFixedQs] = useState([]);
+    const [selectedRandomSets, setSelectedRandomSets] = useState([]);
+
+    // Random Set Creation State
+    const [randomSetMarks, setRandomSetMarks] = useState('');
+    const [randomSetCount, setRandomSetCount] = useState('');
+
+    const paperId = questionPaperDesign?.question_paper?.id;
+
+    const handleSearchQPaper = () => {
+        handleFilterQuestionPaperQuestions(courseId, designingQuizId, paperId, {
+            marks: filterMarks,
+            tags: filterTags,
+            type: filterType
+        });
+        setSelectedPoolQs([]);
+    };
+
+    const handleAddFixed = async () => {
+        if (!selectedPoolQs.length) return;
+        await handleAddFixedQuestions(courseId, designingQuizId, paperId, selectedPoolQs);
+        setSelectedPoolQs([]); 
+    };
+
+    const handleRemoveFixed = async () => {
+        if (!selectedFixedQs.length) return;
+        await handleRemoveFixedQuestions(courseId, designingQuizId, paperId, selectedFixedQs);
+        setSelectedFixedQs([]);
+    };
+
+    const handleAddRandomSet = async () => {
+        if (!selectedPoolQs.length || !randomSetCount) {
+            alert('Please select matching pool items and the number of questions to pick.');
+            return;
+        }
+
+        // Auto-assign marks based on the first selected question in the pool (backend requires a value)
+        const firstSelectedQ = availableQuestions.find(q => q.id === selectedPoolQs[0]);
+        const autoMarks = firstSelectedQ?.points || 1;
+
+        await handleAddRandomQuestionsSet(courseId, designingQuizId, paperId, selectedPoolQs, autoMarks, randomSetCount);
+        
+        setSelectedPoolQs([]);
+        setRandomSetMarks('');
+        setRandomSetCount('');
+    };
+
+    const handleRemoveRandomSets = async () => {
+        if (!selectedRandomSets.length) return;
+        await handleRemoveRandomQuestionsSet(courseId, designingQuizId, paperId, selectedRandomSets);
+        setSelectedRandomSets([]);
+    };
+
+    const handleSaveQPaperSettings = async (e) => {
+        e.preventDefault();
+        try {
+            await handleSaveQuestionPaperOptions(courseId, designingQuizId, paperId, {
+                shuffle_questions: shuffleQuestions,
+                shuffle_testcases: shuffleTestcases,
+            });
+            // Automatically close the modal after successfully saving
+            closeDesignQuestionPaper();
+        } catch (error) {
+            console.error("Failed to save paper settings:", error);
+            alert("Failed to save settings. Please try again.");
+        }
+    };
+
+    const toggleQPaperSelection = (id, list, setList) => {
+        if (list.includes(id)) setList(list.filter(item => item !== id));
+        else setList([...list, id]);
+    };
+
+    const availableQuestions = filteredQuestions?.filtered_questions || [];
+
+    useEffect(() => {
+        if (questionPaperDesign?.question_paper) {
+            setShuffleQuestions(questionPaperDesign.question_paper.shuffle_questions || false);
+            setShuffleTestcases(questionPaperDesign.question_paper.shuffle_testcases || false);
+        }
+    }, [questionPaperDesign]);
+
+
+    const [expandedRandomSets, setExpandedRandomSets] = useState([]);
+
 
 
     return (
@@ -581,7 +809,6 @@ const CourseModules = () => {
                 </div>
             )}
             {/* QUIZ FORM MODAL */}
-                        {/* QUIZ FORM MODAL */}
             {showQuizForm && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-2">
                     <div className="card-strong w-full max-w-full sm:max-w-2xl p-4 sm:p-6 relative rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
@@ -885,6 +1112,695 @@ const CourseModules = () => {
                 </div>
             )}
 
+            {/* EXERCISE FORM MODAL - Added Integration */}
+            {showExerciseForm && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-2">
+                    <div className="card-strong w-full max-w-full sm:max-w-xl p-4 sm:p-6 relative rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
+                        <button
+                            className="absolute right-4 top-4 text-lg sm:text-xl p-2 rounded-full border border-[var(--border-color)] bg-[var(--input-bg)] hover:bg-white/10 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"
+                            onClick={() => {
+                                setShowExerciseForm(false);
+                                setEditingExercise(null);
+                            }}
+                        >
+                            <FaTimes />
+                        </button>
+
+                        <div className="flex flex-row items-center gap-4 mb-6">
+                            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20 text-purple-400">
+                                <FaCheckCircle className="w-7 h-7 sm:w-8 sm:h-8" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <h2 className="text-xl sm:text-2xl font-bold mb-1">
+                                    {editingExercise ? 'Edit Exercise' : 'Add Exercise'}
+                                </h2>
+                                <p className="text-xs sm:text-sm muted">Set up a simple coding exercise/quiz.</p>
+                            </div>
+                        </div>
+
+                        <form onSubmit={handleExerciseSubmit} className="space-y-6">
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold text-gray-300">Description:</label>
+                                <input
+                                    className="input bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg px-4 py-3 text-base focus-visible:outline-none w-full"
+                                    name="description"
+                                    placeholder="e.g. NFT Marketplace"
+                                    value={exerciseFormData.description}
+                                    onChange={handleExerciseFormChange}
+                                    required
+                                />
+                            </div>
+
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between p-4 rounded-lg bg-[var(--input-bg)] border border-[var(--border-color)]">
+                                    <div className="flex-1">
+                                        <span className="text-sm font-semibold text-gray-200">Allow student to view their answer paper:</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleExerciseFormChange({ target: { name: 'view_answerpaper', type: 'checkbox', checked: !exerciseFormData.view_answerpaper } })}
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                                            exerciseFormData.view_answerpaper ? 'bg-purple-600' : 'bg-gray-600'
+                                        }`}
+                                    >
+                                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${exerciseFormData.view_answerpaper ? 'translate-x-6' : 'translate-x-1'}`} />
+                                    </button>
+                                </div>
+
+                                <div className="flex items-center justify-between p-4 rounded-lg bg-[var(--input-bg)] border border-[var(--border-color)]">
+                                    <div className="flex-1">
+                                        <span className="text-sm font-semibold text-gray-200">Active:</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleExerciseFormChange({ target: { name: 'active', type: 'checkbox', checked: !exerciseFormData.active } })}
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                                            exerciseFormData.active ? 'bg-green-600' : 'bg-gray-600'
+                                        }`}
+                                    >
+                                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${exerciseFormData.active ? 'translate-x-6' : 'translate-x-1'}`} />
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-3 justify-end pt-4">
+                                <button
+                                    type="button"
+                                    className="px-5 py-2.5 rounded-lg border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-muted)] hover:text-white hover:bg-white/10 font-medium transition"
+                                    onClick={() => setShowExerciseForm(false)}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-8 py-2.5 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all flex items-center justify-center min-w-[120px]"
+                                >
+                                    {editingExercise ? 'Update' : 'Save'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* DESIGN MODULE MODAL */}
+            {showDesignModuleModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-2 animate-fade-in">
+                    <div className="bg-[#1e1e24] w-full max-w-6xl h-[85vh] flex flex-col relative rounded-xl shadow-2xl overflow-hidden border border-white/10">
+                        {/* Modal Header */}
+                        <div className="p-4 border-b border-white/10 flex items-center justify-between bg-black/20">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-amber-500/10 rounded-lg text-amber-500 border border-amber-500/20">
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" /></svg>
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-bold text-white">Design Module Content</h2>
+                                    <p className="text-sm text-gray-400">Add, remove, and reorder lessons and quizzes</p>
+                                </div>
+                            </div>
+                            <button onClick={closeDesignModule} className="p-2 hover:bg-white/10 rounded-full transition text-gray-400 hover:text-white">
+                                <FaTimes className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div className="flex-1 overflow-hidden p-4 sm:p-6 bg-[#18181b]">
+                            {loadingDesignModule && !designModule ? (
+                                <div className="h-full flex flex-col items-center justify-center text-gray-400 gap-3">
+                                    <FaSync className="animate-spin text-3xl text-amber-500" />
+                                    <span>Loading module configuration...</span>
+                                </div>
+                            ) : designModuleError ? (
+                                <div className="h-full flex items-center justify-center text-red-400">
+                                    <p>{designModuleError}</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
+                                    
+                                    {/* Left Column: SELECTED UNITS (In Module) */}
+                                    <div className="flex flex-col h-full bg-black/20 rounded-xl border border-white/10 overflow-hidden shadow-inner">
+                                        <div className="p-2.5 sm:p-3 md:p-4 border-b border-white/10 bg-white/5">
+                                            <h3 className="font-bold text-sm sm:text-base md:text-lg text-white flex items-center gap-2">
+                                                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-blue-500"></span>
+                                                Included Content
+                                            </h3>
+                                            <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">Items currently in this module</p>
+                                        </div>
+                                        
+                                        <div className="flex-1 overflow-y-auto p-2 sm:p-2.5 md:p-3 space-y-1.5 sm:space-y-2 custom-scrollbar">
+                                            {localSelected.length > 0 ? (
+                                                localSelected.map((unit) => {
+                                                    const isSelected = selectedInSelected === unit.id;
+                                                    return (
+                                                        <div key={unit.id} className="group">
+                                                            <div 
+                                                                onClick={() => setSelectedInSelected(isSelected ? null : unit.id)}
+                                                                className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all border ${
+                                                                    isSelected 
+                                                                    ? 'bg-blue-600/20 border-blue-500/50' 
+                                                                    : 'bg-[#27272a] border-white/5 hover:border-white/10'
+                                                                }`}
+                                                            >
+                                                                <div className={`w-8 h-8 rounded flex items-center justify-center flex-shrink-0 ${
+                                                                    unit.type === 'lesson' ? 'bg-cyan-500/10 text-cyan-400' : 'bg-green-500/10 text-green-400'
+                                                                }`}>
+                                                                    {unit.type === 'lesson' ? <FaBook className="w-3.5 h-3.5" /> : <FaCheckCircle className="w-3.5 h-3.5" />}
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <div className="font-medium text-sm text-gray-200 truncate">{unit.display_name.replace(/\(quiz\)|\(lesson\)/gi, '')}</div>
+                                                                    <div className="flex items-center gap-2 mt-0.5">
+                                                                        <span className="text-[10px] uppercase font-bold text-gray-500 bg-black/30 px-1.5 py-0.5 rounded">{unit.type}</span>
+                                                                        {unit.check_prerequisite && <span className="text-[10px] text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded border border-purple-500/20">Prerequisite</span>}
+                                                                    </div>
+                                                                </div>
+                                                                <input 
+                                                                    type="radio" 
+                                                                    checked={isSelected}
+                                                                    readOnly
+                                                                    className="w-4 h-4 text-blue-500 bg-gray-700 border-gray-600 focus:ring-blue-500 focus:ring-offset-gray-800"
+                                                                />
+                                                            </div>
+
+                                                            {/* Context Actions (only visible when selected) */}
+                                                            <div className={`transition-all duration-300 overflow-hidden ${isSelected ? 'max-h-20 opacity-100 py-2' : 'max-h-0 opacity-0'}`}>
+                                                                <div className="mx-2 p-2 bg-black/30 rounded-lg flex items-center justify-between border border-white/5">
+                                                                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                                                                        <input 
+                                                                            type="checkbox"
+                                                                            checked={unit.check_prerequisite}
+                                                                            onChange={() => handleTogglePrereq(unit.id)}
+                                                                            className="rounded bg-gray-700 border-gray-600 text-purple-500 focus:ring-purple-500"
+                                                                        />
+                                                                        <span className="text-xs text-gray-400 font-medium">Check Prerequisite</span>
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })
+                                            ) : (
+                                                <div className="h-full flex flex-col items-center justify-center text-gray-500 opacity-50">
+                                                    <FaBookOpen className="w-8 h-8 mb-2" />
+                                                    <p className="text-sm">Module is empty</p>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Left Actions Footer */}
+                                        <div className="p-4 border-t border-white/10 bg-white/5 flex items-center justify-between gap-2">
+                                            <button 
+                                                onClick={handleRemoveUnit}
+                                                disabled={!selectedInSelected}
+                                                className="px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 bg-red-600 hover:bg-red-700 rounded-lg text-xs sm:text-sm font-medium transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 flex-shrink-0"
+                                            >
+                                                <FaTrash className="inline mr-1" /> Remove
+                                            </button>
+                                            <div className="flex gap-1.5 sm:gap-2">
+                                                <button 
+                                                    onClick={moveUp}
+                                                    disabled={!selectedInSelected}
+                                                    className="px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 border border-[var(--border-color)] rounded-lg text-xs sm:text-sm font-medium hover:bg-[var(--input-bg)] transition flex items-center justify-center gap-1 sm:gap-1.5 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+                                                >
+                                                    <FaArrowUp className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                                                    <span className="hidden md:inline">Up</span>
+                                                </button>
+                                                <button 
+                                                    onClick={moveDown}
+                                                    disabled={!selectedInSelected}
+                                                    className="px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 border border-[var(--border-color)] rounded-lg text-xs sm:text-sm font-medium hover:bg-[var(--input-bg)] transition flex items-center justify-center gap-1 sm:gap-1.5 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+                                                >
+                                                    <FaArrowDown className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                                                    <span className="hidden md:inline">Down</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Right Column: AVAILABLE POOL */}
+                                    <div className="flex flex-col h-full bg-black/20 rounded-xl border border-white/10 overflow-hidden shadow-inner">
+                                        <div className="p-2.5 sm:p-3 md:p-4 border-b border-white/10 bg-white/5">
+                                            <h3 className="font-bold text-sm sm:text-base md:text-lg text-white flex items-center gap-2">
+                                                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-green-500"></span>
+                                                Available Items
+                                            </h3>
+                                            <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">Unassigned lessons and quizzes</p>
+                                        </div>
+                                        
+                                        <div className="flex-1 overflow-y-auto p-2 sm:p-2.5 md:p-3 space-y-1.5 sm:space-y-2 custom-scrollbar">
+                                            {localPool.length > 0 ? (
+                                                localPool.map((item) => {
+                                                    const isSelected = selectedInPool === item.value_key;
+                                                    return (
+                                                        <div 
+                                                            key={item.value_key}
+                                                            onClick={() => setSelectedInPool(isSelected ? null : item.value_key)}
+                                                            className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all border ${
+                                                                isSelected 
+                                                                ? 'bg-green-600/20 border-green-500/50' 
+                                                                : 'bg-[#27272a] border-white/5 hover:border-white/10'
+                                                            }`}
+                                                        >
+                                                            <div className={`w-8 h-8 rounded flex items-center justify-center flex-shrink-0 ${
+                                                                item.type === 'lesson' ? 'bg-cyan-500/10 text-cyan-400' : 'bg-green-500/10 text-green-400'
+                                                            }`}>
+                                                                {item.type === 'lesson' ? <FaBook className="w-3.5 h-3.5"/> : <FaCheckCircle className="w-3.5 h-3.5"/>}
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="font-medium text-xs sm:text-sm text-gray-300 truncate">{item.display_name.replace(/\(quiz\)|\(lesson\)/gi, '')}</div>
+                                                                <div className="flex items-center gap-2 mt-0.5">
+                                                                    <span className="text-[10px] uppercase font-bold text-gray-600 bg-black/30 px-1.5 py-0.5 rounded">{item.type}</span>
+                                                                </div>
+                                                            </div>
+                                                            <input 
+                                                                type="radio" 
+                                                                checked={isSelected}
+                                                                readOnly
+                                                                className="w-4 h-4 text-green-500 bg-gray-700 border-gray-600 focus:ring-green-500 focus:ring-offset-gray-800 flex-shrink-0"
+                                                            />
+                                                        </div>
+                                                    );
+                                                })
+                                            ) : (
+                                                <div className="h-full flex flex-col items-center justify-center text-gray-500 opacity-50 py-8 sm:py-12">
+                                                    <FaCheckCircle className="w-6 h-6 sm:w-8 sm:h-8 mb-2" />
+                                                    <p className="text-xs sm:text-sm">No available items</p>
+                                                    <p className="text-[10px] sm:text-xs muted mt-1">All items are assigned</p>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Right Actions Footer */}
+                                        <div className="flex items-center justify-between p-4 border-t border-white/10 bg-white/5">
+                                            <button 
+                                                onClick={handleAddUnit}
+                                                disabled={!selectedInPool}
+                                                className="px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 bg-green-600 hover:bg-green-700 rounded-lg text-xs sm:text-sm font-medium transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 flex-shrink-0"
+                                            >
+                                                <FaPlus className="inline mr-1" /> Add
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+
+            
+            {/* DESIGN QUESTION PAPER MODAL */}
+            {showDesignQuestionPaperModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-2 animate-fade-in">
+                    {/* Replaced bg-[#1e1e24] with card-strong for consistent theme and updated sizing */}
+                    <div className="card-strong w-full max-w-full sm:max-w-6xl h-[95vh] flex flex-col relative rounded-xl shadow-2xl overflow-hidden border border-[var(--border-color)]">
+                        
+                        {/* Styled consistent absolute cross button */}
+                        <button
+                            className="absolute right-4 top-4 z-10 text-lg sm:text-xl p-2 rounded-full border border-[var(--border-color)] bg-[var(--input-bg)] hover:bg-white/10 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"
+                            onClick={closeDesignQuestionPaper}
+                        >
+                            <FaTimes />
+                        </button>
+
+                        {/* Standardized Header */}
+                        <div className="flex flex-row items-center gap-4 p-4 sm:p-6 border-b border-[var(--border-color)]">
+                            <div className="w-12 h-12 flex-shrink-0 sm:w-14 sm:h-14 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 text-blue-400">
+                                <FaList className="w-7 h-7 sm:w-8 sm:h-8" />
+                            </div>
+                            <div className="flex-1 min-w-0 pr-12">
+                                <h2 className="text-xl sm:text-2xl font-bold mb-1 truncate text-[var(--text-primary)]">
+                                    Design: {designingQuizName || "Question Paper"}
+                                </h2>
+                                <p className="text-xs sm:text-sm text-[var(--text-muted)]">
+                                    Total Built Marks: <span className="font-bold text-amber-500">{questionPaperDesign?.question_paper?.total_marks || 0}</span>
+                                </p>
+                            </div>
+                        </div>
+
+            {/* Tab Bar + Save Settings button on same row */}
+            <div className="flex items-center justify-between px-4 pt-3 bg-[#18181b] border-b border-white/10">
+                <div className="flex items-center gap-1">
+                    {[
+                        { id: 'FIXED', label: 'Fixed Questions', icon: <FaCheck className="w-3.5 h-3.5" /> },
+                        { id: 'RANDOM', label: 'Random Sets', icon: <FaRandom className="w-3.5 h-3.5" /> },
+                    ].map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setQPaperTab(tab.id)}
+                            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg border-b-2 transition-all ${
+                                qPaperTab === tab.id
+                                ? 'border-amber-500 text-amber-400 bg-black/20'
+                                : 'border-transparent text-gray-500 hover:text-gray-300 hover:bg-white/5'
+                            }`}
+                        >
+                            {tab.icon}
+                            <span className="hidden sm:inline">{tab.label}</span>
+                        </button>
+                    ))}
+                </div>
+                {/* Save settings button — always visible, right aligned in tab row */}
+                <form onSubmit={handleSaveQPaperSettings} className="flex items-center pb-2">
+                    <button
+                        type="submit"
+                        disabled={loadingQuestionPaper}
+                        className="px-8 py-2.5 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all flex items-center justify-center min-w-[120px]"
+                    >
+                        Save 
+                    </button>
+                </form>
+            </div>
+
+            {/* Shuffle Toggles — always visible below tab bar, above body */}
+            
+
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 bg-[#18181b]">
+                {loadingQuestionPaper && !questionPaperDesign ? (
+                    <div className="h-full flex flex-col items-center justify-center text-gray-400 gap-3">
+                        <FaSync className="animate-spin text-3xl text-amber-500" />
+                        <span>Loading paper design...</span>
+                    </div>
+                ) : questionPaperError ? (
+                    <div className="h-full flex items-center justify-center text-red-400">
+                        <p>{questionPaperError}</p>
+                    </div>
+                ) : (
+                    <>
+                    {/* FIXED / RANDOM TABS: Two-column layout */}
+                    {(qPaperTab === 'FIXED' || qPaperTab === 'RANDOM') && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
+
+                            {/* LEFT: Added questions / Configured sets */}
+                            <div className="flex flex-col h-full bg-black/20 rounded-xl border border-white/10 overflow-hidden shadow-inner">
+                                <div className="p-2.5 sm:p-3 md:p-4 border-b border-white/10 bg-white/5">
+                                    <h3 className="font-bold text-sm sm:text-base md:text-lg text-white flex items-center gap-2">
+                                        <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${qPaperTab === 'FIXED' ? 'bg-blue-500' : 'bg-purple-500'}`}></span>
+                                        {qPaperTab === 'FIXED' ? 'Fixed Questions' : 'Random Sets'}
+                                    </h3>
+                                    <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">
+                                        {qPaperTab === 'FIXED' ? 'Questions always included in this paper' : 'Sets where N questions are picked randomly'}
+                                    </p>
+                                </div>
+                                <div className="flex-1 overflow-y-auto p-2 sm:p-2.5 md:p-3 space-y-1.5 sm:space-y-2 custom-scrollbar">
+
+                                    {/* FIXED list */}
+                                    {qPaperTab === 'FIXED' && (
+                                        questionPaperDesign?.fixed_questions?.length > 0 ? (
+                                            questionPaperDesign.fixed_questions.map(q => (
+                                                <div
+                                                    key={q.id}
+                                                    onClick={() => toggleQPaperSelection(q.id, selectedFixedQs, setSelectedFixedQs)}
+                                                    className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all border ${
+                                                        selectedFixedQs.includes(q.id)
+                                                        ? 'bg-red-600/15 border-red-500/50'
+                                                        : 'bg-[#27272a] border-white/5 hover:border-white/10'
+                                                    }`}
+                                                >
+                                                    <div className="w-8 h-8 rounded flex items-center justify-center flex-shrink-0 bg-blue-500/10 text-blue-400">
+                                                        <FaCheck className="w-3.5 h-3.5" />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="font-medium text-sm text-gray-200 truncate">{q.summary || 'Untitled Question'}</div>
+                                                        <div className="flex items-center gap-2 mt-0.5">
+                                                            <span className="text-[10px] uppercase font-bold text-gray-500 bg-black/30 px-1.5 py-0.5 rounded">{q.type}</span>
+                                                            <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">{q.points} pts</span>
+                                                        </div>
+                                                    </div>
+                                                    <input type="checkbox" readOnly checked={selectedFixedQs.includes(q.id)} className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-red-500 focus:ring-red-500 focus:ring-offset-0 flex-shrink-0" />
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="h-full flex flex-col items-center justify-center text-gray-500 opacity-50 py-8">
+                                                <FaCheck className="w-8 h-8 mb-2" />
+                                                <p className="text-sm">No fixed questions yet</p>
+                                                <p className="text-xs mt-1">Search and add from the right panel</p>
+                                            </div>
+                                        )
+                                    )}
+
+                                    {/* RANDOM list */}
+                                    {qPaperTab === 'RANDOM' && (
+                                        questionPaperDesign?.random_sets?.length > 0 ? (
+                                            questionPaperDesign.random_sets.map(set => (
+                                                <div
+                                                    key={set.id}
+                                                    onClick={() => toggleQPaperSelection(set.id, selectedRandomSets, setSelectedRandomSets)}
+                                                    className={`flex flex-col gap-2 p-3 rounded-lg cursor-pointer transition-all border ${
+                                                        selectedRandomSets.includes(set.id)
+                                                        ? 'bg-red-600/15 border-red-500/50'
+                                                        : 'bg-[#27272a] border-white/5 hover:border-white/10'
+                                                    }`}
+                                                >
+                                                    {/* Header Row */}
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 rounded flex items-center justify-center flex-shrink-0 bg-purple-500/10 text-purple-400">
+                                                            <FaRandom className="w-3.5 h-3.5" />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="font-medium text-sm text-gray-200">
+                                                                Pick <span className="text-amber-400 font-bold">{set.num_questions}</span> from <span className="text-cyan-400 font-bold">{set.questions?.length || 0}</span> questions
+                                                            </div>
+                                                            <div className="flex items-center gap-2 mt-0.5">
+                                                                
+                                                                <span className="text-[10px] text-gray-500">Set #{set.id}</span>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        {/* Expand/Collapse Dropdown Trigger */}
+                                                        <button 
+                                                            onClick={(e) => {
+                                                                e.stopPropagation(); // Prevents checking the box when opening the dropdown
+                                                                setExpandedRandomSets(prev => 
+                                                                    prev.includes(set.id) ? prev.filter(id => id !== set.id) : [...prev, set.id]
+                                                                );
+                                                            }}
+                                                            className="p-1.5 hover:bg-white/10 rounded ml-1 text-gray-400 transition"
+                                                            title="View Questions"
+                                                        >
+                                                            <svg className={`w-4 h-4 transition-transform ${expandedRandomSets.includes(set.id) ? 'rotate-180 text-amber-400' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                                                        </button>
+
+                                                        <input type="checkbox" readOnly checked={selectedRandomSets.includes(set.id)} className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-red-500 focus:ring-red-500 focus:ring-offset-0 flex-shrink-0 ml-1" />
+                                                    </div>
+
+                                                    {/* Inner Questions List (Revealed cleanly when expanded) */}
+                                                    {expandedRandomSets.includes(set.id) && set.questions?.length > 0 && (
+                                                        <div 
+                                                            className="mt-1 pt-2 border-t border-white/5 space-y-2 max-h-48 overflow-y-auto custom-scrollbar"
+                                                            onClick={(e) => e.stopPropagation()} // Stop propagation here too so clicking text doesn't check the set
+                                                        >
+                                                            {set.questions.map((q, idx) => (
+                                                                <div key={q.id || idx} className="flex gap-2 items-start text-xs text-gray-400 bg-black/20 p-2 rounded border border-white/5">
+                                                                    <span className="text-gray-500 font-mono mt-0.5">{idx + 1}.</span>
+                                                                    <div className="flex-1">
+                                                                        <div 
+                                                                            className="line-clamp-2 mb-1.5 text-gray-300" 
+                                                                            dangerouslySetInnerHTML={{ __html: q.summary || q.description || `Question ID: ${q.id}` }}
+                                                                        />
+                                                                        {/* Sub-tags showing individual marks underneath each list item */}
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className="text-[9px] uppercase font-bold text-gray-500 bg-black/30 px-1 py-0.5 rounded">{q.type || 'Question'}</span>
+                                                                            <span className="text-[9px] font-bold text-amber-400 bg-amber-500/10 px-1 py-0.5 rounded">{q.points} pts</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="h-full flex flex-col items-center justify-center text-gray-500 opacity-50 py-8">
+                                                <FaRandom className="w-8 h-8 mb-2" />
+                                                <p className="text-sm">No random sets yet</p>
+                                                <p className="text-xs mt-1">Search and build sets from the right panel</p>
+                                            </div>
+                                        )
+                                    )}
+                                </div>
+
+                                {/* Left Footer: Remove button */}
+                                
+                                <div className="flex items-center justify-between p-4 border-t border-white/10 bg-white/5">
+                                    <button
+                                        onClick={qPaperTab === 'FIXED' ? handleRemoveFixed : handleRemoveRandomSets}
+                                        disabled={qPaperTab === 'FIXED' ? (!selectedFixedQs.length || loadingQuestionPaper) : (!selectedRandomSets.length || loadingQuestionPaper)}
+                                        className="px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 bg-red-600 hover:bg-red-700 rounded-lg text-xs sm:text-sm font-medium transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 flex-shrink-0"
+                                    >
+                                        <FaTrash className="w-3 h-3 inline mr-1" />
+                                        Remove ({qPaperTab === 'FIXED' ? selectedFixedQs.length : selectedRandomSets.length})
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* RIGHT: Search + Results */}
+                            <div className="flex flex-col h-full bg-black/20 rounded-xl border border-white/10 overflow-hidden shadow-inner">
+                                <div className="p-2.5 sm:p-3 md:p-4 border-b border-white/10 bg-white/5">
+                                    <h3 className="font-bold text-sm sm:text-base md:text-lg text-white flex items-center gap-2">
+                                        <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-green-500"></span>
+                                        Question Bank
+                                    </h3>
+                                    <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">Filter and select questions to add</p>
+                                </div>
+
+                                {/* Filter controls */}
+                                <div className="p-2.5 sm:p-3 border-b border-white/10 bg-black/10 flex items-center gap-2">
+                                    <input
+                                        type="number"
+                                        placeholder="Marks"
+                                        value={filterMarks}
+                                        onChange={e => setFilterMarks(e.target.value)}
+                                        className="w-20 bg-[#27272a] border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500/60 transition-colors"
+                                    />
+                                    <select
+                                        value={filterType}
+                                        onChange={e => setFilterType(e.target.value)}
+                                        className="flex-1 bg-[#27272a] border border-white/10 rounded-lg px-2 py-1.5 text-xs text-gray-300 focus:outline-none focus:border-amber-500/60 transition-colors"
+                                    >
+                                        <option value="">----------</option>
+                                        <option value="mcq">Single Correct Choice</option>
+                                        <option value="mcc">Multiple Correct Choices</option>
+                                        <option value="code">Code</option>
+                                        <option value="assignment_upload">Assignment Upload</option>
+                                        <option value="integer">Answer in Integer</option>
+                                        <option value="string">Answer in String</option>
+                                        <option value="float">Answer in Float</option>
+                                        <option value="arrange">Arrange in Order</option>
+                                    </select>
+                                    
+                                    <button
+                                        onClick={handleSearchQPaper}
+                                        disabled={loadingQuestionPaper}
+                                        className="px-3 py-1.5 bg-green-600 hover:bg-green-700 rounded-lg text-xs font-bold transition active:scale-95 disabled:opacity-50 flex items-center gap-1.5 flex-shrink-0"
+                                    >
+                                        {loadingQuestionPaper ? <FaSync className="animate-spin w-3 h-3" /> : <FaSearch className="w-3 h-3" />}
+                                        Find
+                                    </button>
+                                </div>
+
+                                {/* Results */}
+                                <div className="flex-1 overflow-y-auto p-2 sm:p-2.5 md:p-3 space-y-1.5 sm:space-y-2 custom-scrollbar">
+                                    {availableQuestions.length > 0 ? (
+                                        availableQuestions.map(q => (
+                                            <div
+                                                key={q.id}
+                                                onClick={() => toggleQPaperSelection(q.id, selectedPoolQs, setSelectedPoolQs)}
+                                                className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all border ${
+                                                    selectedPoolQs.includes(q.id)
+                                                    ? 'bg-green-600/20 border-green-500/50'
+                                                    : 'bg-[#27272a] border-white/5 hover:border-white/10'
+                                                }`}
+                                            >
+                                                <div className="w-8 h-8 rounded flex items-center justify-center flex-shrink-0 bg-green-500/10 text-green-400">
+                                                    <FaList className="w-3.5 h-3.5" />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="font-medium text-xs sm:text-sm text-gray-300 truncate">{q.summary || 'Untitled Question'}</div>
+                                                    <div className="flex items-center gap-2 mt-0.5">
+                                                        <span className="text-[10px] uppercase font-bold text-gray-600 bg-black/30 px-1.5 py-0.5 rounded">{q.type}</span>
+                                                        <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">{q.points} pts</span>
+                                                    </div>
+                                                </div>
+                                                <input type="radio" readOnly checked={selectedPoolQs.includes(q.id)} className="w-4 h-4 text-green-500 bg-gray-700 border-gray-600 focus:ring-green-500 focus:ring-offset-0 flex-shrink-0" />
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="h-full flex flex-col items-center justify-center text-gray-500 opacity-50 py-8 sm:py-12">
+                                            <FaSearch className="w-6 h-6 sm:w-8 sm:h-8 mb-2" />
+                                            <p className="text-xs sm:text-sm">No results yet</p>
+                                            <p className="text-[10px] sm:text-xs mt-1">Use filters above and click Find</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Right Footer: Add button(s) */}
+
+                                
+
+                                
+                                <div className="flex items-center justify-between p-4 border-t border-white/10 bg-white/5">
+                                    {qPaperTab === 'FIXED' && (
+                                        
+                                        <button
+                                            onClick={handleAddFixed}
+                                            disabled={!selectedPoolQs.length || loadingQuestionPaper}
+                                            className="px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 bg-green-600 hover:bg-green-700 rounded-lg text-xs sm:text-sm font-medium transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 flex-shrink-0"
+                                        >
+                                            <FaPlus className="w-3 h-3 inline mr-1" />
+                                            Add {selectedPoolQs.length > 0 ? selectedPoolQs.length : ''} to Fixed
+                                        </button>
+                                    )}
+                                    
+                                    {qPaperTab === 'RANDOM' && (
+                                        <div className="w-full flex items-center justify-between ">
+                                            <button
+                                                onClick={handleAddRandomSet}
+                                                disabled={!selectedPoolQs.length || loadingQuestionPaper || !randomSetCount}
+                                                className="px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 bg-green-600 hover:bg-green-700 rounded-lg text-xs sm:text-sm font-medium transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 flex-shrink-0"
+                                            >
+                                                <FaRandom className="w-3 h-3 inline mr-1" />
+                                                Pick {randomSetCount || 'N'} from {selectedPoolQs.length > 0 ? selectedPoolQs.length : '0'}
+                                            </button>
+                                            <input
+                                                type="number"
+                                                placeholder="Pick N"
+                                                title="Number of random questions to pick from selected"
+                                                value={randomSetCount}
+                                                onChange={e => setRandomSetCount(e.target.value)}
+                                                className="w-24 bg-[#27272a] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500/60 transition-colors flex-shrink-0 text-center"
+                                                min="1"
+                                                max={selectedPoolQs.length || 1}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    </>
+                )}
+            </div>
+
+            {/* Shuffle Toggles — always visible below tab bar, above body */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 px-4 sm:px-6 pb-3 bg-[#18181b] border-b border-white/5">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--input-bg)] border border-[var(--border-color)]">
+                    <div className="flex-1 pr-3">
+                        <span className="text-sm font-semibold text-gray-200">Shuffle Questions</span>
+                        <p className="text-xs muted mt-0.5">Randomize question order for each attempt</p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setShuffleQuestions(prev => !prev)}
+                        className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-[var(--bg-primary)] ${
+                            shuffleQuestions ? 'bg-amber-600' : 'bg-gray-600'
+                        }`}
+                    >
+                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${shuffleQuestions ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </button>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--input-bg)] border border-[var(--border-color)]">
+                    <div className="flex-1 pr-3">
+                        <span className="text-sm font-semibold text-gray-200">Shuffle Test Cases</span>
+                        <p className="text-xs muted mt-0.5">Randomize test case order for coding questions</p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setShuffleTestcases(prev => !prev)}
+                        className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-[var(--bg-primary)] ${
+                            shuffleTestcases ? 'bg-amber-600' : 'bg-gray-600'
+                        }`}
+                    >
+                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${shuffleTestcases ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </button>
+                </div>
+            </div>
+                    </div>
+                </div>
+            )}
+
             {/* MODULES LIST */}
             {modules.length > 0 ? (
             modules.map((module) => (
@@ -935,9 +1851,7 @@ const CourseModules = () => {
                                 <span className="inline sm:hidden">Quiz</span>
                             </button>
                             <button
-                                onClick={() => {
-                                    console.log('Create exercise for module:', module.id);
-                                }}
+                                onClick={() =>  openCreateExercise(module)}
                                 className="px-2 py-1 sm:px-3 sm:py-1.5 bg-gradient-to-r from-purple-500/20 to-purple-600/20 text-purple-400 border border-purple-500/30 rounded-lg text-xs font-bold hover:from-purple-500/30 hover:to-purple-600/30 hover:border-purple-500/50 transition-all duration-200 flex items-center gap-1 sm:gap-1.5 shadow-sm hover:shadow-purple-500/20"
                             >
                                 <FaPlus className="w-3 h-3 hidden sm:inline" />
@@ -946,7 +1860,7 @@ const CourseModules = () => {
                             </button>
                             <button
                                 onClick={() => {
-                                    console.log('Design module:', module.id);
+                                    openDesignModule(module.id);
                                 }}
                                 className="px-2 py-1 sm:px-3 sm:py-1.5 bg-gradient-to-r from-amber-500/20 to-amber-600/20 text-amber-400 border border-amber-500/30 rounded-lg text-xs font-bold hover:from-amber-500/30 hover:to-amber-600/30 hover:border-amber-500/50 transition-all duration-200 flex items-center gap-1 sm:gap-1.5 shadow-sm hover:shadow-amber-500/20"
                             >
@@ -1045,10 +1959,35 @@ const CourseModules = () => {
                                                     Delete
                                                 </button>
                                             </>
+                                        ) : unit.is_exercise ? (
+                                            <>
+                                                <button
+                                                    onClick={() => openDesignQuestionPaper(unit.quiz_id, unit.questionpaper_id || null, unit.name)}
+                                                    className="px-3 py-1 border border-purple-500/30 text-purple-400 rounded text-xs hover:bg-purple-500/20 transition"
+                                                >
+                                                    Questions
+                                                </button>
+                                                <button
+                                                    onClick={() => openEditExercise(module, unit)}
+                                                    className="px-3 py-1 border border-white/10 rounded text-xs hover:bg-white/10 transition"
+                                                >
+                                                    Edit
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        if (window.confirm(`Delete exercise "${unit.name}"?`)) {
+                                                            handleDeleteExercise(module.id, unit.quiz_id);
+                                                        }
+                                                    }}
+                                                    className="px-3 py-1 border border-red-500/30 text-red-400 rounded text-xs hover:bg-red-500/20 transition"
+                                                >
+                                                    Delete
+                                                </button>
+                                            </>
                                         ) : (
                                             <>
                                                 <button
-                                                    onClick={() => openQuizQuestionManager(unit.quiz_id)}
+                                                    onClick={() => openDesignQuestionPaper(unit.quiz_id, unit.questionpaper_id || null, unit.name)}
                                                     className="px-3 py-1 border border-blue-500/30 text-blue-400 rounded text-xs hover:bg-blue-500/20 transition"
                                                 >
                                                     Questions
