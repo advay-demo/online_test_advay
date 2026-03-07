@@ -29,10 +29,10 @@ from yaksh.models import (
     DailyActivity, Lesson, LearningModule, LearningUnit, LessonFile,
     TestCase, McqTestCase, StdIOBasedTestCase, StandardTestCase,
     HookTestCase, IntegerTestCase, StringTestCase, FloatTestCase,
-    ArrangeTestCase, FileUpload, AssignmentUpload
+    ArrangeTestCase, FileUpload, AssignmentUpload, Course 
 )
 from yaksh.models import get_model_class
-from yaksh.views import is_moderator, get_html_text, prof_manage, add_as_moderator, get_toc_contents
+from yaksh.views import is_moderator, get_html_text, prof_manage, add_as_moderator, get_toc_contents, _get_questions, _get_questions_from_tags, _remove_already_present
 from django.db.models import Q, Count, Avg, Sum, F, FloatField
 from django.utils import timezone
 from django.core.paginator import Paginator
@@ -50,7 +50,7 @@ from api.serializers import (
     UserActivitySerializer, CourseProgressSerializer, CourseCatalogSerializer,
     LessonDetailSerializer, LearningModuleDetailSerializer, LearningUnitDetailSerializer, MinimalLearningUnitSerializer,
     SimpleUserSerializer, ProfileSerializer, AnswerDetailSerializer, AnswerPaperGradingSerializer, UserAttemptSerializer, GradeUpdateSerializer, GradingCourseSerializer,
-    MonitorAnswerPaperSerializer, StudentDashboardCourseSerializer, CourseWithCompletionSerializer
+    MonitorAnswerPaperSerializer, StudentDashboardCourseSerializer, CourseWithCompletionSerializer, QuestionSetSerializer, TagSerializer
 )
 
 from rest_framework import generics, permissions, status
@@ -70,6 +70,9 @@ from django.contrib.contenttypes.models import ContentType
 
 from notifications_plugin.models import Notification
 from api.serializers import NotificationSerializer
+from django.db import transaction
+from taggit.models import Tag  
+
 
 import json
 import os
@@ -2924,7 +2927,134 @@ def api_design_module(request, module_id, course_id=None):
 # DESIGN QUESTION PAPER APIs
 #=============================================================
 
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def design_questionpaper_api(request, course_id, quiz_id, questionpaper_id=None):
+    user = request.user
+    
+    # Check permissions
+    if not is_moderator(user):
+        return Response({'detail': 'You are not allowed to view this page!'}, status=status.HTTP_403_FORBIDDEN)
+        
+    if quiz_id:
+        quiz = get_object_or_404(Quiz, pk=quiz_id)
+        if quiz.creator != user and not course_id:
+            return Response({'detail': 'This quiz does not belong to you'}, status=status.HTTP_403_FORBIDDEN)
+            
+    if course_id:
+        course = get_object_or_404(Course, pk=course_id)
+        if not course.is_creator(user) and not course.is_teacher(user):
+            return Response({'detail': 'This Course does not belong to you'}, status=status.HTTP_403_FORBIDDEN)
 
+    # Fetch/create paper definition
+    if questionpaper_id is None:
+        question_paper, created = QuestionPaper.objects.get_or_create(quiz_id=quiz_id)
+    else:
+        question_paper = get_object_or_404(QuestionPaper, id=questionpaper_id, quiz_id=quiz_id)
+
+    response_data = {}
+
+    if request.method == 'POST':
+        action = request.data.get('action') 
+        
+        if action == 'add-fixed':
+            question_ids = request.data.get('checked_ques', [])
+            if isinstance(question_ids, str):
+                question_ids = [qid for qid in question_ids.split(',') if qid]
+                
+            if question_ids:
+                if question_paper.fixed_question_order:
+                    ques_order = question_paper.fixed_question_order.split(",") + [str(q) for q in question_ids]
+                    questions_order = ",".join(ques_order)
+                else:
+                    questions_order = ",".join([str(q) for q in question_ids])
+                    
+                questions = Question.objects.filter(id__in=question_ids)
+                question_paper.fixed_question_order = questions_order
+                question_paper.save()
+                question_paper.fixed_questions.add(*questions)
+                response_data['message'] = "Questions added successfully"
+            else:
+                return Response({'detail': 'Please select at least one question'}, status=status.HTTP_400_BAD_REQUEST)
+
+        elif action == 'remove-fixed':
+            question_ids = request.data.get('added_questions', [])
+            if question_ids:
+                if question_paper.fixed_question_order:
+                    que_order = question_paper.fixed_question_order.split(",")
+                    for qid in question_ids:
+                        if str(qid) in que_order:
+                            que_order.remove(str(qid))
+                    question_paper.fixed_question_order = ",".join(que_order) if que_order else ""
+                    question_paper.save()
+                question_paper.fixed_questions.remove(*question_ids)
+                response_data['message'] = "Questions removed successfully"
+            else:
+                return Response({'detail': 'Please select at least one question'}, status=status.HTTP_400_BAD_REQUEST)
+
+        elif action == 'add-random':
+            question_ids = request.data.get('random_questions', [])
+            num_of_questions = request.data.get('num_of_questions', 1)
+            marks = request.data.get('marks')
+            
+            if question_ids and marks:
+                with transaction.atomic():
+                    random_set = QuestionSet.objects.create(marks=marks, num_questions=num_of_questions)
+                    random_ques = Question.objects.filter(id__in=question_ids)
+                    random_set.questions.add(*random_ques)
+                    question_paper.random_questions.add(random_set)
+                response_data['message'] = "Random questions added successfully"
+            else:
+                return Response({'detail': 'Please provide questions and marks'}, status=status.HTTP_400_BAD_REQUEST)
+
+        elif action == 'remove-random':
+            random_set_ids = request.data.get('random_sets', [])
+            if random_set_ids:
+                question_paper.random_questions.remove(*random_set_ids)
+                response_data['message'] = "Random sets removed successfully"
+            else:
+                return Response({'detail': 'Please select a question set'}, status=status.HTTP_400_BAD_REQUEST)
+
+        elif action == 'save':
+            serializer = QuestionPaperSerializer(question_paper, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                response_data['message'] = "Question Paper saved successfully"
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                
+        elif action == 'filter':
+            marks = request.data.get('marks')
+            tags = request.data.get('question_tags')
+            question_type = request.data.get('question_type')
+            
+            questions = None
+            if marks:
+                questions = _get_questions(user, question_type, marks)
+            elif tags:
+                questions = _get_questions_from_tags(tags, user)
+                
+            if questions is not None:
+                questions = _remove_already_present(question_paper.id, questions)
+                response_data['filtered_questions'] = QuestionSerializer(questions, many=True).data
+
+        # Final cleanup for post requests (updates summary statistics of marks on the paper)
+        question_paper.update_total_marks()
+        question_paper.save()
+
+    # GET response construction (acts as standard fetch, and applies after any POST interaction)
+    que_tags = Question.objects.filter(active=True, user=user).values_list('tags', flat=True).distinct()
+    all_tags = Tag.objects.filter(id__in=que_tags)
+    
+    response_data.update({
+        'question_paper': QuestionPaperSerializer(question_paper).data,
+        'fixed_questions': QuestionSerializer(question_paper.get_ordered_questions(), many=True).data,
+        'random_sets': QuestionSetSerializer(question_paper.random_questions.all(), many=True).data,
+        'all_tags': TagSerializer(all_tags, many=True).data,
+        'course_id': course_id
+    })
+
+    return Response(response_data, status=status.HTTP_200_OK)
 
 
 

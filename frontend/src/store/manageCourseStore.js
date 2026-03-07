@@ -8,7 +8,9 @@ import {
     getCourseDesign, addModulesToCourse, changeCourseModuleOrder, removeModulesFromCourse,
     changeCourseModulePrerequisiteCompletion, changeCourseModulePrerequisitePassing,
     getModuleDesign, addUnitsToModule, changeModuleUnitOrder, removeUnitsFromModule,
-    changeModuleUnitPrerequisite, createTeacherExercise, getTeacherExercise, updateTeacherExercise, deleteTeacherExercise
+    changeModuleUnitPrerequisite, createTeacherExercise, getTeacherExercise, updateTeacherExercise, deleteTeacherExercise,
+    getQuestionPaperDesign, addFixedQuestions, removeFixedQuestions, addRandomQuestionsSet, removeRandomQuestionsSet,
+    saveQuestionPaperOptions, filterQuestionPaperQuestions
 } from '../api/api';
 
 const initialModuleForm = {
@@ -712,9 +714,7 @@ const useManageCourseStore = create((set, get) => ({
             set({ loading: false, error: err.message });
         }
     },
-    // Quiz Question Manager ============================================================
-    openQuizQuestionManager: (quizId) => set({ selectedQuizId: quizId, showQuizQuestionManager: true }),
-    handleQuizQuestionsUpdate: () => get().loadCourseData(get().course.id),
+    
 
 
     // DESIGN MODULE TAB ============================================================
@@ -939,6 +939,129 @@ const useManageCourseStore = create((set, get) => ({
         } catch (err) {
             console.error("Failed to delete exercise:", err);
             set({ loading: false, error: err.message });
+        }
+    },
+
+// ============================================================
+// DESIGN QUESTION PAPER TAB 
+// ============================================================
+    questionPaperDesign: null,
+    filteredQuestions: null,     // Holds the results from the filter action
+    loadingQuestionPaper: false,
+    questionPaperError: null,
+    showDesignQuestionPaperModal: false,
+    designingQuizId: null,
+    designingQuestionPaperId: null,
+    designingQuizName: '', // <-- Add this
+
+    openDesignQuestionPaper: (quizId, questionPaperId = null, quizName = '') => {
+        set({ 
+            showDesignQuestionPaperModal: true, 
+            designingQuizId: quizId,
+            designingQuestionPaperId: questionPaperId,
+            designingQuizName: quizName // <-- Add this
+        });
+        const courseId = get().course?.id;
+        if (courseId) {
+            get().loadQuestionPaperDesign(courseId, quizId, questionPaperId);
+        }
+    },
+
+    closeDesignQuestionPaper: () => {
+        set({ 
+            showDesignQuestionPaperModal: false, 
+            designingQuizId: null, 
+            designingQuestionPaperId: null,
+            designingQuizName: '', // <-- Add this
+            questionPaperDesign: null,
+            filteredQuestions: null,
+            questionPaperError: null
+        });
+    },
+    
+    loadQuestionPaperDesign: async (courseId, quizId, questionPaperId = null) => {
+        set({ loadingQuestionPaper: true, questionPaperError: null });
+        try {
+            const data = await getQuestionPaperDesign(courseId, quizId, questionPaperId);
+            set({ questionPaperDesign: data });
+        } catch (err) {
+            set({ questionPaperError: err.response?.data?.error || err.message || 'Failed to load question paper design' });
+        } finally {
+            set({ loadingQuestionPaper: false });
+        }
+    },
+
+    handleAddFixedQuestions: async (courseId, quizId, questionPaperId, questionIds) => {
+        set({ loadingQuestionPaper: true });
+        try {
+            await addFixedQuestions(courseId, quizId, questionPaperId, questionIds);
+            await get().loadQuestionPaperDesign(courseId, quizId, questionPaperId);
+        } catch (err) {
+            set({ questionPaperError: err.response?.data?.error || err.message || 'Failed to add fixed questions' });
+        } finally {
+            set({ loadingQuestionPaper: false });
+        }
+    },
+
+    handleRemoveFixedQuestions: async (courseId, quizId, questionPaperId, questionIds) => {
+        set({ loadingQuestionPaper: true });
+        try {
+            await removeFixedQuestions(courseId, quizId, questionPaperId, questionIds);
+            await get().loadQuestionPaperDesign(courseId, quizId, questionPaperId);
+        } catch (err) {
+            set({ questionPaperError: err.response?.data?.error || err.message || 'Failed to remove fixed questions' });
+        } finally {
+            set({ loadingQuestionPaper: false });
+        }
+    },
+
+    handleAddRandomQuestionsSet: async (courseId, quizId, questionPaperId, questionIds, marks, numOfQuestions) => {
+        set({ loadingQuestionPaper: true });
+        try {
+            await addRandomQuestionsSet(courseId, quizId, questionPaperId, questionIds, marks, numOfQuestions);
+            await get().loadQuestionPaperDesign(courseId, quizId, questionPaperId);
+        } catch (err) {
+            set({ questionPaperError: err.response?.data?.error || err.message || 'Failed to add random question set' });
+        } finally {
+            set({ loadingQuestionPaper: false });
+        }
+    },
+
+    handleRemoveRandomQuestionsSet: async (courseId, quizId, questionPaperId, randomSetIds) => {
+        set({ loadingQuestionPaper: true });
+        try {
+            await removeRandomQuestionsSet(courseId, quizId, questionPaperId, randomSetIds);
+            await get().loadQuestionPaperDesign(courseId, quizId, questionPaperId);
+        } catch (err) {
+            set({ questionPaperError: err.response?.data?.error || err.message || 'Failed to remove random question set' });
+        } finally {
+            set({ loadingQuestionPaper: false });
+        }
+    },
+
+    handleSaveQuestionPaperOptions: async (courseId, quizId, questionPaperId, paperData) => {
+        set({ loadingQuestionPaper: true });
+        try {
+            await saveQuestionPaperOptions(courseId, quizId, questionPaperId, paperData);
+            await get().loadQuestionPaperDesign(courseId, quizId, questionPaperId);
+        } catch (err) {
+            set({ questionPaperError: err.response?.data?.error || err.message || 'Failed to save question paper options' });
+        } finally {
+            set({ loadingQuestionPaper: false });
+        }
+    },
+
+    handleFilterQuestionPaperQuestions: async (courseId, quizId, questionPaperId, filters = {}) => {
+        set({ loadingQuestionPaper: true });
+        try {
+            // Store the result directly in `filteredQuestions` so your UI can display the search results
+            const data = await filterQuestionPaperQuestions(courseId, quizId, questionPaperId, filters);
+            set({ filteredQuestions: data });
+            return data;
+        } catch (err) {
+            set({ questionPaperError: err.response?.data?.error || err.message || 'Failed to filter questions' });
+        } finally {
+            set({ loadingQuestionPaper: false });
         }
     },
 

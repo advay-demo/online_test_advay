@@ -181,6 +181,10 @@ urlpatterns = [
     url(r'^teacher/courses/(?P<course_id>\d+)/modules/(?P<module_id>\d+)/quizzes/(?P<quiz_id>\d+)/$', views.api_quiz_handler, name='api_quiz_handler_update'), #ok #IMP USE ^ for this, otherwise it will conflict with the create route which also has quizzes in the url
 
 
+    url(r'^teacher/designquestionpaper/(?P<course_id>[0-9]+)/(?P<quiz_id>[0-9]+)/(?P<questionpaper_id>[0-9]+)/$', views.design_questionpaper_api, name='designquestionpaper_api'),
+    url(r'^teacher/designquestionpaper/(?P<course_id>[0-9]+)/(?P<quiz_id>[0-9]+)/$', views.design_questionpaper_api, name='designquestionpaper_api'),
+
+
     url(r'teacher/courses/(?P<course_id>\d+)/designcourse/$', views.api_design_course, name='api_design_course'), #ok
 
     # Teacher Courses Analytics

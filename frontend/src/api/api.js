@@ -625,6 +625,101 @@ export const changeModuleUnitPrerequisite = async (moduleId, checkPrereqList, co
 };
 
 
+
+// DESIGN QUESTION PAPER APIs ============================================================
+
+export const getQuestionPaperDesign = async (courseId, quizId, questionPaperId = null) => {
+  let url = `/api/teacher/designquestionpaper/${courseId}/${quizId}/`;
+  if (questionPaperId) {
+    url = `/api/teacher/designquestionpaper/${courseId}/${quizId}/${questionPaperId}/`;
+  }
+  const response = await api.get(url);
+  return response.data;
+};
+
+// Add Fixed Questions to Question Paper
+export const addFixedQuestions = async (courseId, quizId, questionPaperId, questionIds) => {
+  let url = `/api/teacher/designquestionpaper/${courseId}/${quizId}/`;
+  if (questionPaperId) {
+    url = `/api/teacher/designquestionpaper/${courseId}/${quizId}/${questionPaperId}/`;
+  }
+  const response = await api.post(url, {
+    action: "add-fixed",
+    checked_ques: questionIds, // array of ID strings/ints
+  });
+  return response.data;
+};
+
+// Remove Fixed Questions from Question Paper
+export const removeFixedQuestions = async (courseId, quizId, questionPaperId, questionIds) => {
+  let url = `/api/teacher/designquestionpaper/${courseId}/${quizId}/`;
+  if (questionPaperId) {
+    url = `/api/teacher/designquestionpaper/${courseId}/${quizId}/${questionPaperId}/`;
+  }
+  const response = await api.post(url, {
+    action: "remove-fixed",
+    added_questions: questionIds, // array of ID strings/ints
+  });
+  return response.data;
+};
+
+// Add Random Question Set to Question Paper
+export const addRandomQuestionsSet = async (courseId, quizId, questionPaperId, questionIds, marks, numOfQuestions) => {
+  let url = `/api/teacher/designquestionpaper/${courseId}/${quizId}/`;
+  if (questionPaperId) {
+    url = `/api/teacher/designquestionpaper/${courseId}/${quizId}/${questionPaperId}/`;
+  }
+  const response = await api.post(url, {
+    action: "add-random",
+    random_questions: questionIds,
+    marks: marks,
+    num_of_questions: numOfQuestions,
+  });
+  return response.data;
+};
+
+// Remove Random Question Set from Question Paper
+export const removeRandomQuestionsSet = async (courseId, quizId, questionPaperId, randomSetIds) => {
+  let url = `/api/teacher/designquestionpaper/${courseId}/${quizId}/`;
+  if (questionPaperId) {
+    url = `/api/teacher/designquestionpaper/${courseId}/${quizId}/${questionPaperId}/`;
+  }
+  const response = await api.post(url, {
+    action: "remove-random",
+    random_sets: randomSetIds, // array of ID strings/ints
+  });
+  return response.data;
+};
+
+// Save general configurations for Question Paper
+export const saveQuestionPaperOptions = async (courseId, quizId, questionPaperId, paperData) => {
+  let url = `/api/teacher/designquestionpaper/${courseId}/${quizId}/`;
+  if (questionPaperId) {
+    url = `/api/teacher/designquestionpaper/${courseId}/${quizId}/${questionPaperId}/`;
+  }
+  const response = await api.post(url, {
+    action: "save",
+    ...paperData, 
+  });
+  return response.data;
+};
+
+// Filter available questions (by type, tag, or marks)
+export const filterQuestionPaperQuestions = async (courseId, quizId, questionPaperId, filters = {}) => {
+  let url = `/api/teacher/designquestionpaper/${courseId}/${quizId}/`;
+  if (questionPaperId) {
+    url = `/api/teacher/designquestionpaper/${courseId}/${quizId}/${questionPaperId}/`;
+  }
+  const response = await api.post(url, {
+    action: "filter",
+    marks: filters.marks || null,
+    question_tags: filters.tags || null,
+    question_type: filters.type || null,
+  });
+  return response.data;
+};
+
+
 // Exerise APIs ============================================================
 
 export const createTeacherExercise = async (courseId, moduleId, exerciseData) => {
