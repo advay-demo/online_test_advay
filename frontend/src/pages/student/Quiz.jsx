@@ -231,7 +231,7 @@ const Quiz = () => {
     if (Array.isArray(error)) {
       // Empty array
       if (error.length === 0) {
-        return <p className="text-sm">An error occurred</p>;
+        return <p className="text-sm">No error occurred</p>;
       }
 
       // Simple string array (non-code questions)

@@ -1152,12 +1152,7 @@ def student_dash(request):
             return Response({'error': 'Course code is required for search'}, status=status.HTTP_400_BAD_REQUEST)
     else:
         enrolled_courses = user.students.filter(is_trial=False).order_by('-id')
-        remaining_courses = Course.objects.filter(
-            active=True, is_trial=False, hidden=False
-        ).exclude(
-            id__in=enrolled_courses.values_list("id", flat=True)
-        ).order_by('-id')
-        courses = list(enrolled_courses) + list(remaining_courses)
+        courses = list(enrolled_courses)
 
     for course in courses:
         if course.is_enrolled(user):
@@ -1257,26 +1252,15 @@ def student_dash(request):
 @permission_classes([IsAuthenticated])
 def user_courselist(request):
     """
-    API endpoint to get all quizzes/courses available to the logged-in user.
+    API endpoint to get only enrolled courses for the logged-in user.
     """
     user = request.user
     courses_data = []
 
     enrolled_courses = user.students.filter(is_trial=False).order_by('-id')
-    remaining_courses = list(Course.objects.filter(
-        active=True, is_trial=False, hidden=False
-    ).exclude(
-        id__in=enrolled_courses.values_list("id", flat=True)
-    ).order_by('-id'))
-    courses = list(enrolled_courses)
-    courses.extend(remaining_courses)
-    title = 'All Courses'
 
-    for course in courses:
-        if course.students.filter(id=user.id).exists():
-            _percent = course.get_completion_percent(user)
-        else:
-            _percent = None
+    for course in enrolled_courses:
+        _percent = course.get_completion_percent(user)
         courses_data.append({
             'data': course,
             'completion_percentage': _percent,
@@ -1286,7 +1270,7 @@ def user_courselist(request):
     return Response({
         'user_id': user.id,
         'courses': serializer.data,
-        'title': title
+        'title': 'Enrolled Courses'
     })
 
 
@@ -1312,6 +1296,33 @@ def search_new_courses(request):
     return Response({
         'courses': serializer.data,
         'title': 'Search Results'
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def all_available_courses(request):
+    """
+    API endpoint to get all active, non-enrolled courses for the student.
+    Used by the 'Add New Course' tab to show browseable courses.
+    """
+    user = request.user
+    enrolled_ids = user.students.filter(is_trial=False).values_list("id", flat=True)
+    available_courses = Course.objects.filter(
+        active=True, is_trial=False, hidden=False
+    ).exclude(id__in=enrolled_ids).order_by('-id')
+
+    courses_data = []
+    for course in available_courses:
+        courses_data.append({
+            'data': course,
+            'completion_percentage': None,
+        })
+
+    serializer = CourseWithCompletionSerializer(courses_data, many=True, context={'request': request})
+    return Response({
+        'courses': serializer.data,
+        'title': 'Available Courses'
     })
 
 
@@ -1798,9 +1809,18 @@ def user_badges(request):
     
     in_progress_serializer = BadgeProgressSerializer(in_progress_badges, many=True)
     
+    # Get locked badges (active badges that are neither unlocked nor in-progress)
+    unlocked_badge_ids = list(unlocked_badges.values_list('badge', flat=True))
+    in_progress_badge_ids = list(in_progress_badges.values_list('badge', flat=True))
+    locked_badges = Badge.objects.filter(active=True).exclude(
+        id__in=unlocked_badge_ids + in_progress_badge_ids
+    )
+    locked_serializer = BadgeSerializer(locked_badges, many=True)
+    
     return Response({
         'unlocked': unlocked_serializer.data,
-        'inProgress': in_progress_serializer.data
+        'inProgress': in_progress_serializer.data,
+        'locked': locked_serializer.data
     }, status=status.HTTP_200_OK)
 
 
@@ -1935,68 +1955,6 @@ def teacher_dashboard(request):
     # If no courses have enrolled students, return 0
     avg_completion = sum(completion_rates) / len(completion_rates) if completion_rates else 0
     
-    # Calculate previous period metrics (30 days ago)
-    date_30_days_ago = timezone.now() - timedelta(days=30)
-    
-    # Previous period: Total courses (courses created before 30 days ago)
-    previous_courses = Course.objects.filter(
-        Q(creator=user) | Q(teachers=user),
-        is_trial=False,
-        created_on__lte=date_30_days_ago
-    ).distinct()
-    previous_total_courses = previous_courses.count()
-    
-    # Previous period: Active courses (courses that existed and were active 30 days ago)
-    # We check if course was created before 30 days ago and was active
-    # Note: We can't know historical active status, so we use current active status
-    # for courses that existed 30 days ago
-    previous_active_courses = previous_courses.filter(active=True).count()
-    
-    # Previous period: Total students
-    # Count distinct students enrolled in courses that existed 30 days ago
-    # Since we can't track exact enrollment dates, we use students in courses that existed then
-    previous_total_students = User.objects.filter(
-        students__in=previous_courses
-    ).distinct().count()
-    
-    # Previous period: Average completion rate
-    # Calculate completion rate for courses that existed 30 days ago
-    previous_completion_rates = []
-    for course in previous_courses:
-        # Count students enrolled in this course (that existed 30 days ago)
-        previous_enrolled = course.students.count()
-        
-        if previous_enrolled > 0:
-            # Count students who completed the course
-            # Note: We can't know if they completed before 30 days ago,
-            # so we use current completion status for courses that existed then
-            previous_completed = CourseStatus.objects.filter(
-                course=course,
-                grade__isnull=False
-            ).count()
-            previous_course_completion_rate = (previous_completed / previous_enrolled) * 100
-            previous_completion_rates.append(previous_course_completion_rate)
-    
-    previous_avg_completion = sum(previous_completion_rates) / len(previous_completion_rates) if previous_completion_rates else 0
-    
-    # Calculate percentage changes
-    def calculate_percentage_change(current, previous):
-        """Calculate percentage change, handling edge cases"""
-        if previous == 0:
-            if current == 0:
-                return 0.0  # No change
-            else:
-                # New data appeared (can't calculate meaningful percentage)
-                # Return a large positive number or handle as "New"
-                return 100.0  # Represent as 100% increase
-        else:
-            return ((current - previous) / previous) * 100
-    
-    total_courses_change = calculate_percentage_change(total_courses, previous_total_courses)
-    active_courses_change = calculate_percentage_change(active_courses, previous_active_courses)
-    total_students_change = calculate_percentage_change(total_students, previous_total_students)
-    avg_completion_change = calculate_percentage_change(avg_completion, previous_avg_completion)
-    
     # Recent events (upcoming quizzes)
     upcoming_quizzes = []
     for course in courses[:10]:  # Check first 10 courses
@@ -2081,13 +2039,9 @@ def teacher_dashboard(request):
     
     return Response({
         'total_courses': total_courses,
-        'total_courses_change': round(total_courses_change, 1),
         'active_courses': active_courses,
-        'active_courses_change': round(active_courses_change, 1),
         'total_students': total_students,
-        'total_students_change': round(total_students_change, 1),
         'avg_completion': round(avg_completion, 1),
-        'avg_completion_change': round(avg_completion_change, 1),
         'top_students': top_students,
         'recent_courses': [
             {

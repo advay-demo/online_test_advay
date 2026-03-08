@@ -139,6 +139,10 @@ class ProfileSerializer(serializers.ModelSerializer):
     user_id = serializers.IntegerField(source='user.id', read_only=True)
     is_moderator = serializers.BooleanField(read_only=True)
     email_verified = serializers.BooleanField(source='is_email_verified', read_only=True)
+    teacher_courses_count = serializers.SerializerMethodField()
+    teacher_students_count = serializers.SerializerMethodField()
+    student_enrolled_count = serializers.SerializerMethodField()
+    student_completed_count = serializers.SerializerMethodField()
     
     class Meta:
         model = Profile
@@ -146,9 +150,13 @@ class ProfileSerializer(serializers.ModelSerializer):
             'user_id', 'username', 'email', 'first_name', 'last_name',
             'roll_number', 'institute', 'department', 'position',
             'bio', 'phone', 'city', 'country', 'linkedin', 'github',
-            'display_name', 'timezone', 'is_moderator', 'email_verified'
+            'display_name', 'timezone', 'is_moderator', 'email_verified',
+            'teacher_courses_count', 'teacher_students_count',
+            'student_enrolled_count', 'student_completed_count'
         ]
-        read_only_fields = ['user_id', 'username', 'is_moderator', 'email_verified']
+        read_only_fields = ['user_id', 'username', 'is_moderator', 'email_verified',
+                            'teacher_courses_count', 'teacher_students_count',
+                            'student_enrolled_count', 'student_completed_count']
     
     def validate_email(self, value):
         """Validate that email is unique"""
@@ -177,7 +185,31 @@ class ProfileSerializer(serializers.ModelSerializer):
         instance.save()
         
         return instance
-        
+
+    def get_teacher_courses_count(self, obj):
+        try:
+            return Course.objects.filter(creator=obj.user).count()
+        except Exception:
+            return 0
+
+    def get_teacher_students_count(self, obj):
+        try:
+            courses = Course.objects.filter(creator=obj.user)
+            return User.objects.filter(students__in=courses).distinct().count()
+        except Exception:
+            return 0
+
+    def get_student_enrolled_count(self, obj):
+        try:
+            return Course.objects.filter(students=obj.user).count()
+        except Exception:
+            return 0
+
+    def get_student_completed_count(self, obj):
+        try:
+            return CourseStatus.objects.filter(user=obj.user, percent_completed__gte=100).count()
+        except Exception:
+            return 0
 
 class QuestionSerializer(serializers.ModelSerializer):
     test_cases = serializers.SerializerMethodField()

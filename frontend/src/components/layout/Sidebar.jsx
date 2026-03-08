@@ -33,8 +33,7 @@ const Sidebar = () => {
 
   
 
-  // Check if any nav item is active
-  const anyActive = navItems.some(item => isActive(item.path));
+
 
   const handleLinkClick = () => {
     setIsMobileOpen(false);
@@ -77,8 +76,7 @@ const Sidebar = () => {
         <nav className="flex-1 p-4 sm:p-6 lg:p-8 space-y-2 overflow-y-auto">
           {navItems.map((item) => {
             const Icon = item.icon;
-            // If no nav item is active, force dashboard to be active
-            const active = isActive(item.path) || (!anyActive && item.path === '/dashboard');
+            const active = isActive(item.path);
             return (
               <Link
                 key={item.path}

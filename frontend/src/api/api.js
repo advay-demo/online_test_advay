@@ -164,6 +164,11 @@ export const searchNewCourses = async (courseCode) => {
   return response.data;
 };
 
+export const fetchAvailableCourses = async () => {
+  const response = await api.get('/api/student/available-courses/');
+  return response.data;
+};
+
 
 
 export const requestCourseEnrollment = async (courseId) => {

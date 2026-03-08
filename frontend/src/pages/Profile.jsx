@@ -24,11 +24,12 @@ import Header from '../components/layout/Header';
 import StudentSidebar from '../components/layout/Sidebar';
 import TeacherSidebar from '../components/layout/TeacherSidebar';
 import { useAuthStore } from '../store/authStore';
-import { getUserProfile, patchUserProfile } from '../api/api';
+import { getUserProfile, patchUserProfile, getModeratorStatus } from '../api/api';
 
 const Profile = () => {
   const { user, isAuthenticated } = useAuthStore();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isModeratorActive, setIsModeratorActive] = useState(null);
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   
   const [profileData, setProfileData] = useState(null);
@@ -57,8 +58,26 @@ const Profile = () => {
   const [skills, setSkills] = useState(['Data Structures', 'Algorithms', 'SQL', 'React', 'Python', 'JavaScript']);
   const [loading, setLoading] = useState(true);
 
-  // Determine if user is moderator/teacher
-  const isTeacher = user?.is_moderator || false;
+  // Determine if user is currently in teacher mode (not just has teacher privileges)
+  const isTeacher = user?.is_moderator && isModeratorActive;
+
+  // Fetch active moderator status on mount
+  useEffect(() => {
+    const fetchModeratorStatus = async () => {
+      if (user?.is_moderator && isAuthenticated) {
+        try {
+          const status = await getModeratorStatus();
+          setIsModeratorActive(status.is_moderator_active);
+        } catch (error) {
+          console.error('Failed to fetch moderator status:', error);
+          setIsModeratorActive(false);
+        }
+      } else {
+        setIsModeratorActive(false);
+      }
+    };
+    fetchModeratorStatus();
+  }, [user, isAuthenticated]);
 
   // Fetch profile data on mount
   useEffect(() => {
@@ -747,11 +766,11 @@ const Profile = () => {
                 {/* Quick Stats */}
                 <div className="grid grid-cols-2 gap-3 mb-6">
                   <div className="bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg p-3 text-center">
-                    <div className="text-2xl font-bold">{isTeacher ? '12' : '8'}</div>
+                    <div className="text-2xl font-bold">{isTeacher ? (profileData?.teacher_courses_count || 0) : (profileData?.student_enrolled_count || 0)}</div>
                     <div className="text-xs muted">{isTeacher ? 'Courses' : 'Enrolled'}</div>
                   </div>
                   <div className="bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg p-3 text-center">
-                    <div className="text-2xl font-bold">{isTeacher ? '248' : '47'}</div>
+                    <div className="text-2xl font-bold">{isTeacher ? (profileData?.teacher_students_count || 0) : (profileData?.student_completed_count || 0)}</div>
                     <div className="text-xs muted">{isTeacher ? 'Students' : 'Completed'}</div>
                   </div>
                 </div>
@@ -870,11 +889,11 @@ const Profile = () => {
                 {/* Quick Stats */}
                 <div className="grid grid-cols-2 gap-3 mb-6">
                   <div className="bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg p-3 text-center">
-                    <div className="text-2xl font-bold">{isTeacher ? '12' : '8'}</div>
+                    <div className="text-2xl font-bold">{isTeacher ? (profileData?.teacher_courses_count || 0) : (profileData?.student_enrolled_count || 0)}</div>
                     <div className="text-xs muted">{isTeacher ? 'Courses' : 'Enrolled'}</div>
                   </div>
                   <div className="bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg p-3 text-center">
-                    <div className="text-2xl font-bold">{isTeacher ? '248' : '47'}</div>
+                    <div className="text-2xl font-bold">{isTeacher ? (profileData?.teacher_students_count || 0) : (profileData?.student_completed_count || 0)}</div>
                     <div className="text-xs muted">{isTeacher ? 'Students' : 'Completed'}</div>
                   </div>
                 </div>

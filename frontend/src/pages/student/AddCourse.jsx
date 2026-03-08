@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   FaSearch, FaTimes, FaBook, FaSpinner, FaCheckCircle, 
-  FaInfoCircle, FaUser, FaCalendarAlt, FaClock, FaExclamationTriangle,
+  FaInfoCircle, FaUser, FaCalendarAlt, FaExclamationTriangle,
   FaBan, FaHourglassHalf
 } from 'react-icons/fa';
 import { AiOutlineClockCircle, AiOutlineBarChart } from 'react-icons/ai';
@@ -22,24 +22,28 @@ const AddNewCourseStudent = () => {
     enrollmentLoading,
     enrollmentError,
     enrollmentSuccess,
-    searchCourses, 
-    clearSearch,
+    fetchAvailableCourses,
     requestEnrollment,
     selfEnroll,
     clearEnrollmentMessages
   } = useCourseStore();
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchTerm.trim()) {
-      searchCourses(searchTerm.trim());
-    }
-  };
+  // Load all available courses on mount
+  useEffect(() => {
+    fetchAvailableCourses();
+  }, [fetchAvailableCourses]);
 
-  const handleClearSearch = () => {
-    setSearchTerm('');
-    clearSearch();
-  };
+  // Frontend search: filter newCourses by name or code
+  const filteredCourses = useMemo(() => {
+    if (!searchTerm.trim()) return newCourses;
+    const term = searchTerm.toLowerCase().trim();
+    return newCourses.filter((item) => {
+      const course = item.data;
+      const name = (course.name || '').toLowerCase();
+      const code = (course.code || '').toLowerCase();
+      return name.includes(term) || code.includes(term);
+    });
+  }, [newCourses, searchTerm]);
 
   const handleEnroll = async (course) => {
     clearEnrollmentMessages();
@@ -61,12 +65,10 @@ const AddNewCourseStudent = () => {
     // Handle result
     if (result.success) {
       toast.success(result.data.message);
-      // Optionally refresh the search results
-      if (searchTerm.trim()) {
-        setTimeout(() => {
-          searchCourses(searchTerm.trim());
-        }, 1000);
-      }
+      // Refresh the available courses list
+      setTimeout(() => {
+        fetchAvailableCourses();
+      }, 1000);
     } else {
       toast.error(result.error);
     }
@@ -90,9 +92,9 @@ const AddNewCourseStudent = () => {
 
   // Function to render enrollment button/badge based on status
   const renderEnrollmentAction = (course) => {
-    const status = course.enrollment_status;
+    const courseStatus = course.enrollment_status;
 
-    switch (status) {
+    switch (courseStatus) {
       case 'enrolled':
         return (
           <div className="px-3 sm:px-6 py-2 sm:py-2.5 bg-green-600/20 text-green-400 border border-green-500/30 text-sm font-semibold rounded-lg sm:rounded-xl flex items-center justify-center gap-2 flex-shrink-0">
@@ -177,10 +179,23 @@ const AddNewCourseStudent = () => {
 
       default:
         return (
-          <div className="px-3 sm:px-6 py-2 sm:py-2.5 bg-gray-600/20 text-gray-400 border border-gray-500/30 text-sm font-semibold rounded-lg sm:rounded-xl flex items-center justify-center gap-2 flex-shrink-0">
-            <FaInfoCircle className="w-4 h-4" />
-            <span className="hidden sm:inline">Unknown Status</span>
-          </div>
+          <button
+            onClick={() => handleEnroll(course)}
+            disabled={enrollmentLoading}
+            className="px-3 sm:px-6 py-2 sm:py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg sm:rounded-xl shadow-lg shadow-blue-600/25 hover:shadow-xl hover:shadow-blue-600/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-95 flex-shrink-0"
+          >
+            {enrollmentLoading ? (
+              <>
+                <FaSpinner className="animate-spin w-4 h-4" />
+                <span className="hidden sm:inline">Enrolling...</span>
+              </>
+            ) : (
+              <>
+                <FaCheckCircle className="w-4 h-4" />
+                <span className="hidden sm:inline">Enroll</span>
+              </>
+            )}
+          </button>
         );
     }
   };
@@ -204,68 +219,27 @@ const AddNewCourseStudent = () => {
           <div className="card-strong p-4 sm:p-5 lg:p-6 min-h-[500px]">
             {/* Search Section */}
             <div className="mb-8">
-              <h2 className="text-lg sm:text-xl font-bold mb-1">Search for Courses</h2>
-              <p className="text-xs sm:text-sm muted">Browse and explore new courses</p> 
+              <h2 className="text-lg sm:text-xl font-bold mb-1">Available Courses</h2>
+              <p className="text-xs sm:text-sm muted">Browse and enroll in new courses</p> 
 
-              <form className="flex flex-row gap-2 sm:gap-3 mt-4" onSubmit={handleSearch}>
-                <div className="relative flex-1">
-                  <input
-                    type="text"
-                    className="input input-bordered w-full pl-10 pr-10 py-2.5 text-sm focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                    placeholder="Enter course code (e.g., CS101, 0002)"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                  <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
-                  {searchTerm && (
-                    <button
-                      type="button"
-                      onClick={() => setSearchTerm('')}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors p-1 hover:bg-white/10 rounded"
-                    >
-                      <FaTimes className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-                <div className="flex gap-2 sm:gap-3">
-                  <button 
-                    type="submit" 
-                    disabled={!searchTerm.trim() || loading}
-                    className="flex-1 sm:flex-none px-3 sm:px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-lg shadow-blue-600/25 hover:shadow-xl hover:shadow-blue-600/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 flex items-center justify-center gap-2"
-                  >
-                    {loading ? (
-                      <>
-                        <FaSpinner className="animate-spin w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">Searching...</span>
-                      </>
-                    ) : (
-                      <>
-                        <FaSearch className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">Search</span>
-                      </>
-                    )}
-                  </button>
-                  <button 
-                    type="button" 
-                    onClick={handleClearSearch}
-                    disabled={loading || (newCourses.length === 0 && !searchTerm)}
-                    className="flex-1 sm:flex-none px-3 sm:px-6 py-2.5 bg-red-600/80 hover:bg-red-600 text-white text-sm font-semibold rounded-lg shadow-lg shadow-red-600/25 hover:shadow-xl hover:shadow-red-600/30 transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 flex items-center justify-center gap-2"
+              <div className="relative mt-4">
+                <input
+                  type="text"
+                  className="input input-bordered w-full pl-10 pr-10 py-2.5 text-sm focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                  placeholder="Search by course name or code..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
+                {searchTerm && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors p-1 hover:bg-white/10 rounded"
                   >
                     <FaTimes className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Clear</span>
                   </button>
-                </div>
-              </form>
-              
-              {/* Search Tips */}
-              <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                <div className="flex items-start gap-2">
-                  <FaInfoCircle className="text-blue-400 mt-0.5 flex-shrink-0" />
-                  <div className="text-xs sm:text-sm text-blue-200">
-                    <span className="font-semibold">Search Tips:</span> Enter the exact course code to find available courses. 
-                    Contact your instructor if you need the course code.
-                  </div>
-                </div>
+                )}
               </div>
 
               {/* Enrollment Success/Error Messages */}
@@ -295,7 +269,7 @@ const AddNewCourseStudent = () => {
                   <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-t-4 border-blue-500"></div>
                   <FaBook className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-blue-400 text-xl" />
                 </div>
-                <p className="mt-4 text-sm muted">Searching for courses...</p>
+                <p className="mt-4 text-sm muted">Loading available courses...</p>
               </div>
             )}
 
@@ -310,32 +284,32 @@ const AddNewCourseStudent = () => {
               </div>
             )}
 
-            {/* Empty State - No search yet */}
-            {!loading && !error && newCourses.length === 0 && !searchTerm && (
+            {/* Empty State - No courses available */}
+            {!loading && !error && filteredCourses.length === 0 && !searchTerm && newCourses.length === 0 && (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <div className="mb-4 p-6 bg-blue-500/10 rounded-full">
-                  <FaSearch className="w-12 h-12 text-blue-400" />
+                  <FaBook className="w-12 h-12 text-blue-400" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">Start Your Search</h3>
+                <h3 className="text-xl font-bold mb-2">No Courses Available</h3>
                 <p className="text-sm muted max-w-md">
-                  Enter a course code above to discover new courses and expand your learning opportunities.
+                  There are no new courses available at the moment. Check back later!
                 </p>
               </div>
             )}
 
-            {/* Empty State - No results */}
-            {!loading && !error && newCourses.length === 0 && searchTerm && (
+            {/* Empty State - No search results */}
+            {!loading && !error && filteredCourses.length === 0 && searchTerm && (
               <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in">
                 <div className="mb-4 p-6 bg-orange-500/10 rounded-full">
-                  <FaBook className="w-12 h-12 text-orange-400" />
+                  <FaSearch className="w-12 h-12 text-orange-400" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">No Courses Found</h3>
+                <h3 className="text-xl font-bold mb-2">No Matching Courses</h3>
                 <p className="text-sm muted max-w-md mb-4">
-                  We couldn't find any courses matching "<span className="font-semibold text-white">{searchTerm}</span>".
-                  Please check the course code and try again.
+                  No courses match "<span className="font-semibold text-white">{searchTerm}</span>".
+                  Try a different search term.
                 </p>
                 <button 
-                  onClick={handleClearSearch}
+                  onClick={() => setSearchTerm('')}
                   className="btn btn-info px-6 py-2"
                 >
                   Clear Search
@@ -344,14 +318,16 @@ const AddNewCourseStudent = () => {
             )}
 
             {/* Course Results */}
-            {!loading && !error && newCourses.length > 0 && (
+            {!loading && !error && filteredCourses.length > 0 && (
               <div className="space-y-4 animate-fade-in">
                 <div className="mb-4">
-                  <h3 className="text-lg font-bold mb-1">Result :</h3>
-                  <p className="text-sm muted">Found {newCourses.length} course{newCourses.length > 1 ? 's' : ''}</p>
+                  <p className="text-sm muted">
+                    Showing {filteredCourses.length} course{filteredCourses.length > 1 ? 's' : ''}
+                    {searchTerm && <span> matching "<span className="font-semibold text-white">{searchTerm}</span>"</span>}
+                  </p>
                 </div>
                 
-                {newCourses.map((item) => {
+                {filteredCourses.map((item) => {
                   const course = item.data;
                   const isExpanded = expandedCourse === course.id;
                   
@@ -477,27 +453,6 @@ const AddNewCourseStudent = () => {
                                     </div>
                                   </div>
                                 ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Progress Info */}
-                          {course.completion_percent !== undefined && course.completion_percent > 0 && (
-                            <div>
-                              <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                                <AiOutlineBarChart className="text-green-400" />
-                                Course Progress
-                              </h4>
-                              <div className="flex items-center gap-3">
-                                <div className="flex-1 bg-gray-700 rounded-full h-3 overflow-hidden">
-                                  <div
-                                    className="bg-gradient-to-r from-blue-500 to-green-500 h-full transition-all duration-500 rounded-full"
-                                    style={{ width: `${course.completion_percent || 0}%` }}
-                                  ></div>
-                                </div>
-                                <span className="text-sm font-semibold text-green-400 whitespace-nowrap">
-                                  {course.completion_percent || 0}%
-                                </span>
                               </div>
                             </div>
                           )}

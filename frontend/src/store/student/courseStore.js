@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { 
   fetchCoursesList, 
   searchNewCourses, 
+  fetchAvailableCourses as fetchAvailableCoursesApi,
   requestCourseEnrollment, 
   selfEnrollInCourse 
 } from '../../api/api';
@@ -16,7 +17,7 @@ const useCourseStore = create((set, get) => ({
   enrollmentError: null,
   enrollmentSuccess: null,
 
-  // Fetch all courses (enrolled + available)
+  // Fetch enrolled courses only
   fetchCourses: async () => {
     set({ loading: true, error: null });
     try {
@@ -35,6 +36,17 @@ const useCourseStore = create((set, get) => ({
       set({ newCourses: data.courses || [], loading: false });
     } catch (err) {
       set({ error: err.message || 'Failed to search courses', loading: false });
+    }
+  },
+
+  // Fetch all available (non-enrolled) courses
+  fetchAvailableCourses: async () => {
+    set({ loading: true, error: null });
+    try {
+      const data = await fetchAvailableCoursesApi();
+      set({ newCourses: data.courses || [], loading: false });
+    } catch (err) {
+      set({ error: err.message || 'Failed to fetch available courses', loading: false });
     }
   },
 
