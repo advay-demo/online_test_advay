@@ -20,6 +20,7 @@ const Quiz = () => {
   const [correctAnswers, setCorrectAnswers] = useState(new Set());
   const [incorrectAnswers, setIncorrectAnswers] = useState(new Set());
   const [questionResults, setQuestionResults] = useState({});
+  const [showQuitConfirm, setShowQuitConfirm] = useState(false);
   const timerIntervalRef = useRef(null);
 
   useEffect(() => {
@@ -398,15 +399,17 @@ const Quiz = () => {
     }
   };
 
-  const handleQuit = async () => {
-    if (window.confirm('Are you sure you want to quit the quiz? Your progress will be saved.')) {
-      try {
-        await quitQuiz(answerPaper.id);
-        navigate(`/answerpapers/${answerPaper.id}/submission`);
-      } catch (err) {
-        console.error('Failed to quit quiz:', err);
-        navigate(`/answerpapers/${answerPaper.id}/submission`);
-      }
+  const handleQuit = () => {
+    setShowQuitConfirm(true);
+  };
+
+  const confirmQuit = async () => {
+    try {
+      await quitQuiz(answerPaper.id);
+      navigate(`/answerpapers/${answerPaper.id}/submission`);
+    } catch (err) {
+      console.error('Failed to quit quiz:', err);
+      navigate(`/answerpapers/${answerPaper.id}/submission`);
     }
   };
 
@@ -558,6 +561,37 @@ const Quiz = () => {
       />
 
       <main className="flex-1 flex flex-col">
+        {/* Quit Confirmation Overlay */}
+        {showQuitConfirm && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-gray-900 border border-white/10 rounded-2xl p-8 max-w-md w-full shadow-2xl">
+              <div className="text-center">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center bg-yellow-500/20 border border-yellow-500/30">
+                  <AiOutlineWarning className="w-8 h-8 text-yellow-400" />
+                </div>
+                <p className="text-lg text-gray-300 mb-2">Your current answers are saved.</p>
+                <h3 className="text-xl font-bold mb-2">Are you sure you want to quit?</h3>
+                <p className="text-sm text-gray-400 mb-8">Be sure, as you won't be able to restart this exam.</p>
+                <div className="flex justify-center gap-4">
+                  <button
+                    onClick={confirmQuit}
+                    className="bg-red-600 text-white px-8 py-3 rounded-xl font-semibold hover:bg-red-700 transition flex items-center gap-2"
+                  >
+                    <FaTimes className="w-4 h-4" />
+                    Yes, Quit
+                  </button>
+                  <button
+                    onClick={() => setShowQuitConfirm(false)}
+                    className="bg-white/10 text-white px-8 py-3 rounded-xl font-semibold hover:bg-white/20 transition flex items-center gap-2"
+                  >
+                    No, Continue
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Top Bar */}
         <header className="px-8 py-4 flex justify-end items-center border-b border-white/6 bg-gradient-to-b from-white/[0.01] to-transparent">
           <div className="flex items-center gap-4">
@@ -651,33 +685,48 @@ const Quiz = () => {
                   </div>
                 )}
 
-                {/* Result Display */}
-                {questionResults[currentQuestion.id] && !evaluatingQuestions.has(currentQuestion.id) && (
-                  <div className={`mt-4 mb-6 p-4 rounded-lg ${questionResults[currentQuestion.id].success
-                    ? 'bg-green-500/10 border border-green-500/30'
-                    : 'bg-red-500/10 border border-red-500/30'
-                    }`}>
-                    <h4 className="font-bold mb-2 flex items-center gap-2">
-                      {questionResults[currentQuestion.id].success ? (
-                        <><FaCheck className="text-green-500" /> Correct!</>
-                      ) : (
-                        <><FaTimes className="text-red-500" /> Incorrect</>
-                      )}
-                    </h4>
+                {/* Result Display — Hidden feedback mode:
+                    - Non-code questions: neutral "Answer Submitted" (no correct/incorrect)
+                    - Code questions with compilation/runtime errors: show error details as hints
+                    - Code questions without errors: neutral "Answer Submitted"
+                    To revert to showing correct/incorrect, restore the original block below.
+                */}
+                {questionResults[currentQuestion.id] && !evaluatingQuestions.has(currentQuestion.id) && (() => {
+                  const result = questionResults[currentQuestion.id];
+                  const isCodeQuestion = currentQuestion.type === 'code' || currentQuestion.type === 'upload';
 
-                    {questionResults[currentQuestion.id].error && (
-                      <div className="mt-2">
-                        {renderErrorDisplay(questionResults[currentQuestion.id].error)}
+                  // Check if code question has real errors (objects with error details, not just simple strings)
+                  const hasRealCodeErrors = isCodeQuestion && !result.success && result.error && (
+                    (Array.isArray(result.error) && result.error.length > 0 && typeof result.error[0] === 'object') ||
+                    (typeof result.error === 'string' && result.error !== 'Incorrect answer')
+                  );
+
+                  if (hasRealCodeErrors) {
+                    // Code question with real compilation/runtime errors — show error details as a hint
+                    return (
+                      <div className="mt-4 mb-6 p-4 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                        <h4 className="font-bold mb-2 flex items-center gap-2">
+                          <AiOutlineWarning className="text-amber-400" /> Code Error — Hint
+                        </h4>
+                        <div className="mt-2">
+                          {renderErrorDisplay(result.error)}
+                        </div>
                       </div>
-                    )}
+                    );
+                  }
 
-                    {questionResults[currentQuestion.id].success && currentQuestion.type === 'code' && (
-                      <p className="text-sm text-gray-400 mt-2">
-                        All test cases passed! ✅
+                  // All other cases — neutral "Answer Submitted" message
+                  return (
+                    <div className="mt-4 mb-6 p-4 rounded-lg bg-blue-500/10 border border-blue-500/30">
+                      <h4 className="font-bold mb-2 flex items-center gap-2">
+                        <FaCheck className="text-blue-400" /> Answer Submitted
+                      </h4>
+                      <p className="text-sm text-gray-400">
+                        Your answer has been recorded and will be evaluated.
                       </p>
-                    )}
-                  </div>
-                )}
+                    </div>
+                  );
+                })()}
 
                 {/* Action Buttons */}
                 <div className="flex gap-4 flex-wrap">

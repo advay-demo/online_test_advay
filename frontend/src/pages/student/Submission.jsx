@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { FaCheck, FaTimes, FaExclamationTriangle } from 'react-icons/fa';
 import Logo from '../../components/ui/Logo';
 import { getQuizSubmissionStatus, quitQuiz } from '../../api/api';
 
 const Submission = () => {
   const { answerpaperId } = useParams();
-  const navigate = useNavigate();
   const [submission, setSubmission] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -161,30 +160,37 @@ const Submission = () => {
             </div>
           </div>
 
-          {/* Confirmation Box */}
-          <div className="card p-8 text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center bg-yellow-500/20 border border-yellow-500/30">
-              <FaExclamationTriangle className="w-8 h-8 text-yellow-400" />
-            </div>
-
-            <p className="text-lg soft mb-2">Your current answers are saved.</p>
-            <p className="text-xl font-semibold text-white mb-2">Are you sure you wish to quit exam?</p>
-            <p className="text-base muted mb-8">Be sure, as you won't be able to restart this exam.</p>
-
-            {submission.status === 'completed' ? (
-              <div className="text-center">
-                <p className="text-lg text-green-400 mb-4">Quiz has been completed.</p>
-                {submission.percent !== undefined && (
-                  <p className="text-2xl font-bold mb-4">Score: {submission.percent}%</p>
-                )}
-                <Link
-                  to="/courses"
-                  className="bg-indigo-600 text-white px-10 py-3 rounded-xl font-semibold hover:bg-indigo-700 transition text-lg inline-flex items-center gap-2"
-                >
-                  Back to Courses
-                </Link>
+          {/* Confirmation / Completion Box */}
+          {submission.status === 'completed' ? (
+            <div className="card p-8 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center bg-green-500/20 border border-green-500/30">
+                <FaCheck className="w-8 h-8 text-green-400" />
               </div>
-            ) : (
+
+              <p className="text-xl font-semibold text-white mb-2">Quiz Submitted Successfully</p>
+              <p className="text-base muted mb-6">Your answers have been recorded for evaluation.</p>
+
+              {submission.percent !== undefined && (
+                <p className="text-2xl font-bold mb-6">Score: {submission.percent}%</p>
+              )}
+
+              <Link
+                to="/courses"
+                className="bg-indigo-600 text-white px-10 py-3 rounded-xl font-semibold hover:bg-indigo-700 transition text-lg inline-flex items-center gap-2"
+              >
+                Back to Courses
+              </Link>
+            </div>
+          ) : (
+            <div className="card p-8 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center bg-yellow-500/20 border border-yellow-500/30">
+                <FaExclamationTriangle className="w-8 h-8 text-yellow-400" />
+              </div>
+
+              <p className="text-lg soft mb-2">Your current answers are saved.</p>
+              <p className="text-xl font-semibold text-white mb-2">Are you sure you wish to quit exam?</p>
+              <p className="text-base muted mb-8">Be sure, as you won't be able to restart this exam.</p>
+
               <div className="flex justify-center gap-4 flex-wrap">
                 <button
                   onClick={handleQuit}
@@ -202,8 +208,8 @@ const Submission = () => {
                   No, Continue
                 </button>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </main>
     </div>
