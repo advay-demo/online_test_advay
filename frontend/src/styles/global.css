@@ -6,43 +6,66 @@
 
 :root {
   /* Default Dark Mode */
-  --bg-primary: #0b0b11;
-  --bg-secondary: #0c0c13;
-  --surface: #111118;
-  --surface-2: #14141c;
+  --bg-primary: #0f0f1a;      
+  --bg-secondary: #14141f;    
+  --surface: #1a1a27;         
+  --surface-2: #1f1f2e;       
 
-  --text-primary: #ffffff;
-  --text-secondary: rgba(255, 255, 255, 0.78);
-  --text-muted: rgba(255, 255, 255, 0.52);
+  /* Add subtle colored tints for warmth */
+  --text-primary: #f0f0f5;    /* softer than pure white */
+  --text-secondary: rgba(240, 240, 255, 0.75);
+  --text-muted: rgba(160, 162, 180, 0.7);
 
-  --border-color: rgba(255, 255, 255, 0.1);
-  --border-subtle: rgba(255, 255, 255, 0.06);
+  /* Enhanced borders with slight purple tint - more visible */
+  --border-color: rgba(139, 92, 246, 0.25);
+  --border-subtle: rgba(139, 92, 246, 0.15);
+  --border-strong: rgba(139, 92, 246, 0.35);
 
-  --input-bg: rgba(255, 255, 255, 0.03);
-
+  --input-bg: rgba(139, 92, 246, 0.04);
   --bg-footer: #000000;
+  
+  /* Component-specific backgrounds with better separation */
+  --header-bg: rgba(15, 15, 26, 0.85);
+  --sidebar-bg: rgba(20, 20, 31, 0.95);
+  
+  /* Shadow definitions */
+  --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-strong: 0 8px 24px rgba(0, 0, 0, 0.5);
 
-  --grad-1: #7b2ff7;
-  --grad-2: #ff4da6;
-  --grad-3: #ff914d;
+  --grad-1: #48d820;  /* slightly adjusted purple */
+  --grad-2: #b51a1a;  /* more balanced pink */
+  --grad-3: #f97316;  /* consistent with Tailwind orange */
 }
 
 [data-theme='light'] {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8fafc;
+  --bg-primary: #fafafa;      /* warmer than pure white */
+  --bg-secondary: #f5f5f7;
   --surface: #ffffff;
-  --surface-2: #f1f5f9;
+  --surface-2: #ededf0;
 
-  --text-primary: #0f172a;
-  --text-secondary: #334155;
-  --text-muted: #64748b;
+  /* Slightly warmer text */
+  --text-primary: #1a1a2e;
+  --text-secondary: #3d3d56;
+  --text-muted: #6b6b88;
 
-  --border-color: #e2e8f0;
-  --border-subtle: #cbd5e1;
+  /* More visible borders for light mode */
+  --border-color: #d1d1d6;
+  --border-subtle: #e5e5ea;
+  --border-strong: #b8b8bf;
 
   --input-bg: #f1f5f9;
 
   --bg-footer: #f8fafc;
+  
+  /* Component-specific backgrounds with better separation */
+  --header-bg: rgba(255, 255, 255, 0.9);
+  --sidebar-bg: rgba(250, 250, 250, 0.95);
+  
+  /* Shadow definitions for light mode */
+  --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --shadow-strong: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
 @layer base {
@@ -107,7 +130,8 @@
 
   .logo-badge {
     background: linear-gradient(135deg, var(--grad-1), var(--grad-2));
-    box-shadow: 0 6px 18px rgba(123, 47, 247, 0.12);
+    box-shadow: 0 6px 18px rgba(123, 47, 247, 0.25), 0 2px 8px rgba(123, 47, 247, 0.15);
+    border: 2px solid rgba(255, 255, 255, 0.1);
   }
 
   .btn-grad {
@@ -215,8 +239,14 @@
 
   /* Sidebar */
   .app-sidebar {
-    background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
-    border-right: 1px solid var(--border-subtle);
+    background: var(--sidebar-bg);
+    backdrop-filter: blur(12px);
+    border-right: 1px solid var(--border-strong);
+    box-shadow: var(--shadow-soft);
+  }
+  
+  [data-theme='light'] .app-sidebar {
+    box-shadow: var(--shadow-medium);
   }
 
   /* Glow Card */

@@ -170,7 +170,7 @@ const Header = ({ isAuth = false, isLanding = false }) => {
 
   if (isLanding) {
     return (
-      <header className="sticky top-0 z-50 bg-[var(--bg-primary)]/95 backdrop-blur-xl border-b border-[var(--border-color)] shadow-sm">
+      <header className="sticky top-0 z-50 bg-[var(--header-bg)] backdrop-blur-xl border-b-2 border-[var(--border-strong)] shadow-[var(--shadow-medium)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 md:h-20">
             {/* Logo */}
@@ -239,7 +239,7 @@ const Header = ({ isAuth = false, isLanding = false }) => {
 
   if (isAuth) {
     return (
-      <header className="sticky top-0 z-50 border-b border-[var(--border-subtle)] bg-[var(--bg-primary)]/95 backdrop-blur-xl shadow-sm">
+      <header className="sticky top-0 z-50 border-b-2 border-[var(--border-strong)] bg-[var(--header-bg)] backdrop-blur-xl shadow-[var(--shadow-strong)]">
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center gap-2 sm:gap-3 h-16 md:h-20">
             
