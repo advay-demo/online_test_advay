@@ -28,6 +28,7 @@ const CourseActionButtons = ({ activeButton = null }) => {
     },
   ];
 
+
   return (
     <div className="mb-6 lg:mb-8">
       <div className="flex justify-center sm:justify-start gap-2 sm:gap-3 overflow-x-auto scrollbar-hide pb-1">
@@ -37,17 +38,22 @@ const CourseActionButtons = ({ activeButton = null }) => {
             <Link
               key={button.type}
               to={button.path}
-              className={`group relative px-4 sm:px-6 py-3 rounded-xl font-medium transition-all duration-200 text-sm flex items-center gap-2.5 whitespace-nowrap flex-shrink-0 ${
+              className={`group relative px-4 sm:px-6 py-3 rounded-xl font-semibold transition-all duration-300 text-sm flex items-center gap-2.5 whitespace-nowrap flex-shrink-0 border-2 ${
                 isActive
-                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/25 hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-600/30'
-                  : 'bg-[var(--card-bg)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:border-blue-500/30 hover:bg-[var(--card-strong-bg)]'
+                  ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-xl shadow-blue-600/30 hover:shadow-2xl hover:shadow-blue-600/40 border-transparent scale-101'
+                  : 'card-strong border-[var(--border-strong)] text-[var(--text-secondary)] hover:border-blue-500/40 hover:bg-blue-500/5 hover:text-blue-400 hover:shadow-md'
               }`}
             >
-              <span className={`transition-transform duration-200 ${isActive ? '' : 'group-hover:scale-110'}`}>
+              <span className={`transition-transform duration-300 ${
+                isActive ? 'text-white' : 'text-blue-400 group-hover:scale-110'
+              }`}>
                 {button.icon}
               </span>
-              <span className="hidden md:inline font-semibold">{button.label}</span>
-              <span className="md:hidden font-semibold">{button.shortLabel}</span>
+              <span className="hidden md:inline">{button.label}</span>
+              <span className="md:hidden">{button.shortLabel}</span>
+              {isActive && (
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-[var(--bg-primary)] animate-pulse"></span>
+              )}
             </Link>
           );
         })}
