@@ -13,7 +13,6 @@ const DashboardTeachers = () => {
     error,
     errorDetails,
     loadDashboard,
-    createDemoCourse,
     message,
     clearMessage,
   } = useTeacherDashboardStore();
@@ -179,28 +178,7 @@ const DashboardTeachers = () => {
                 Welcome back, {dashboardData.teacher_name || 'Teacher'}! Here&apos;s what&apos;s happening with your courses and quizzes
               </p>
             </div>
-            <div className="grid grid-cols-2 sm:flex sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-              <button
-                className="px-3 sm:px-5 py-2.5 border-2 border-[var(--border-strong)] bg-[var(--card-bg)] rounded-xl text-xs sm:text-sm font-semibold hover:border-blue-500/40 hover:bg-blue-500/5 hover:shadow-md transition-all duration-300 flex items-center justify-center gap-2"
-                onClick={createDemoCourse}
-              >
-                <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                </svg>
-                <span className="hidden lg:inline">Create Demo Course</span>
-                <span className="lg:hidden">Demo Course</span>
-              </button>
-              <Link
-                to="/teacher/add-course"
-                className="px-3 sm:px-5 py-2.5 border-2 border-transparent bg-gradient-to-r from-blue-600 to-blue-500 rounded-xl text-xs sm:text-sm font-semibold hover:shadow-xl hover:shadow-blue-600/30 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                </svg>
-                <span className="hidden lg:inline">Create New Course</span>
-                <span className="lg:hidden">New Course</span>
-              </Link>
-            </div>
+
           </div>
 
           {/* Stats Grid */}
@@ -474,7 +452,7 @@ const DashboardTeachers = () => {
               )}
               {/* Create New Course Card */}
               <Link
-                to="/teacher/add-course"
+                to="/teacher/courses"
                 className="
                   group relative flex flex-col rounded-xl
                   border-2 border-dashed border-[var(--border-color)]
