@@ -1573,12 +1573,13 @@ def course_modules(request, course_id):
             status=status.HTTP_403_FORBIDDEN
         )
         
-    # Check active status
-    if not course.active or not course.is_active_enrollment():
-         return Response(
-             {'error': "{0} is either expired or not active".format(course.name)},
-             status=status.HTTP_403_FORBIDDEN
-         )
+    # Check course is active (enrollment window check is intentionally excluded here:
+    # enrolled students should always be able to access their course content)
+    if not course.active:
+        return Response(
+            {'error': "{0} is not currently active".format(course.name)},
+            status=status.HTTP_403_FORBIDDEN
+        )
     
     # Use model method to get modules (handles ordering and is_trial)
     learning_modules = course.get_learning_modules()

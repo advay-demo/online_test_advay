@@ -226,11 +226,18 @@ const Dashboard = () => {
                           </div>
                         </div>
                       </div>
-                      
-                        <span className="w-full sm:w-auto border border-[var(--border-color)] px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold text-muted opacity-50 cursor-not-allowed whitespace-nowrap">
-                          Manage
-                        </span>
-                     
+                        {quiz.course_id ? (
+                          <Link
+                            to={`/courses/${quiz.course_id}/manage`}
+                            className="w-full sm:w-auto border border-[var(--border-color)] px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold hover:bg-[var(--input-bg)] transition whitespace-nowrap"
+                          >
+                            Manage
+                          </Link>
+                        ) : (
+                          <span className="w-full sm:w-auto border border-[var(--border-color)] px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold text-muted opacity-50 cursor-not-allowed whitespace-nowrap">
+                            Manage
+                          </span>
+                        )}
                     </div>
                   </div>
                 )) : (

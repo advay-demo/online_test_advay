@@ -179,12 +179,12 @@ const DashboardTeachers = () => {
                 Welcome back, {dashboardData.teacher_name || 'Teacher'}! Here&apos;s what&apos;s happening with your courses and quizzes
               </p>
             </div>
-            <div className="grid grid-cols-2 sm:flex sm:flex-row items-stretch sm:items-center gap-3">
+            <div className="grid grid-cols-2 sm:flex sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
               <button
-                className="px-3 sm:px-5 py-2.5 rounded-lg border border-[var(--border-color)] text-sm font-medium hover:bg-[var(--input-bg)] transition flex items-center justify-center gap-2"
+                className="px-3 sm:px-5 py-2.5 border-2 border-[var(--border-strong)] bg-[var(--card-bg)] rounded-xl text-xs sm:text-sm font-semibold hover:border-blue-500/40 hover:bg-blue-500/5 hover:shadow-md transition-all duration-300 flex items-center justify-center gap-2"
                 onClick={createDemoCourse}
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                 </svg>
                 <span className="hidden lg:inline">Create Demo Course</span>
@@ -192,7 +192,7 @@ const DashboardTeachers = () => {
               </button>
               <Link
                 to="/teacher/add-course"
-                className="bg-blue-600 px-3 sm:px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-700 transition flex items-center justify-center gap-2"
+                className="px-3 sm:px-5 py-2.5 border-2 border-transparent bg-gradient-to-r from-blue-600 to-blue-500 rounded-xl text-xs sm:text-sm font-semibold hover:shadow-xl hover:shadow-blue-600/30 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -204,19 +204,31 @@ const DashboardTeachers = () => {
           </div>
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 lg:mb-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 lg:mb-8">
             {stats.map((stat, index) => (
-              <div key={index} className="card-strong p-5 sm:p-6 rounded-2xl">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <p className="muted text-xs sm:text-sm mb-2">{stat.label}</p>
-                    <p className="text-2xl sm:text-3xl font-bold mb-2">{stat.value}</p>
+              <div 
+                key={index} 
+                className="card p-4 sm:p-5 lg:p-6 rounded-2xl border-l-4 hover:shadow-lg transition-all duration-300 group relative overflow-hidden"
+                style={{
+                  borderLeftColor: stat.color,
+                }}
+              >
+                {/* Subtle background glow */}
+                <div 
+                  className="absolute top-0 right-0 w-24 h-24 rounded-full blur-3xl opacity-10 group-hover:opacity-20 transition-opacity duration-300"
+                  style={{ background: stat.color }}
+                />
+                
+                <div className="relative flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                  <div className="flex-1 order-2 sm:order-1">
+                    <p className="muted text-xs sm:text-sm mb-1.5 font-medium">{stat.label}</p>
+                    <p className="text-2xl sm:text-3xl font-bold" style={{ color: stat.color }}>{stat.value}</p>
                   </div>
                   <div
-                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center flex-shrink-0 order-1 sm:order-2 group-hover:scale-110 transition-transform duration-300"
                     style={{
-                      background: `${stat.color}26`,
-                      border: `1px solid ${stat.color}40`,
+                      background: `${stat.color}1A`,
+                      border: `2px solid ${stat.color}33`,
                       color: stat.color,
                     }}
                   >
@@ -230,29 +242,36 @@ const DashboardTeachers = () => {
           {/* Content Grid */}
           <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 mb-6 lg:mb-8">
             {/* Recent Events */}
-            <div className="lg:col-span-2 card-strong p-5 sm:p-6 rounded-2xl">
-              <div className="mb-4 sm:mb-6">
-                <h2 className="text-lg sm:text-xl font-bold mb-1">Recent Events</h2>
-                <p className="text-xs sm:text-sm muted">Manage your upcoming and active quiz events</p>
+            <div className="lg:col-span-2 card p-5 sm:p-6 rounded-2xl border-t-4 border-t-emerald-500 shadow-lg shadow-emerald-500/5">
+              <div className="mb-4 sm:mb-6 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border-2 border-emerald-500/30 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-lg sm:text-xl font-bold mb-0.5">Recent Events</h2>
+                  <p className="text-xs sm:text-sm muted">Manage your upcoming and active quiz events</p>
+                </div>
               </div>
               <div className="space-y-3 sm:space-y-4">
                 {recentEvents.length > 0 ? recentEvents.map((event, index) => (
-                  <div key={index} className="card p-4 sm:p-5 rounded-xl">
+                  <div key={index} className="card-strong p-4 sm:p-5 rounded-xl border-l-4 border-l-emerald-500 hover:shadow-md hover:bg-white/[0.03] transition-all duration-300 group">
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                       <div className="flex gap-3 sm:gap-4 flex-1">
                         <div
-                          className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                          className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300"
                           style={{
-                            background: 'rgba(34,197,94,0.15)',
-                            border: '1px solid rgba(34,197,94,0.2)',
+                            background: 'rgba(16,185,129,0.15)',
+                            border: '2px solid rgba(16,185,129,0.3)',
                           }}
                         >
-                          <svg className="w-5 h-5 sm:w-6 sm:h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+                          <svg className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-base sm:text-lg mb-1 truncate">{event.name}</h3>
+                          <h3 className="font-semibold text-base sm:text-lg mb-1 truncate  transition-colors duration-300">{event.name}</h3>
                           <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm muted">
                             <div className="flex items-center gap-1.5">
                               <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
@@ -284,42 +303,58 @@ const DashboardTeachers = () => {
                     </div>
                   </div>
                 )) : (
-                  <div className="card p-5 text-center text-muted">
-                    <p>No upcoming quizzes</p>
+                  <div className="card-strong p-8 text-center rounded-xl">
+                    <div className="inline-block p-4 bg-emerald-500/10 rounded-full mb-3">
+                      <svg className="w-8 h-8 text-emerald-400 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <p className="text-muted font-medium">No upcoming quizzes</p>
                   </div>
                 )}
               </div>
             </div>
 
             {/* Top Students */}
-            <div className="card-strong p-5 sm:p-6 rounded-2xl">
-              <div className="mb-4 sm:mb-6">
-                <h2 className="text-lg sm:text-xl font-bold mb-1">Top Students</h2>
-                <p className="text-xs sm:text-sm muted">Students with highest quiz scores</p>
+            <div className="card p-5 sm:p-6 rounded-2xl border-t-4 border-t-purple-500 shadow-lg shadow-purple-500/5">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-500/10 border-2 border-purple-500/30 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-purple-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-lg sm:text-xl font-bold mb-0.5">Top Students</h2>
+                  <p className="text-xs sm:text-sm muted">Students with highest quiz scores</p>
+                </div>
               </div>
-              <div className="space-y-3 sm:space-y-4">
+              <div className="space-y-4">
                 {topStudents.length > 0 ? topStudents.map((student, index) => (
-                  <div key={index} className="flex items-center gap-2 sm:gap-3">
-                    <div className="text-base sm:text-lg font-bold muted w-5 sm:w-6">{index + 1}</div>
-                    <img
-                      src={`https://ui-avatars.com/api/?name=${student.name}&background=random&color=fff&size=128`}
-                      className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex-shrink-0"
-                      alt={student.name}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-sm sm:text-base truncate">{student.name}</div>
-                      <div className="text-xs muted truncate">{student.subject}</div>
+                  <div key={index} className="card-strong p-4 rounded-xl flex items-center justify-between group hover:bg-white/[0.03] transition-all duration-300">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-purple-500/15 border border-purple-500/30 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <span className="text-base font-bold text-purple-400">#{index + 1}</span>
+                      </div>
+                      <div>
+                        <p className="text-xs muted">Rank {index + 1}</p>
+                        <p className="text-lg font-bold text-purple-400">{student.name}</p>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1 text-orange-400 font-bold text-xs sm:text-sm">
-                      <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <div className="flex items-center gap-1 text-xs font-bold">
+                      <svg className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                       </svg>
-                      {student.score}
+                      <span className="text-yellow-400">{student.score}</span>
                     </div>
                   </div>
                 )) : (
-                  <div className="text-center text-muted py-4">
-                    No student data available
+                  <div className="card-strong p-8 text-center rounded-xl">
+                    <div className="inline-block p-4 bg-purple-500/10 rounded-full mb-3">
+                      <svg className="w-8 h-8 text-purple-400 opacity-50" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                    </div>
+                    <p className="text-muted font-medium">No student data available</p>
                   </div>
                 )}
               </div>
@@ -327,71 +362,144 @@ const DashboardTeachers = () => {
           </div>
 
           {/* Courses Section */}
-          <div className="card-strong p-5 sm:p-6 rounded-2xl">
-            <div className="mb-4 sm:mb-6">
-              <h2 className="text-xl sm:text-2xl font-bold mb-1">Courses</h2>
-              <p className="text-xs sm:text-sm muted">Your recently created courses</p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+          <section
+            className="
+              rounded-2xl
+              border-2 border-[var(--border-strong)]
+              card
+              shadow-lg
+              p-5 sm:p-6 lg:p-8
+            "
+          >
+            <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-6 sm:mb-8 pb-4 border-b-2 border-[var(--border-subtle)]">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-xl bg-blue-500/10 border-2 border-blue-500/30 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13M3 6.253C4.168 5.477 5.754 5 7.5 5S10.832 5.477 12 6.253M12 6.253C13.168 5.477 14.754 5 16.5 5S19.832 5.477 21 6.253M3 19.253C4.168 18.477 5.754 18 7.5 18S10.832 18.477 12 19.253M12 19.253C13.168 18.477 14.754 18 16.5 18S19.832 18.477 21 19.253" />
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-[var(--text-primary)] truncate">
+                    Courses
+                  </h2>
+                  <p className="text-xs sm:text-sm text-[var(--text-muted)] mt-0.5 truncate">
+                    Your recently created courses
+                  </p>
+                </div>
+              </div>
+              <span className="text-xs sm:text-sm font-semibold text-[var(--text-secondary)] px-3 py-1.5 rounded-lg bg-[var(--input-bg)] border border-[var(--border-color)] whitespace-nowrap">
+                {courses.length} total
+              </span>
+            </header>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
               {courses.length > 0 ? courses.map((course, index) => (
                 <Link
                   key={course.id}
                   to={`/teacher/courses/${course.id}/manage`}
-                  className="card p-4 sm:p-5 rounded-xl hover:scale-[1.02] transition-all duration-200"
+                  className="
+                    group relative flex flex-col rounded-xl
+                    border-2 border-[var(--border-color)]
+                    card-strong
+                    p-4 sm:p-5
+                    transition-all duration-300
+                    hover:-translate-y-1
+                    hover:shadow-lg
+                    hover:border-blue-500/30
+                  "
                 >
-                  <div className="flex justify-between items-start mb-3 sm:mb-4">
-                    <h3 className="font-bold text-sm sm:text-base flex-1 pr-2 line-clamp-2">{course.name}</h3>
-                    <div className={`px-2 py-1 rounded text-xs font-semibold ${course.active
-                      ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                      : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
-                    }`}>
+                  <h3 className="text-sm sm:text-base font-bold leading-snug line-clamp-2 mb-1.5 text-[var(--text-primary)] group-hover:text-blue-400 transition-colors duration-300">
+                    {course.name}
+                  </h3>
+                  <div className="flex items-center justify-between text-xs mb-3 gap-2 sm:mb-4">
+                    <span className="text-[var(--text-muted)] flex items-center gap-1.5 truncate">
+                      <svg className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13M3 6.253C4.168 5.477 5.754 5 7.5 5S10.832 5.477 12 6.253" />
+                      </svg>
+                      <span className="truncate">{course.modules_count} modules</span>
+                    </span>
+                    <span
+                      className={`px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg border-2 text-[10px] sm:text-xs font-bold whitespace-nowrap flex-shrink-0 ${
+                        course.active
+                          ? 'border-emerald-500/50 text-emerald-400 bg-emerald-500/10'
+                          : 'border-orange-500/50 text-orange-400 bg-orange-500/10'
+                      }`}
+                    >
                       {course.active ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                  <div className="mb-4 sm:mb-5">
+                    <div className="flex justify-between text-[10px] sm:text-[11px] mb-2">
+                      <span className="text-[var(--text-muted)] font-medium">
+                        Completion Rate
+                      </span>
+                      <span className="text-[var(--text-primary)] font-bold">
+                        {course.completion_rate ?? 0}%
+                      </span>
+                    </div>
+                    <div className="h-2 rounded-full bg-[var(--input-bg)] border border-[var(--border-color)] overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-700 bg-blue-500"
+                        style={{ width: `${course.completion_rate ?? 0}%` }}
+                      />
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs muted mb-3 sm:mb-4">
-                    <div className="flex items-center gap-1">
-                      <svg className="w-3 sm:w-3.5 h-3 sm:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      {course.modules_count} modules
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <svg className="w-3 sm:w-3.5 h-3 sm:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+                  <div className="flex justify-between text-[10px] sm:text-[11px] text-[var(--text-muted)] mb-4 sm:mb-5 gap-2">
+                    <span className="truncate flex items-center gap-1">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857" />
                       </svg>
                       {course.students_count} students
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-xs mb-2">
-                      <span className="muted">Completion Rate</span>
-                      <span className="font-semibold">{course.completion_rate ?? 0}%</span>
-                    </div>
-                    <div className="w-full bg-white/10 rounded-full h-2">
-                      <div className="h-2 rounded-full bg-cyan-500" style={{ width: `${course.completion_rate ?? 0}%` }}></div>
-                    </div>
+                    </span>
                   </div>
                 </Link>
               )) : (
-                <div className="col-span-4 card p-6 text-center text-muted">
-                  <p>No courses yet. Create your first course!</p>
+                <div className="
+                  col-span-full rounded-xl
+                  border-2 border-dashed border-[var(--border-color)]
+                  card-strong
+                  py-16 text-center
+                ">
+                  <div className="inline-block p-5 bg-blue-500/10 rounded-full mb-4">
+                    <svg className="w-12 h-12 text-blue-400 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13M3 6.253C4.168 5.477 5.754 5 7.5 5S10.832 5.477 12 6.253M12 6.253C13.168 5.477 14.754 5 16.5 5S19.832 5.477 21 6.253M3 19.253C4.168 18.477 5.754 18 7.5 18S10.832 18.477 12 19.253M12 19.253C13.168 18.477 14.754 18 16.5 18S19.832 18.477 21 19.253" />
+                    </svg>
+                  </div>
+                  <p className="text-base text-[var(--text-secondary)] mb-4 font-medium">
+                    No courses yet
+                  </p>
+                  <p className="text-sm text-[var(--text-muted)]">
+                    Create your first course to get started!
+                  </p>
                 </div>
               )}
               {/* Create New Course Card */}
               <Link
                 to="/teacher/add-course"
-                className="card p-4 sm:p-5 rounded-xl hover:scale-[1.02] transition-all duration-200 flex flex-col items-center justify-center text-center min-h-[180px] sm:min-h-[200px] cursor-pointer group"
+                className="
+                  group relative flex flex-col rounded-xl
+                  border-2 border-dashed border-[var(--border-color)]
+                  card-strong
+                  p-4 sm:p-5
+                  transition-all duration-300
+                  hover:-translate-y-1
+                  hover:shadow-lg
+                  hover:border-blue-500/40
+                  hover:bg-blue-500/5
+                  items-center justify-center text-center
+                  min-h-[180px] sm:min-h-[200px]
+                  cursor-pointer
+                "
               >
-                <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-[var(--input-bg)] border-2 border-dashed border-[var(--border-color)] flex items-center justify-center mb-3 sm:mb-4 group-hover:border-[var(--border-subtle)] transition">
-                  <svg className="w-6 h-6 sm:w-8 sm:h-8 text-[var(--text-muted)] group-hover:text-[var(--text-secondary)] transition" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-blue-500/10 border-2 border-blue-500/30 flex items-center justify-center mb-3 sm:mb-4 group-hover:border-blue-500/50 group-hover:scale-110 transition-all duration-300">
+                  <svg className="w-6 h-6 sm:w-8 sm:h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                   </svg>
                 </div>
-                <h3 className="font-bold text-sm sm:text-base mb-1 sm:mb-2">Create New Course</h3>
-                <p className="text-xs muted">Add details, set time limits and more</p>
+                <h3 className="font-bold text-sm sm:text-base mb-1 sm:mb-2 group-hover:text-blue-400 transition-colors duration-300">Create New Course</h3>
+                <p className="text-xs text-[var(--text-muted)]">Add details, set time limits and more</p>
               </Link>
             </div>
-          </div>
+          </section>
         </div>
       </main>
     </div>

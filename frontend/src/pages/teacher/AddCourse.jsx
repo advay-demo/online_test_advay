@@ -197,14 +197,7 @@ const AddCourse = () => {
                                         </p>
                                     </div>
                                 </div>
-                                <button
-                                    type="button"
-                                    className="bg-orange-600 text-white px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg font-semibold hover:bg-orange-700 active:scale-95 transition text-xs sm:text-sm whitespace-nowrap flex-shrink-0 opacity-60 cursor-not-allowed"
-                                    disabled
-                                >
-                                    <span className="hidden sm:inline">Save Draft</span>
-                                    <span className="sm:hidden">Save Draft</span>
-                                </button>
+                                
                             </div>
                             {/* Form Content */}
                             <form onSubmit={handleSubmit}>
