@@ -1,4 +1,3 @@
-// Updated TeacherQuizzes.jsx
 import React, { useState, useEffect } from 'react';
 import TeacherSidebar from '../../components/layout/TeacherSidebar';
 import Header from '../../components/layout/Header';
@@ -114,9 +113,9 @@ const TeacherQuizzes = () => {
             <main className="flex-1 w-full lg:w-auto">
                 <Header isAuth />
                 <div className="p-4 sm:p-6 lg:p-8">
-                    <div className="mb-4 sm:mb-6 lg:mb-8">
-                        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-1 sm:mb-2">Quizzes</h1>
-                        <p className="text-xs sm:text-sm muted">Manage and monitor all your quizzes and exercises</p>
+                    <div className="mb-6 lg:mb-8">
+                        <h1 className="text-2xl sm:text-3xl font-bold mb-2">Quizzes</h1>
+                        <p className="text-sm muted">Manage and monitor all your quizzes and exercises</p>
                     </div>
                     {gradingQuiz && gradingCourse ? (
                         <QuizGradingPanel
