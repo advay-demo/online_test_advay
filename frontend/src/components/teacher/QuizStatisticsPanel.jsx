@@ -13,26 +13,26 @@ const QuizStatisticsPanel = ({
   const { quiz, total_attempts_count, statistics, message } = statsData;
 
   return (
-    <div className="card-strong p-4 sm:p-5 lg:p-6 min-h-[600px]">
+    <div className="card-strong p-5 sm:p-6 min-h-[600px] border-2 border-[var(--border-strong)] rounded-2xl shadow-lg">
       {/* Header */}
-      <div className="mb-6 flex items-start gap-4">
+      <div className="mb-6 flex items-start gap-4 pb-5 border-b-2 border-[var(--border-subtle)]">
         <button
           onClick={onBack}
-          className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[var(--input-bg)] border border-[var(--border-color)] flex items-center justify-center hover:bg-[var(--border-subtle)] transition flex-shrink-0"
+          className="w-10 h-10 rounded-xl bg-[var(--input-bg)] border-2 border-[var(--border-strong)] flex items-center justify-center hover:border-blue-500/40 hover:bg-blue-500/5 transition-all duration-300 flex-shrink-0 active:scale-95"
         >
           <FaChevronLeft className="w-4 h-4" />
         </button>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2">
             <h2 className="text-xl sm:text-2xl font-bold line-clamp-2">Attempt {currentAttempt}</h2>
-            <span className="text-[10px] px-2 py-0.5 rounded border bg-green-500/20 text-green-400 border-green-500/30 uppercase font-bold tracking-wider whitespace-nowrap">
+            <span className="text-[10px] px-2.5 py-1 rounded-lg border-2 bg-emerald-500/10 text-emerald-400 border-emerald-500/30 uppercase font-bold tracking-wider whitespace-nowrap">
               Statistics
             </span>
           </div>
           <div className="flex flex-wrap gap-4 text-xs muted">
-            
             <div className="flex items-center gap-1.5">
-              <span>Total Participants: {total_attempts_count}</span>
+              <FaListOl className="w-3.5 h-3.5" />
+              <span className="font-medium">Total Participants: {total_attempts_count}</span>
             </div>
           </div>
         </div>
@@ -40,19 +40,18 @@ const QuizStatisticsPanel = ({
 
       {/* Attempt Tabs */}
       {attempts && attempts.length > 0 && (
-        <div className="flex bg-black/20 p-1 rounded-lg overflow-x-auto scrollbar-hide mb-6">
+        <div className="flex bg-[var(--input-bg)] p-1.5 rounded-xl overflow-x-auto scrollbar-hide mb-6 border-2 border-[var(--border-strong)]">
           {[...attempts]
             .sort((a, b) => a.attempt_number - b.attempt_number)
             .map((attempt) => (
               <button
                 key={attempt.id}
                 onClick={() => onAttemptChange(attempt)}
-                className={`flex-1 sm:flex-initial px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 whitespace-nowrap
-                  ${currentAttempt === attempt.attempt_number
-                    ? 'bg-white/10 text-white shadow-sm'
-                    : 'text-muted hover:text-white hover:bg-white/5'
-                  }`}
-                style={{ transition: 'all 0.15s' }}
+                className={`flex-1 sm:flex-initial px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 whitespace-nowrap ${
+                  currentAttempt === attempt.attempt_number
+                    ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/5'
+                }`}
                 disabled={loading}
               >
                 Attempt {attempt.attempt_number}
@@ -62,36 +61,44 @@ const QuizStatisticsPanel = ({
       )}
 
       {/* Statistics Table or Message */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto rounded-xl border-2 border-[var(--border-strong)]">
         {loading ? (
-          <div className="text-center py-8 text-blue-400 font-semibold text-base">Loading statistics...</div>
+          <div className="text-center py-12 text-blue-400 font-bold text-base">Loading statistics...</div>
         ) : message ? (
-          <div className="text-center py-8 text-yellow-400 font-semibold text-base">{message}</div>
+          <div className="text-center py-12 text-yellow-400 font-bold text-base">{message}</div>
         ) : (
-          <table className="min-w-full bg-black/20 rounded-lg border border-white/5 text-xs">
+          <table className="min-w-full text-sm">
             <thead>
-              <tr className="bg-blue-950/80 text-blue-300">
-                <th className="px-3 py-2">#</th>
-                <th className="px-3 py-2">Question</th>
-                <th className="px-3 py-2">Type</th>
-                <th className="px-3 py-2">Points</th>
-                <th className="px-3 py-2">Total Attempts</th>
-                <th className="px-3 py-2">Correct Attempts</th>
-                <th className="px-3 py-2">% Correct</th>
+              <tr className="bg-blue-500/10 border-b-2 border-[var(--border-strong)]">
+                <th className="px-4 py-3 text-left font-bold text-blue-400">#</th>
+                <th className="px-4 py-3 text-left font-bold text-blue-400">Question</th>
+                <th className="px-4 py-3 text-center font-bold text-blue-400">Type</th>
+                <th className="px-4 py-3 text-center font-bold text-blue-400">Points</th>
+                <th className="px-4 py-3 text-center font-bold text-blue-400">Total Attempts</th>
+                <th className="px-4 py-3 text-center font-bold text-blue-400">Correct Attempts</th>
+                <th className="px-4 py-3 text-center font-bold text-blue-400">% Correct</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="bg-[var(--card-bg)]">
               {statistics && statistics.length > 0 ? (
                 statistics.map((q, idx) => (
-                  <tr key={q.question.id} className="border-b border-white/10">
-                    <td className="px-3 py-2 text-center">{idx + 1}</td>
-                    <td className="px-3 py-2">{q.question.summary}</td>
-                    <td className="px-3 py-2 text-center">{q.question.type}</td>
-                    <td className="px-3 py-2 text-center">{q.question.points}</td>
-                    <td className="px-3 py-2 text-center">{q.total_attempts}</td>
-                    <td className="px-3 py-2 text-center">{q.correct_attempts}</td>
-                    <td className="px-3 py-2 text-center">
-                      <span className={q.correct_percentage > 0 ? "text-green-400" : "text-red-400"}>
+                  <tr key={q.question.id} className="border-b border-[var(--border-subtle)] hover:bg-white/[0.02] transition-colors">
+                    <td className="px-4 py-3 text-center font-semibold">{idx + 1}</td>
+                    <td className="px-4 py-3 font-medium">{q.question.summary}</td>
+                    <td className="px-4 py-3 text-center">
+                      <span className="px-2 py-1 rounded-lg bg-blue-500/10 text-blue-400 text-xs font-semibold">
+                        {q.question.type}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center font-bold text-blue-400">{q.question.points}</td>
+                    <td className="px-4 py-3 text-center font-semibold">{q.total_attempts}</td>
+                    <td className="px-4 py-3 text-center font-semibold">{q.correct_attempts}</td>
+                    <td className="px-4 py-3 text-center">
+                      <span className={`px-2.5 py-1 rounded-lg font-bold text-sm ${
+                        q.correct_percentage > 70 ? "bg-emerald-500/20 text-emerald-400" :
+                        q.correct_percentage > 40 ? "bg-yellow-500/20 text-yellow-400" :
+                        "bg-red-500/20 text-red-400"
+                      }`}>
                         {q.correct_percentage}%
                       </span>
                     </td>
@@ -99,7 +106,7 @@ const QuizStatisticsPanel = ({
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="text-center py-4 text-muted">No statistics available for this attempt.</td>
+                  <td colSpan={7} className="text-center py-8 text-muted font-medium">No statistics available for this attempt.</td>
                 </tr>
               )}
             </tbody>

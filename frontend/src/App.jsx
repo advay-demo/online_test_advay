@@ -69,7 +69,7 @@ function App() {
         {/* Teacher Routes */}
         <Route element={<PrivateRoute />}>
           <Route path="/teacher/dashboard" element={<DashboardTeachers />} />
-          <Route path="/teacher/add-course" element={<AddCourse />} />
+
           <Route path="/teacher/grading-systems" element={<GradingSystems />} />
           <Route path="/teacher/courses" element={<Courses />} />
           <Route path="/teacher/courses/:courseId/manage" element={<ManageCourse />} />

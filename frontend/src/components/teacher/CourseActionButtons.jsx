@@ -25,17 +25,6 @@ const CourseActionButtons = ({ activeButton = null }) => {
         </svg>
       ),
     },
-    {
-      label: 'Create New Course',
-      shortLabel: 'New Course',
-      path: '/teacher/add-course',
-      type: 'create',
-      icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-        </svg>
-      ),
-    },
   ];
 
   return (

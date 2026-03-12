@@ -168,35 +168,35 @@ const QuizGradingPanel = ({ quiz, course, onBack }) => {
     return (
         <div className="space-y-4">
             {/* Main Card */}
-            <div className="card-strong p-4 sm:p-5 lg:p-6 min-h-[600px]">
+            <div className="card-strong p-5 sm:p-6 min-h-[600px] border-2 border-[var(--border-strong)] shadow-lg rounded-2xl">
                 {/* Header Section */}
-                <div className="mb-6">
+                <div className="mb-6 pb-5 border-b-2 border-[var(--border-subtle)]">
                     <div className="flex items-start gap-4 mb-4">
                         <button
                             onClick={onBack}
-                            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[var(--input-bg)] border border-[var(--border-color)] flex items-center justify-center hover:bg-[var(--border-subtle)] transition flex-shrink-0"
+                            className="w-10 h-10 rounded-xl bg-[var(--input-bg)] border-2 border-[var(--border-strong)] flex items-center justify-center hover:border-blue-500/40 hover:bg-blue-500/5 transition-all duration-300 flex-shrink-0 active:scale-95"
                         >
                             <FaChevronLeft className="w-4 h-4" />
                         </button>
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-2">
                                 <h2 className="text-xl sm:text-2xl font-bold line-clamp-2">{quiz.description || quiz.name}</h2>
-                                <span className={`text-[10px] px-2 py-0.5 rounded border ${
+                                <span className={`text-[10px] px-2.5 py-1 rounded-lg border-2 uppercase font-bold tracking-wider whitespace-nowrap ${
                                     quiz.is_exercise 
                                         ? 'bg-purple-500/20 text-purple-400 border-purple-500/30' 
                                         : 'bg-blue-500/20 text-blue-400 border-blue-500/30'
-                                } uppercase font-bold tracking-wider whitespace-nowrap`}>
+                                }`}>
                                     {quiz.is_exercise ? 'Exercise' : 'Quiz'}
                                 </span>
                             </div>
                             <div className="flex flex-wrap gap-4 text-xs muted">
                                 <div className="flex items-center gap-1.5">
-                                    <FaUser className="w-3 h-3" />
-                                    <span>{course.course_name}</span>
+                                    <FaUser className="w-3.5 h-3.5" />
+                                    <span className="font-medium">{course.course_name}</span>
                                 </div>
                                 <div className="flex items-center gap-1.5">
-                                    <FaListOl className="w-3 h-3" />
-                                    <span>{quiz.module_name}</span>
+                                    <FaListOl className="w-3.5 h-3.5" />
+                                    <span className="font-medium">{quiz.module_name}</span>
                                 </div>
                                 
                                 {quiz.start_date && (
@@ -217,25 +217,25 @@ const QuizGradingPanel = ({ quiz, course, onBack }) => {
                         {/* Selected User Details (left, 1/3 width) */}
                         <div className="w-full md:w-1/3 lg:w-1/3">
                             {selectedUser ? (
-                                <div className="card p-4 flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
-                                        <FaUser className="w-6 h-6 text-blue-400" />
+                                <div className="card p-4 rounded-xl border-2 border-blue-500/30 flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center border-2 border-blue-500/30">
+                                        <FaUser className="w-6 h-6 text-blue-500" />
                                     </div>
                                     <div>
-                                        <p className="font-semibold text-base text-blue-400 mb-1">
+                                        <p className="font-bold text-base text-blue-600 dark:text-blue-400 mb-1">
                                             {selectedUser.first_name} {selectedUser.last_name}
                                         </p>
-                                        <p className="text-xs text-muted">{selectedUser.username} . {selectedUser.email}</p>
+                                        <p className="text-xs text-[var(--text-muted)]">{selectedUser.username} . {selectedUser.email}</p>
                                     </div>
                                 </div>
                             ) : (
-                                <div className="card p-4 flex items-center gap-4 opacity-60">
-                                    <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center border border-blue-500/10">
-                                        <FaUser className="w-6 h-6 text-muted" />
+                                <div className="card p-4 rounded-xl border-2 border-[var(--border-color)] flex items-center gap-4 opacity-60">
+                                    <div className="w-12 h-12 rounded-xl bg-[var(--input-bg)] flex items-center justify-center border-2 border-[var(--border-color)]">
+                                        <FaUser className="w-6 h-6 text-[var(--text-muted)]" />
                                     </div>
                                     <div>
-                                        <p className="font-semibold text-base text-muted mb-1">No user selected</p>
-                                        <p className="text-xs text-muted">Select a user to view details</p>
+                                        <p className="font-semibold text-base text-[var(--text-muted)] mb-1">No user selected</p>
+                                        <p className="text-xs text-[var(--text-muted)]">Select a user to view details</p>
                                     </div>
                                 </div>
                             )}
@@ -259,7 +259,7 @@ const QuizGradingPanel = ({ quiz, course, onBack }) => {
                                         setSelectedUser(user || null);
                                         setSelectedAttempt(null);
                                     }}
-                                    className="w-full pl-4 pr-10 py-2 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg text-sm font-medium text-white focus:outline-none focus:border-blue-500/50 transition-colors appearance-none"
+                                    className="w-full pl-4 pr-10 py-2 bg-[var(--input-bg)] border-2 border-[var(--border-strong)] rounded-xl text-sm font-medium text-[var(--text-primary)] focus:outline-none focus:border-blue-500/50 transition-colors appearance-none"
                                 >
                                     <option value="">All Users ({quizUsersData?.users?.length || 0})</option>
                                     {(quizUsersData?.users || []).map(user => (
@@ -268,7 +268,7 @@ const QuizGradingPanel = ({ quiz, course, onBack }) => {
                                         </option>
                                     ))}
                                 </select>
-                                <span className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-blue-400">
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-blue-600 dark:text-blue-400">
                                     <FaUser className="w-4 h-4" />
                                 </span>
                             </div>
@@ -277,19 +277,18 @@ const QuizGradingPanel = ({ quiz, course, onBack }) => {
                     {/* Attempt Filter (only show when user is selected) */}
                     {selectedUser && userAttemptsData && (
                         <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3 sm:gap-4 my-6">
-                            <div className="flex bg-black/20 p-1 rounded-lg overflow-x-auto scrollbar-hide">
+                            <div className="flex bg-[var(--input-bg)] p-1.5 rounded-xl overflow-x-auto scrollbar-hide border-2 border-[var(--border-strong)]">
                                 {[...userAttemptsData.attempts]
                                     .sort((a, b) => a.attempt_number - b.attempt_number)
                                     .map((attempt) => (
                                         <button
                                             key={attempt.id}
                                             onClick={() => setSelectedAttempt(attempt)}
-                                            className={`flex-1 sm:flex-initial px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 whitespace-nowrap
-                                                ${selectedAttempt?.id === attempt.id
-                                                    ? 'bg-white/10 text-white shadow-sm'
-                                                    : 'text-muted hover:text-white hover:bg-white/5'
-                                                }`}
-                                            style={{ transition: 'all 0.15s' }}
+                                            className={`flex-1 sm:flex-initial px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 whitespace-nowrap ${
+                                                selectedAttempt?.id === attempt.id
+                                                    ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg'
+                                                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--card-bg)]'
+                                            }`}
                                         >
                                             Attempt {attempt.attempt_number}
                                         </button>
@@ -316,7 +315,7 @@ const QuizGradingPanel = ({ quiz, course, onBack }) => {
 
                     {/* Error State */}
                     {(error.quizUsers || error.userAttempts || error.attemptGrading) && (
-                        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-red-300">
+                        <div className="bg-red-500/10 border-2 border-red-500/40 rounded-xl p-4 text-red-600 dark:text-red-400 font-semibold">
                             {error.quizUsers || error.userAttempts || error.attemptGrading}
                         </div>
                     )}
@@ -327,8 +326,8 @@ const QuizGradingPanel = ({ quiz, course, onBack }) => {
                     {selectedUser && selectedAttempt && !loading.attemptGrading && !error.attemptGrading && attemptGradingData && (
                         <div>
                             <div className="flex items-center justify-between mb-3">
-                                <h3 className="text-sm sm:text-base font-semibold flex items-center gap-2">
-                                    <FaCheckCircle className="w-4 h-4 text-green-400" />
+                                <h3 className="text-base font-bold flex items-center gap-2">
+                                    <FaCheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                                     Grading Details
                                 </h3>
                                 <div className="flex items-center gap-2">
@@ -348,30 +347,30 @@ const QuizGradingPanel = ({ quiz, course, onBack }) => {
                                     </button>
                                 </div>
                             </div>
-                            <p className="text-xs text-blue-300 mb-4">
-                                <strong>Note:</strong> Only answered questions can be marked. Unanswered questions cannot be externally graded.
+                            <p className="text-sm text-blue-600 dark:text-blue-400 mb-4 font-medium">
+                                <strong className="font-bold">Note:</strong> Only answered questions can be marked. Unanswered questions cannot be externally graded.
                             </p>
                             <div className="space-y-4">
                                 {(attemptGradingData?.papers || []).map(paper => (
-                                    <div key={paper.id} className="card p-4">
-                                        <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/10">
+                                    <div key={paper.id} className="card-strong p-5 rounded-xl border-2 border-[var(--border-strong)]">
+                                        <div className="flex items-center justify-between mb-4 pb-4 border-b-2 border-[var(--border-subtle)]">
                                             <div>
-                                                <h4 className="font-semibold text-green-400">Paper #{paper.id}</h4>
-                                                <p className="text-xs text-muted mt-1">Status: {paper.status}</p>
+                                                <h4 className="font-bold text-lg text-emerald-600 dark:text-emerald-400">Paper #{paper.id}</h4>
+                                                <p className="text-sm text-[var(--text-muted)] mt-1 font-medium">Status: <span className="font-semibold text-[var(--text-primary)]">{paper.status}</span></p>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-sm font-semibold">
-                                                    <span className="text-green-400">{paper.marks_obtained || 0}</span>
-                                                    <span className="text-muted"> / {paper.total_marks || 0}</span>
+                                                <p className="text-base font-bold">
+                                                    <span className="text-emerald-600 dark:text-emerald-400">{paper.marks_obtained || 0}</span>
+                                                    <span className="text-[var(--text-muted)]"> / {paper.total_marks || 0}</span>
                                                 </p>
-                                                <p className="text-xs text-muted mt-1">{paper.percent || 0}%</p>
+                                                <p className="text-sm text-[var(--text-muted)] mt-1 font-semibold">{paper.percent || 0}%</p>
                                             </div>
                                         </div>
                                         <div className="space-y-3">  
                                             {(paper.questions || []).map((q, idx) => {
                                                 const { question } = q;
                                                 const type = (question.type || "").toLowerCase();
-                                                let correctDisplay = <span className="text-muted">N/A</span>;
+                                                let correctDisplay = <span className="text-[var(--text-muted)]">N/A</span>;
 
                                                 if (type === "mcq" || type === "mcc") {
                                                     // MCQ: show correct options
@@ -383,12 +382,12 @@ const QuizGradingPanel = ({ quiz, course, onBack }) => {
                                                         correctDisplay = (
                                                             <ul className="list-disc ml-4">
                                                                 {correctOptions.map((opt, i) => (
-                                                                    <li key={i} className="text-green-300">{opt}</li>
+                                                                    <li key={i} className="text-emerald-600 dark:text-emerald-400 font-medium">{opt}</li>
                                                                 ))}
                                                             </ul>
                                                         );
                                                     } else if (!question.test_cases || question.test_cases.length === 0) {
-                                                        correctDisplay = <span className="text-muted">No choices provided</span>;
+                                                        correctDisplay = <span className="text-[var(--text-muted)]">No choices provided</span>;
                                                     }
                                                 } else if (type === "arrange" || type === "arrangetestcase") {
                                                     // Arrange: show correct order
@@ -399,7 +398,7 @@ const QuizGradingPanel = ({ quiz, course, onBack }) => {
                                                         correctDisplay = (
                                                             <ol className="list-decimal ml-4">
                                                                 {arrangeOrder.map((step, i) => (
-                                                                    <li key={i} className="text-green-300">{step}</li>
+                                                                    <li key={i} className="text-emerald-600 dark:text-emerald-400 font-medium">{step}</li>
                                                                 ))}
                                                             </ol>
                                                         );
@@ -413,7 +412,7 @@ const QuizGradingPanel = ({ quiz, course, onBack }) => {
                                                         correctDisplay = (
                                                             <ul className="list-disc ml-4">
                                                                 {stdioCases.map((desc, i) => (
-                                                                    <li key={i} className="text-green-300">{desc}</li>
+                                                                    <li key={i} className="text-emerald-600 dark:text-emerald-400 font-medium">{desc}</li>
                                                                 ))}
                                                             </ul>
                                                         );
@@ -426,7 +425,7 @@ const QuizGradingPanel = ({ quiz, course, onBack }) => {
                                                         .filter(Boolean);
                                                     if (hookCodes.length > 0) {
                                                         correctDisplay = (
-                                                            <pre className="bg-black/30 text-green-300 p-2 rounded">{hookCodes.join('\n\n')}</pre>
+                                                            <pre className="bg-[var(--input-bg)] text-emerald-600 dark:text-emerald-400 p-3 rounded-lg border-2 border-[var(--border-strong)] font-mono text-xs">{hookCodes.join('\n\n')}</pre>
                                                         );
                                                     }
                                                 }
@@ -439,7 +438,7 @@ const QuizGradingPanel = ({ quiz, course, onBack }) => {
                                                         correctDisplay = (
                                                             <ul className="list-disc ml-4">
                                                                 {testCaseDescriptions.map((desc, i) => (
-                                                                    <li key={i} className="text-green-300">
+                                                                    <li key={i} className="text-emerald-600 dark:text-emerald-400 font-medium">
                                                                         <span dangerouslySetInnerHTML={{ __html: desc }} />
                                                                     </li>
                                                                 ))}
@@ -458,11 +457,11 @@ const QuizGradingPanel = ({ quiz, course, onBack }) => {
                                                 }
 
                                                 return (
-                                                    <div key={question.id} className="bg-black/20 rounded-lg p-3 border border-white/5">
+                                                    <div key={question.id} className="card p-4 rounded-xl border-l-4 border-l-blue-500 hover:shadow-md transition-all">
                                                         <div className="flex items-start justify-between mb-2">
                                                             <div className="flex-1">
-                                                                <div className="font-medium text-blue-300 mb-2 flex items-start gap-2">
-                                                                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center text-xs">
+                                                                <div className="font-semibold text-blue-600 dark:text-blue-400 mb-3 flex items-start gap-2">
+                                                                    <span className="flex-shrink-0 w-7 h-7 rounded-lg bg-blue-500/20 border-2 border-blue-500/30 flex items-center justify-center text-sm font-bold text-blue-600 dark:text-blue-400">
                                                                         {idx + 1}
                                                                     </span>
                                                                     <span dangerouslySetInnerHTML={{ __html: question.summary }} />
@@ -472,16 +471,16 @@ const QuizGradingPanel = ({ quiz, course, onBack }) => {
                                                             <div className="relative">
                                                                 <button
                                                                     onClick={e => handleMenuClick(question.id, e)}
-                                                                    className="p-2 rounded-full hover:bg-white/10 transition"
+                                                                    className="p-2 rounded-lg hover:bg-[var(--input-bg)] border-2 border-[var(--border-color)] hover:border-blue-500/40 transition-all"
                                                                     aria-label="Question Actions"
                                                                 >
-                                                                    <FaEllipsisV className="w-4 h-4 text-blue-300" />
+                                                                    <FaEllipsisV className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                                                                 </button>
                                                                 {openMenuQuestionId === question.id && (
-                                                                    <div className="absolute right-0 mt-2 z-50 w-32 bg-blue-950/90 border border-[var(--border-color)] rounded-lg shadow-lg py-1 animate-fadeIn">
+                                                                    <div className="absolute right-0 mt-2 z-50 w-36 bg-[var(--card-strong-bg)] border-2 border-[var(--border-strong)] rounded-xl shadow-2xl py-1.5 animate-fadeIn">
                                                                         <button
                                                                             onClick={() => handleRegrade(question, paper)}
-                                                                            className="w-full text-left px-4 py-2 text-xs hover:bg-white/5 transition-colors text-blue-400"
+                                                                            className="w-full text-left px-4 py-2.5 text-sm font-semibold hover:bg-blue-500/10 transition-colors text-blue-600 dark:text-blue-400"
                                                                         >
                                                                             Regrade
                                                                         </button>
@@ -489,67 +488,67 @@ const QuizGradingPanel = ({ quiz, course, onBack }) => {
                                                                 )}
                                                             </div>
                                                         </div>
-                                                        <div className="text-xs text-gray-300 mb-3 ml-8" dangerouslySetInnerHTML={{ __html: question.description }} />
+                                                        <div className="text-sm text-[var(--text-secondary)] mb-3 ml-8" dangerouslySetInnerHTML={{ __html: question.description }} />
                                                         
-                                                        <div className="ml-8 space-y-2 text-xs">
+                                                        <div className="ml-9 space-y-3 text-sm">
                                                             <div className="flex items-start gap-2">
-                                                                <span className="font-semibold text-muted min-w-[60px]">Answer:</span>
-                                                                <span className={q.answer?.answer_content ? 'text-gray-300' : 'text-red-400'}>
+                                                                <span className="font-bold text-[var(--text-muted)] min-w-[70px]">Answer:</span>
+                                                                <span className={q.answer?.answer_content ? 'text-[var(--text-primary)] font-medium' : 'text-red-600 dark:text-red-400 font-semibold'}>
                                                                     {q.answer?.answer_content || 'Not answered'}
                                                                 </span>
                                                             </div>
                                                             <div className="flex items-start gap-2">
-                                                                <span className="font-semibold text-muted min-w-[60px]">Correct:</span>
-                                                                <span className="text-green-300">{correctDisplay}</span>
+                                                                <span className="font-bold text-[var(--text-muted)] min-w-[70px]">Correct:</span>
+                                                                <span className="text-emerald-600 dark:text-emerald-400 font-medium">{correctDisplay}</span>
                                                             </div>
                                                             <div className="flex items-center gap-2">
-                                                                <span className="font-semibold text-muted min-w-[60px]">Marks:</span>
+                                                                <span className="font-bold text-[var(--text-muted)] min-w-[70px]">Marks:</span>
                                                                 <span>
-                                                                    <span className="text-green-400 font-semibold">{q.answer?.marks ?? 0}</span>
-                                                                    <span className="text-muted"> / {question.points}</span>
+                                                                    <span className="text-emerald-600 dark:text-emerald-400 font-bold">{q.answer?.marks ?? 0}</span>
+                                                                    <span className="text-[var(--text-muted)] font-semibold"> / {question.points}</span>
                                                                 </span>
                                                             </div>
                                                             <div className="flex items-center gap-2 justify-between">
                                                                 <div className="flex items-center gap-2">
-                                                                    <span className="font-semibold text-muted min-w-[60px]">Status:</span>
+                                                                    <span className="font-bold text-[var(--text-muted)] min-w-[70px]">Status:</span>
                                                                     {q.answer?.correct ? (
-                                                                        <span className="text-green-400 flex items-center gap-1">
-                                                                            <FaCheckCircle className="w-3 h-3" /> Correct
+                                                                        <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 font-semibold">
+                                                                            <FaCheckCircle className="w-3.5 h-3.5" /> Correct
                                                                         </span>
                                                                     ) : q.answer?.skipped ? (
-                                                                        <span className="text-yellow-400">Skipped</span>
+                                                                        <span className="text-yellow-600 dark:text-yellow-400 font-semibold">Skipped</span>
                                                                     ) : (
-                                                                        <span className="text-red-400">Incorrect</span>
+                                                                        <span className="text-red-600 dark:text-red-400 font-semibold">Incorrect</span>
                                                                     )}
                                                                 </div>
                                                                 {/* Marks input field */}
                                                                 {q.answer?.answer_content && (
-                                                                    <div className="hidden lg:flex items-center gap-1 ">
-                                                                        <span className="font-semibold text-muted">Marks:</span>
+                                                                    <div className="hidden lg:flex items-center gap-2 ">
+                                                                        <span className="font-bold text-[var(--text-muted)]">Marks:</span>
                                                                         <input
                                                                             type="number"
                                                                             min="0"
                                                                             step="0.1"
-                                                                            className="w-24 px-2 py-1 rounded bg-black/30 border border-blue-500/20 text-green-400 font-semibold focus:outline-none focus:border-blue-400 transition"
+                                                                            className="w-24 px-3 py-1.5 rounded-lg bg-[var(--input-bg)] border-2 border-[var(--border-strong)] text-emerald-600 dark:text-emerald-400 font-bold focus:outline-none focus:border-blue-500/50 transition"
                                                                             value={editedMarks[q.answer?.id] ?? q.answer?.marks ?? 0}
                                                                             onChange={e => setEditedMarks(m => ({ ...m, [q.answer?.id]: e.target.value }))}
                                                                         />
-                                                                        <span className="text-muted">/ {question.points}</span>
+                                                                        <span className="text-[var(--text-muted)] font-semibold">/ {question.points}</span>
                                                                     </div>
                                                                 )}
                                                             </div>
                                                             {q.answer?.answer_content && (
-                                                                <div className="lg:hidden lg:flex items-center gap-1 ">
-                                                                    <span className="font-semibold text-muted">Marks:</span>
+                                                                <div className="lg:hidden lg:flex items-center gap-2 ">
+                                                                    <span className="font-bold text-[var(--text-muted)]">Marks:</span>
                                                                     <input
                                                                         type="number"
                                                                         min="0"
                                                                         
-                                                                        className="w-12 ml-7 px-2 py-1 rounded bg-black/30 border border-blue-500/20 text-green-400 font-semibold focus:outline-none focus:border-blue-400 transition"
+                                                                        className="w-16 ml-7 px-2 py-1.5 rounded-lg bg-[var(--input-bg)] border-2 border-[var(--border-strong)] text-emerald-600 dark:text-emerald-400 font-bold focus:outline-none focus:border-blue-500/50 transition"
                                                                         value={editedMarks[q.answer?.id] ?? q.answer?.marks ?? 0}
                                                                         onChange={e => setEditedMarks(m => ({ ...m, [q.answer?.id]: e.target.value }))}
                                                                     />
-                                                                    <span className="text-muted">/ {question.points}</span>
+                                                                    <span className="text-[var(--text-muted)] font-semibold">/ {question.points}</span>
                                                                 </div>
                                                             )}
                                                         </div>
