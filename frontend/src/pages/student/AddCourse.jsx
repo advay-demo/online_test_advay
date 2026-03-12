@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   FaSearch, FaTimes, FaBook, FaSpinner, FaCheckCircle, 
-  FaInfoCircle, FaUser, FaCalendarAlt, FaExclamationTriangle,
+  FaInfoCircle, FaUser, FaCalendarAlt, FaClock, FaExclamationTriangle,
   FaBan, FaHourglassHalf
 } from 'react-icons/fa';
 import { AiOutlineClockCircle, AiOutlineBarChart } from 'react-icons/ai';
@@ -10,6 +10,7 @@ import Header from '../../components/layout/Header';
 import CourseActionButtons from '../../components/student/CourseActionButtons';
 import useCourseStore from '../../store/student/courseStore';
 import toast from 'react-hot-toast';
+
 
 const AddNewCourseStudent = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -22,28 +23,25 @@ const AddNewCourseStudent = () => {
     enrollmentLoading,
     enrollmentError,
     enrollmentSuccess,
-    fetchAvailableCourses,
+    searchCourses, 
+    clearSearch,
     requestEnrollment,
     selfEnroll,
     clearEnrollmentMessages
   } = useCourseStore();
 
-  // Load all available courses on mount
-  useEffect(() => {
-    fetchAvailableCourses();
-  }, [fetchAvailableCourses]);
+  
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      searchCourses(searchTerm.trim());
+    }
+  };
 
-  // Frontend search: filter newCourses by name or code
-  const filteredCourses = useMemo(() => {
-    if (!searchTerm.trim()) return newCourses;
-    const term = searchTerm.toLowerCase().trim();
-    return newCourses.filter((item) => {
-      const course = item.data;
-      const name = (course.name || '').toLowerCase();
-      const code = (course.code || '').toLowerCase();
-      return name.includes(term) || code.includes(term);
-    });
-  }, [newCourses, searchTerm]);
+  const handleClearSearch = () => {
+    setSearchTerm('');
+    clearSearch();
+  };
 
   const handleEnroll = async (course) => {
     clearEnrollmentMessages();
@@ -65,10 +63,12 @@ const AddNewCourseStudent = () => {
     // Handle result
     if (result.success) {
       toast.success(result.data.message);
-      // Refresh the available courses list
+      // Optionally refresh the search results
+      if (searchTerm.trim()) {
       setTimeout(() => {
-        fetchAvailableCourses();
+         searchCourses(searchTerm.trim());
       }, 1000);
+       }
     } else {
       toast.error(result.error);
     }
@@ -92,9 +92,9 @@ const AddNewCourseStudent = () => {
 
   // Function to render enrollment button/badge based on status
   const renderEnrollmentAction = (course) => {
-    const courseStatus = course.enrollment_status;
+    const status = course.enrollment_status;
 
-    switch (courseStatus) {
+    switch (status) {
       case 'enrolled':
         return (
           <div className="px-3 sm:px-6 py-2 sm:py-2.5 bg-green-600/20 text-green-400 border border-green-500/30 text-sm font-semibold rounded-lg sm:rounded-xl flex items-center justify-center gap-2 flex-shrink-0">
@@ -179,23 +179,10 @@ const AddNewCourseStudent = () => {
 
       default:
         return (
-          <button
-            onClick={() => handleEnroll(course)}
-            disabled={enrollmentLoading}
-            className="px-3 sm:px-6 py-2 sm:py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg sm:rounded-xl shadow-lg shadow-blue-600/25 hover:shadow-xl hover:shadow-blue-600/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-95 flex-shrink-0"
-          >
-            {enrollmentLoading ? (
-              <>
-                <FaSpinner className="animate-spin w-4 h-4" />
-                <span className="hidden sm:inline">Enrolling...</span>
-              </>
-            ) : (
-              <>
-                <FaCheckCircle className="w-4 h-4" />
-                <span className="hidden sm:inline">Enroll</span>
-              </>
-            )}
-          </button>
+          <div className="px-3 sm:px-6 py-2 sm:py-2.5 bg-gray-600/20 text-gray-400 border border-gray-500/30 text-sm font-semibold rounded-lg sm:rounded-xl flex items-center justify-center gap-2 flex-shrink-0">
+            <FaInfoCircle className="w-4 h-4" />
+            <span className="hidden sm:inline">Unknown Status</span>
+          </div>
         );
     }
   };
@@ -216,17 +203,25 @@ const AddNewCourseStudent = () => {
           <CourseActionButtons activeButton="create" />
 
           {/* Main Content Card */}
-          <div className="card-strong p-4 sm:p-5 lg:p-6 min-h-[500px]">
+          <div className="card p-4 sm:p-5 lg:p-6 min-h-[500px] border-2 border-[var(--border-strong)] shadow-lg rounded-2xl">
             {/* Search Section */}
             <div className="mb-8">
-              <h2 className="text-lg sm:text-xl font-bold mb-1">Available Courses</h2>
-              <p className="text-xs sm:text-sm muted">Browse and enroll in new courses</p> 
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-purple-500/10 border-2 border-purple-500/30 flex items-center justify-center flex-shrink-0">
+                  <FaSearch className="w-5 h-5 sm:w-6 sm:h-6 text-purple-400" />
+                </div>
+                <div>
+                  <h2 className="text-lg sm:text-xl font-bold mb-0.5">Search for Courses</h2>
+                  <p className="text-xs sm:text-sm muted">Browse and explore new courses</p>
+                </div>
+              </div> 
 
-              <div className="relative mt-4">
+              <form className="flex flex-row gap-2 sm:gap-3 mt-5" onSubmit={handleSearch}>
+                <div className="relative flex-1">
                 <input
                   type="text"
-                  className="input input-bordered w-full pl-10 pr-10 py-2.5 text-sm focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                  placeholder="Search by course name or code..."
+                  className="input input-bordered w-full pl-10 pr-10 py-3 text-sm border-2 focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all rounded-xl"
+                  placeholder="Enter course code (e.g., CS101, 0002)"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -240,14 +235,56 @@ const AddNewCourseStudent = () => {
                     <FaTimes className="w-3.5 h-3.5" />
                   </button>
                 )}
+                </div>
+                <div className="flex gap-2 sm:gap-3">
+                  <button 
+                    type="submit" 
+                    disabled={!searchTerm.trim() || loading}
+                    className="flex-1 sm:flex-none px-4 sm:px-7 py-3 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white text-sm font-bold rounded-xl shadow-xl shadow-purple-600/30 hover:shadow-2xl hover:shadow-purple-600/40 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 flex items-center justify-center gap-2.5 border-2 border-purple-500/50"
+                  >
+                    {loading ? (
+                      <>
+                        <FaSpinner className="animate-spin w-4 h-4" />
+                        <span className="hidden sm:inline">Searching...</span>
+                      </>
+                    ) : (
+                      <>
+                        <FaSearch className="w-4 h-4" />
+                        <span className="hidden sm:inline">Search</span>
+                      </>
+                    )}
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={handleClearSearch}
+                    disabled={loading || (newCourses.length === 0 && !searchTerm)}
+                    className="flex-1 sm:flex-none px-4 sm:px-7 py-3 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white text-sm font-bold rounded-xl shadow-xl shadow-red-600/30 hover:shadow-2xl hover:shadow-red-600/40 transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 flex items-center justify-center gap-2.5 border-2 border-red-500/50"
+                  >
+                    <FaTimes className="w-4 h-4" />
+                    <span className="hidden sm:inline">Clear</span>
+                  </button>
+                </div>
+              </form>
+              
+              {/* Search Tips */}
+              <div className="mt-5 p-4 bg-blue-500/10 border-2 border-blue-500/30 rounded-xl">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                    <FaInfoCircle className="text-blue-400 w-4 h-4" />
+                  </div>
+                  <div className="text-xs sm:text-sm text-[var(--text-primary)]">
+                    <span className="font-bold text-blue-500 dark:text-blue-400">Search Tips:</span> Enter the exact course code to find available courses. 
+                    Contact your instructor if you need the course code.
+                  </div>
+                </div>
               </div>
 
               {/* Enrollment Success/Error Messages */}
               {enrollmentSuccess && (
                 <div className="mt-4 p-4 bg-green-500/10 border border-green-500/30 rounded-lg animate-fade-in">
                   <div className="flex items-center gap-2">
-                    <FaCheckCircle className="text-green-400 flex-shrink-0" />
-                    <p className="text-sm text-green-200">{enrollmentSuccess}</p>
+                    <FaCheckCircle className="text-green-600 dark:text-green-400 flex-shrink-0" />
+                    <p className="text-sm text-green-700 dark:text-green-300">{enrollmentSuccess}</p>
                   </div>
                 </div>
               )}
@@ -255,8 +292,8 @@ const AddNewCourseStudent = () => {
               {enrollmentError && (
                 <div className="mt-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg animate-fade-in">
                   <div className="flex items-center gap-2">
-                    <FaExclamationTriangle className="text-red-400 flex-shrink-0" />
-                    <p className="text-sm text-red-200">{enrollmentError}</p>
+                    <FaExclamationTriangle className="text-red-600 dark:text-red-400 flex-shrink-0" />
+                    <p className="text-sm text-red-700 dark:text-red-300">{enrollmentError}</p>
                   </div>
                 </div>
               )}
@@ -269,47 +306,47 @@ const AddNewCourseStudent = () => {
                   <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-t-4 border-blue-500"></div>
                   <FaBook className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-blue-400 text-xl" />
                 </div>
-                <p className="mt-4 text-sm muted">Loading available courses...</p>
+                <p className="mt-4 text-sm muted">Searching for courses...</p>
               </div>
             )}
 
             {/* Error State */}
             {error && !loading && (
               <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-6 text-center animate-fade-in">
-                <div className="flex items-center justify-center gap-2 text-red-300 mb-2">
+                <div className="flex items-center justify-center gap-2 text-red-600 dark:text-red-300 mb-2">
                   <FaTimes className="w-5 h-5" />
                   <span className="font-semibold text-lg">Error</span>
                 </div>
-                <p className="text-red-200">{error}</p>
+                <p className="text-red-700 dark:text-red-300">{error}</p>
               </div>
             )}
 
-            {/* Empty State - No courses available */}
-            {!loading && !error && filteredCourses.length === 0 && !searchTerm && newCourses.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-16 text-center">
-                <div className="mb-4 p-6 bg-blue-500/10 rounded-full">
-                  <FaBook className="w-12 h-12 text-blue-400" />
+            {/* Empty State - No search yet */}
+            {!loading && !error && newCourses.length === 0 && !searchTerm && (
+              <div className="flex flex-col items-center justify-center py-20 text-center">
+                <div className="mb-5 p-8 bg-gradient-to-br from-purple-500/15 to-blue-500/15 rounded-3xl border-2 border-purple-500/30">
+                  <FaSearch className="w-16 h-16 text-purple-400" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">No Courses Available</h3>
-                <p className="text-sm muted max-w-md">
-                  There are no new courses available at the moment. Check back later!
+                <h3 className="text-2xl font-bold mb-3 text-[var(--text-primary)]">Start Your Search</h3>
+                <p className="text-sm muted max-w-md leading-relaxed">
+                  Enter a course code above to discover new courses and expand your learning opportunities.
                 </p>
               </div>
             )}
 
-            {/* Empty State - No search results */}
-            {!loading && !error && filteredCourses.length === 0 && searchTerm && (
+            {/* Empty State - No results */}
+            {!loading && !error && newCourses.length === 0 && searchTerm && (
               <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in">
                 <div className="mb-4 p-6 bg-orange-500/10 rounded-full">
-                  <FaSearch className="w-12 h-12 text-orange-400" />
+                  <FaBook className="w-12 h-12 text-orange-400" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">No Matching Courses</h3>
+                <h3 className="text-xl font-bold mb-2">No Courses Found</h3>
                 <p className="text-sm muted max-w-md mb-4">
-                  No courses match "<span className="font-semibold text-white">{searchTerm}</span>".
-                  Try a different search term.
+                  We couldn't find any courses matching "<span className="font-semibold text-[var(--text-primary)]">{searchTerm}</span>".
+                  Please check the course code and try again.
                 </p>
                 <button 
-                  onClick={() => setSearchTerm('')}
+                 onClick={handleClearSearch}
                   className="btn btn-info px-6 py-2"
                 >
                   Clear Search
@@ -318,33 +355,38 @@ const AddNewCourseStudent = () => {
             )}
 
             {/* Course Results */}
-            {!loading && !error && filteredCourses.length > 0 && (
-              <div className="space-y-4 animate-fade-in">
-                <div className="mb-4">
-                  <p className="text-sm muted">
-                    Showing {filteredCourses.length} course{filteredCourses.length > 1 ? 's' : ''}
-                    {searchTerm && <span> matching "<span className="font-semibold text-white">{searchTerm}</span>"</span>}
-                  </p>
+            {!loading && !error && newCourses.length > 0 && (
+              <div className="space-y-5 animate-fade-in">
+                <div className="mb-5 pb-4 border-b-2 border-[var(--border-subtle)] flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-green-500/10 border-2 border-green-500/30 flex items-center justify-center">
+                      <FaCheckCircle className="w-5 h-5 text-green-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold mb-0.5">Search Results</h3>
+                      <p className="text-sm muted">Found {newCourses.length} course{newCourses.length > 1 ? 's' : ''}</p>
+                    </div>
+                  </div>
                 </div>
                 
-                {filteredCourses.map((item) => {
+                {newCourses.map((item) => {
                   const course = item.data;
                   const isExpanded = expandedCourse === course.id;
                   
                   return (
                     <div
                       key={course.id}
-                      className="card p-4 sm:p-6 hover:bg-white/[0.02] transition-all duration-300 group border-l-4 border-blue-500"
+                      className="card-strong p-5 sm:p-6 hover:shadow-xl hover:border-purple-500/30 transition-all duration-300 group border-l-4 border-l-purple-500 rounded-xl border-2 border-[var(--border-color)]"
                     >
                       {/* Course Header and Enrollment Action */}
-                      <div className="flex flex-row items-center justify-between gap-3 sm:gap-4 mb-4">
+                      <div className="flex flex-row items-center justify-between gap-3 sm:gap-4 mb-5">
                         <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-blue-500/10 flex items-center justify-center flex-shrink-0 border border-blue-500/20 group-hover:border-blue-500/30 transition-all duration-200">
-                            <FaBook className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
+                          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-purple-500/15 flex items-center justify-center flex-shrink-0 border-2 border-purple-500/30 group-hover:border-purple-500/50 group-hover:scale-110 transition-all duration-300">
+                            <FaBook className="w-6 h-6 sm:w-7 sm:h-7 text-purple-400" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex flex-wrap items-center gap-2 mb-1">
-                              <h3 className="font-semibold text-base sm:text-lg line-clamp-1 group-hover:text-blue-400 transition-colors duration-200">
+                            <div className="flex flex-wrap items-center gap-2 mb-2">
+                              <h3 className="font-bold text-base sm:text-lg line-clamp-1 group-hover:text-purple-400 transition-colors duration-300">
                                 {course.name}
                               </h3>
                             </div>
@@ -364,31 +406,31 @@ const AddNewCourseStudent = () => {
                       <div className="mb-4">
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
                           {course.instructor && (
-                            <div className="flex items-center gap-2 text-gray-300">
-                              <FaUser className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                            <div className="flex items-center gap-2 text-[var(--text-secondary)]">
+                              <FaUser className="w-4 h-4 text-purple-500 dark:text-purple-400 flex-shrink-0" />
                               <span className="truncate">
                                 <span className="font-semibold">Instructor:</span> {course.instructor}
                               </span>
                             </div>
                           )}
                           
-                          <div className="flex items-center gap-2 text-gray-300">
-                            <FaCalendarAlt className="w-4 h-4 text-green-400 flex-shrink-0" />
+                          <div className="flex items-center gap-2 text-[var(--text-secondary)]">
+                            <FaCalendarAlt className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" />
                             <span className="truncate">
                               <span className="font-semibold">Start:</span> {formatDateTime(course.start_date)}
                             </span>
                           </div>
                           
-                          <div className="flex items-center gap-2 text-gray-300">
-                            <AiOutlineClockCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+                          <div className="flex items-center gap-2 text-[var(--text-secondary)]">
+                            <AiOutlineClockCircle className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0" />
                             <span className="truncate">
                               <span className="font-semibold">End:</span> {formatDateTime(course.end_date)}
                             </span>
                           </div>
                           
                           {course.modules && (
-                            <div className="flex items-center gap-2 text-gray-300">
-                              <FaBook className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                            <div className="flex items-center gap-2 text-[var(--text-secondary)]">
+                              <FaBook className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
                               <span>
                                 <span className="font-semibold">Modules:</span> {course.modules.length}
                               </span>
@@ -400,30 +442,33 @@ const AddNewCourseStudent = () => {
                       {/* Course Details Toggle */}
                       <button
                         onClick={() => toggleCourseDetails(course.id)}
-                        className="w-full py-2 px-4 bg-white/5 hover:bg-white/10 rounded-lg transition-colors duration-200 text-sm font-medium flex items-center justify-between mb-3"
+                        className="w-full py-2.5 px-4 bg-[var(--input-bg)] hover:bg-purple-500/10 border-2 border-[var(--border-color)] hover:border-purple-500/30 rounded-xl transition-all duration-300 text-sm font-semibold flex items-center justify-between mb-4 text-[var(--text-primary)] hover:text-purple-400"
                       >
                         <span>{isExpanded ? 'Hide Details' : 'View Details'}</span>
                         <svg
-                          className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                          className={`w-4 h-4 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
+                          strokeWidth="2"
                         >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                         </svg>
                       </button>
 
                       {/* Expandable Course Details */}
                       {isExpanded && (
-                        <div className="animate-fade-in space-y-4 pt-4 border-t border-white/10">
+                        <div className="animate-fade-in space-y-5 pt-5 border-t-2 border-[var(--border-subtle)]">
                           {/* Instructions */}
                           {course.instructions && (
                             <div>
-                              <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                                <FaInfoCircle className="text-yellow-400" />
+                              <h4 className="text-sm sm:text-base font-bold mb-3 flex items-center gap-2 text-[var(--text-primary)]">
+                                <div className="w-6 h-6 rounded-lg bg-yellow-500/15 border border-yellow-500/30 flex items-center justify-center">
+                                  <FaInfoCircle className="text-yellow-400 w-3.5 h-3.5" />
+                                </div>
                                 Course Instructions
                               </h4>
-                              <div className="p-3 bg-white/5 rounded-lg text-sm text-gray-300 leading-relaxed">
+                              <div className="p-4 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-xl text-sm text-[var(--text-secondary)] leading-relaxed">
                                 {course.instructions}
                               </div>
                             </div>
@@ -432,27 +477,51 @@ const AddNewCourseStudent = () => {
                           {/* Course Modules */}
                           {course.modules && course.modules.length > 0 && (
                             <div>
-                              <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                                <FaBook className="text-blue-400" />
+                              <h4 className="text-sm sm:text-base font-bold mb-3 flex items-center gap-2 text-[var(--text-primary)]">
+                                <div className="w-6 h-6 rounded-lg bg-blue-500/15 border border-blue-500/30 flex items-center justify-center">
+                                  <FaBook className="text-blue-400 w-3.5 h-3.5" />
+                                </div>
                                 Course Content ({course.modules.length} Modules)
                               </h4>
-                              <div className="space-y-2">
+                              <div className="space-y-2.5">
                                 {course.modules.map((mod, index) => (
                                   <div
                                     key={mod.id}
-                                    className="p-3 bg-white/5 hover:bg-white/10 rounded-lg transition-colors duration-200 flex items-center gap-3"
+                                    className="p-3 sm:p-4 bg-[var(--input-bg)] hover:bg-blue-500/5 border border-[var(--border-color)] hover:border-blue-500/30 rounded-xl transition-all duration-300 flex items-center gap-3 group"
                                   >
-                                    <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0 text-xs font-bold text-blue-400">
+                                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center flex-shrink-0 text-xs font-bold text-blue-400 group-hover:scale-110 transition-transform duration-300">
                                       {index + 1}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                      <p className="text-sm font-medium truncate">{mod.name}</p>
+                                      <p className="text-sm font-semibold text-[var(--text-primary)] group-hover:text-blue-400 transition-colors duration-300">{mod.name}</p>
                                       {mod.description && (
-                                        <p className="text-xs text-gray-400 truncate mt-0.5">{mod.description}</p>
+                                        <p className="text-xs text-[var(--text-muted)] mt-1 line-clamp-2">{mod.description}</p>
                                       )}
                                     </div>
                                   </div>
                                 ))}
+                              </div>
+                            </div>
+                          )}
+                          {/* Progress Info */}
+                          {course.completion_percent !== undefined && course.completion_percent > 0 && (
+                            <div>
+                              <h4 className="text-sm sm:text-base font-bold mb-3 flex items-center gap-2 text-[var(--text-primary)]">
+                                <div className="w-6 h-6 rounded-lg bg-green-500/15 border border-green-500/30 flex items-center justify-center">
+                                  <AiOutlineBarChart className="text-green-400 w-3.5 h-3.5" />
+                                </div>
+                                Course Progress
+                              </h4>
+                              <div className="flex items-center gap-3">
+                                <div className="flex-1 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-full h-3 overflow-hidden">
+                                  <div
+                                    className="bg-gradient-to-r from-blue-500 to-green-500 h-full transition-all duration-500 rounded-full"
+                                    style={{ width: `${course.completion_percent || 0}%` }}
+                                  ></div>
+                                </div>
+                                <span className="text-sm font-semibold text-green-400 whitespace-nowrap">
+                                  {course.completion_percent || 0}%
+                                </span>
                               </div>
                             </div>
                           )}

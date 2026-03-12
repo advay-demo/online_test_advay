@@ -48,10 +48,15 @@ const CourseStudent = () => {
           <CourseActionButtons activeButton="enrolled" />
 
           {/* Course Library Section */}
-          <div className="card-strong p-4 sm:p-5 lg:p-6 min-h-[600px]">
-            <div className="mb-4 sm:mb-6">
-              <h2 className="text-lg sm:text-xl font-bold mb-1">Enrolled Courses</h2>
-              <p className="text-xs sm:text-sm muted">Browse and manage all your courses</p>
+          <div className="card p-4 sm:p-5 lg:p-6 min-h-[600px] border-2 border-[var(--border-strong)] shadow-lg rounded-2xl">
+            <div className="mb-5 sm:mb-7 pb-4 border-b-2 border-[var(--border-subtle)] flex items-center gap-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-blue-500/10 border-2 border-blue-500/30 flex items-center justify-center flex-shrink-0">
+                <FaBook className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
+              </div>
+              <div>
+                <h2 className="text-lg sm:text-xl font-bold mb-0.5">Enrolled Courses</h2>
+                <p className="text-xs sm:text-sm muted">Browse and manage all your courses</p>
+              </div>
             </div>
 
             {/* Loading State */}
@@ -72,8 +77,12 @@ const CourseStudent = () => {
             {!loading && !error && (
               <div className="space-y-3 sm:space-y-4">
                 {courses.length === 0 ? (
-                  <div className="text-center py-12">
-                    <p className="text-lg muted">No courses found</p>
+                  <div className="text-center py-16">
+                    <div className="inline-block p-5 bg-blue-500/10 rounded-full mb-4">
+                      <FaBook className="w-12 h-12 text-blue-400 opacity-50" />
+                    </div>
+                    <p className="text-lg font-semibold text-[var(--text-secondary)] mb-2">No courses found</p>
+                    <p className="text-sm muted">Start by enrolling in your first course</p>
                   </div>
                 ) : (
                   courses.map((item) => {
@@ -84,23 +93,23 @@ const CourseStudent = () => {
                     return (
                       <div
                         key={course.id}
-                        className="card p-4 sm:p-5 hover:bg-white/[0.02] transition-all duration-200 group"
+                        className="card-strong p-4 sm:p-5 hover:shadow-lg hover:border-blue-500/30 transition-all duration-300 group border-l-4 border-l-blue-500 rounded-xl"
                       >
                         <div className="flex flex-row flex-wrap items-center gap-3 sm:gap-4">
                           {/* Icon */}
-                          <div className="w-12 h-12 sm:w-14 sm:h-14 -mt-10 sm:-mt-5 rounded-xl bg-blue-500/10 flex items-center justify-center flex-shrink-0 border border-blue-500/20 group-hover:border-blue-500/30 transition-all duration-200">
+                          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-blue-500/15 flex items-center justify-center flex-shrink-0 border-2 border-blue-500/30 group-hover:border-blue-500/50 group-hover:scale-110 transition-all duration-300">
                             <FaBook className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
                           </div>
                           {/* Content */}
                           <div className="flex-1 min-w-0 w-full">
-                            <div className="flex flex-wrap items-center gap-2 mb-1">
-                              <h3 className="font-semibold text-base sm:text-lg line-clamp-1 group-hover:text-blue-400 transition-colors duration-200">
+                            <div className="flex flex-wrap items-center gap-2 mb-2">
+                              <h3 className="font-bold text-base sm:text-lg line-clamp-1 group-hover:text-blue-400 transition-colors duration-300">
                                 {course.name}
                               </h3>
                               <span
-                                className={`text-[10px] px-2 py-0.5 rounded border ${getStatusColor(
+                                className={`text-[10px] px-2.5 py-1 rounded-lg border-2 ${getStatusColor(
                                   status
-                                )} uppercase font-bold tracking-wider whitespace-nowrap flex-shrink-0 transition-all duration-200`}
+                                )} uppercase font-bold tracking-wider whitespace-nowrap flex-shrink-0 transition-all duration-300`}
                               >
                                 {status}
                               </span>
@@ -135,13 +144,11 @@ const CourseStudent = () => {
                           <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto sm:self-start">
                             <Link
                               to={`/courses/${course.id}/manage`}
-                              className="flex-1 sm:flex-none px-3 sm:px-4 py-2 border border-[var(--border-color)] rounded-lg text-xs sm:text-sm font-medium hover:bg-[var(--input-bg)] active:scale-95 transition-all duration-200 text-center whitespace-nowrap"
+                              className="flex-1 sm:flex-none px-4 sm:px-5 py-2.5 border-2 border-blue-500/30 bg-blue-500/10 rounded-lg text-xs sm:text-sm font-semibold text-blue-400 hover:border-blue-500/50 hover:bg-blue-500/20 hover:shadow-lg hover:shadow-blue-500/20 active:scale-95 transition-all duration-300 text-center whitespace-nowrap"
                             >
                               Manage
                             </Link>
-                            <button className="p-2 border border-[var(--border-color)] rounded-lg hover:bg-[var(--input-bg)] active:scale-95 transition-all duration-200 text-[var(--text-muted)] hover:text-[var(--text-primary)]">
-                              <FaEllipsisV className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                            </button>
+                            
                           </div>
                         </div>
                       </div>

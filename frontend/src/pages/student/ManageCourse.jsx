@@ -95,7 +95,7 @@ const ManageCourseStudent = () => {
                     </div>
 
                     {/* Course Container */}
-                    <div className="card-strong p-3 sm:p-6 min-h-[400px] sm:min-h-[600px] w-full max-w-full overflow-x-auto">
+                    <div className="card-strong p-3 sm:p-6 min-h-[400px] sm:min-h-[600px] w-full max-w-full overflow-x-auto border-2 border-[var(--border-strong)] shadow-lg rounded-2xl">
                         {/* Course Header */}
                         <div className="flex sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-4">
                             <div className="flex items-center gap-3 sm:gap-4">
@@ -115,18 +115,12 @@ const ManageCourseStudent = () => {
                                 </div>
                             </div>
                             <div className="flex items-center gap-2 sm:gap-3">
-                                <button className="px-3 py-1.5 sm:px-4 sm:py-2 border border-white/10 rounded-lg text-xs sm:text-sm font-medium hover:bg-white/5 transition flex items-center gap-2">
-                                    <FaShareAlt className="w-3 h-3" />
-                                    <span className="hidden xs:inline">Share</span>
-                                </button>
-                                <button className="p-2 border border-white/10 rounded-lg hover:bg-white/5 transition text-muted hover:text-white">
-                                    <FaEllipsisV className="w-4 h-4" />
-                                </button>
+                                
 
                                 {activeTab === 'Discussions' && activeForumTab === 'Course Forum' && (
                                     <button
                                         onClick={openCreatePost}
-                                        className="bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-700 transition flex items-center gap-2"
+                                        className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 shadow-xl shadow-blue-600/30 hover:shadow-2xl hover:shadow-blue-600/40 border-2 border-blue-500/50 active:scale-95 flex items-center gap-2"
                                     >
                                         <FaPlus className="w-3 h-3" />
                                         <span className="hidden sm:inline">New Post</span>
@@ -136,15 +130,15 @@ const ManageCourseStudent = () => {
                         </div>
 
                         {/* Tabs */}
-                        <div className="w-full overflow-x-auto">
-                            <div className="flex flex-nowrap sm:flex-wrap bg-black/20 p-1 rounded-lg min-w-[300px] sm:min-w-0 w-max sm:w-fit mb-6 sm:mb-8 gap-2">
+                        <div className="w-full overflow-x-auto scrollbar-thin">
+                            <div className="flex flex-nowrap sm:flex-wrap bg-[var(--input-bg)] border border-[var(--border-subtle)] sm:border-2 p-0.5 sm:p-1 rounded-xl min-w-[280px] sm:min-w-0 w-full sm:w-fit mb-6 sm:mb-8 gap-1 sm:gap-2 shadow-inner">
                                 {tabs.map((tab) => (
                                     <button
                                         key={tab}
                                         onClick={() => setActiveTab(tab)}
-                                        className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition whitespace-nowrap ${activeTab === tab
-                                            ? 'bg-blue-600 text-white'
-                                            : 'text-muted hover:text-white hover:bg-white/5'
+                                        className={`flex-1 sm:flex-none px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg text-[11px] sm:text-sm font-bold transition-all duration-300 whitespace-nowrap ${activeTab === tab
+                                            ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-600/30 sm:scale-105 border border-blue-400/50 sm:border-2'
+                                            : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--border-subtle)] border border-transparent sm:border-2'
                                             }`}
                                     >
                                         {tab}

@@ -143,19 +143,31 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 lg:mb-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 lg:mb-8">
             {stat_s.map((stat, index) => (
-              <div key={index} className="card-strong p-5 sm:p-6 rounded-2xl">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <p className="muted text-xs sm:text-sm mb-2">{stat.label}</p>
-                    <p className="text-2xl sm:text-3xl font-bold mb-2">{stat.value}</p>
+              <div 
+                key={index} 
+                className="card p-4 sm:p-5 lg:p-6 rounded-2xl border-l-4 hover:shadow-lg transition-all duration-300 group relative overflow-hidden"
+                style={{
+                  borderLeftColor: stat.color,
+                }}
+              >
+                {/* Subtle background glow */}
+                <div 
+                  className="absolute top-0 right-0 w-24 h-24 rounded-full blur-3xl opacity-10 group-hover:opacity-20 transition-opacity duration-300"
+                  style={{ background: stat.color }}
+                />
+                
+                <div className="relative flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                  <div className="flex-1 order-2 sm:order-1">
+                    <p className="muted text-xs sm:text-sm mb-1.5 font-medium">{stat.label}</p>
+                    <p className="text-2xl sm:text-3xl font-bold" style={{ color: stat.color }}>{stat.value}</p>
                   </div>
                   <div
-                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center flex-shrink-0 order-1 sm:order-2 group-hover:scale-110 transition-transform duration-300"
                     style={{
-                      background: `${stat.color}26`,
-                      border: `1px solid ${stat.color}40`,
+                      background: `${stat.color}1A`,
+                      border: `2px solid ${stat.color}33`,
                       color: stat.color,
                     }}
                   >
@@ -168,25 +180,32 @@ const Dashboard = () => {
 
           <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 mb-6 lg:mb-8">
             {/* Upcoming Quizzes */}
-            <div className="lg:col-span-2 card-strong p-5 sm:p-6 rounded-2xl">
-              <div className="mb-4 sm:mb-6">
-                <h2 className="text-lg sm:text-xl font-bold mb-1">Upcoming Quizzes</h2>
-                <p className="text-xs sm:text-sm muted">Quizzes scheduled for your courses</p>
+            <div className="lg:col-span-2 card p-5 sm:p-6 rounded-2xl border-t-4 border-t-emerald-500 shadow-lg shadow-emerald-500/5">
+              <div className="mb-4 sm:mb-6 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border-2 border-emerald-500/30 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-lg sm:text-xl font-bold mb-0.5">Upcoming Quizzes</h2>
+                  <p className="text-xs sm:text-sm muted">Quizzes scheduled for your courses</p>
+                </div>
               </div>
               <div className="space-y-3 sm:space-y-4">
                 {upcomingQuizzes.length > 0 ? upcomingQuizzes.map((quiz, index) => (
-                  <div key={index} className="card p-4 sm:p-5 rounded-xl">
+                  <div key={index} className="card-strong p-4 sm:p-5 rounded-xl border-l-4 border-l-emerald-500 hover:shadow-md hover:bg-white/[0.03] transition-all duration-300 group">
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                       <div className="flex gap-3 sm:gap-4 flex-1">
                         <div
-                          className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                          className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300"
                           style={{
-                            background: 'rgba(34,197,94,0.15)',
-                            border: '1px solid rgba(34,197,94,0.2)',
+                            background: 'rgba(16,185,129,0.15)',
+                            border: '2px solid rgba(16,185,129,0.3)',
                           }}
                         >
-                          <svg className="w-5 h-5 sm:w-6 sm:h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          <svg className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                           </svg>
                         </div>
                         <div className="flex-1 min-w-0">
@@ -207,101 +226,160 @@ const Dashboard = () => {
                           </div>
                         </div>
                       </div>
-                      
-                        <span className="w-full sm:w-auto border border-[var(--border-color)] px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold text-muted opacity-50 cursor-not-allowed whitespace-nowrap">
-                          Manage
-                        </span>
-                     
+                        {quiz.course_id ? (
+                          <Link
+                            to={`/courses/${quiz.course_id}/manage`}
+                            className="w-full sm:w-auto border border-[var(--border-color)] px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold hover:bg-[var(--input-bg)] transition whitespace-nowrap"
+                          >
+                            Manage
+                          </Link>
+                        ) : (
+                          <span className="w-full sm:w-auto border border-[var(--border-color)] px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold text-muted opacity-50 cursor-not-allowed whitespace-nowrap">
+                            Manage
+                          </span>
+                        )}
                     </div>
                   </div>
                 )) : (
-                  <div className="card p-5 text-center text-muted">
-                    <p>No upcoming quizzes</p>
+                  <div className="card-strong p-8 text-center rounded-xl">
+                    <div className="inline-block p-4 bg-emerald-500/10 rounded-full mb-3">
+                      <svg className="w-8 h-8 text-emerald-400 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <p className="text-muted font-medium">No upcoming quizzes</p>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Top Students */}
-            <div className="card-strong p-5 sm:p-6 rounded-2xl">
+            {/* Quick Stats */}
+            <div className="card p-5 sm:p-6 rounded-2xl border-t-4 border-t-purple-500 shadow-lg shadow-purple-500/5">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-500/10 border-2 border-purple-500/30 flex items-center justify-center">
+                  <FaBolt className="w-5 h-5 text-purple-400" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold mb-0.5">Quick Stats</h2>
+                  <p className="text-xs muted">Your activity overview</p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="card-strong p-4 rounded-xl flex items-center justify-between group hover:bg-white/[0.03] transition-all duration-300">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-blue-500/15 border border-blue-500/30 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                      <FaChartLine className="w-5 h-5 text-blue-400" />
+                    </div>
+                    <div>
+                      <p className="text-xs muted">Total Quizzes</p>
+                      <p className="text-xl font-bold text-blue-400">{upcomingQuizzes.length}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="card-strong p-4 rounded-xl flex items-center justify-between group hover:bg-white/[0.03] transition-all duration-300">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                      <FaCheckCircle className="w-5 h-5 text-emerald-400" />
+                    </div>
+                    <div>
+                      <p className="text-xs muted">Completed</p>
+                      <p className="text-xl font-bold text-emerald-400">0</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
           </div>
   
           <section
             className="
-              rounded-3xl
-              border border-[var(--border-color)] dark:border-white/10
-              bg-white dark:bg-white/[0.04]
-              backdrop-blur-xl
-              p-6 sm:p-8
+              rounded-2xl
+              border-2 border-[var(--border-strong)]
+              card
+              shadow-lg
+              p-5 sm:p-6 lg:p-8
             "
           >
             {/* Header */}
-            <header className="flex items-end justify-between mb-8">
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[var(--text-primary)] dark:text-white">
-                  Enrolled Courses
-                </h2>
-                <p className="text-sm text-[var(--text-muted)] dark:text-white/50 mt-1">
-                  Continue where you left off
-                </p>
+            <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-6 sm:mb-8 pb-4 border-b-2 border-[var(--border-subtle)]">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-xl bg-blue-500/10 border-2 border-blue-500/30 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13M3 6.253C4.168 5.477 5.754 5 7.5 5S10.832 5.477 12 6.253M12 6.253C13.168 5.477 14.754 5 16.5 5S19.832 5.477 21 6.253M3 19.253C4.168 18.477 5.754 18 7.5 18S10.832 18.477 12 19.253M12 19.253C13.168 18.477 14.754 18 16.5 18S19.832 18.477 21 19.253" />
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-[var(--text-primary)] truncate">
+                    Enrolled Courses
+                  </h2>
+                  <p className="text-xs sm:text-sm text-[var(--text-muted)] mt-0.5 truncate">
+                    Continue where you left off
+                  </p>
+                </div>
               </div>
-              <span className="text-xs font-medium text-[var(--text-muted)] dark:text-white/60">
+              <span className="text-xs sm:text-sm font-semibold text-[var(--text-secondary)] px-3 py-1.5 rounded-lg bg-[var(--input-bg)] border border-[var(--border-color)] whitespace-nowrap">
                 {(searchResult || courses).length} total
               </span>
             </header>
 
             {/* Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
               {(searchResult || courses).length > 0 ? (
                 (searchResult || courses).map((course) => (
                   <article
                     key={course.id}
                     className="
-                      group relative flex flex-col rounded-2xl
-                      border border-[var(--border-color)] dark:border-white/10
-                      bg-white dark:bg-white/[0.03]
-                      p-5
+                      group relative flex flex-col rounded-xl
+                      border-2 border-[var(--border-color)]
+                      card-strong
+                      p-4 sm:p-5
                       transition-all duration-300
-                      hover:-translate-y-[2px]
-                      hover:bg-[var(--input-bg)] dark:hover:bg-white/[0.06]
+                      hover:-translate-y-1
+                      hover:shadow-lg
+                      hover:border-blue-500/30
                     "
                   >
                     {/* Course Title */}
-                    <h3 className="text-sm font-semibold leading-snug line-clamp-2 mb-1 text-[var(--text-primary)] dark:text-white">
+                    <h3 className="text-sm sm:text-base font-bold leading-snug line-clamp-2 mb-1.5 text-[var(--text-primary)] group-hover:text-blue-400 transition-colors duration-300">
                       {course.name}
                     </h3>
                     {/* Instructor */}
-                    <p className="text-xs text-[var(--text-muted)] dark:text-white/50 mb-4">
-                      {course.instructor}
+                    <p className="text-xs text-[var(--text-muted)] mb-3 sm:mb-4 flex items-center gap-1.5">
+                      <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                      </svg>
+                      <span className="truncate">{course.instructor}</span>
                     </p>
                     {/* Meta */}
-                    <div className="flex items-center justify-between text-xs mb-3">
-                      <span className="text-[var(--text-muted)] dark:text-white/50">
-                        {course.course_content?.length ?? 0} modules
+                    <div className="flex items-center justify-between text-xs mb-3 gap-2">
+                      <span className="text-[var(--text-muted)] flex items-center gap-1.5 truncate">
+                        <svg className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13M3 6.253C4.168 5.477 5.754 5 7.5 5S10.832 5.477 12 6.253" />
+                        </svg>
+                        <span className="truncate">{course.course_content?.length ?? 0} modules</span>
                       </span>
                       <span
-                        className={`px-2 py-0.5 rounded-full border ${
+                        className={`px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg border-2 text-[10px] sm:text-xs font-bold whitespace-nowrap flex-shrink-0 ${
                           course.active
-                            ? 'border-emerald-500/40 text-emerald-600 dark:text-emerald-400'
-                            : 'border-[var(--border-color)] text-[var(--text-muted)] dark:border-white/20 dark:text-white/40'
+                            ? 'border-emerald-500/50 text-emerald-400 bg-emerald-500/10'
+                            : 'border-orange-500/50 text-orange-400 bg-orange-500/10'
                         }`}
                       >
                         {course.active ? 'Active' : 'Inactive'}
                       </span>
                     </div>
                     {/* Progress */}
-                    <div className="mb-5">
-                      <div className="flex justify-between text-[11px] mb-1">
-                        <span className="text-[var(--text-muted)] dark:text-white/50">
+                    <div className="mb-4 sm:mb-5">
+                      <div className="flex justify-between text-[10px] sm:text-[11px] mb-2">
+                        <span className="text-[var(--text-muted)] font-medium">
                           Progress
                         </span>
-                        <span className="text-[var(--text-primary)] dark:text-white/70">
+                        <span className="text-[var(--text-primary)] font-bold">
                           {course.completion_percentage || 0}%
                         </span>
                       </div>
-                      <div className="h-1.5 rounded-full bg-[var(--border-color)] dark:bg-white/10 overflow-hidden">
+                      <div className="h-2 rounded-full bg-[var(--input-bg)] border border-[var(--border-color)] overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all duration-700 ${getProgressColor(
                             course.completion_percentage
@@ -311,45 +389,54 @@ const Dashboard = () => {
                       </div>
                     </div>
                     {/* Dates */}
-                    <div className="flex justify-between text-[11px] text-[var(--text-muted)] dark:text-white/40 mb-5">
-                      <span>{new Date(course.start_date).toLocaleDateString()}</span>
-                      <span>{new Date(course.end_date).toLocaleDateString()}</span>
+                    <div className="flex justify-between text-[10px] sm:text-[11px] text-[var(--text-muted)] mb-4 sm:mb-5 gap-2">
+                      <span className="truncate">{new Date(course.start_date).toLocaleDateString()}</span>
+                      <span className="truncate">{new Date(course.end_date).toLocaleDateString()}</span>
                     </div>
                     {/* CTA */}
                     <Link
                       to={`/courses/${course.id}/manage`}
                       className="
                         mt-auto inline-flex items-center justify-center gap-2
-                        rounded-xl
-                        border border-[var(--border-color)] dark:border-white/15
-                        py-2 text-sm font-medium
-                        text-[var(--text-primary)] dark:text-white/80
-                        transition
-                        hover:border-[var(--border-subtle)] dark:hover:border-white/30
-                        hover:text-[var(--text-secondary)] dark:hover:text-white
+                        rounded-lg
+                        border-2 border-blue-500/30
+                        bg-blue-500/10
+                        py-2 sm:py-2.5 px-3 sm:px-4 text-xs sm:text-sm font-semibold
+                        text-blue-400
+                        transition-all duration-300
+                        hover:border-blue-500/50
+                        hover:bg-blue-500/20
+                        hover:shadow-lg hover:shadow-blue-500/20
+                        active:scale-95
                       "
                     >
-                      Resume
-                      
-                      <FaArrowRight className="w-3.5 h-3.5 opacity-70" />
+                      <span className="hidden sm:inline">Resume Course</span>
+                      <span className="sm:hidden">Resume</span>
+                      <FaArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 group-hover:translate-x-1 transition-transform duration-300" />
                     </Link>
                   </article>
                 ))
               ) : (
                 <div className="
-                  col-span-full rounded-2xl
-                  border border-[var(--border-color)] dark:border-white/10
-                  bg-white dark:bg-white/[0.03]
-                  py-12 text-center
+                  col-span-full rounded-xl
+                  border-2 border-dashed border-[var(--border-color)]
+                  card-strong
+                  py-16 text-center
                 ">
-                  <p className="text-sm text-[var(--text-muted)] dark:text-white/50 mb-2">
-                    You haven’t enrolled in any courses yet
+                  <div className="inline-block p-5 bg-blue-500/10 rounded-full mb-4">
+                    <svg className="w-12 h-12 text-blue-400 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13M3 6.253C4.168 5.477 5.754 5 7.5 5S10.832 5.477 12 6.253M12 6.253C13.168 5.477 14.754 5 16.5 5S19.832 5.477 21 6.253M3 19.253C4.168 18.477 5.754 18 7.5 18S10.832 18.477 12 19.253M12 19.253C13.168 18.477 14.754 18 16.5 18S19.832 18.477 21 19.253" />
+                    </svg>
+                  </div>
+                  <p className="text-base text-[var(--text-secondary)] mb-4 font-medium">
+                    You haven't enrolled in any courses yet
                   </p>
                   <Link
                     to="/courses"
-                    className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-lg shadow-blue-600/25 hover:shadow-xl hover:shadow-blue-600/30 transition-all duration-300 active:scale-95"
                   >
-                    Explore courses →
+                    Explore Courses
+                    <FaArrowRight className="w-4 h-4" />
                   </Link>
                 </div>
               )}

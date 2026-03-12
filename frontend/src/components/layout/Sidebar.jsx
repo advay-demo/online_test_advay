@@ -59,7 +59,7 @@ const Sidebar = () => {
         `}
       >
         {/* Logo Section - Matching header height */}
-        <div className="h-16 lg:h-20 px-4 sm:px-6 lg:px-8 border-b border-[var(--border-subtle)] bg-[var(--bg-primary)]/95 backdrop-blur-xl shadow-sm flex items-center justify-between flex-shrink-0">
+        <div className="h-16 lg:h-20 px-4 sm:px-6 lg:px-8 border-b-1 border-[var(--border-strong)] bg-[var(--header-bg)] backdrop-blur-xl shadow-[var(--shadow-strong)] flex items-center justify-between flex-shrink-0">
           <Logo />
           <button
             onClick={() => setIsMobileOpen(false)}
@@ -67,9 +67,7 @@ const Sidebar = () => {
           >
             <FaTimes className="w-5 h-5" />
           </button>
-          <button className="hidden lg:block text-muted hover:text-white transition">
-            <FaChevronRight className="w-5 h-5" />
-          </button>
+          
         </div>
 
         {/* Navigation */}

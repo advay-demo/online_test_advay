@@ -161,23 +161,30 @@ const Courses = () => {
                     <CourseActionButtons activeButton="library" />
 
                     {/* Course Library Section */}
-                    <div className="card-strong p-4 sm:p-5 lg:p-6 min-h-[600px]">
-                        <div className="mb-4 sm:mb-6">
-                            <h2 className="text-lg sm:text-xl font-bold mb-1">Course Library</h2>
-                            <p className="text-xs sm:text-sm muted">Browse and manage all your courses</p>
+                    <div className="card-strong p-4 sm:p-5 lg:p-6 min-h-[600px] border-2 border-[var(--border-strong)] shadow-lg rounded-2xl">
+                        <div className="mb-5 sm:mb-7 pb-4 border-b-2 border-[var(--border-subtle)] flex items-center gap-3">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-blue-500/10 border-2 border-blue-500/30 flex items-center justify-center flex-shrink-0">
+                                <FaBook className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
+                            </div>
+                            <div>
+                                <h2 className="text-lg sm:text-xl font-bold mb-0.5">Course Library</h2>
+                                <p className="text-xs sm:text-sm muted">Browse and manage all your courses</p>
+                            </div>
                         </div>
+
+                        
 
                         {/* Filters and Search */}
                         <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3 sm:gap-4 mb-6">
-                            <div className="flex bg-black/20 p-1 rounded-lg overflow-x-auto scrollbar-hide">
+                            <div className="flex bg-[var(--input-bg)] p-1.5 rounded-xl overflow-x-auto scrollbar-hide border-2 border-[var(--border-strong)]">
                                 {['All Quizzes', 'Active'].map((tab) => (
                                     <button
                                         key={tab}
                                         onClick={() => setActiveTab(tab)}
-                                        className={`flex-1 sm:flex-initial px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                                        className={`flex-1 sm:flex-initial px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 whitespace-nowrap ${
                                             activeTab === tab
-                                                ? 'bg-white/10 text-white shadow-sm'
-                                                : 'text-muted hover:text-white hover:bg-white/5'
+                                                ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg'
+                                                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/5'
                                         }`}
                                     >
                                         {tab}
@@ -186,13 +193,13 @@ const Courses = () => {
                             </div>
                             <div className="flex gap-2 sm:gap-3 w-full md:w-auto">
                                 <div className="relative flex-1 md:w-64">
-                                    <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-muted w-3.5 h-3.5 transition-colors" />
+                                    <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] w-3.5 h-3.5 transition-colors" />
                                     <input
                                         type="text"
                                         placeholder="Search courses..."
                                         value={searchQuery}
                                         onChange={handleSearch}
-                                        className="w-full pl-9 pr-3 sm:pr-4 py-2 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg text-sm focus:outline-none focus:border-blue-500/50 transition-colors"
+                                        className="w-full pl-9 pr-3 sm:pr-4 py-2.5 bg-[var(--input-bg)] border-2 border-[var(--border-strong)] rounded-xl text-sm focus:outline-none focus:border-blue-500/50 transition-colors"
                                     />
                                 </div>
                                 
@@ -217,30 +224,34 @@ const Courses = () => {
                         {!loading && !error && (
                             <div className="space-y-3 sm:space-y-4">
                                 {courses.length === 0 ? (
-                                    <div className="text-center py-12">
-                                        <p className="text-lg muted">No courses found</p>
+                                    <div className="text-center py-16">
+                                        <div className="inline-block p-5 bg-blue-500/10 rounded-full mb-4">
+                                            <FaBook className="w-12 h-12 text-blue-400 opacity-50" />
+                                        </div>
+                                        <p className="text-lg font-semibold text-[var(--text-secondary)] mb-2">No courses found</p>
+                                        <p className="text-sm muted">Create your first course to get started</p>
                                     </div>
                                 ) : (
                                     courses.map((course) => (
                                         <div
                                             key={course.id}
-                                            className="card p-4 sm:p-5 hover:bg-white/[0.02] transition-all duration-200 group"
+                                            className="card-strong p-4 sm:p-5 hover:shadow-lg hover:border-blue-500/30 transition-all duration-300 group border-l-4 border-l-blue-500 rounded-xl"
                                         >
                                             <div className="flex flex-row flex-wrap items-center gap-3 sm:gap-4">
                                                 {/* Icon */}
-                                                <div className="w-12 h-12 sm:w-14 sm:h-14 -mt-10 sm:-mt-5 rounded-xl bg-blue-500/10 flex items-center justify-center flex-shrink-0 border border-blue-500/20 group-hover:border-blue-500/30 transition-all duration-200">
+                                                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-blue-500/15 flex items-center justify-center flex-shrink-0 border-2 border-blue-500/30 group-hover:border-blue-500/50 group-hover:scale-110 transition-all duration-300">
                                                     <FaBook className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
                                                 </div>
                                                 {/* Content */}
                                                 <div className="flex-1 min-w-0 w-full">
-                                                    <div className="flex flex-wrap items-center gap-2 mb-1">
-                                                        <h3 className="font-semibold text-base sm:text-lg line-clamp-1 group-hover:text-blue-400 transition-colors duration-200">
+                                                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                                                        <h3 className="font-bold text-base sm:text-lg line-clamp-1 group-hover:text-blue-400 transition-colors duration-300">
                                                             {course.name}
                                                         </h3>
                                                         <span
-                                                            className={`text-[10px] px-2 py-0.5 rounded border ${getStatusColor(
+                                                            className={`text-[10px] px-2.5 py-1 rounded-lg border-2 ${getStatusColor(
                                                                 course.status
-                                                            )} uppercase font-bold tracking-wider whitespace-nowrap flex-shrink-0 transition-all duration-200`}
+                                                            )} uppercase font-bold tracking-wider whitespace-nowrap flex-shrink-0 transition-all duration-300`}
                                                         >
                                                             {course.status}
                                                         </span>
@@ -275,14 +286,14 @@ const Courses = () => {
                                                 <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto sm:self-start">
                                                     <Link
                                                         to={`/teacher/courses/${course.id}/manage`}
-                                                        className="flex-1 sm:flex-none px-3 sm:px-4 py-2 border border-[var(--border-color)] rounded-lg text-xs sm:text-sm font-medium hover:bg-[var(--input-bg)] active:scale-95 transition-all duration-200 text-center whitespace-nowrap"
+                                                        className="flex-1 sm:flex-none px-4 sm:px-5 py-2.5 border-2 border-blue-500/30 bg-blue-500/10 rounded-lg text-xs sm:text-sm font-semibold text-blue-400 hover:border-blue-500/50 hover:bg-blue-500/20 hover:shadow-lg hover:shadow-blue-500/20 active:scale-95 transition-all duration-300 text-center whitespace-nowrap"
                                                     >
                                                         Manage
                                                     </Link>
                                                     <div className="relative" ref={openDropdownId === course.id ? dropdownRef : null}>
                                                         <button 
                                                             onClick={() => toggleDropdown(course.id)}
-                                                            className="p-2 border border-[var(--border-color)] rounded-lg hover:bg-[var(--input-bg)] active:scale-95 transition-all duration-200 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                                                            className="p-2.5 border-2 border-[var(--border-strong)] rounded-lg hover:bg-[var(--input-bg)] hover:border-blue-500/30 active:scale-95 transition-all duration-300 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                                                         >
                                                             <FaEllipsisV className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                                         </button>
@@ -290,9 +301,9 @@ const Courses = () => {
                                                         {/* Dropdown Menu */}
                                                         {openDropdownId === course.id && (
                                                             
-                                                            <div className="absolute right-0 mt-2 z-50 w-32 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg shadow-lg py-1 flex flex-col text-sm animate-fade-in">
+                                                            <div className="absolute right-0 mt-2 z-50 w-36 bg-[var(--card-strong-bg)] border-2 border-[var(--border-strong)] rounded-xl shadow-2xl py-1.5 flex flex-col text-sm animate-fade-in">
                                                                 <button
-                                                                    className="flex items-center gap-2 px-4 py-2 hover:bg-blue-500/10 transition"
+                                                                    className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-blue-500/10 text-blue-400 hover:text-blue-300 transition-colors duration-200"
                                                                     onClick={() => handleEditClick(course.id)}
                                                                 >
                                                                     <FaEdit className="w-4 h-4" /> Edit
@@ -314,11 +325,11 @@ const Courses = () => {
 
             {/* Edit Modal */}
             {showEditModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-2 sm:p-4">
-                <div className="card-strong w-full max-w-full sm:max-w-2xl lg:max-w-4xl my-4 sm:my-8 p-3 sm:p-4 md:p-6 relative rounded-xl shadow-2xl max-h-[85vh] sm:max-h-[90vh] overflow-y-auto">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4">
+                <div className="card-strong w-full max-w-full sm:max-w-2xl lg:max-w-4xl my-4 sm:my-8 p-4 sm:p-5 md:p-7 relative rounded-2xl shadow-2xl border-2 border-[var(--border-strong)] max-h-[85vh] sm:max-h-[90vh] overflow-y-auto">
                     {/* Close Button */}
                     <button
-                        className="absolute right-2 top-2 sm:right-4 sm:top-4 z-10 text-base sm:text-lg p-1.5 sm:p-2 rounded-full border border-[var(--border-color)] bg-[var(--input-bg)] hover:bg-white/10 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"
+                        className="absolute right-3 top-3 sm:right-5 sm:top-5 z-10 text-base sm:text-lg p-2 sm:p-2.5 rounded-xl border-2 border-[var(--border-strong)] bg-[var(--input-bg)] hover:bg-red-500/10 hover:border-red-500/30 text-[var(--text-muted)] hover:text-red-400 transition-all duration-300"
                         onClick={() => setShowEditModal(false)}
                         aria-label="Close"
                     >
@@ -326,12 +337,12 @@ const Courses = () => {
                     </button>
                     
                     {/* Header */}
-                    <div className="flex flex-row items-center gap-3 sm:gap-4 mb-3 sm:mb-4 pr-8 sm:pr-0">
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 flex-shrink-0">
-                            <FaEdit className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-blue-400" />
+                    <div className="flex flex-row items-center gap-3 sm:gap-4 mb-4 sm:mb-6 pr-10 sm:pr-0 pb-4 border-b-2 border-[var(--border-subtle)]">
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-xl bg-blue-500/10 flex items-center justify-center border-2 border-blue-500/30 flex-shrink-0">
+                            <FaEdit className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-blue-400" />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-0.5 sm:mb-1 line-clamp-1">
+                            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1 line-clamp-1">
                                 Edit Course
                             </h2>
                             <p className="text-xs sm:text-sm muted line-clamp-2">
@@ -342,18 +353,18 @@ const Courses = () => {
                     
                     {/* Error */}
                     {editError && (
-                        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 sm:p-4 text-red-300 mb-3 sm:mb-4 text-sm">
+                        <div className="bg-red-500/10 border-2 border-red-500/30 rounded-xl p-3 sm:p-4 text-red-300 mb-4 sm:mb-5 text-sm">
                             {editError}
                         </div>
                     )}
                     
                     {/* Form */}
-                    <form onSubmit={handleEditSubmit} className="space-y-3 sm:space-y-4">
+                    <form onSubmit={handleEditSubmit} className="space-y-4 sm:space-y-5">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 lg:gap-6">
                             {/* Left Column */}
-                            <div className="space-y-3 sm:space-y-4">
+                            <div className="space-y-4 sm:space-y-5">
                                 <div>
-                                    <label className="block text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+                                    <label className="block text-xs sm:text-sm font-semibold mb-2">
                                         Course Title *
                                     </label>
                                     <input
@@ -363,12 +374,12 @@ const Courses = () => {
                                         onChange={handleEditChange}
                                         required
                                         placeholder="Enter course title"
-                                        className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50 text-sm sm:text-base transition-colors"
+                                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-[var(--input-bg)] border-2 border-[var(--border-strong)] rounded-xl focus:outline-none focus:border-blue-500/50 text-sm sm:text-base transition-colors"
                                     />
                                 </div>
                                 
                                 <div>
-                                    <label className="block text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+                                    <label className="block text-xs sm:text-sm font-semibold mb-2">
                                         Instructions
                                     </label>
                                     <textarea
@@ -377,13 +388,13 @@ const Courses = () => {
                                         value={editForm.instructions}
                                         onChange={handleEditChange}
                                         placeholder="Enter course instructions"
-                                        className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50 resize-none text-sm sm:text-base transition-colors"
+                                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-[var(--input-bg)] border-2 border-[var(--border-strong)] rounded-xl focus:outline-none focus:border-blue-500/50 resize-none text-sm sm:text-base transition-colors"
                                     />
                                 </div>
                                 
                                 <div className="grid grid-cols-2 gap-3 sm:gap-4">
                                     <div>
-                                        <label className="block text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+                                        <label className="block text-xs sm:text-sm font-semibold mb-2">
                                             Code
                                         </label>
                                         <input
@@ -392,18 +403,18 @@ const Courses = () => {
                                             value={editForm.code}
                                             onChange={handleEditChange}
                                             placeholder="xxxx"
-                                            className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50 text-sm sm:text-base transition-colors"
+                                            className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-[var(--input-bg)] border-2 border-[var(--border-strong)] rounded-xl focus:outline-none focus:border-blue-500/50 text-sm sm:text-base transition-colors"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+                                        <label className="block text-xs sm:text-sm font-semibold mb-2">
                                             Enrollment
                                         </label>
                                         <select
                                             name="enrollment"
                                             value={editForm.enrollment}
                                             onChange={handleEditChange}
-                                            className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50 text-sm sm:text-base transition-colors"
+                                            className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-[var(--input-bg)] border-2 border-[var(--border-strong)] rounded-xl focus:outline-none focus:border-blue-500/50 text-sm sm:text-base transition-colors"
                                         >
                                             <option value="">---------</option>
                                             <option value="default">Enroll Request</option>
@@ -414,9 +425,9 @@ const Courses = () => {
                             </div>
                             
                             {/* Right Column */}
-                            <div className="space-y-3 sm:space-y-4">
+                            <div className="space-y-4 sm:space-y-5">
                                 <div>
-                                    <label className="block text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+                                    <label className="block text-xs sm:text-sm font-semibold mb-2">
                                         Start Enrollment Date & Time
                                     </label>
                                     <input
@@ -424,12 +435,12 @@ const Courses = () => {
                                         name="start_enroll_time"
                                         value={editForm.start_enroll_time}
                                         onChange={handleEditChange}
-                                        className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50 text-sm sm:text-base transition-colors"
+                                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-[var(--input-bg)] border-2 border-[var(--border-strong)] rounded-xl focus:outline-none focus:border-blue-500/50 text-sm sm:text-base transition-colors"
                                     />
                                 </div>
                                 
                                 <div>
-                                    <label className="block text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+                                    <label className="block text-xs sm:text-sm font-semibold mb-2">
                                         End Enrollment Date & Time
                                     </label>
                                     <input
@@ -437,19 +448,19 @@ const Courses = () => {
                                         name="end_enroll_time"
                                         value={editForm.end_enroll_time}
                                         onChange={handleEditChange}
-                                        className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50 text-sm sm:text-base transition-colors"
+                                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-[var(--input-bg)] border-2 border-[var(--border-strong)] rounded-xl focus:outline-none focus:border-blue-500/50 text-sm sm:text-base transition-colors"
                                     />
                                 </div>
                                 
                                 <div>
-                                    <label className="block text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+                                    <label className="block text-xs sm:text-sm font-semibold mb-2">
                                         Grading System
                                     </label>
                                     <select
                                         name="grading_system_id"
                                         value={editForm.grading_system_id}
                                         onChange={handleEditChange}
-                                        className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-blue-500/50 text-sm sm:text-base transition-colors"
+                                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-[var(--input-bg)] border-2 border-[var(--border-strong)] rounded-xl focus:outline-none focus:border-blue-500/50 text-sm sm:text-base transition-colors"
                                     >
                                         <option value="">---------</option>
                                         {gradingSystems.map(gs => (
@@ -458,14 +469,14 @@ const Courses = () => {
                                             </option>
                                         ))}
                                     </select>
-                                    <p className="text-xs muted mt-1">Leave empty if not using a grading system</p>
+                                    <p className="text-xs muted mt-1.5">Leave empty if not using a grading system</p>
                                 </div>
                                 
                                 
                                 
                                     
                                     <div className="flex flex-col gap-3 sm:gap-4">
-                                        <div className="p-3 sm:p-4 rounded-lg bg-[var(--input-bg)] border border-[var(--border-color)] mb-5">
+                                        <div className="p-4 rounded-xl bg-[var(--input-bg)] border-2 border-[var(--border-strong)]">
                                             <div className="flex items-center justify-between gap-3">
                                                 <div>
                                                     <div className="text-sm sm:text-base font-semibold mb-1">View Grade</div>
@@ -483,7 +494,7 @@ const Courses = () => {
                                                 </label>
                                             </div>
                                         </div>
-                                        <div className="p-3 sm:p-4 rounded-lg bg-[var(--input-bg)] border border-[var(--border-color)]">
+                                        <div className="p-4 rounded-xl bg-[var(--input-bg)] border-2 border-[var(--border-strong)]">
                                             <div className="flex items-center justify-between gap-3">
                                                 <div>
                                                     <div className="text-sm sm:text-base font-semibold mb-1">Active</div>
@@ -508,17 +519,17 @@ const Courses = () => {
                             </div>
                         </div>
                         
-                        <div className="flex flex-row gap-2 sm:gap-3 justify-end mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-white/10">
+                        <div className="flex flex-row gap-2 sm:gap-3 justify-end mt-5 sm:mt-6 pt-4 sm:pt-5 border-t-2 border-[var(--border-subtle)]">
                             <button
                                 type="button"
-                                className="w-full sm:w-auto px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/10 font-medium transition text-sm sm:text-base"
+                                className="w-full sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl border-2 border-[var(--border-strong)] bg-[var(--input-bg)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/5 hover:border-[var(--border-subtle)] font-semibold transition-all duration-300 text-sm sm:text-base"
                                 onClick={() => setShowEditModal(false)}
                             >
                                 Cancel
                             </button>
                             <button
                                 type="submit"
-                                className="w-full sm:w-auto px-5 sm:px-6 py-2 sm:py-2.5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition disabled:opacity-60 text-sm sm:text-base"
+                                className="w-full sm:w-auto px-6 sm:px-8 py-2.5 sm:py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white font-semibold hover:shadow-xl hover:shadow-blue-600/30 active:scale-95 transition-all duration-300 disabled:opacity-60 text-sm sm:text-base"
                                 disabled={saving}
                             >
                                 {saving ? 'Updating...' : 'Update'}

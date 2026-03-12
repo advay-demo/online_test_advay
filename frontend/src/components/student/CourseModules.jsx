@@ -61,19 +61,29 @@ const CourseModules = () => {
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between mb-4 px-1">
-                <div className="text-cyan-400 text-sm sm:text-base font-bold flex items-center gap-2 tracking-wider">
-                    COURSE MODULES &rarr;
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/15 to-blue-500/15 border-2 border-cyan-500/30 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                        <FaLayerGroup className="w-5 h-5 text-cyan-400" />
+                    </div>
+                    <div>
+                        <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)]">Course Modules</h3>
+                        <p className="text-xs muted">Track your learning progress</p>
+                    </div>
                 </div>
                 {modules.length > 0 && (
-                    <span className="text-xs font-mono text-gray-400 bg-black/40 px-3 py-1.5 rounded-full border border-white/10 shadow-sm">
-                        Total: <span className="text-white">{modules.length}</span>
+                    <span className="text-xs font-bold text-[var(--text-secondary)] bg-[var(--input-bg)] border-2 border-[var(--border-color)] px-3 py-1.5 rounded-xl shadow-md">
+                        Total: <span className="text-cyan-600 dark:text-cyan-400">{modules.length}</span>
                     </span>
                 )}
             </div>
 
             {!modules.length && (
-                <div className="text-center py-12 text-muted bg-white/5 rounded-xl border border-white/10">
-                    <p>No modules available for this course yet.</p>
+                <div className="text-center py-12 bg-[var(--input-bg)] border-2 border-dashed border-[var(--border-color)] rounded-xl shadow-inner">
+                    <div className="mb-4 p-4 bg-cyan-500/10 rounded-full w-16 h-16 mx-auto flex items-center justify-center">
+                        <FaLayerGroup className="text-cyan-400 w-8 h-8" />
+                    </div>
+                    <p className="text-[var(--text-primary)] font-semibold">No modules available for this course yet.</p>
+                    <p className="text-xs muted mt-2">Check back later for content</p>
                 </div>
             )}
 
@@ -86,10 +96,10 @@ const CourseModules = () => {
                         <div 
                             key={module.id} 
                             className={`
-                                relative rounded-xl border-l-[4px] transition-all duration-300 overflow-hidden bg-[#0a0a0bef]
-                                ${isExpanded ? 'border-l-blue-500 border-y border-r border-blue-500/20 shadow-lg shadow-blue-900/10' : 'border-l-white/10 border-y border-r border-white/5 hover:border-white/10'}
+                                relative rounded-xl border-l-[4px] transition-all duration-300 overflow-hidden border-2
+                                ${isExpanded ? 'border-l-blue-500 border-blue-500/30 shadow-xl shadow-blue-500/20 bg-[var(--surface-2)]' : 'border-l-[var(--border-color)] border-[var(--border-color)] hover:border-[var(--border-strong)] bg-[var(--surface)] hover:shadow-lg'}
                             `}
-                            style={{ borderLeftColor: isExpanded ? undefined : 'rgba(255,255,255,0.1)' }} 
+                            style={{ borderLeftColor: isExpanded ? undefined : 'var(--border-color)' }} 
                         >
                             {/* Module Row Header */}
                             <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-5 relative z-10">
@@ -97,27 +107,33 @@ const CourseModules = () => {
                                 {/* Info Section */}
                                 <div className="flex-1 min-w-0 flex items-start sm:items-center gap-4">
                                     {/* Icon Box */}
-                                    <div className={`p-3 rounded-xl shrink-0 ${isExpanded ? 'bg-blue-600 shadow-lg shadow-blue-900/50 text-white' : 'bg-gray-800/50 text-gray-500'}`}>
+                                    <div className={`p-3 rounded-xl shrink-0 transition-all duration-300 border-2 shadow-lg ${
+                                        isExpanded 
+                                            ? 'bg-gradient-to-br from-blue-600 to-blue-500 border-blue-400 shadow-blue-500/50 text-white' 
+                                            : 'bg-[var(--input-bg)] border-[var(--border-color)] text-gray-600 dark:text-gray-400'
+                                    }`}>
                                         <FaLayerGroup className="w-5 h-5" />
                                     </div>
 
                                     {/* Text Info */}
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                            <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-white/10 bg-white/5 text-gray-300">
+                                            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border-2 border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-secondary)]">
                                                 Module {index + 1}
                                             </span>
                                             {isCompleted && (
-                                                <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-900/20 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                                                <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border-2 border-emerald-500/30 shadow-md shadow-emerald-500/20">
                                                     <FaCheckCircle size={10} /> DONE
                                                 </span>
                                             )}
                                         </div>
-                                        <h3 className={`font-bold text-base sm:text-lg truncate group-hover:text-white transition-colors ${isExpanded ? 'text-white' : 'text-gray-200'}`}>
+                                        <h3 className={`font-bold text-base sm:text-lg truncate group-hover:text-blue-500 transition-colors ${
+                                            isExpanded ? 'text-blue-600 dark:text-blue-400' : 'text-[var(--text-primary)]'
+                                        }`}>
                                             {module.name}
                                         </h3>
                                         {module.description && (
-                                             <p className="text-xs text-gray-400 mt-1 line-clamp-1 max-w-md hidden sm:block">
+                                             <p className="text-xs text-[var(--text-muted)] mt-1 line-clamp-1 max-w-md hidden sm:block">
                                                 {module.description}
                                             </p>
                                         )}
@@ -133,39 +149,47 @@ const CourseModules = () => {
                                     {/* Progress */}
                                     <div className="flex flex-col items-end min-w-[120px]">
                                         <div className="flex items-center justify-between w-full mb-1.5">
-                                            <span className="text-[10px] uppercase text-gray-500 font-bold tracking-wider">Storage</span>
+                                            <span className="text-[10px] uppercase text-[var(--text-muted)] font-bold tracking-wider">Progress</span>
                                             <div className="flex items-center gap-1.5">
-                                                 {isExpanded && !isCompleted && <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></div>}
-                                                <span className={`text-xs font-bold ${isCompleted ? 'text-emerald-400' : 'text-cyan-400'}`}>
+                                                 {isExpanded && !isCompleted && <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 dark:bg-cyan-400 animate-pulse shadow-lg shadow-cyan-500/50"></div>}
+                                                <span className={`text-xs font-bold ${
+                                                    isCompleted 
+                                                        ? 'text-emerald-600 dark:text-emerald-400' 
+                                                        : 'text-cyan-600 dark:text-cyan-400'
+                                                }`}>
                                                     {Math.round(module.progress || 0)}%
                                                 </span>
                                             </div>
                                         </div>
                                         {/* Progress Bar Container */}
-                                        <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden border border-white/5 relative">
+                                        <div className="h-2.5 w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-full overflow-hidden relative shadow-inner">
                                             <div 
-                                                className={`h-full rounded-full transition-all duration-1000 ease-out relative ${isCompleted ? 'bg-gradient-to-r from-green-500 to-emerald-400' : 'bg-gradient-to-r from-blue-600 to-cyan-400'}`}
+                                                className={`h-full rounded-full transition-all duration-1000 ease-out relative shadow-lg ${
+                                                    isCompleted 
+                                                        ? 'bg-gradient-to-r from-green-500 to-emerald-400 shadow-emerald-500/50' 
+                                                        : 'bg-gradient-to-r from-blue-600 to-cyan-400 shadow-blue-500/50'
+                                                }`}
                                                 style={{ width: `${module.progress || 0}%` }}
                                             >
                                                 {/* Shine effect */}
-                                                <div className="absolute top-0 left-0 bottom-0 right-0 bg-gradient-to-b from-white/20 to-transparent"></div>
+                                                <div className="absolute top-0 left-0 bottom-0 right-0 bg-gradient-to-b from-white/30 to-transparent"></div>
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Units Badge Desktop */}
-                                    <div className="hidden lg:flex flex-col items-center justify-center px-4 py-1 rounded-lg bg-black/20 border border-white/5 min-w-[70px]">
-                                        <div className="text-sm font-bold text-white">{module.units ? module.units.length : 0}</div>
-                                        <div className="text-[9px] text-gray-500 uppercase tracking-widest">Units</div>
+                                    <div className="hidden lg:flex flex-col items-center justify-center px-4 py-1.5 rounded-xl bg-[var(--input-bg)] border-2 border-[var(--border-color)] min-w-[70px] shadow-md">
+                                        <div className="text-sm font-bold text-[var(--text-primary)]">{module.units ? module.units.length : 0}</div>
+                                        <div className="text-[9px] text-[var(--text-muted)] uppercase tracking-widest font-bold">Units</div>
                                     </div>
 
                                     {/* Toggle CTA */}
                                     <button
                                         onClick={() => toggleModule(module.id)}
-                                        className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 border ${
+                                        className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 border-2 shadow-lg ${
                                             isExpanded 
-                                            ? 'bg-blue-600 text-white border-blue-400 shadow-lg shadow-blue-500/30' 
-                                            : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10'
+                                            ? 'bg-gradient-to-br from-blue-600 to-blue-500 text-white border-blue-400 shadow-blue-500/50 scale-110' 
+                                            : 'bg-[var(--input-bg)] text-[var(--text-muted)] border-[var(--border-color)] hover:bg-[var(--border-subtle)] hover:text-[var(--text-primary)] hover:border-[var(--border-strong)]'
                                         }`}
                                     >
                                         {isExpanded ? <FaChevronUp size={14} /> : <FaChevronDown size={14} />}
@@ -175,11 +199,11 @@ const CourseModules = () => {
 
                             {/* Dropdown Content */}
                             {isExpanded && (
-                                <div className="border-t border-white/10 bg-black/20 animate-fadeIn relative">
-                                    <div className="absolute top-0 left-0 bottom-0 w-1 bg-gradient-to-b from-blue-500 to-transparent opacity-20"></div>
+                                <div className="border-t-2 border-[var(--border-subtle)] bg-[var(--input-bg)] animate-fadeIn relative shadow-inner">
+                                    <div className="absolute top-0 left-0 bottom-0 w-1 bg-gradient-to-b from-blue-500 to-transparent opacity-30"></div>
                                     
                                     {(!module.units || module.units.length === 0) ? (
-                                        <div className="p-8 text-center text-gray-500 text-sm italic">
+                                        <div className="p-8 text-center text-[var(--text-muted)] text-sm italic bg-[var(--surface)] border border-dashed border-[var(--border-color)] rounded-lg m-4">
                                             No learning units available in this module.
                                         </div>
                                     ) : (
@@ -187,7 +211,7 @@ const CourseModules = () => {
                                             {/* --- DESKTOP TABLE VIEW (MD+) --- */}
                                             <div className="hidden md:block overflow-x-auto">
                                                 <table className="w-full text-left text-sm">
-                                                    <thead className="text-xs uppercase text-gray-500 bg-black/20 font-semibold border-b border-white/5">
+                                                    <thead className="text-xs uppercase text-[var(--text-muted)] bg-[var(--surface)] font-semibold border-b border-[var(--border-color)]">
                                                         <tr>
                                                             <th className="pl-8 pr-4 py-4 w-[140px]">Status</th>
                                                             <th className="px-4 py-4">Unit Details</th>
@@ -195,7 +219,7 @@ const CourseModules = () => {
                                                             <th className="px-4 py-4 text-right pr-8">Actions</th>
                                                         </tr>
                                                     </thead>
-                                                    <tbody className="divide-y divide-white/5">
+                                                    <tbody className="divide-y divide-[var(--border-subtle)]">
                                                         {module.units.map((unit) => {
                                                             const unitName = unit.type === 'lesson' ? unit.lesson?.name : (unit.quiz?.description || unit.quiz?.name || `Quiz ${unit.order}`);
                                                             const isLocked = unit.check_prerequisite && unit.status === 'locked';
@@ -214,7 +238,7 @@ const CourseModules = () => {
                                                                                 <FaCheckCircle size={10} /> <span className="text-[10px] font-bold uppercase">Completed </span>
                                                                             </div>
                                                                         ) : isInProgress ? (
-                                                                            <div className="flex items-center gap-2 text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-md border border-amber-500/20 w-fit shadow-[0_0_10px_rgba(251,191,36,0.1)]">
+                                                                            <div className="flex items-center gap-2 text-amber-500 bg-amber-500/10 px-2.5 py-1 rounded-md border border-amber-500/20 w-fit shadow-[0_0_10px_rgba(251,191,36,0.1)]">
                                                                                 <FaSpinner className="animate-spin" size={10} /> <span className="text-[10px] font-bold uppercase">In Progress</span>
                                                                             </div>
                                                                         ) : (
@@ -227,20 +251,20 @@ const CourseModules = () => {
                                                                     
                                                                     <td className="px-4 py-4 align-middle">
                                                                         <div className="flex flex-col">
-                                                                            <span className="text-gray-200 font-medium group-hover:text-white transition-colors">{unitName}</span>
-                                                                            <span className="text-[11px] text-gray-500 font-mono mt-0.5">ORDER #{unit.order}</span>
+                                                                            <span className="text-[var(--text-primary)] font-medium group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors">{unitName}</span>
+                                                                            <span className="text-[11px] text-[var(--text-muted)] font-mono mt-0.5">ORDER #{unit.order}</span>
                                                                         </div>
                                                                     </td>
 
                                                                     <td className="px-4 py-4 align-middle">
                                                                         {unit.type === 'lesson' ? (
-                                                                            <div className="flex items-center gap-2 text-cyan-300 text-xs bg-cyan-950/30 px-3 py-1.5 rounded-full w-fit border border-cyan-500/20">
-                                                                                <FaBook className="text-cyan-400" size={12}/>
+                                                                            <div className="flex items-center gap-2 text-cyan-600 dark:text-cyan-300 text-xs bg-cyan-500/10 dark:bg-cyan-950/30 px-3 py-1.5 rounded-full w-fit border border-cyan-500/30">
+                                                                                <FaBook className="text-cyan-500 dark:text-cyan-400" size={12}/>
                                                                                 <span className="capitalize font-medium">Lesson</span>
                                                                             </div>
                                                                         ) : (
-                                                                            <div className="flex items-center gap-2 text-purple-300 text-xs bg-purple-950/30 px-3 py-1.5 rounded-full w-fit border border-purple-500/20">
-                                                                                <FaStar className="text-purple-400" size={12}/>
+                                                                            <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300 text-xs bg-purple-500/10 dark:bg-purple-950/30 px-3 py-1.5 rounded-full w-fit border border-purple-500/30">
+                                                                                <FaStar className="text-purple-500 dark:text-purple-400" size={12}/>
                                                                                 <span className="capitalize font-medium">Quiz</span>
                                                                             </div>
                                                                         )}
@@ -272,7 +296,7 @@ const CourseModules = () => {
                                                     const isInProgress = unit.status === 'inprogress';
 
                                                     return (
-                                                        <div key={unit.id} className="bg-white/5 rounded-lg p-4 border border-white/5 relative overflow-hidden">
+                                                        <div key={unit.id} className="bg-[var(--input-bg)] rounded-lg p-4 border-2 border-[var(--border-color)] relative overflow-hidden shadow-md">
                                                             {/* Status Strip on Left */}
                                                             <div className={`absolute top-0 bottom-0 left-0 w-1 ${
                                                                 isLocked ? 'bg-gray-700' : 
@@ -285,11 +309,11 @@ const CourseModules = () => {
                                                                 <div className="flex-1">
                                                                      <div className="flex items-center gap-2 mb-1">
                                                                         {unit.type === 'lesson' ? (
-                                                                            <span className="text-[10px] uppercase font-bold px-1.5 rounded bg-cyan-900/40 text-cyan-300 border border-cyan-500/20">
+                                                                            <span className="text-[10px] uppercase font-bold px-1.5 rounded bg-cyan-500/10 dark:bg-cyan-900/40 text-cyan-600 dark:text-cyan-300 border border-cyan-500/30">
                                                                                 Lesson
                                                                             </span>
                                                                         ) : (
-                                                                            <span className="text-[10px] uppercase font-bold px-1.5 rounded bg-purple-900/40 text-purple-300 border border-purple-500/20">
+                                                                            <span className="text-[10px] uppercase font-bold px-1.5 rounded bg-purple-500/10 dark:bg-purple-900/40 text-purple-600 dark:text-purple-300 border border-purple-500/30">
                                                                                 Quiz
                                                                             </span>
                                                                         )}
@@ -301,13 +325,13 @@ const CourseModules = () => {
                                                                              <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse shadow-[0_0_5px_#3b82f6]"></div> 
                                                                         )}
                                                                      </div>
-                                                                     <h4 className="text-sm font-bold text-gray-100 line-clamp-2 leading-tight">{unitName}</h4>
+                                                                     <h4 className="text-sm font-bold text-[var(--text-primary)] line-clamp-2 leading-tight">{unitName}</h4>
                                                                 </div>
                                                                 
                                                                 {/* Mobile Status Badge */}
                                                                 <div>
                                                                     {isLocked ? (
-                                                                        <FaLock className="text-gray-600" size={14} />
+                                                                        <FaLock className="text-gray-400 dark:text-gray-600" size={14} />
                                                                     ) : isUnitCompleted ? (
                                                                         <FaCheckCircle className="text-emerald-500" size={16} />
                                                                     ) : isInProgress ? (
@@ -318,8 +342,8 @@ const CourseModules = () => {
                                                                 </div>
                                                             </div>
 
-                                                            <div className="flex items-center justify-between pt-3 border-t border-white/5">
-                                                                <div className="text-[10px] text-gray-500">
+                                                            <div className="flex items-center justify-between pt-3 border-t border-[var(--border-subtle)]">
+                                                                <div className="text-[10px] text-[var(--text-muted)]">
                                                                     Unit Order: {unit.order}
                                                                 </div>
                                                                 <DesktopActionButtons 
@@ -357,7 +381,7 @@ const DesktopActionButtons = ({ unit, module, isLocked, isUnitCompleted, isInPro
                     onClick={(e) => {
                         e.stopPropagation();
                     }}
-                    className="px-3 py-1.5 text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 rounded-lg transition-colors border border-blue-500/20 flex items-center gap-2 text-xs font-medium"
+                    className="px-3 py-1.5 text-blue-500 bg-blue-500/10 hover:bg-blue-500/20 rounded-lg transition-colors border border-blue-500/20 flex items-center gap-2 text-xs font-medium"
                 >
                     <FaClipboardList className="w-3 h-3" /> {isMobile ? "Ans." : "Answer Paper"}
                 </button>
@@ -384,7 +408,7 @@ const DesktopActionButtons = ({ unit, module, isLocked, isUnitCompleted, isInPro
             {isUnitCompleted && (
                 <button
                         onClick={() => handleUnitClick(module, unit)}
-                        className="flex items-center gap-1.5 text-gray-400 hover:text-white text-xs px-4 py-1.5 rounded-lg border border-transparent hover:border-white/10 hover:bg-white/5 transition"
+                        className="flex items-center gap-1.5 text-gray-600 hover:text-red-500 text-xs px-4 py-1.5 rounded-lg border border-transparent hover:border-white/10 hover:bg-white/5 transition"
                 >
                     Retry <FaPlay size={10} />
                 </button>
