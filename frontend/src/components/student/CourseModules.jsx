@@ -7,7 +7,9 @@ import {
     FaCheckCircle, 
     FaLock,
     FaPlay,
+    FaVideo,
     FaBook,
+    FaPuzzlePiece,
     FaCalendarAlt,
     FaChevronDown,
     FaChevronUp,
@@ -259,12 +261,21 @@ const CourseModules = () => {
                                                                     <td className="px-4 py-4 align-middle">
                                                                         {unit.type === 'lesson' ? (
                                                                             <div className="flex items-center gap-2 text-cyan-600 dark:text-cyan-300 text-xs bg-cyan-500/10 dark:bg-cyan-950/30 px-3 py-1.5 rounded-full w-fit border border-cyan-500/30">
-                                                                                <FaBook className="text-cyan-500 dark:text-cyan-400" size={12}/>
+                                                                                <FaVideo className="text-cyan-500 dark:text-cyan-400" size={12}/>
                                                                                 <span className="capitalize font-medium">Lesson</span>
                                                                             </div>
-                                                                        ) : (
+                                                                        ) : unit.quiz.is_exercise ? (
                                                                             <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300 text-xs bg-purple-500/10 dark:bg-purple-950/30 px-3 py-1.5 rounded-full w-fit border border-purple-500/30">
-                                                                                <FaStar className="text-purple-500 dark:text-purple-400" size={12}/>
+                                                                                <FaPuzzlePiece className="text-purple-500 dark:text-purple-400" size={12}/>
+                                                                                <span className="capitalize font-medium">Exercise</span>
+                                                                            </div>
+                                                                            
+                                                                        ) : (
+                                                                            <div className="flex items-center gap-2 text-green-600 dark:text-green-300 text-xs bg-green-500/10 dark:bg-green-950/30 px-3 py-1.5 rounded-full w-fit border border-green-500/30">
+                                                                                <svg className="w-4 h-4 text-green-500 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                                </svg>
+                                                                                
                                                                                 <span className="capitalize font-medium">Quiz</span>
                                                                             </div>
                                                                         )}

@@ -73,6 +73,7 @@ const QuizListContent = ({
                             <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
+                            
                         </div>
                         <div className="flex-1 min-w-0">
                             <p className="text-sm text-blue-700 dark:text-blue-400 font-semibold mb-1">
@@ -93,7 +94,9 @@ const QuizListContent = ({
             <div className="card-strong p-5 sm:p-6 lg:p-8 min-h-[600px] border-2 border-[var(--border-strong)] shadow-lg rounded-2xl">
                 <div className="mb-5 sm:mb-7 pb-4 border-b-2 border-[var(--border-subtle)] flex items-center gap-3">
                     <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-blue-500/15 border-2 border-blue-500/40 flex items-center justify-center flex-shrink-0">
-                        <FaBook className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
+                        <svg className="w-10 h-10 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
                     </div>
                     <div>
                         <h2 className="text-lg sm:text-xl font-bold mb-0.5">All Quizzes & Exercises</h2>
@@ -177,10 +180,7 @@ const QuizListContent = ({
                                                             <FaTrophy className="w-3.5 h-3.5 flex-shrink-0 text-blue-600 dark:text-blue-400" />
                                                             <span className="font-medium">{quizCount} quiz{quizCount !== 1 ? 'zes' : ''} & exercise{quizCount !== 1 ? 's' : ''}</span>
                                                         </div>
-                                                        <div className="flex items-center gap-1.5">
-                                                            <FaBook className="w-3.5 h-3.5 flex-shrink-0 text-blue-600 dark:text-blue-400" />
-                                                            <span className="font-medium">{course.quizzes.length} total</span>
-                                                        </div>
+                                                        
                                                     </div>
                                                 </div>
 

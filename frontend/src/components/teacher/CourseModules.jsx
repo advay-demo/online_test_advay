@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FaPlus, FaBook, FaCalendarAlt, FaEdit, FaTrash, FaCheckCircle, FaEllipsisV, FaVideo, FaTimes, FaUpload, FaFileAlt, FaExternalLinkAlt, FaArrowUp, FaArrowDown, FaCheck, FaCog, FaRandom, FaList, FaSync, FaSearch } from 'react-icons/fa';
+import { FaPlus, FaBook, FaCalendarAlt, FaEdit, FaTrash, FaCheckCircle, FaEllipsisV, FaVideo, FaTimes, FaUpload, FaFileAlt, FaExternalLinkAlt, FaArrowUp, FaArrowDown, FaCheck, FaCog, FaRandom, FaList, FaSync, FaSearch, FaPuzzlePiece } from 'react-icons/fa';
 import useManageCourseStore from '../../store/manageCourseStore';
 import { useParams } from 'react-router-dom';
 import { FaBookOpen } from 'react-icons/fa';
@@ -1921,12 +1921,16 @@ const CourseModules = () => {
                                     <div className="flex items-center gap-4">
                                         <div className={`w-8 h-8 rounded flex items-center justify-center ${unit.type === 'lesson'
                                             ? 'bg-cyan-500/10 text-cyan-400'
-                                            : 'bg-green-500/10 text-green-400'
+                                            : 'bg-green-500/10 text-purple-400'
                                             }`}>
                                             {unit.type === 'lesson' ? (
-                                                <FaBook className="w-4 h-4" />
+                                                <FaVideo className="w-4 h-4" />
+                                            ) : unit.is_exercise ? (
+                                                <FaPuzzlePiece className="w-4 h-4" />
                                             ) : (
-                                                <FaCalendarAlt className="w-4 h-4" />
+                                                <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
                                             )}
                                         </div>
                                         <div>
@@ -1934,7 +1938,14 @@ const CourseModules = () => {
                                                 {unit.name || `${unit.type} #${unit.id}`}
                                             </div>
                                             <div className="text-xs muted flex items-center gap-3 mt-0.5">
-                                                <span className="uppercase">{unit.type}</span>
+                                                {unit.type === 'lesson' ? (
+                                                    <span className="uppercase">{unit.type}</span>
+                                                ) : unit.is_exercise ? (
+                                                    <span className="uppercase">EXERCISE</span>
+                                                ) : (
+                                                    <span className="uppercase">{unit.type}</span>
+                                                )}
+                                                
                                                 
                                             </div>
                                         </div>
@@ -1988,7 +1999,7 @@ const CourseModules = () => {
                                             <>
                                                 <button
                                                     onClick={() => openDesignQuestionPaper(unit.quiz_id, unit.questionpaper_id || null, unit.name)}
-                                                    className="px-3 py-1 border border-blue-500/30 text-blue-400 rounded text-xs hover:bg-blue-500/20 transition"
+                                                    className="px-3 py-1 border border-green-500/30 text-green-400 rounded text-xs hover:bg-green-500/20 transition"
                                                 >
                                                     Questions
                                                 </button>
