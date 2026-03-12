@@ -120,8 +120,14 @@ export default function CourseDiscussion({ courseId, showAddPostModal, setShowAd
 
   return (
     <div>
-      <div className="text-cyan-400 text-sm sm:text-base font-medium mb-6 flex items-center gap-2">
-        DISCUSSION FORUM <span>&rarr;</span>
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/15 to-blue-500/15 border-2 border-cyan-500/30 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+          <FaComments className="w-5 h-5 text-cyan-400" />
+        </div>
+        <div>
+          <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)]">Discussion Forum</h3>
+          <p className="text-xs muted">Join the conversation</p>
+        </div>
       </div>
 
       {/* Add Post Modal (Only for Course Forum) */}
@@ -201,14 +207,14 @@ export default function CourseDiscussion({ courseId, showAddPostModal, setShowAd
               <div className="flex gap-2 justify-end mt-6 flex-wrap">
                 <button
                   type="button"
-                  className="px-4 py-2 rounded-lg border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/10 font-medium transition"
+                  className="px-5 py-2.5 rounded-xl border-2 border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--border-subtle)] hover:border-[var(--border-strong)] font-bold transition-all duration-300 shadow-md"
                   onClick={closeCreatePost}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition disabled:opacity-60"
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-bold transition-all duration-300 shadow-xl shadow-blue-600/30 hover:shadow-2xl hover:shadow-blue-600/40 border-2 border-blue-500/50 active:scale-95 disabled:opacity-60"
                 >
                   Create Post
                 </button>
@@ -219,34 +225,44 @@ export default function CourseDiscussion({ courseId, showAddPostModal, setShowAd
       )}
 
       {/* Forum Tabs */}
-      <div className="flex bg-black/20 p-1 rounded-lg mb-6 w-max">
-        {['Course Forum', 'Lesson Forum'].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveForumTab(tab)}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 whitespace-nowrap ${
-              activeForumTab === tab
-                ? 'bg-white/10 text-white shadow-sm'
-                : 'text-muted hover:text-white hover:bg-white/5'
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
+      <div className="w-full sm:w-max overflow-x-auto scrollbar-thin mb-6">
+        <div className="flex bg-[var(--input-bg)] border border-[var(--border-subtle)] sm:border-2 p-0.5 sm:p-1 rounded-xl min-w-[280px] sm:min-w-0 w-full sm:w-fit gap-1 sm:gap-2 shadow-inner">
+          {['Course Forum', 'Lesson Forum'].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveForumTab(tab)}
+              className={`flex-1 sm:flex-none px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg text-[11px] sm:text-sm font-bold transition-all duration-300 whitespace-nowrap ${
+                activeForumTab === tab
+                  ? 'bg-gradient-to-r from-cyan-600 to-blue-500 text-white shadow-lg shadow-cyan-600/30 sm:scale-105 border border-cyan-400/50 sm:border-2'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--border-subtle)] border border-transparent sm:border-2'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Posts List */}
-      <div className="p-2 sm:p-4 bg-[var(--surface)] rounded-lg border border-[var(--border-subtle)] mt-4 space-y-8">
+      <div className="p-2 sm:p-5 bg-[var(--surface)] rounded-xl border-2 border-[var(--border-strong)] shadow-lg mt-4 space-y-8">
         <div>
-          <h3 className="text-base sm:text-lg font-bold mb-4 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-            {activeForumTab === 'Course Forum' ? 'Course Discussions' : 'Lesson Discussions'} ({posts.length})
-          </h3>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-8 h-8 rounded-lg bg-blue-500/15 border border-blue-500/30 flex items-center justify-center">
+              <FaComments className="text-blue-400 w-4 h-4" />
+            </div>
+            <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)]">
+              {activeForumTab === 'Course Forum' ? 'Course Discussions' : 'Lesson Discussions'} 
+              <span className="ml-2 text-blue-500 dark:text-blue-400">({posts.length})</span>
+            </h3>
+          </div>
           {posts.length === 0 ? (
-             <div className="text-center py-12 text-muted border border-dashed border-[var(--border-color)] rounded-xl">
-                <p>No posts yet.</p>
+             <div className="text-center py-12 border-2 border-dashed border-[var(--border-color)] rounded-xl bg-[var(--input-bg)]">
+                <div className="mb-4 p-4 bg-blue-500/10 rounded-full w-16 h-16 mx-auto flex items-center justify-center">
+                  <FaComments className="text-blue-400 w-8 h-8" />
+                </div>
+                <p className="text-[var(--text-primary)] font-semibold">No posts yet.</p>
                 {activeForumTab === 'Course Forum' && (
-                  <p className="text-sm mt-1">Be the first to start a topic!</p>
+                  <p className="text-sm mt-2 muted">Be the first to start a topic!</p>
                 )}
              </div>
           ) : (
@@ -254,23 +270,23 @@ export default function CourseDiscussion({ courseId, showAddPostModal, setShowAd
               {posts.map((post) => (
                 <div
                   key={post.id}
-                  className="card p-2 sm:p-4 flex flex-col gap-2 border border-[var(--border-color)] rounded-lg group"
+                  className="card p-2 sm:p-5 flex flex-col gap-2 border-2 border-[var(--border-color)] hover:border-blue-500/30 rounded-xl group shadow-md hover:shadow-xl transition-all duration-300"
                 >
                   <div className="flex flex-col sm:flex-row flex-wrap items-center gap-3 sm:gap-4">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-blue-500/10 flex items-center justify-center flex-shrink-0 border border-blue-500/20 group-hover:border-blue-500/30 transition-all duration-200">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-blue-500/15 to-purple-500/10 flex items-center justify-center flex-shrink-0 border-2 border-blue-500/30 group-hover:border-blue-500/50 group-hover:scale-110 transition-all duration-300 shadow-lg group-hover:shadow-blue-500/20">
                       <FaPaperPlane className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
                     </div>
                     <div className="flex-1 min-w-0 w-full sm:w-auto">
                       <div className="flex flex-wrap items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-base sm:text-lg line-clamp-1 group-hover:text-blue-400 transition-colors duration-200">
+                        <h3 className="font-bold text-base sm:text-lg line-clamp-1 group-hover:text-blue-400 transition-colors duration-200 text-[var(--text-primary)]">
                           {post.title}
                         </h3>
-                        <span className="text-xs text-gray-400 ml-2">
+                        <span className="text-xs text-[var(--text-secondary)] ml-2">
                            by {post.anonymous ? (post.is_me ? "Anonymous (You)" : "Anonymous") : post.author}
                         </span>
                       </div>
                       <div
-                        className="text-xs sm:text-sm muted mb-2 sm:mb-3 line-clamp-2"
+                        className="text-xs sm:text-sm text-[var(--text-secondary)] mb-2 sm:mb-3 line-clamp-2"
                         dangerouslySetInnerHTML={{ __html: post.description }}
                       />
                       {post.image && (
@@ -283,9 +299,9 @@ export default function CourseDiscussion({ courseId, showAddPostModal, setShowAd
                           />
                         </div>
                       )}
-                      <div className="flex items-center gap-2 text-xs muted">
+                      <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
                         {post.created_at && (
-                          <span className="ml-2 text-gray-400">
+                          <span className="ml-2">
                             {new Date(post.created_at).toLocaleString()}
                           </span>
                         )}
@@ -294,7 +310,7 @@ export default function CourseDiscussion({ courseId, showAddPostModal, setShowAd
                     <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto sm:self-start mt-2 sm:mt-0">
                       <button
                         onClick={() => handleShowComments(post)}
-                        className="w-full sm:w-auto px-3 sm:px-4 py-2 border border-[var(--border-color)] rounded-lg text-xs sm:text-sm font-medium hover:bg-[var(--input-bg)] active:scale-95 transition-all duration-200 text-center whitespace-nowrap"
+                        className="w-full sm:w-auto px-3 sm:px-4 py-2 border-2 border-[var(--border-color)] hover:border-blue-500/50 rounded-xl text-xs sm:text-sm font-bold hover:bg-gradient-to-r hover:from-blue-500/10 hover:to-purple-500/10 active:scale-95 transition-all duration-300 text-center whitespace-nowrap text-[var(--text-primary)] shadow-md hover:shadow-lg"
                       >
                         {selectedPostId === post.id ? 'Hide Comments' : 'Comments'}
                       </button>
@@ -303,7 +319,7 @@ export default function CourseDiscussion({ courseId, showAddPostModal, setShowAd
                       {activeForumTab === 'Course Forum' && post.is_me && (
                         <div className="relative post-action-menu">
                           <button
-                            className="p-2 border border-[var(--border-color)] rounded-lg hover:bg-[var(--input-bg)] active:scale-95 transition-all duration-200 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                            className="p-2 border-2 border-[var(--border-color)] hover:border-purple-500/50 rounded-xl hover:bg-gradient-to-r hover:from-purple-500/10 hover:to-pink-500/10 active:scale-95 transition-all duration-300 text-[var(--text-muted)] hover:text-[var(--text-primary)] shadow-md hover:shadow-lg"
                             onClick={() => setActionMenuOpen(actionMenuOpen === post.id ? null : post.id)}
                             aria-label="Actions"
                             tabIndex={0}
@@ -327,27 +343,30 @@ export default function CourseDiscussion({ courseId, showAddPostModal, setShowAd
                   
                   {/* Comments Section */}
                   {selectedPostId === post.id && (
-                    <div className="mt-2 border-t pt-2">
-                      <h4 className="text-xs sm:text-sm font-semibold mb-2 flex items-center gap-1">
-                        <FaComments className="text-blue-400" /> Comments
+                    <div className="mt-4 border-t-2 border-[var(--border-subtle)] pt-4">
+                      <h4 className="text-xs sm:text-sm font-bold mb-3 flex items-center gap-2 text-[var(--text-primary)]">
+                        <div className="w-6 h-6 rounded-lg bg-blue-500/15 border border-blue-500/30 flex items-center justify-center">
+                          <FaComments className="text-blue-400 w-3 h-3" />
+                        </div>
+                        Comments
                       </h4>
                       <div
                         className="overflow-x-auto sm:overflow-y-auto"
                         style={{ maxHeight: '220px' }}
                       >
                         {comments.length === 0 ? (
-                          <div className="text-xs text-gray-400">No comments yet.</div>
+                          <div className="text-xs text-[var(--text-muted)] p-3 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg">No comments yet.</div>
                         ) : (
                           <ul className="space-y-3">
                             {comments.map((comment) => (
                               <li
                                 key={comment.id}
-                                className="bg-white/5 border border-blue-100/20 rounded-lg px-2 sm:px-3 py-2 flex flex-col shadow-sm relative"
+                                className="bg-[var(--input-bg)] border-2 border-[var(--border-color)] hover:border-blue-500/30 rounded-xl px-2 sm:px-4 py-3 flex flex-col shadow-md hover:shadow-lg transition-all duration-300 relative"
                               >
-                                <div className="text-xs sm:text-sm text-gray-100" style={{ wordBreak: 'break-word' }}>
+                                <div className="text-xs sm:text-sm text-[var(--text-primary)] leading-relaxed" style={{ wordBreak: 'break-word' }}>
                                   <span dangerouslySetInnerHTML={{ __html: comment.description }} />
                                 </div>
-                                <div className="flex items-center gap-2 mt-1 text-[10px] text-gray-400">
+                                <div className="flex items-center gap-2 mt-2 text-[10px] text-[var(--text-muted)]">
                                   {comment.created_at && (
                                     <span>
                                       {new Date(comment.created_at).toLocaleString()}
@@ -374,10 +393,10 @@ export default function CourseDiscussion({ courseId, showAddPostModal, setShowAd
                         )}
                       </div>
                       <button
-                        className="w-full sm:w-auto mt-3 px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-xs font-medium"
+                        className="w-full sm:w-auto mt-4 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded-xl text-xs font-bold transition-all duration-300 shadow-lg shadow-blue-600/30 hover:shadow-xl hover:shadow-blue-600/40 border-2 border-blue-500/50 active:scale-95 flex items-center justify-center gap-2"
                         onClick={() => setShowAddCommentModal(true)}
                       >
-                        + Add Comment
+                        <FaPaperPlane className="w-3 h-3" /> Add Comment
                       </button>
                     </div>
                   )}

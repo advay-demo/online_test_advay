@@ -32,10 +32,6 @@ urlpatterns = [
 
 
 
-
-
-
-    
     # Course Catalog & Enrollment
     url(r'student/courses/catalog/$', views.course_catalog, name='course_catalog'),
     url(r'student/courses/enrolled/$', views.enrolled_courses, name='enrolled_courses'),
