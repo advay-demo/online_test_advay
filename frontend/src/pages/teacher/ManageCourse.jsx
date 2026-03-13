@@ -23,18 +23,10 @@ import CourseMDManager from '../../components/teacher/CourseMDManager';
 const ManageCourse = () => {
     const { courseId } = useParams();
     const {
-        course, modules, loading, error, enrollments, loadingEnrollments, analytics, loadingAnalytics,
-        activeTab, setActiveTab, activeForumTab, showQuizQuestionManager, setShowQuizQuestionManager, selectedQuizId, setSelectedQuizId,
-        moduleOrder, unitOrders, savingOrder, showModuleForm, editingModule, showLessonForm, showQuizForm,
-        selectedModule, editingLesson, editingQuiz, moduleFormData, lessonFormData, quizFormData,
-        setShowModuleForm, setEditingModule, setModuleFormData, handleModuleFormChange, handleCreateModule, handleUpdateModule, handleDeleteModule,
-        openEditModule, openCreateModule, setShowLessonForm, setSelectedModule, setEditingLesson, setLessonFormData, handleLessonFormChange,
-        openCreateLesson, openEditLesson, handleCreateLesson, handleDeleteLesson,
-        setShowQuizForm, setEditingQuiz, setQuizFormData, handleQuizFormChange, openCreateQuiz, openEditQuiz, handleCreateQuiz, handleDeleteQuiz,
-        loadCourseData, loadEnrollments, loadAnalytics, initializeOrdering, moveModule, saveModuleOrder, moveUnit, saveUnitOrder,
-        handleApproveEnrollment, handleRejectEnrollment, handleRemoveEnrollment, handleQuizQuestionsUpdate
+        course, modules, loading, error, analytics, loadingAnalytics,
+        activeTab, setActiveTab, activeForumTab,
+        loadCourseData, loadEnrollments, loadAnalytics, initializeOrdering
     } = useManageCourseStore();
-
 
     const [showAddPostModal, setShowAddPostModal] = useState(false);
     const openCreatePost = () => setShowAddPostModal(true);
@@ -89,7 +81,7 @@ const ManageCourse = () => {
                             <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-red-300 mb-4">
                                 {error || 'Course not found'}
                             </div>
-                            <Link to="/teacher/courses" className="text-blue-400 hover:text-blue-300">
+                            <Link to="/teacher/courses" className="text-blue-500 hover:text-blue-400">
                                 Back to Courses
                             </Link>
                         </div>
@@ -119,15 +111,12 @@ const ManageCourse = () => {
                 <Header isAuth />
 
                 <div className="p-4 sm:p-8">
-                    {/* Page Header */}
                     <div className="mb-6 lg:mb-8">
                         <h1 className="text-2xl sm:text-3xl font-bold mb-2">Courses</h1>
                         <p className="text-sm muted">Create, manage and analyze your courses</p>
                     </div>
 
-                    {/* Course Container */}
-                    <div className="card-strong p-3 sm:p-6 min-h-[400px] sm:min-h-[600px] w-full max-w-full overflow-x-auto">
-                        {/* Course Header */}
+                    <div className="card-strong p-3 sm:p-6 min-h-[400px] sm:min-h-[600px] w-full max-w-full overflow-x-auto border border-[var(--border-strong)] shadow-lg rounded-2xl">
                         <div className="flex sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-4">
                             <div className="flex items-center gap-3 sm:gap-4">
                                 <Link
@@ -145,19 +134,13 @@ const ManageCourse = () => {
                                     </p>
                                 </div>
                             </div>
+
                             <div className="flex items-center gap-2 sm:gap-3">
-                                <button className="px-3 py-1.5 sm:px-4 sm:py-2 border border-white/10 rounded-lg text-xs sm:text-sm font-medium hover:bg-white/5 transition flex items-center gap-2">
-                                    <FaShareAlt className="w-3 h-3" />
-                                    <span className="hidden xs:inline">Share</span>
-                                </button>
-                                <button className="p-2 border border-white/10 rounded-lg hover:bg-white/5 transition text-muted hover:text-white">
-                                    <FaEllipsisV className="w-4 h-4" />
-                                </button>
 
                                 {activeTab === 'Modules' && (
                                     <button
-                                        onClick={openCreateModule}
-                                        className="bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-700 transition flex items-center gap-2"
+                                        onClick={() => useManageCourseStore.getState().openCreateModule()}
+                                        className="bg-gradient-to-r from-blue-600 to-blue-500 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs sm:text-sm font-bold hover:from-blue-700 hover:to-blue-600 transition-all shadow-lg shadow-blue-500/20 border border-blue-500/40 flex items-center gap-2"
                                     >
                                         <FaPlus className="w-3 h-3" />
                                         <span className="hidden sm:inline">Add Module</span>
@@ -167,7 +150,7 @@ const ManageCourse = () => {
                                 {activeTab === 'Discussions' && activeForumTab === 'Course Forum' && (
                                     <button
                                         onClick={openCreatePost}
-                                        className="bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-700 transition flex items-center gap-2"
+                                        className="bg-gradient-to-r from-blue-600 to-blue-500 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs sm:text-sm font-bold hover:from-blue-700 hover:to-blue-600 transition-all shadow-lg shadow-blue-500/20 border border-blue-500/40 flex items-center gap-2"
                                     >
                                         <FaPlus className="w-3 h-3" />
                                         <span className="hidden sm:inline">New Post</span>
@@ -176,17 +159,17 @@ const ManageCourse = () => {
                             </div>
                         </div>
 
-                        {/* Tabs */}
-                        <div className="w-full overflow-x-auto">
-                            <div className="flex flex-nowrap sm:flex-wrap bg-black/20 p-1 rounded-lg min-w-[500px] sm:min-w-0 w-max sm:w-fit mb-6 sm:mb-8 gap-2">
+                        <div className="w-full overflow-x-auto scrollbar-thin">
+                            <div className="flex flex-nowrap sm:flex-wrap bg-[var(--input-bg)] border border-[var(--border-subtle)] sm:border-2 p-0.5 sm:p-1 rounded-xl min-w-[280px] sm:min-w-0 w-full sm:w-fit mb-6 sm:mb-8 gap-1 sm:gap-2 shadow-inner">
                                 {tabs.map((tab) => (
                                     <button
                                         key={tab}
                                         onClick={() => setActiveTab(tab)}
-                                        className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition whitespace-nowrap ${activeTab === tab
-                                            ? 'bg-blue-600 text-white'
-                                            : 'text-muted hover:text-white hover:bg-white/5'
-                                            }`}
+                                        className={`flex-1 sm:flex-none px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg text-[11px] sm:text-sm font-bold transition-all duration-300 whitespace-nowrap ${
+                                            activeTab === tab
+                                            ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-600/30 sm:scale-105 border border-blue-400/50 sm:border-2'
+                                            : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--border-subtle)] border border-transparent sm:border-2'
+                                        }`}
                                     >
                                         {tab}
                                     </button>
@@ -194,14 +177,13 @@ const ManageCourse = () => {
                             </div>
                         </div>
 
-                        {/* Tab Content */}
                         <div className="min-h-[200px] sm:min-h-[400px]">
                             {activeTab === 'Enrollment' && <CourseEnrollment courseId={course.id} />}
                             {activeTab === 'Modules' && <CourseModules />}
                             {activeTab === 'Design Course' && <CourseDesign />}
                             {activeTab === 'Analytics' && (
                                 <div>
-                                    <div className="text-cyan-400 text-xs sm:text-sm font-medium mb-4 sm:mb-6 flex items-center gap-2">
+                                    <div className="text-cyan-500 dark:text-cyan-400 text-xs sm:text-sm font-medium mb-4 sm:mb-6 flex items-center gap-2">
                                         COURSE ANALYTICS <span>&rarr;</span>
                                     </div>
                                     <CourseAnalytics analytics={analytics} loading={loadingAnalytics} />
@@ -223,8 +205,6 @@ const ManageCourse = () => {
                     </div>
                 </div>
             </main>
-
-            
         </div>
     );
 };
