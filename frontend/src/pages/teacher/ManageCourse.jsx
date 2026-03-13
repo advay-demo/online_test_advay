@@ -23,9 +23,16 @@ import CourseMDManager from '../../components/teacher/CourseMDManager';
 const ManageCourse = () => {
     const { courseId } = useParams();
     const {
-        course, modules, loading, error, analytics, loadingAnalytics,
-        activeTab, setActiveTab, activeForumTab,
-        loadCourseData, loadEnrollments, loadAnalytics, initializeOrdering
+        course, modules, loading, error, enrollments, loadingEnrollments, analytics, loadingAnalytics,
+        activeTab, setActiveTab, activeForumTab, showQuizQuestionManager, setShowQuizQuestionManager, selectedQuizId, setSelectedQuizId,
+        moduleOrder, unitOrders, savingOrder, showModuleForm, editingModule, showLessonForm, showQuizForm,
+        selectedModule, editingLesson, editingQuiz, moduleFormData, lessonFormData, quizFormData,
+        setShowModuleForm, setEditingModule, setModuleFormData, handleModuleFormChange, handleCreateModule, handleUpdateModule, handleDeleteModule,
+        openEditModule, openCreateModule, setShowLessonForm, setSelectedModule, setEditingLesson, setLessonFormData, handleLessonFormChange,
+        openCreateLesson, openEditLesson, handleCreateLesson, handleDeleteLesson,
+        setShowQuizForm, setEditingQuiz, setQuizFormData, handleQuizFormChange, openCreateQuiz, openEditQuiz, handleCreateQuiz, handleDeleteQuiz,
+        loadCourseData, loadEnrollments, loadAnalytics, initializeOrdering, moveModule, saveModuleOrder, moveUnit, saveUnitOrder,
+        handleApproveEnrollment, handleRejectEnrollment, handleRemoveEnrollment, handleQuizQuestionsUpdate
     } = useManageCourseStore();
 
     const [showAddPostModal, setShowAddPostModal] = useState(false);
@@ -139,7 +146,7 @@ const ManageCourse = () => {
 
                                 {activeTab === 'Modules' && (
                                     <button
-                                        onClick={() => useManageCourseStore.getState().openCreateModule()}
+                                        onClick={openCreateModule}
                                         className="bg-gradient-to-r from-blue-600 to-blue-500 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs sm:text-sm font-bold hover:from-blue-700 hover:to-blue-600 transition-all shadow-lg shadow-blue-500/20 border border-blue-500/40 flex items-center gap-2"
                                     >
                                         <FaPlus className="w-3 h-3" />
