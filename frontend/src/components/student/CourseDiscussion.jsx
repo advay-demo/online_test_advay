@@ -272,7 +272,7 @@ export default function CourseDiscussion({ courseId, showAddPostModal, setShowAd
                   key={post.id}
                   className="card p-2 sm:p-5 flex flex-col gap-2 border-2 border-[var(--border-color)] hover:border-blue-500/30 rounded-xl group shadow-md hover:shadow-xl transition-all duration-300"
                 >
-                  <div className="flex flex-col sm:flex-row flex-wrap items-center gap-3 sm:gap-4">
+                  <div className="flex flex-row flex-wrap items-center gap-3 sm:gap-4">
                     <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-blue-500/15 to-purple-500/10 flex items-center justify-center flex-shrink-0 border-2 border-blue-500/30 group-hover:border-blue-500/50 group-hover:scale-110 transition-all duration-300 shadow-lg group-hover:shadow-blue-500/20">
                       <FaPaperPlane className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
                     </div>
