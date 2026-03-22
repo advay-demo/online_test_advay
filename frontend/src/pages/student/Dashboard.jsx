@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FaCheckCircle, FaBolt, FaChartLine, FaClock, FaArrowRight } from 'react-icons/fa';
-import { AiOutlineCheck, AiOutlineTrophy, AiOutlineMessage, AiOutlineFire } from 'react-icons/ai';
+import { FaCheckCircle, FaBolt, FaChartLine, FaClock, FaArrowRight,
+    FaBook,
+    FaLayerGroup,
+} from 'react-icons/fa';
+
 import Sidebar from '../../components/layout/Sidebar';
 import Header from '../../components/layout/Header';
 import { useAuthStore } from '../../store/authStore';
@@ -147,14 +150,11 @@ const Dashboard = () => {
             {stat_s.map((stat, index) => (
               <div 
                 key={index} 
-                className="card p-4 sm:p-5 lg:p-6 rounded-2xl border-l-4 hover:shadow-lg transition-all duration-300 group relative overflow-hidden"
-                style={{
-                  borderLeftColor: stat.color,
-                }}
+                className="card p-4 sm:p-5 lg:p-6 rounded-2xl border-2 border-[var(--border-subtle)] hover:shadow-lg transition-all duration-300 group relative overflow-hidden"
               >
                 {/* Subtle background glow */}
                 <div 
-                  className="absolute top-0 right-0 w-24 h-24 rounded-full blur-3xl opacity-10 group-hover:opacity-20 transition-opacity duration-300"
+                  className="absolute top-0 right-0 w-24 h-24 rounded-full blur-3xl opacity-20 group-hover:opacity-40 transition-opacity duration-300"
                   style={{ background: stat.color }}
                 />
                 
@@ -180,7 +180,7 @@ const Dashboard = () => {
 
           <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 mb-6 lg:mb-8">
             {/* Upcoming Quizzes */}
-            <div className="lg:col-span-2 card p-5 sm:p-6 rounded-2xl border-t-4 border-t-emerald-500 shadow-lg shadow-emerald-500/5">
+            <div className="lg:col-span-2 card p-5 sm:p-6 rounded-2xl border-2 border-[var(--border-subtle)] shadow-lg shadow-emerald-500/5">
               <div className="mb-4 sm:mb-6 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border-2 border-emerald-500/30 flex items-center justify-center">
                   <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
@@ -194,7 +194,7 @@ const Dashboard = () => {
               </div>
               <div className="space-y-3 sm:space-y-4">
                 {upcomingQuizzes.length > 0 ? upcomingQuizzes.map((quiz, index) => (
-                  <div key={index} className="card-strong p-4 sm:p-5 rounded-xl border-l-4 border-l-emerald-500 hover:shadow-md hover:bg-white/[0.03] transition-all duration-300 group">
+                  <div key={index} className="card-strong p-4 sm:p-5 rounded-xl hover:border-emerald-500 hover:shadow-md hover:bg-white/[0.03] transition-all duration-300 group">
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                       <div className="flex gap-3 sm:gap-4 flex-1">
                         <div
@@ -233,6 +233,7 @@ const Dashboard = () => {
                           >
                             Manage
                           </Link>
+
                         ) : (
                           <span className="w-full sm:w-auto border border-[var(--border-color)] px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold text-muted opacity-50 cursor-not-allowed whitespace-nowrap">
                             Manage
@@ -254,7 +255,7 @@ const Dashboard = () => {
             </div>
 
             {/* Quick Stats */}
-            <div className="card p-5 sm:p-6 rounded-2xl border-t-4 border-t-purple-500 shadow-lg shadow-purple-500/5">
+            <div className="card p-5 sm:p-6 rounded-2xl border-b-2 border-[var(--border-subtle)] shadow-lg shadow-purple-500/5">
               <div className="mb-4 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-purple-500/10 border-2 border-purple-500/30 flex items-center justify-center">
                   <FaBolt className="w-5 h-5 text-purple-400" />
@@ -305,9 +306,7 @@ const Dashboard = () => {
             <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-6 sm:mb-8 pb-4 border-b-2 border-[var(--border-subtle)]">
               <div className="flex items-center gap-2 sm:gap-3">
                 <div className="w-9 h-9 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-xl bg-blue-500/10 border-2 border-blue-500/30 flex items-center justify-center flex-shrink-0">
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13M3 6.253C4.168 5.477 5.754 5 7.5 5S10.832 5.477 12 6.253M12 6.253C13.168 5.477 14.754 5 16.5 5S19.832 5.477 21 6.253M3 19.253C4.168 18.477 5.754 18 7.5 18S10.832 18.477 12 19.253M12 19.253C13.168 18.477 14.754 18 16.5 18S19.832 18.477 21 19.253" />
-                  </svg>
+                   <FaBook className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-[var(--text-primary)] truncate">
@@ -354,9 +353,7 @@ const Dashboard = () => {
                     {/* Meta */}
                     <div className="flex items-center justify-between text-xs mb-3 gap-2">
                       <span className="text-[var(--text-muted)] flex items-center gap-1.5 truncate">
-                        <svg className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13M3 6.253C4.168 5.477 5.754 5 7.5 5S10.832 5.477 12 6.253" />
-                        </svg>
+                        <FaLayerGroup className="w-3 h-3 text-cyan-400" />
                         <span className="truncate">{course.course_content?.length ?? 0} modules</span>
                       </span>
                       <span

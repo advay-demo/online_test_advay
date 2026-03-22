@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import {
     FaCalendar,
     FaClock,
+    FaPuzzlePiece,
     FaUsers,
     FaCheckCircle,
     FaBook,
@@ -40,26 +41,26 @@ const QuizListContent = ({
         <>
             {/* Stats Cards - Responsive Grid */}
             <div className="grid grid-cols-2 gap-4 sm:gap-5 mb-6">
-                <div className="card p-4 sm:p-5 rounded-2xl border-l-4 border-l-blue-500 hover:shadow-lg transition-all duration-300 group relative overflow-hidden bg-[var(--card-bg)]">
+                <div className="card p-4 sm:p-5 rounded-2xl border-2 border-[var(--border-subtle)] hover:shadow-lg transition-all duration-300 group relative overflow-hidden bg-[var(--card-bg)]">
                     <div className="relative flex items-center gap-3">
-                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-blue-500/15 flex items-center justify-center border-2 border-blue-500/40 group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
-                            <FaTrophy className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-orange-500/15 flex items-center justify-center border-2 border-orange-500/40 group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+                            <FaTrophy className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600 dark:text-orange-400" />
                         </div>
                         <div className="min-w-0 flex-1">
-                            <p className="text-xs text-[var(--text-muted)] mb-1 font-medium">Total Quizzes</p>
-                            <p className="text-2xl sm:text-3xl font-bold truncate text-blue-600 dark:text-blue-400">{totalQuizzes}</p>
+                            <p className="text-xs text-[var(--text-muted)] mb-1 font-medium">Total Quizzes & Exercises</p>
+                            <p className="text-2xl sm:text-3xl font-bold truncate text-orange-600 dark:text-orange-400">{totalQuizzes}</p>
                         </div>
                     </div>
                 </div>
 
-                <div className="card p-4 sm:p-5 rounded-2xl border-l-4 border-l-emerald-500 hover:shadow-lg transition-all duration-300 group relative overflow-hidden bg-[var(--card-bg)]">
+                <div className="card p-4 sm:p-5 rounded-2xl border-2 border-[var(--border-subtle)] hover:shadow-lg transition-all duration-300 group relative overflow-hidden bg-[var(--card-bg)]">
                     <div className="relative flex items-center gap-3">
-                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-emerald-500/15 flex items-center justify-center border-2 border-emerald-500/40 group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
-                            <FaCheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600 dark:text-emerald-400" />
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-yellow-500/15 flex items-center justify-center border-2 border-yellow-500/40 group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+                            <FaCheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600 dark:text-yellow-400" />
                         </div>
                         <div className="min-w-0 flex-1">
                             <p className="text-xs text-[var(--text-muted)] mb-1 font-medium">Active</p>
-                            <p className="text-2xl sm:text-3xl font-bold truncate text-emerald-600 dark:text-emerald-400">{totalActive}</p>
+                            <p className="text-2xl sm:text-3xl font-bold truncate text-yellow-600 dark:text-yellow-400">{totalActive}</p>
                         </div>
                     </div>
                 </div>
@@ -93,11 +94,7 @@ const QuizListContent = ({
             {/* Main Content Card */}
             <div className="card-strong p-5 sm:p-6 lg:p-8 min-h-[600px] border-2 border-[var(--border-strong)] shadow-lg rounded-2xl">
                 <div className="mb-5 sm:mb-7 pb-4 border-b-2 border-[var(--border-subtle)] flex items-center gap-3">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-blue-500/15 border-2 border-blue-500/40 flex items-center justify-center flex-shrink-0">
-                        <svg className="w-10 h-10 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    </div>
+                    
                     <div>
                         <h2 className="text-lg sm:text-xl font-bold mb-0.5">All Quizzes & Exercises</h2>
                         <p className="text-xs sm:text-sm muted">Browse and manage all assessments across courses</p>
@@ -157,7 +154,7 @@ const QuizListContent = ({
 
                                 return (
                                     <div key={course.course_id} className="mb-4">
-                                        <div className="card p-4 sm:p-5 rounded-xl border-l-4 border-l-blue-500 hover:shadow-lg hover:border-blue-500/70 dark:hover:border-blue-500/50 transition-all duration-300 group bg-[var(--card-bg)]">
+                                        <div className="card p-4 sm:p-5 rounded-xl border-2 border-[var(--border-medium)] hover:shadow-lg hover:border-blue-500/70 dark:hover:border-blue-500/50 transition-all duration-300 group bg-[var(--card-bg)]">
                                             <div className="flex flex-col sm:flex-row items-start gap-4">
                                                 {/* Icon */}
                                                 <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-blue-500/15 flex items-center justify-center flex-shrink-0 border-2 border-blue-500/40 dark:border-blue-500/30 group-hover:border-blue-500/60 dark:group-hover:border-blue-500/50 group-hover:scale-110 transition-all duration-300">
@@ -178,7 +175,7 @@ const QuizListContent = ({
                                                     <div className="flex flex-wrap gap-3 sm:gap-4 text-xs text-[var(--text-muted)] mt-2">
                                                         <div className="flex items-center gap-1.5">
                                                             <FaTrophy className="w-3.5 h-3.5 flex-shrink-0 text-blue-600 dark:text-blue-400" />
-                                                            <span className="font-medium">{quizCount} quiz{quizCount !== 1 ? 'zes' : ''} & exercise{quizCount !== 1 ? 's' : ''}</span>
+                                                            <span className="font-medium">{course.quizzes.length} quizzes and exercises</span>
                                                         </div>
                                                         
                                                     </div>
@@ -232,7 +229,7 @@ const QuizListContent = ({
 
                                         {/* Quiz Details Dropdown */}
                                         {isExpanded && (
-                                            <div className="mt-3 border-2 border-[var(--border-strong)] bg-[var(--card-bg)] rounded-xl overflow-hidden shadow-lg animate-slideDown">
+                                            <div className="mt-3 border-2 border-blue-500/70 dark:border-blue-500/50 rounded-xl overflow-hidden shadow-lg animate-slideDown">
                                                 <div className="p-5">
                                                     <h4 className="text-sm font-bold mb-4 flex items-center gap-2">
                                                         <span className="w-2 h-2 rounded-full bg-blue-500"></span>
@@ -255,94 +252,99 @@ const QuizListContent = ({
                                                             </div>
                                                         ) : (
                                                             <ul className="space-y-3">
-    {course.quizzes.map((quiz) => {
-        const TypeIcon = getQuizTypeIcon(quiz.is_exercise);
-        const typeColor = getQuizTypeColor(quiz.is_exercise);
+                                                            {course.quizzes.map((quiz) => {
+                                                                const TypeIcon = getQuizTypeIcon(quiz.is_exercise);
+                                                                const typeColor = getQuizTypeColor(quiz.is_exercise);
 
-        return (
-            <li
-                key={quiz.id}
-                className="card-strong p-4 rounded-xl border-l-4 hover:shadow-md hover:bg-white/[0.02] transition-all duration-300 group"
-                style={{
-                    borderLeftColor: quiz.is_exercise ? 'rgb(168, 85, 247)' : 'rgb(59, 130, 246)'
-                }}
-            >
-                <div className="flex items-start gap-3">
-                    <div className={`p-2.5 rounded-xl flex-shrink-0 border-2 ${
-                        quiz.is_exercise 
-                            ? 'bg-purple-500/10 border-purple-500/30' 
-                            : 'bg-blue-500/10 border-blue-500/30'
-                    } group-hover:scale-110 transition-transform duration-300`}>
-                        <TypeIcon className={`w-5 h-5 ${
-                            quiz.is_exercise ? 'text-purple-400' : 'text-blue-400'
-                        }`} />
-                    </div>
+                                                                return (
+                                                                    <li
+                                                                        key={quiz.id}
+                                                                        className="card-strong p-4 rounded-xl border-2 border-[var(--border-medium)] hover:shadow-md hover:bg-white/[0.02] transition-all duration-300 group"
+                                                                        
+                                                                    >
+                                                                        <div className="flex items-start gap-3">
+                                                                            <div className={`p-2 rounded-xl flex-shrink-0 border-2 ${
+                                                                                quiz.is_exercise 
+                                                                                    ? 'bg-purple-500/10 border-purple-500/30' 
+                                                                                    : 'bg-emerald-500/10 border-emerald-500/30'
+                                                                                } group-hover:scale-110 transition-transform duration-300`}>
+                                                                                {quiz.is_exercise ? (
+                                                                                    <FaPuzzlePiece className="text-purple-400 w-6 h-6" />
+                                                                                ) : (
+                                                                                    <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                                    </svg>
+                                                                                )}
+                                                                                
+                                                                            </div>
 
-                    <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2 mb-2">
-                            <div className="flex-1 min-w-0">
-                                <div className="text-[10px] font-bold text-blue-400 mb-1 uppercase tracking-wide">
-                                    {quiz.module_name}
-                                </div>
-                                <h5 className="text-sm font-bold group-hover:text-blue-400 transition-colors line-clamp-2">
-                                    {quiz.name}
-                                </h5>
-                            </div>
-                            <div className={`
-                                px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider whitespace-nowrap flex-shrink-0 border-2
-                                ${quiz.active
-                                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                                    : 'bg-gray-500/10 text-gray-400 border-gray-500/30'
-                                }
-                            `}>
-                                {quiz.active ? 'Active' : 'Inactive'}
-                            </div>
-                        </div>
+                                                                           
 
-                        <div className="flex flex-wrap items-center gap-3 text-xs text-muted mb-3">
-                            <span className="flex items-center gap-1.5">
-                                <FaUsers className="w-3.5 h-3.5" />
-                                <span className="font-medium">{quiz.attempts || 0} attempts</span>
-                            </span>
-                            <span className="flex items-center gap-1.5">
-                                <FaCalendar className="w-3.5 h-3.5" />
-                                <span className="font-medium">{new Date(quiz.start_date).toLocaleDateString()}</span>
-                            </span>
-                        </div>
+                                                                            <div className="flex-1 min-w-0">
+                                                                                <div className="flex items-start justify-between gap-2 mb-2">
+                                                                                    <div className="flex-1 min-w-0">
+                                                                                        <div className="text-[10px] font-bold text-blue-400 mb-1 uppercase tracking-wide">
+                                                                                            {quiz.module_name}
+                                                                                        </div>
+                                                                                        <h5 className="text-sm font-bold group-hover:text-blue-400 transition-colors line-clamp-2">
+                                                                                            {quiz.name}
+                                                                                        </h5>
+                                                                                    </div>
+                                                                                    <div className={`
+                                                                                        px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider whitespace-nowrap flex-shrink-0 border-2
+                                                                                        ${quiz.active
+                                                                                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                                                                                            : 'bg-gray-500/10 text-gray-400 border-gray-500/30'
+                                                                                        }
+                                                                                    `}>
+                                                                                        {quiz.active ? 'Active' : 'Inactive'}
+                                                                                    </div>
+                                                                                </div>
 
-                        <div className="flex items-center justify-between flex-wrap gap-2">
-                            <Link
-                                to={`/teacher/courses/${course.course_id}/manage`}
-                                className="inline-flex items-center gap-2 text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors"
-                            >
-                                <FaEye className="w-3.5 h-3.5" />
-                                View in Course
-                            </Link>
-                            <div className="flex gap-2">
-                                <Link
-                                    to="#"
-                                    onClick={(e) => { e.preventDefault(); onMonitorClick(quiz, course); }}
-                                    className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 hover:shadow-lg hover:shadow-purple-500/30 active:scale-95 transition-all duration-300"
-                                >
-                                    <FaChartLine className="w-3.5 h-3.5" />
-                                    Monitor
-                                </Link>
-                                <Link
-                                    to="#"
-                                    onClick={e => { e.preventDefault(); onGradeClick(quiz, course); }}
-                                    className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-600 to-green-600 text-white hover:from-emerald-700 hover:to-green-700 hover:shadow-lg hover:shadow-emerald-500/30 active:scale-95 transition-all duration-300"
-                                >
-                                    <FaCheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-                                    Grade
-                                </Link>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </li>
-        );
-    })}
-</ul>
+                                                                                <div className="flex flex-wrap items-center gap-3 text-xs text-muted mb-3">
+                                                                                    <span className="flex items-center gap-1.5">
+                                                                                        <FaUsers className="w-3.5 h-3.5" />
+                                                                                        <span className="font-medium">{quiz.attempts || 0} attempts</span>
+                                                                                    </span>
+                                                                                    <span className="flex items-center gap-1.5">
+                                                                                        <FaCalendar className="w-3.5 h-3.5" />
+                                                                                        <span className="font-medium">{new Date(quiz.start_date).toLocaleDateString()}</span>
+                                                                                    </span>
+                                                                                </div>
+
+                                                                                <div className="flex items-center justify-between flex-wrap gap-2">
+                                                                                    <Link
+                                                                                        to={`/teacher/courses/${course.course_id}/manage`}
+                                                                                        className="inline-flex items-center gap-2 text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors"
+                                                                                    >
+                                                                                        <FaEye className="w-3.5 h-3.5" />
+                                                                                        View in Course
+                                                                                    </Link>
+                                                                                    <div className="flex gap-2">
+                                                                                        <Link
+                                                                                            to="#"
+                                                                                            onClick={(e) => { e.preventDefault(); onMonitorClick(quiz, course); }}
+                                                                                            className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 hover:shadow-lg hover:shadow-purple-500/30 active:scale-95 transition-all duration-300"
+                                                                                        >
+                                                                                            <FaChartLine className="w-3.5 h-3.5" />
+                                                                                            Monitor
+                                                                                        </Link>
+                                                                                        <Link
+                                                                                            to="#"
+                                                                                            onClick={e => { e.preventDefault(); onGradeClick(quiz, course); }}
+                                                                                            className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-600 to-green-600 text-white hover:from-emerald-700 hover:to-green-700 hover:shadow-lg hover:shadow-emerald-500/30 active:scale-95 transition-all duration-300"
+                                                                                        >
+                                                                                            <FaCheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+                                                                                            Grade
+                                                                                        </Link>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </li>
+                                                                );
+                                                            })}
+                                                        </ul>
                                                         )}
                                                     </div>
                                                 </div>
@@ -356,7 +358,7 @@ const QuizListContent = ({
                 )}
             </div>
 
-            <style jsx>{`
+            <style>{`
                 @keyframes slideDown {
                     from {
                         opacity: 0;

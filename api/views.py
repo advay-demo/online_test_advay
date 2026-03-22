@@ -5422,6 +5422,7 @@ def teacher_quizzes_grouped(request):
                         'attempts': total_attempts,
                         'start_date': quiz.start_date_time,
                         'active': quiz.active,
+                        'is_exercise': quiz.is_exercise,
                         'created_at': quiz.start_date_time # Using start time as proxy for creation or relevance
                     })
         
