@@ -1,5 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom';
+import { VscLibrary } from "react-icons/vsc";
 
 const CourseActionButtons = ({ activeButton = null }) => {
   const buttons = [
@@ -8,11 +9,7 @@ const CourseActionButtons = ({ activeButton = null }) => {
       shortLabel: 'Enrolled',
       path: '/courses',
       type: 'enrolled',
-      icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13M3 6.253C4.168 5.477 5.754 5 7.5 5S10.832 5.477 12 6.253M12 6.253C13.168 5.477 14.754 5 16.5 5S19.832 5.477 21 6.253M3 19.253C4.168 18.477 5.754 18 7.5 18S10.832 18.477 12 19.253M12 19.253C13.168 18.477 14.754 18 16.5 18S19.832 18.477 21 19.253" />
-        </svg>
-      ),
+      icon: <VscLibrary className="w-4 h-4" />,
     },
     
     {

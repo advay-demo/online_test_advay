@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { FaSearch, FaPlus, FaBookOpen, FaEllipsisV, FaEdit, FaTrash } from 'react-icons/fa';
+import { MdGrading } from "react-icons/md";
+import { BsFileEarmarkSpreadsheet } from "react-icons/bs";
+import { BiSolidSpreadsheet } from "react-icons/bi";
 import TeacherSidebar from '../../components/layout/TeacherSidebar';
 import Header from '../../components/layout/Header';
 import CourseActionButtons from '../../components/teacher/CourseActionButtons';
@@ -74,7 +77,7 @@ export default function GradingSystems() {
             <div className="mb-5 sm:mb-7 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3">
               <div className="pb-4 border-b-2 border-[var(--border-subtle)] md:border-b-0 md:pb-0 flex items-center gap-3">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-blue-500/10 border-2 border-blue-500/30 flex items-center justify-center flex-shrink-0">
-                  <FaBookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
+                  <BsFileEarmarkSpreadsheet className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
                 </div>
                 <div>
                   <h2 className="text-lg sm:text-xl font-bold mb-0.5">Grading System Library</h2>
@@ -128,7 +131,7 @@ export default function GradingSystems() {
                 {filteredGradingSystems.length === 0 ? (
                   <div className="text-center py-16">
                     <div className="inline-block p-5 bg-blue-500/10 rounded-full mb-4">
-                      <FaBookOpen className="w-12 h-12 text-blue-400 opacity-50" />
+                      <MdGrading className="w-12 h-12 text-blue-400 opacity-50" />
                     </div>
                     <p className="text-lg font-semibold text-[var(--text-secondary)] mb-2">No grading systems found</p>
                     <p className="text-sm muted">Create your first grading system to get started</p>
@@ -137,12 +140,12 @@ export default function GradingSystems() {
                   filteredGradingSystems.map((gs) => (
                     <div
                       key={gs.id}
-                      className="card-strong p-4 sm:p-5 hover:shadow-lg hover:border-blue-500/30 transition-all duration-300 group border-l-4 border-l-blue-500 rounded-xl"
+                      className="card-strong p-4 sm:p-5 border-2 border-[var(--border-medium)] hover:shadow-lg hover:border-blue-500/70 dark:hover:border-blue-500/50 transition-all duration-300 group bg-[var(--card-bg)] rounded-xl"
                     >
                       <div className="flex flex-row flex-wrap items-center gap-3 sm:gap-4">
                         {/* Icon */}
                         <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-blue-500/15 flex items-center justify-center flex-shrink-0 border-2 border-blue-500/30 group-hover:border-blue-500/50 group-hover:scale-110 transition-all duration-300">
-                          <FaBookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
+                          <MdGrading className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
                         </div>
                         {/* Content */}
                         <div className="flex-1 min-w-0 w-full">
@@ -159,7 +162,7 @@ export default function GradingSystems() {
                           <p className="text-xs sm:text-sm muted mb-2 sm:mb-3 line-clamp-2">{gs.description}</p>
                           <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-4 text-xs muted">
                             <div className="flex items-center gap-1.5">
-                              <FaBookOpen className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
+                              <BiSolidSpreadsheet className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
                               <span>{gs.grade_ranges?.length || 0} grade ranges</span>
                             </div>
                             <div className="flex items-center gap-1.5">
