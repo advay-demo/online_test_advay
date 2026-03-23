@@ -121,7 +121,7 @@ export default function CourseDiscussion({ courseId, showAddPostModal, setShowAd
   return (
     <div>
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/15 to-blue-500/15 border-2 border-cyan-500/30 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/15 to-blue-500/15 border-2 border-cyan-500/30 flex items-center justify-center">
           <FaComments className="w-5 h-5 text-cyan-400" />
         </div>
         <div>

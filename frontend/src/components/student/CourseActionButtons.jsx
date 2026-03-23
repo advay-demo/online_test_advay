@@ -1,26 +1,25 @@
 import React from 'react'
 import { Link } from 'react-router-dom';
 import { VscLibrary } from "react-icons/vsc";
+import { FaSearch } from 'react-icons/fa';
 
 const CourseActionButtons = ({ activeButton = null }) => {
   const buttons = [
     {
-      label: 'Enrolled Courses',
-      shortLabel: 'Enrolled',
+      label: 'Course Library',
+      shortLabel: 'Courses',
       path: '/courses',
       type: 'enrolled',
       icon: <VscLibrary className="w-4 h-4" />,
     },
     
     {
-      label: 'Add New Course',
-      shortLabel: 'Course',
+      label: 'Search New Course',
+      shortLabel: 'New',
       path: '/add-course',
       type: 'create',
       icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-        </svg>
+        <FaSearch className="w-4 h-4" />
       ),
     },
   ];

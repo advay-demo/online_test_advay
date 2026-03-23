@@ -56,7 +56,7 @@ const CourseStudent = () => {
                 <VscLibrary className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
               </div>
               <div>
-                <h2 className="text-lg sm:text-xl font-bold mb-0.5">Enrolled Courses</h2>
+                <h2 className="text-lg sm:text-xl font-bold mb-0.5">Course Library</h2>
                 <p className="text-xs sm:text-sm muted">Browse and manage all your courses</p>
               </div>
             </div>
@@ -119,17 +119,17 @@ const CourseStudent = () => {
                             {course.code && (
                               <p className="text-xs sm:text-sm muted mb-2 sm:mb-3 line-clamp-2">Code: {course.code}</p>
                             )}
-                            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-4 text-xs muted">
-                              <div className="flex items-center gap-1.5">
-                                <FaLayerGroup className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
+                            <div className="flex sm:flex sm:flex-wrap gap-1.5 sm:gap-4 text-xs muted">
+                              <div className="flex items-center gap-0.5 sm:gap-1.5">
+                                <FaLayerGroup className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
                                 <span>{modulesCount} modules</span>
                               </div>
-                              <div className="flex items-center gap-1.5">
-                                <FaUserFriends className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
+                              <div className="flex items-center gap-0.5 sm:gap-1.5">
+                                <FaUserFriends className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
                                 <span>{course.students_count || 0} students</span>
                               </div>
-                              <div className="flex items-center gap-1.5">
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <div className="flex items-center gap-0.5 sm:gap-1.5">
+                                <svg className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                                 <span>{item.completion_percentage ?? 0}% complete</span>
