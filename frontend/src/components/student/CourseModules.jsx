@@ -64,7 +64,7 @@ const CourseModules = () => {
         <div className="space-y-6">
             <div className="flex items-center justify-between mb-4 px-1">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/15 to-blue-500/15 border-2 border-cyan-500/30 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/15 to-blue-500/15 border-2 border-cyan-500/30 flex items-center justify-center ">
                         <FaLayerGroup className="w-5 h-5 text-cyan-400" />
                     </div>
                     <div>
@@ -80,7 +80,7 @@ const CourseModules = () => {
             </div>
 
             {!modules.length && (
-                <div className="text-center py-12 bg-[var(--input-bg)] border-2 border-dashed border-[var(--border-color)] rounded-xl shadow-inner">
+                <div className="text-center py-12 bg-[var(--input-bg)] border-2 border-dashed border-[var(--border-color)] rounded-xl ">
                     <div className="mb-4 p-4 bg-cyan-500/10 rounded-full w-16 h-16 mx-auto flex items-center justify-center">
                         <FaLayerGroup className="text-cyan-400 w-8 h-8" />
                     </div>
@@ -94,14 +94,14 @@ const CourseModules = () => {
                     const isExpanded = expandedModuleId === module.id;
                     const isCompleted = module.progress >= 100;
 
+
                     return (
                         <div 
                             key={module.id} 
                             className={`
-                                relative rounded-xl border-l-[4px] transition-all duration-300 overflow-hidden border-2
-                                ${isExpanded ? 'border-l-blue-500 border-blue-500/30 shadow-xl shadow-blue-500/20 bg-[var(--surface-2)]' : 'border-l-[var(--border-color)] border-[var(--border-color)] hover:border-[var(--border-strong)] bg-[var(--surface)] hover:shadow-lg'}
-                            `}
-                            style={{ borderLeftColor: isExpanded ? undefined : 'var(--border-color)' }} 
+                                relative border-2 border-[var(--border-medium)] hover:shadow-lg hover:border-blue-500/70 dark:hover:border-blue-500/50 transition-all duration-300 group bg-[var(--card-bg)] rounded-xl
+                                ${isExpanded ? 'border-blue-500/70 bg-[var(--surface-2)]' : 'border-[var(--border-color)] hover:border-[var(--border-strong)] bg-[var(--surface)]'}
+                            `} 
                         >
                             {/* Module Row Header */}
                             <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-5 relative z-10">
@@ -111,7 +111,7 @@ const CourseModules = () => {
                                     {/* Icon Box */}
                                     <div className={`p-3 rounded-xl shrink-0 transition-all duration-300 border-2 shadow-lg ${
                                         isExpanded 
-                                            ? 'bg-gradient-to-br from-blue-600 to-blue-500 border-blue-400 shadow-blue-500/50 text-white' 
+                                            ? 'bg-gradient-to-br from-blue-600 to-blue-500 border-blue-400 text-white' 
                                             : 'bg-[var(--input-bg)] border-[var(--border-color)] text-gray-600 dark:text-gray-400'
                                     }`}>
                                         <FaLayerGroup className="w-5 h-5" />
@@ -188,7 +188,7 @@ const CourseModules = () => {
                                     {/* Toggle CTA */}
                                     <button
                                         onClick={() => toggleModule(module.id)}
-                                        className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 border-2 shadow-lg ${
+                                        className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 border-2  ${
                                             isExpanded 
                                             ? 'bg-gradient-to-br from-blue-600 to-blue-500 text-white border-blue-400 shadow-blue-500/50 scale-110' 
                                             : 'bg-[var(--input-bg)] text-[var(--text-muted)] border-[var(--border-color)] hover:bg-[var(--border-subtle)] hover:text-[var(--text-primary)] hover:border-[var(--border-strong)]'
@@ -202,7 +202,7 @@ const CourseModules = () => {
                             {/* Dropdown Content */}
                             {isExpanded && (
                                 <div className="border-t-2 border-[var(--border-subtle)] bg-[var(--input-bg)] animate-fadeIn relative shadow-inner">
-                                    <div className="absolute top-0 left-0 bottom-0 w-1 bg-gradient-to-b from-blue-500 to-transparent opacity-30"></div>
+                                    
                                     
                                     {(!module.units || module.units.length === 0) ? (
                                         <div className="p-8 text-center text-[var(--text-muted)] text-sm italic bg-[var(--surface)] border border-dashed border-[var(--border-color)] rounded-lg m-4">
@@ -308,14 +308,7 @@ const CourseModules = () => {
 
                                                     return (
                                                         <div key={unit.id} className="bg-[var(--input-bg)] rounded-lg p-4 border-2 border-[var(--border-color)] relative overflow-hidden shadow-md">
-                                                            {/* Status Strip on Left */}
-                                                            <div className={`absolute top-0 bottom-0 left-0 w-1 ${
-                                                                isLocked ? 'bg-gray-700' : 
-                                                                isUnitCompleted ? 'bg-emerald-500' : 
-                                                                isInProgress ? 'bg-amber-500' : 
-                                                                'bg-blue-500'
-                                                            }`}></div>
-                                                            
+                                                        
                                                             <div className="flex justify-between items-start gap-3 mb-3">
                                                                 <div className="flex-1">
                                                                      <div className="flex items-center gap-2 mb-1">

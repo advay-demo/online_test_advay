@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   FaSearch, FaTimes, FaBook, FaSpinner, FaCheckCircle, 
   FaInfoCircle, FaUser, FaCalendarAlt, FaClock, FaExclamationTriangle,
-  FaBan, FaHourglassHalf
+  FaBan, FaHourglassHalf, FaLayerGroup
 } from 'react-icons/fa';
 import { AiOutlineClockCircle, AiOutlineBarChart } from 'react-icons/ai';
 import Sidebar from '../../components/layout/Sidebar';
@@ -207,8 +207,8 @@ const AddNewCourseStudent = () => {
             {/* Search Section */}
             <div className="mb-8">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-purple-500/10 border-2 border-purple-500/30 flex items-center justify-center flex-shrink-0">
-                  <FaSearch className="w-5 h-5 sm:w-6 sm:h-6 text-purple-400" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-blue-500/10 border-2 border-blue-500/30 flex items-center justify-center flex-shrink-0">
+                  <FaSearch className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
                 </div>
                 <div>
                   <h2 className="text-lg sm:text-xl font-bold mb-0.5">Search for Courses</h2>
@@ -337,8 +337,8 @@ const AddNewCourseStudent = () => {
             {/* Empty State - No results */}
             {!loading && !error && newCourses.length === 0 && searchTerm && (
               <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in">
-                <div className="mb-4 p-6 bg-orange-500/10 rounded-full">
-                  <FaBook className="w-12 h-12 text-orange-400" />
+                <div className="mb-4 p-6 bg-red-500/10 rounded-full">
+                  <FaBook className="w-12 h-12 text-red-400" />
                 </div>
                 <h3 className="text-xl font-bold mb-2">No Courses Found</h3>
                 <p className="text-sm muted max-w-md mb-4">
@@ -376,17 +376,17 @@ const AddNewCourseStudent = () => {
                   return (
                     <div
                       key={course.id}
-                      className="card-strong p-5 sm:p-6 hover:shadow-xl hover:border-purple-500/30 transition-all duration-300 group border-l-4 border-l-purple-500 rounded-xl border-2 border-[var(--border-color)]"
+                      className="card-strong p-5 sm:p-6 border-2 border-[var(--border-medium)] hover:shadow-lg hover:border-blue-500/70 dark:hover:border-blue-500/50 transition-all duration-300 group bg-[var(--card-bg)] rounded-xl"
                     >
                       {/* Course Header and Enrollment Action */}
                       <div className="flex flex-row items-center justify-between gap-3 sm:gap-4 mb-5">
                         <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-purple-500/15 flex items-center justify-center flex-shrink-0 border-2 border-purple-500/30 group-hover:border-purple-500/50 group-hover:scale-110 transition-all duration-300">
-                            <FaBook className="w-6 h-6 sm:w-7 sm:h-7 text-purple-400" />
+                          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-blue-500/15 flex items-center justify-center flex-shrink-0 border-2 border-blue-500/30 group-hover:border-blue-500/50 group-hover:scale-110 transition-all duration-300">
+                            <FaBook className="w-6 h-6 sm:w-7 sm:h-7 text-blue-400" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex flex-wrap items-center gap-2 mb-2">
-                              <h3 className="font-bold text-base sm:text-lg line-clamp-1 group-hover:text-purple-400 transition-colors duration-300">
+                              <h3 className="font-bold text-base sm:text-lg line-clamp-1 group-hover:text-blue-400 transition-colors duration-300">
                                 {course.name}
                               </h3>
                             </div>
@@ -422,7 +422,7 @@ const AddNewCourseStudent = () => {
                           </div>
                           
                           <div className="flex items-center gap-2 text-[var(--text-secondary)]">
-                            <AiOutlineClockCircle className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0" />
+                            <FaCalendarAlt className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0" />
                             <span className="truncate">
                               <span className="font-semibold">End:</span> {formatDateTime(course.end_date)}
                             </span>
@@ -430,7 +430,7 @@ const AddNewCourseStudent = () => {
                           
                           {course.modules && (
                             <div className="flex items-center gap-2 text-[var(--text-secondary)]">
-                              <FaBook className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                              <FaLayerGroup className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
                               <span>
                                 <span className="font-semibold">Modules:</span> {course.modules.length}
                               </span>

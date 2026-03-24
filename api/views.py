@@ -1216,7 +1216,8 @@ def student_dash(request):
                         'course_id': course.id,
                         'name': quiz.description,
                         'course_name': course.name,
-                        'module_name': module.name
+                        'module_name': module.name,
+                        'is_exercise': getattr(quiz, 'is_exercise', False)
                     })
     upcoming_quizzes = upcoming_quizzes[:5]
 
@@ -5422,6 +5423,7 @@ def teacher_quizzes_grouped(request):
                         'attempts': total_attempts,
                         'start_date': quiz.start_date_time,
                         'active': quiz.active,
+                        'is_exercise': quiz.is_exercise,
                         'created_at': quiz.start_date_time # Using start time as proxy for creation or relevance
                     })
         

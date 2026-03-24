@@ -1,10 +1,12 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FaBook, FaUserFriends, FaEllipsisV } from 'react-icons/fa';
+import { FaBook, FaUserFriends, FaEllipsisV, FaLayerGroup } from 'react-icons/fa';
+import { VscLibrary } from "react-icons/vsc";
 import Sidebar from '../../components/layout/Sidebar';
 import Header from '../../components/layout/Header';
 import CourseActionButtons from '../../components/student/CourseActionButtons';
 import useCourseStore from '../../store/student/courseStore';
+
 
 const CourseStudent = () => {
   const { courses, loading, error, fetchCourses } = useCourseStore();
@@ -51,10 +53,10 @@ const CourseStudent = () => {
           <div className="card p-4 sm:p-5 lg:p-6 min-h-[600px] border-2 border-[var(--border-strong)] shadow-lg rounded-2xl">
             <div className="mb-5 sm:mb-7 pb-4 border-b-2 border-[var(--border-subtle)] flex items-center gap-3">
               <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-blue-500/10 border-2 border-blue-500/30 flex items-center justify-center flex-shrink-0">
-                <FaBook className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
+                <VscLibrary className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
               </div>
               <div>
-                <h2 className="text-lg sm:text-xl font-bold mb-0.5">Enrolled Courses</h2>
+                <h2 className="text-lg sm:text-xl font-bold mb-0.5">Course Library</h2>
                 <p className="text-xs sm:text-sm muted">Browse and manage all your courses</p>
               </div>
             </div>
@@ -93,7 +95,7 @@ const CourseStudent = () => {
                     return (
                       <div
                         key={course.id}
-                        className="card-strong p-4 sm:p-5 hover:shadow-lg hover:border-blue-500/30 transition-all duration-300 group border-l-4 border-l-blue-500 rounded-xl"
+                        className="card-strong p-4 sm:p-5 border-2 border-[var(--border-medium)] hover:shadow-lg hover:border-blue-500/70 dark:hover:border-blue-500/50 transition-all duration-300 group bg-[var(--card-bg)] rounded-xl"
                       >
                         <div className="flex flex-row flex-wrap items-center gap-3 sm:gap-4">
                           {/* Icon */}
@@ -117,17 +119,17 @@ const CourseStudent = () => {
                             {course.code && (
                               <p className="text-xs sm:text-sm muted mb-2 sm:mb-3 line-clamp-2">Code: {course.code}</p>
                             )}
-                            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-4 text-xs muted">
-                              <div className="flex items-center gap-1.5">
-                                <FaBook className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
+                            <div className="flex sm:flex sm:flex-wrap gap-1.5 sm:gap-4 text-xs muted">
+                              <div className="flex items-center gap-0.5 sm:gap-1.5">
+                                <FaLayerGroup className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
                                 <span>{modulesCount} modules</span>
                               </div>
-                              <div className="flex items-center gap-1.5">
-                                <FaUserFriends className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
+                              <div className="flex items-center gap-0.5 sm:gap-1.5">
+                                <FaUserFriends className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
                                 <span>{course.students_count || 0} students</span>
                               </div>
-                              <div className="flex items-center gap-1.5">
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <div className="flex items-center gap-0.5 sm:gap-1.5">
+                                <svg className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                                 <span>{item.completion_percentage ?? 0}% complete</span>

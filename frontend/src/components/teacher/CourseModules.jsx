@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FaPlus, FaBook, FaCalendarAlt, FaEdit, FaTrash, FaCheckCircle, FaEllipsisV, FaVideo, FaTimes, FaUpload, FaFileAlt, FaExternalLinkAlt, FaArrowUp, FaArrowDown, FaCheck, FaCog, FaRandom, FaList, FaSync, FaSearch, FaPuzzlePiece } from 'react-icons/fa';
+import { FaPlus, FaBook, FaCalendarAlt, FaEdit, FaTrash, FaCheckCircle, FaEllipsisV, FaVideo, FaTimes, FaUpload, FaFileAlt, FaExternalLinkAlt, FaArrowUp, FaArrowDown, FaCheck, FaCog, FaRandom, FaList, FaSync, FaSearch, FaPuzzlePiece, FaChevronDown, FaChevronUp, FaLayerGroup } from 'react-icons/fa';
 import useManageCourseStore from '../../store/manageCourseStore';
 import { useParams } from 'react-router-dom';
 import { FaBookOpen } from 'react-icons/fa';
@@ -87,6 +87,17 @@ const CourseModules = () => {
     // Dropdown state management
     const [openDropdownId, setOpenDropdownId] = useState(null);
     const dropdownRef = useRef(null);
+
+    // Collapsible module state
+    const [expandedModuleId, setExpandedModuleId] = useState(null);
+
+    const toggleModule = (moduleId) => {
+        if (expandedModuleId === moduleId) {
+            setExpandedModuleId(null);
+        } else {
+            setExpandedModuleId(moduleId);
+        }
+    };
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -389,8 +400,22 @@ const CourseModules = () => {
 
     return (
         <div className="space-y-6">
-            <div className="text-cyan-400 text-sm sm:text-base font-medium mb-6 flex items-center gap-2">
-                 COURSE MODULES &rarr;
+            {/* Header Section */}
+            <div className="flex items-center justify-between mb-4 px-1">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/15 to-blue-500/15 border-2 border-cyan-500/30 flex items-center justify-center">
+                        <FaLayerGroup className="w-5 h-5 text-cyan-400" />
+                    </div>
+                    <div>
+                        <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)]">Course Modules</h3>
+                        <p className="text-xs muted">Manage course content & structure</p>
+                    </div>
+                </div>
+                {modules.length > 0 && (
+                    <span className="text-xs font-bold text-[var(--text-secondary)] bg-[var(--input-bg)] border-2 border-[var(--border-color)] px-3 py-1.5 rounded-xl shadow-md">
+                        Total: <span className="text-cyan-600 dark:text-cyan-400">{modules.length}</span>
+                    </span>
+                )}
             </div>
 
             
@@ -412,7 +437,7 @@ const CourseModules = () => {
                 {/* Header */}
                 <div className="flex flex-row items-center gap-4 mb-4 sm:mt-0">
                     <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
-                    <FaBookOpen className="w-7 h-7 sm:w-8 sm:h-8 text-blue-400" />
+                    <FaLayerGroup className="w-7 h-7 sm:w-8 sm:h-8 text-blue-400" />
                     </div>
                     <div className="flex-1 min-w-0">
                     <h2 className="text-xl sm:text-2xl font-bold mb-1 line-clamp-1">
@@ -1803,240 +1828,314 @@ const CourseModules = () => {
 
             {/* MODULES LIST */}
             {modules.length > 0 ? (
-            modules.map((module) => (
-                <div key={module.id} className="bg-white/5 rounded-xl border border-white/10 overflow-hidden">
-                    <div className="p-4 border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between bg-white/5 gap-4">
-                        <div className="flex-1">
-                            <div className="flex flex-wrap items-center gap-2 mb-1">
-                                <h3 className="font-bold text-lg line-clamp-1">{module.name}</h3>
-                                <span
-                                    className={`text-[10px] px-2 py-0.5 rounded border uppercase font-bold tracking-wider whitespace-nowrap flex-shrink-0 transition-all duration-200 ${
-                                        module.active
-                                            ? 'bg-green-500/20 text-green-400 border-green-500/30'
-                                            : 'bg-orange-500/20 text-orange-400 border-orange-500/30'
-                                    }`}
-                                >
-                                    {module.active ? 'Active' : 'Inactive'}
-                                </span>
-                            </div>
-                            {module.description && (
-                                <p className="text-xs muted mt-1 line-clamp-2">
-                                    {module.description}
-                                </p>
-                            )}
-                            <div className="flex items-center gap-3 text-xs muted mt-2">
-                                <div className="flex items-center gap-1.5">
-                                    <FaBook className="w-3 h-3" />
-                                    <span>{module.units_count} unit{module.units_count !== 1 ? 's' : ''}</span>
+                <div className="space-y-5">
+                    {modules.map((module) => {
+                        const isExpanded = expandedModuleId === module.id;
+
+                        return (
+                            <div
+                            key={module.id}
+                            style={{ zIndex: openDropdownId === module.id ? 9999 : 10 }}
+                            className={`
+                                relative border-2 hover:shadow-lg transition-all duration-300 group bg-[var(--card-bg)] rounded-xl
+                                ${isExpanded ? 'border-blue-500/70 dark:border-blue-500/50 bg-[var(--surface-2)]' : 'border-[var(--border-color)] hover:border-[var(--border-strong)] bg-[var(--surface)]'}
+                            `}
+                        >
+                                {/* Module Row Header */}
+                                <div className="p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
+
+                                    {/* Info Section */}
+                                    <div className="flex-1 min-w-0 flex items-start sm:items-center gap-4">
+                                        {/* Icon Box */}
+                                        <div className={`p-3 rounded-xl shrink-0 transition-all duration-300 border-2 shadow-lg ${
+                                            isExpanded
+                                                ? 'bg-gradient-to-br from-blue-600 to-blue-500 border-blue-400 text-white'
+                                                : 'bg-[var(--input-bg)] border-[var(--border-color)] text-gray-600 dark:text-gray-400'
+                                        }`}>
+                                            <FaLayerGroup className="w-5 h-5" />
+                                        </div>
+
+                                        {/* Text Info */}
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                                <h3 className={`font-bold text-base sm:text-lg truncate group-hover:text-blue-500 transition-colors ${
+                                                    isExpanded ? 'text-blue-600 dark:text-blue-400' : 'text-[var(--text-primary)]'
+                                                }`}>
+                                                    {module.name}
+                                                </h3>
+                                                <span
+                                                    className={`text-[10px] px-2 py-0.5 rounded-md border-2 uppercase font-bold tracking-wider whitespace-nowrap flex-shrink-0 transition-all duration-200 shadow-md ${
+                                                        module.active
+                                                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 shadow-emerald-500/20'
+                                                            : 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30 shadow-orange-500/20'
+                                                    }`}
+                                                >
+                                                    {module.active ? 'Active' : 'Inactive'}
+                                                </span>
+                                            </div>
+                                            {module.description && (
+                                                <p className="text-xs text-[var(--text-muted)] mt-1 line-clamp-1 max-w-md hidden sm:block">
+                                                    {module.description}
+                                                </p>
+                                            )}
+                                            <div className="flex items-center gap-3 text-xs muted mt-2">
+                                                <div className="flex items-center gap-1.5">
+                                                    <FaBook className="w-3 h-3" />
+                                                    <span>{module.units_count} unit{module.units_count !== 1 ? 's' : ''}</span>
+                                                </div>
+                                                <span>•</span>
+                                                <span>Order: {module.order}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Divider for Mobile */}
+                                    <div className="h-px w-full bg-white/5 lg:hidden"></div>
+
+                                    {/* Right: Action Buttons */}
+                                    <div className="flex items-center justify-between lg:justify-end gap-2 w-full lg:w-auto flex-wrap">
+                                        <button
+                                            onClick={() => openCreateLesson(module)}
+                                            className="px-2 py-1 sm:px-3 sm:py-1.5 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-2 border-cyan-500/30 rounded-lg text-xs font-bold hover:bg-cyan-500/20 hover:border-cyan-500/50 transition-all duration-200 flex items-center gap-1 sm:gap-1.5 shadow-md hover:shadow-cyan-500/20 flex-shrink-0"
+                                        >
+                                            <FaPlus className="w-3 h-3 hidden sm:inline" />
+                                            <span className="hidden sm:inline">Add Lesson</span>
+                                            <span className="inline sm:hidden">Lesson</span>
+                                        </button>
+                                        <button
+                                            onClick={() => openCreateQuiz(module)}
+                                            className="px-2 py-1 sm:px-3 sm:py-1.5 bg-green-500/10 text-green-600 dark:text-green-400 border-2 border-green-500/30 rounded-lg text-xs font-bold hover:bg-green-500/20 hover:border-green-500/50 transition-all duration-200 flex items-center gap-1 sm:gap-1.5 shadow-md hover:shadow-green-500/20 flex-shrink-0"
+                                        >
+                                            <FaPlus className="w-3 h-3 hidden sm:inline" />
+                                            <span className="hidden sm:inline ">Add Quiz</span>
+                                            <span className="inline sm:hidden">Quiz</span>
+                                        </button>
+                                        <button
+                                            onClick={() => openCreateExercise(module)}
+                                            className="px-2 py-1 sm:px-3 sm:py-1.5 bg-purple-500/10 text-purple-600 dark:text-purple-400 border-2 border-purple-500/30 rounded-lg text-xs font-bold hover:bg-purple-500/20 hover:border-purple-500/50 transition-all duration-200 flex items-center gap-1 sm:gap-1.5 shadow-md hover:shadow-purple-500/20 flex-shrink-0"
+                                        >
+                                            <FaPlus className="w-3 h-3 hidden sm:inline" />
+                                            <span className="hidden sm:inline">Add Exercise</span>
+                                            <span className="inline sm:hidden">Exercise</span>
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                openDesignModule(module.id);
+                                            }}
+                                            className="px-2 py-1 sm:px-3 sm:py-1.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 border-2 border-amber-500/30 rounded-lg text-xs font-bold hover:bg-amber-500/20 hover:border-amber-500/50 transition-all duration-200 flex items-center gap-1 sm:gap-1.5 shadow-md hover:shadow-amber-500/20 flex-shrink-0"
+                                        >
+                                            <svg className="w-3 h-3 hidden sm:inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" />
+                                            </svg>
+                                            <span className="hidden sm:inline">Design</span>
+                                            <span className="inline sm:hidden">Design</span>
+                                        </button>
+
+                                        {/* Three-dot dropdown menu */}
+                                        <div className="relative flex-shrink-0 z-[100]" ref={openDropdownId === module.id ? dropdownRef : null}>
+                                            <button
+                                                onClick={() => toggleDropdown(module.id)}
+                                                className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-300 border-2 ${
+                                                    openDropdownId === module.id
+                                                        ? 'bg-[var(--input-bg)] border-[var(--border-strong)] text-[var(--text-primary)]'
+                                                        : 'bg-[var(--input-bg)] border-[var(--border-color)] text-[var(--text-muted)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]'
+                                                }`}
+                                            >
+                                                <FaEllipsisV className="w-3.5 h-3.5" />
+                                            </button>
+
+                                            {/* Dropdown Menu */}
+                                            {openDropdownId === module.id && (
+                                                <div
+                                                    className="absolute right-0 mt-2 z-[9999] w-36 bg-[var(--surface-2)] border-2 border-[var(--border-color)] rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.4)] py-2 flex flex-col text-sm animate-fadeIn"
+                                                    style={{ pointerEvents: 'auto' }}
+                                                >
+                                                    <button
+                                                        className="flex items-center gap-2 px-4 py-2.5 hover:bg-blue-500/10 transition text-left text-[var(--text-primary)] cursor-pointer w-full"
+                                                        onClick={() => {
+                                                            openEditModule(module);
+                                                            setOpenDropdownId(null);
+                                                        }}
+                                                    >
+                                                        <FaEdit className="w-4 h-4 text-blue-400" />
+                                                        <span>Edit</span>
+                                                    </button>
+                                                    <button
+                                                        className="flex items-center gap-2 px-4 py-2.5 hover:bg-red-500/10 transition text-left text-[var(--text-primary)] cursor-pointer w-full"
+                                                        onClick={() => {
+                                                            if (window.confirm(`Delete module "${module.name}"?`)) {
+                                                                handleDeleteModule(courseId, module.id);
+                                                            }
+                                                            setOpenDropdownId(null);
+                                                        }}
+                                                    >
+                                                        <FaTrash className="w-4 h-4 text-red-400" />
+                                                        <span>Delete</span>
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Toggle CTA */}
+                                        <button
+                                            onClick={() => toggleModule(module.id)}
+                                            className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 border-2 flex-shrink-0 ${
+                                                isExpanded
+                                                    ? 'bg-gradient-to-br from-blue-600 to-blue-500 text-white border-blue-400 shadow-lg shadow-blue-500/50 scale-110'
+                                                    : 'bg-[var(--input-bg)] text-[var(--text-muted)] border-[var(--border-color)] hover:bg-[var(--border-subtle)] hover:text-[var(--text-primary)] hover:border-[var(--border-strong)]'
+                                            }`}
+                                        >
+                                            {isExpanded ? <FaChevronUp size={14} /> : <FaChevronDown size={14} />}
+                                        </button>
+                                    </div>
                                 </div>
-                                <span>•</span>
-                                <span>Order: {module.order}</span>
-                            </div>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                            <button
-                                onClick={() => openCreateLesson(module)}
-                                className="px-2 py-1 sm:px-3 sm:py-1.5 bg-gradient-to-r from-cyan-500/20 to-cyan-600/20 text-cyan-400 border border-cyan-500/30 rounded-lg text-xs font-bold hover:from-cyan-500/30 hover:to-cyan-600/30 hover:border-cyan-500/50 transition-all duration-200 flex items-center gap-1 sm:gap-1.5 shadow-sm hover:shadow-cyan-500/20"
-                            >
-                                <FaPlus className="w-3 h-3 hidden sm:inline" />
-                                <span className="hidden sm:inline">Add Lesson</span>
-                                <span className="inline sm:hidden">Lesson</span>
-                            </button>
-                            <button
-                                onClick={() => openCreateQuiz(module)}
-                                className="px-2 py-1 sm:px-3 sm:py-1.5 bg-gradient-to-r from-green-500/20 to-green-600/20 text-green-400 border border-green-500/30 rounded-lg text-xs font-bold hover:from-green-500/30 hover:to-green-600/30 hover:border-green-500/50 transition-all duration-200 flex items-center gap-1 sm:gap-1.5 shadow-sm hover:shadow-green-500/20"
-                            >
-                                <FaPlus className="w-3 h-3 hidden sm:inline" />
-                                <span className="hidden sm:inline ">Add Quiz</span>
-                                <span className="inline sm:hidden">Quiz</span>
-                            </button>
-                            <button
-                                onClick={() =>  openCreateExercise(module)}
-                                className="px-2 py-1 sm:px-3 sm:py-1.5 bg-gradient-to-r from-purple-500/20 to-purple-600/20 text-purple-400 border border-purple-500/30 rounded-lg text-xs font-bold hover:from-purple-500/30 hover:to-purple-600/30 hover:border-purple-500/50 transition-all duration-200 flex items-center gap-1 sm:gap-1.5 shadow-sm hover:shadow-purple-500/20"
-                            >
-                                <FaPlus className="w-3 h-3 hidden sm:inline" />
-                                <span className="hidden sm:inline">Add Exercise</span>
-                                <span className="inline sm:hidden">Exercise</span>
-                            </button>
-                            <button
-                                onClick={() => {
-                                    openDesignModule(module.id);
-                                }}
-                                className="px-2 py-1 sm:px-3 sm:py-1.5 bg-gradient-to-r from-amber-500/20 to-amber-600/20 text-amber-400 border border-amber-500/30 rounded-lg text-xs font-bold hover:from-amber-500/30 hover:to-amber-600/30 hover:border-amber-500/50 transition-all duration-200 flex items-center gap-1 sm:gap-1.5 shadow-sm hover:shadow-amber-500/20"
-                            >
-                                <svg className="w-3 h-3 hidden sm:inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" />
-                                </svg>
-                                <span className="hidden sm:inline">Design</span>
-                                <span className="inline sm:hidden">Design</span>
-                            </button>
-                            
-                            {/* Three-dot dropdown menu */}
-                            <div className="relative" ref={openDropdownId === module.id ? dropdownRef : null}>
-                                <button 
-                                    onClick={() => toggleDropdown(module.id)}
-                                    className="p-2 border border-[var(--border-color)] rounded-lg hover:bg-[var(--input-bg)] active:scale-95 transition-all duration-200 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-                                >
-                                    <FaEllipsisV className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                                </button>
-                                
-                                {/* Dropdown Menu */}
-                                {openDropdownId === module.id && (
-                                    <div className="absolute right-0 mt-2 z-50 w-32 bg-gray-900 border border-[var(--border-color)] rounded-lg shadow-lg py-1 flex flex-col text-sm animate-fade-in">
-                                        <button
-                                            className="flex items-center gap-2 px-4 py-2 hover:bg-blue-500/10 transition text-left"
-                                            onClick={() => {
-                                                openEditModule(module);
-                                                setOpenDropdownId(null);
-                                            }}
-                                        >
-                                            <FaEdit className="w-4 h-4 text-blue-400" /> 
-                                            <span>Edit</span>
-                                        </button>
-                                        <button
-                                            className="flex items-center gap-2 px-4 py-2 hover:bg-red-500/10 transition text-left"
-                                            onClick={() => {
-                                                if (window.confirm(`Delete module "${module.name}"?`)) {
-                                                    handleDeleteModule(courseId, module.id);
-                                                }
-                                                setOpenDropdownId(null);
-                                            }}
-                                        >
-                                            <FaTrash className="w-4 h-4 text-red-400" /> 
-                                            <span>Delete</span>
-                                        </button>
+
+                                {/* Dropdown Content - Units */}
+                                {isExpanded && (
+                                    <div className="border-t-2 border-[var(--border-subtle)] bg-[var(--input-bg)] animate-fadeIn relative shadow-inner">
+                                        {(!module.units || module.units.length === 0) ? (
+                                            <div className="p-8 text-center text-[var(--text-muted)] text-sm italic bg-[var(--surface)] border border-dashed border-[var(--border-color)] rounded-lg m-4">
+                                                No learning units yet. Add a lesson, quiz, or exercise to get started.
+                                            </div>
+                                        ) : (
+                                            <div className="p-4 space-y-3">
+                                                {module.units.map((unit) => (
+                                                    <div
+                                                        key={unit.id}
+                                                        className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 rounded-lg bg-[var(--surface)] border-2 border-[var(--border-color)] hover:border-[var(--border-strong)] hover:shadow-md transition-all duration-200 group gap-3"
+                                                    >
+                                                        <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                                                            {/* Type Icon */}
+                                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center border-2 flex-shrink-0 ${
+                                                                unit.type === 'lesson'
+                                                                    ? 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/30'
+                                                                    : unit.is_exercise
+                                                                        ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30'
+                                                                        : 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/30'
+                                                            }`}>
+                                                                {unit.type === 'lesson' ? (
+                                                                    <FaVideo className="w-4 h-4" />
+                                                                ) : unit.is_exercise ? (
+                                                                    <FaPuzzlePiece className="w-4 h-4" />
+                                                                ) : (
+                                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                    </svg>
+                                                                )}
+                                                            </div>
+
+                                                            {/* Unit Info */}
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="font-semibold text-sm text-[var(--text-primary)] truncate group-hover:text-blue-500 transition-colors">
+                                                                    {unit.name || `${unit.type} #${unit.id}`}
+                                                                </div>
+                                                                <div className="text-xs muted flex items-center gap-2 mt-0.5">
+                                                                    <span className={`uppercase font-bold text-[10px] px-1.5 py-0.5 rounded border ${
+                                                                        unit.type === 'lesson'
+                                                                            ? 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/30'
+                                                                            : unit.is_exercise
+                                                                                ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30'
+                                                                                : 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/30'
+                                                                    }`}>
+                                                                        {unit.type === 'lesson' ? 'LESSON' : unit.is_exercise ? 'EXERCISE' : 'QUIZ'}
+                                                                    </span>
+                                                                    <span className="text-[11px] font-mono">ORDER #{unit.order}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Action Buttons */}
+                                                        <div className="flex flex-wrap gap-2 mt-2 sm:mt-0 justify-end sm:justify-end w-full sm:w-auto">
+                                                            {unit.type === 'lesson' ? (
+                                                                <>
+                                                                    <button
+                                                                        onClick={() => openEditLesson(module, unit)}
+                                                                        className="px-3 py-1.5 bg-blue-500/10 border border-blue-500/30 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-medium hover:bg-blue-500/20 hover:border-blue-500/50 transition-all shadow-sm"
+                                                                    >
+                                                                        Edit
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            if (window.confirm(`Delete lesson "${unit.name}"?`)) {
+                                                                                handleDeleteLesson(module.id, unit.lesson_id);
+                                                                            }
+                                                                        }}
+                                                                        className="px-3 py-1.5 bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 rounded-lg text-xs font-medium hover:bg-red-500/20 hover:border-red-500/50 transition-all shadow-sm"
+                                                                    >
+                                                                        Delete
+                                                                    </button>
+                                                                </>
+                                                            ) : unit.is_exercise ? (
+                                                                <>
+                                                                    <button
+                                                                        onClick={() => openDesignQuestionPaper(unit.quiz_id, unit.questionpaper_id || null, unit.name)}
+                                                                        className="px-3 py-1.5 bg-purple-500/10 border border-purple-500/30 text-purple-600 dark:text-purple-400 rounded-lg text-xs font-medium hover:bg-purple-500/20 hover:border-purple-500/50 transition-all shadow-sm"
+                                                                    >
+                                                                        Questions
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => openEditExercise(module, unit)}
+                                                                        className="px-3 py-1.5 bg-blue-500/10 border border-blue-500/30 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-medium hover:bg-blue-500/20 hover:border-blue-500/50 transition-all shadow-sm"
+                                                                    >
+                                                                        Edit
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            if (window.confirm(`Delete exercise "${unit.name}"?`)) {
+                                                                                handleDeleteExercise(module.id, unit.quiz_id);
+                                                                            }
+                                                                        }}
+                                                                        className="px-3 py-1.5 bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 rounded-lg text-xs font-medium hover:bg-red-500/20 hover:border-red-500/50 transition-all shadow-sm"
+                                                                    >
+                                                                        Delete
+                                                                    </button>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <button
+                                                                        onClick={() => openDesignQuestionPaper(unit.quiz_id, unit.questionpaper_id || null, unit.name)}
+                                                                        className="px-3 py-1.5 bg-green-500/10 border border-green-500/30 text-green-600 dark:text-green-400 rounded-lg text-xs font-medium hover:bg-green-500/20 hover:border-green-500/50 transition-all shadow-sm"
+                                                                    >
+                                                                        Questions
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => openEditQuiz(module, unit)}
+                                                                        className="px-3 py-1.5 bg-blue-500/10 border border-blue-500/30 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-medium hover:bg-blue-500/20 hover:border-blue-500/50 transition-all shadow-sm"
+                                                                    >
+                                                                        Edit
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            if (window.confirm(`Delete quiz "${unit.name}"?`)) {
+                                                                                handleDeleteQuiz(module.id, unit.quiz_id);
+                                                                            }
+                                                                        }}
+                                                                        className="px-3 py-1.5 bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 rounded-lg text-xs font-medium hover:bg-red-500/20 hover:border-red-500/50 transition-all shadow-sm"
+                                                                    >
+                                                                        Delete
+                                                                    </button>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
-                        </div>
-                    </div>
-
-                    <div className="p-2 space-y-2">
-                        {module.units && module.units.length > 0 ? (
-                            module.units.map((unit) => (
-                                <div
-                                    key={unit.id}
-                                    className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-lg bg-black/20 border border-white/10 hover:bg-white/10 transition group gap-2"
-                                >
-                                    <div className="flex items-center gap-4">
-                                        <div className={`w-8 h-8 rounded flex items-center justify-center ${unit.type === 'lesson'
-                                            ? 'bg-cyan-500/10 text-cyan-400'
-                                            : 'bg-green-500/10 text-purple-400'
-                                            }`}>
-                                            {unit.type === 'lesson' ? (
-                                                <FaVideo className="w-4 h-4" />
-                                            ) : unit.is_exercise ? (
-                                                <FaPuzzlePiece className="w-4 h-4" />
-                                            ) : (
-                                                <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                </svg>
-                                            )}
-                                        </div>
-                                        <div>
-                                            <div className="font-medium text-sm">
-                                                {unit.name || `${unit.type} #${unit.id}`}
-                                            </div>
-                                            <div className="text-xs muted flex items-center gap-3 mt-0.5">
-                                                {unit.type === 'lesson' ? (
-                                                    <span className="uppercase">{unit.type}</span>
-                                                ) : unit.is_exercise ? (
-                                                    <span className="uppercase">EXERCISE</span>
-                                                ) : (
-                                                    <span className="uppercase">{unit.type}</span>
-                                                )}
-                                                
-                                                
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-wrap gap-2 mt-2 sm:mt-0">
-                                        {unit.type === 'lesson' ? (
-                                            <>
-                                                <button
-                                                    onClick={() => openEditLesson(module, unit)}
-                                                    className="px-3 py-1 border border-white/10 rounded text-xs hover:bg-white/10 transition"
-                                                >
-                                                    Edit
-                                                </button>
-                                                <button
-                                                    onClick={() => {
-                                                        if (window.confirm(`Delete lesson "${unit.name}"?`)) {
-                                                            handleDeleteLesson(module.id, unit.lesson_id);
-                                                        }
-                                                    }}
-                                                    className="px-3 py-1 border border-red-500/30 text-red-400 rounded text-xs hover:bg-red-500/20 transition"
-                                                >
-                                                    Delete
-                                                </button>
-                                            </>
-                                        ) : unit.is_exercise ? (
-                                            <>
-                                                <button
-                                                    onClick={() => openDesignQuestionPaper(unit.quiz_id, unit.questionpaper_id || null, unit.name)}
-                                                    className="px-3 py-1 border border-purple-500/30 text-purple-400 rounded text-xs hover:bg-purple-500/20 transition"
-                                                >
-                                                    Questions
-                                                </button>
-                                                <button
-                                                    onClick={() => openEditExercise(module, unit)}
-                                                    className="px-3 py-1 border border-white/10 rounded text-xs hover:bg-white/10 transition"
-                                                >
-                                                    Edit
-                                                </button>
-                                                <button
-                                                    onClick={() => {
-                                                        if (window.confirm(`Delete exercise "${unit.name}"?`)) {
-                                                            handleDeleteExercise(module.id, unit.quiz_id);
-                                                        }
-                                                    }}
-                                                    className="px-3 py-1 border border-red-500/30 text-red-400 rounded text-xs hover:bg-red-500/20 transition"
-                                                >
-                                                    Delete
-                                                </button>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <button
-                                                    onClick={() => openDesignQuestionPaper(unit.quiz_id, unit.questionpaper_id || null, unit.name)}
-                                                    className="px-3 py-1 border border-green-500/30 text-green-400 rounded text-xs hover:bg-green-500/20 transition"
-                                                >
-                                                    Questions
-                                                </button>
-                                                <button
-                                                    onClick={() => openEditQuiz(module, unit)}
-                                                    className="px-3 py-1 border border-white/10 rounded text-xs hover:bg-white/10 transition"
-                                                >
-                                                    Edit
-                                                </button>
-                                                <button
-                                                    onClick={() => {
-                                                        if (window.confirm(`Delete quiz "${unit.name}"?`)) {
-                                                            handleDeleteQuiz(module.id, unit.quiz_id);
-                                                        }
-                                                    }}
-                                                    className="px-3 py-1 border border-red-500/30 text-red-400 rounded text-xs hover:bg-red-500/20 transition"
-                                                >
-                                                    Delete
-                                                </button>
-                                            </>
-                                        )}
-                                    </div>
-                                </div>
-                            ))
-                        ) : (
-                            <div className="p-4 text-center text-muted text-sm">
-                                No learning units yet. Add a lesson or quiz to get started.
-                            </div>
-                        )}
-                    </div>
+                        );
+                    })}
                 </div>
-            ))
-        ) : (
-            <div className="text-center py-12 text-muted">
-                <p>No modules yet. Create your first module!</p>
-            </div>
-        )}
+            ) : (
+                <div className="text-center py-12 bg-[var(--input-bg)] border-2 border-dashed border-[var(--border-color)] rounded-xl">
+                    <div className="mb-4 p-4 bg-cyan-500/10 rounded-full w-16 h-16 mx-auto flex items-center justify-center">
+                        <FaLayerGroup className="text-cyan-400 w-8 h-8" />
+                    </div>
+                    <p className="text-[var(--text-primary)] font-semibold">No modules yet for this course.</p>
+                    <p className="text-xs muted mt-2">Create your first module to get started!</p>
+                </div>
+            )}
         </div>
     );
 };

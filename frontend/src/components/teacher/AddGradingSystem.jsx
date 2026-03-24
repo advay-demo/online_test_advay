@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaBookOpen, FaTimes, FaPlus, FaMinus } from 'react-icons/fa';
 import useGradingSystemStore from '../../store/teacherGradeStore';
+import { MdGrading } from "react-icons/md";
 
 export default function AddGradingSystem({ onCancel, gradingSystem = null, isEdit = false }) {
   const [form, setForm] = useState({ name: '', description: '' });
@@ -88,7 +89,7 @@ export default function AddGradingSystem({ onCancel, gradingSystem = null, isEdi
         {/* Header */}
         <div className="flex flex-row items-center gap-4 mb-4 sm:mt-0">
           <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
-            <FaBookOpen className="w-7 h-7 sm:w-8 sm:h-8 text-blue-400" />
+            <MdGrading className="w-7 h-7 sm:w-8 sm:h-8 text-blue-400" />
           </div>
           <div className="flex-1 min-w-0">
             <h2 className="text-xl sm:text-2xl font-bold mb-1 line-clamp-1">

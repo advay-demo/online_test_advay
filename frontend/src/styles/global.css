@@ -17,11 +17,12 @@
   --text-muted: rgba(160, 162, 180, 0.7);
 
   /* Enhanced borders with slight purple tint - more visible */
-  --border-color: rgba(139, 92, 246, 0.25);
-  --border-subtle: rgba(139, 92, 246, 0.15);
-  --border-strong: rgba(139, 92, 246, 0.35);
+  --border-color: rgba(159, 158, 161, 0.25);
+  --border-subtle: rgba(205, 203, 211, 0.15);
+  --border-medium: rgba(209, 209, 210, 0.35);
+  --border-strong: rgba(230, 229, 232, 0.35);
 
-  --input-bg: rgba(139, 92, 246, 0.04);
+  --input-bg: rgba(119, 118, 121, 0.04);
   --bg-footer: #000000;
   
   /* Component-specific backgrounds with better separation */
@@ -33,8 +34,8 @@
   --shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.4);
   --shadow-strong: 0 8px 24px rgba(0, 0, 0, 0.5);
 
-  --grad-1: #48d820;  /* slightly adjusted purple */
-  --grad-2: #b51a1a;  /* more balanced pink */
+  --grad-1: #7b2ff7;
+  --grad-2: #ff4da6;  
   --grad-3: #f97316;  /* consistent with Tailwind orange */
 }
 
@@ -52,6 +53,7 @@
   /* More visible borders for light mode */
   --border-color: #d1d1d6;
   --border-subtle: #e5e5ea;
+  --border-medium: #bbbbc0;
   --border-strong: #b8b8bf;
 
   --input-bg: #f1f5f9;
@@ -305,5 +307,50 @@
   .badge-blue {
     background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.05));
     border: 1px solid rgba(59, 130, 246, 0.2);
+  }
+
+  /* Module Card Backgrounds */
+  .card-bg {
+    background: var(--surface);
+  }
+
+  /* Animations */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fadeIn {
+    animation: fadeIn 0.3s ease-out forwards;
+  }
+
+  /* Custom Scrollbar */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(99, 102, 241, 0.5) transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(99, 102, 241, 0.5);
+    border-radius: 10px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(99, 102, 241, 0.7);
   }
 }

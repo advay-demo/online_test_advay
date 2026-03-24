@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FaCheckCircle, FaBolt, FaChartLine, FaClock, FaArrowRight } from 'react-icons/fa';
-import { AiOutlineCheck, AiOutlineTrophy, AiOutlineMessage, AiOutlineFire } from 'react-icons/ai';
+import { FaCheckCircle, FaBolt, FaChartLine, FaClock, FaArrowRight,
+    FaBook,
+    FaLayerGroup,
+    FaPuzzlePiece,
+    FaHistory,
+    FaStar
+} from 'react-icons/fa';
+
 import Sidebar from '../../components/layout/Sidebar';
 import Header from '../../components/layout/Header';
 import { useAuthStore } from '../../store/authStore';
@@ -48,9 +54,7 @@ const Dashboard = () => {
       label: 'Total Courses',
       value: dashboard?.total_enrolled ?? 0,
       icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13M3 6.253C4.168 5.477 5.754 5 7.5 5S10.832 5.477 12 6.253M12 6.253C13.168 5.477 14.754 5 16.5 5S19.832 5.477 21 6.253M3 19.253C4.168 18.477 5.754 18 7.5 18S10.832 18.477 12 19.253M12 19.253C13.168 18.477 14.754 18 16.5 18S19.832 18.477 21 19.253" />
-        </svg>
+        <FaBook className="w-6 h-6" />
       ),
       color: 'rgb(234, 179, 8)',
     },
@@ -58,9 +62,7 @@ const Dashboard = () => {
       label: 'Active Courses',
       value: dashboard?.active_enrolled ?? 0,
       icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
+        <FaBook className="w-6 h-6" />
       ),
       color: 'rgb(34, 197, 94)',
     },
@@ -147,14 +149,11 @@ const Dashboard = () => {
             {stat_s.map((stat, index) => (
               <div 
                 key={index} 
-                className="card p-4 sm:p-5 lg:p-6 rounded-2xl border-l-4 hover:shadow-lg transition-all duration-300 group relative overflow-hidden"
-                style={{
-                  borderLeftColor: stat.color,
-                }}
+                className="card p-4 sm:p-5 lg:p-6 rounded-2xl border-2 border-[var(--border-subtle)] hover:shadow-lg transition-all duration-300 group relative overflow-hidden"
               >
                 {/* Subtle background glow */}
                 <div 
-                  className="absolute top-0 right-0 w-24 h-24 rounded-full blur-3xl opacity-10 group-hover:opacity-20 transition-opacity duration-300"
+                  className="absolute top-0 right-0 w-24 h-24 rounded-full blur-3xl opacity-20 group-hover:opacity-40 transition-opacity duration-300"
                   style={{ background: stat.color }}
                 />
                 
@@ -180,7 +179,7 @@ const Dashboard = () => {
 
           <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 mb-6 lg:mb-8">
             {/* Upcoming Quizzes */}
-            <div className="lg:col-span-2 card p-5 sm:p-6 rounded-2xl border-t-4 border-t-emerald-500 shadow-lg shadow-emerald-500/5">
+            <div className="lg:col-span-2 card p-5 sm:p-6 rounded-2xl border-2 border-[var(--border-subtle)] shadow-lg shadow-emerald-500/5">
               <div className="mb-4 sm:mb-6 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border-2 border-emerald-500/30 flex items-center justify-center">
                   <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
@@ -188,28 +187,46 @@ const Dashboard = () => {
                   </svg>
                 </div>
                 <div>
-                  <h2 className="text-lg sm:text-xl font-bold mb-0.5">Upcoming Quizzes</h2>
-                  <p className="text-xs sm:text-sm muted">Quizzes scheduled for your courses</p>
+                  <h2 className="text-lg sm:text-xl font-bold mb-0.5">Upcoming</h2>
+                  <p className="text-xs sm:text-sm muted">Quizzes & Exercises scheduled for your courses</p>
                 </div>
               </div>
-              <div className="space-y-3 sm:space-y-4">
+                           <div className="space-y-3 sm:space-y-4">
                 {upcomingQuizzes.length > 0 ? upcomingQuizzes.map((quiz, index) => (
-                  <div key={index} className="card-strong p-4 sm:p-5 rounded-xl border-l-4 border-l-emerald-500 hover:shadow-md hover:bg-white/[0.03] transition-all duration-300 group">
+                  <div 
+                    key={index} 
+                    className={`card-strong p-4 sm:p-5 rounded-xl hover:shadow-md hover:bg-white/[0.03] transition-all duration-300 group ${
+                      quiz.is_exercise ? 'hover:border-purple-500' : 'hover:border-green-500'
+                    }`}
+                  >
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                       <div className="flex gap-3 sm:gap-4 flex-1">
                         <div
-                          className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300"
-                          style={{
-                            background: 'rgba(16,185,129,0.15)',
-                            border: '2px solid rgba(16,185,129,0.3)',
-                          }}
+                          className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300 border-2 ${
+                            quiz.is_exercise 
+                              ? 'bg-purple-500/15 border-purple-500/30' 
+                              : 'bg-green-500/15 border-green-500/30'
+                          }`}
                         >
-                          <svg className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                          </svg>
+                          {quiz.is_exercise ? (
+                            <FaPuzzlePiece className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500 dark:text-purple-400" />
+                          ) : (
+                            <svg className="w-5 h-5 sm:w-6 sm:h-6 text-green-500 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-base sm:text-lg mb-1 truncate">{quiz.name}</h3>
+                          <h3 className="font-semibold text-base sm:text-lg mb-1 flex items-center gap-2">
+                            <span className="truncate">{quiz.name}</span>
+                            <span className={`px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg border-2 text-[10px] sm:text-xs font-bold whitespace-nowrap flex-shrink-0 ${
+                              quiz.is_exercise
+                                ? 'bg-purple-500/10 text-purple-500 border-purple-500/20'
+                                : 'bg-green-500/10 text-green-500 border-green-500/20'
+                            } `}>
+                              {quiz.is_exercise ? 'Exercise' : 'Quiz'}
+                            </span>
+                          </h3>
                           <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm muted">
                             <div className="flex items-center gap-1.5">
                               <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
@@ -226,18 +243,18 @@ const Dashboard = () => {
                           </div>
                         </div>
                       </div>
-                        {quiz.course_id ? (
-                          <Link
-                            to={`/courses/${quiz.course_id}/manage`}
-                            className="w-full sm:w-auto border border-[var(--border-color)] px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold hover:bg-[var(--input-bg)] transition whitespace-nowrap"
-                          >
-                            Manage
-                          </Link>
-                        ) : (
-                          <span className="w-full sm:w-auto border border-[var(--border-color)] px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold text-muted opacity-50 cursor-not-allowed whitespace-nowrap">
-                            Manage
-                          </span>
-                        )}
+                      {quiz.course_id ? (
+                        <Link
+                          to={`/courses/${quiz.course_id}/manage`}
+                          className="w-full sm:w-auto border border-[var(--border-color)] px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold hover:bg-[var(--input-bg)] transition whitespace-nowrap text-center"
+                        >
+                          Manage
+                        </Link>
+                      ) : (
+                        <span className="w-full sm:w-auto border border-[var(--border-color)] px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold text-muted opacity-50 cursor-not-allowed whitespace-nowrap text-center">
+                          Manage
+                        </span>
+                      )}
                     </div>
                   </div>
                 )) : (
@@ -253,40 +270,52 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Quick Stats */}
-            <div className="card p-5 sm:p-6 rounded-2xl border-t-4 border-t-purple-500 shadow-lg shadow-purple-500/5">
+            {/* Recent Activity */}
+            <div className="card p-5 sm:p-6 rounded-2xl border-b-2 border-[var(--border-subtle)] shadow-lg shadow-purple-500/5">
               <div className="mb-4 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-purple-500/10 border-2 border-purple-500/30 flex items-center justify-center">
-                  <FaBolt className="w-5 h-5 text-purple-400" />
+                  <FaHistory className="w-5 h-5 text-purple-400" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold mb-0.5">Quick Stats</h2>
-                  <p className="text-xs muted">Your activity overview</p>
+                  <h2 className="text-lg font-bold mb-0.5">Recent Activity</h2>
+                  <p className="text-xs muted">Your latest actions</p>
                 </div>
               </div>
-              <div className="space-y-4">
-                <div className="card-strong p-4 rounded-xl flex items-center justify-between group hover:bg-white/[0.03] transition-all duration-300">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-blue-500/15 border border-blue-500/30 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                      <FaChartLine className="w-5 h-5 text-blue-400" />
+              <div className="space-y-3">
+                {activities && activities.length > 0 ? (
+                  activities.map((activity) => (
+                    <div 
+                      key={activity.id} 
+                      className="card-strong p-3.5 sm:p-4 rounded-xl flex items-center gap-3 sm:gap-4 group hover:bg-white/[0.03] hover:border-purple-500/30 transition-all duration-300 border border-transparent"
+                    >
+                      <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg border flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300 ${
+                        activity.color === 'yellow' ? 'bg-amber-500/15 border-amber-500/30 text-amber-500 dark:text-amber-400' :
+                        activity.color === 'green' ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-500 dark:text-emerald-400' :
+                        activity.color === 'blue' ? 'bg-blue-500/15 border-blue-500/30 text-blue-500 dark:text-blue-400' :
+                        'bg-purple-500/15 border-purple-500/30 text-purple-500 dark:text-purple-400'
+                      }`}>
+                        {activity.icon === 'check' ? <FaCheckCircle className="w-4 h-4 sm:w-5 sm:h-5" /> :
+                         activity.icon === 'clock' ? <FaClock className="w-4 h-4 sm:w-5 sm:h-5" /> :
+                         activity.icon === 'star' ? <FaStar className="w-4 h-4 sm:w-5 sm:h-5" /> :
+                         <FaBolt className="w-4 h-4 sm:w-5 sm:h-5" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-[var(--text-primary)] truncate">
+                          {activity.title}
+                        </p>
+                        <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs muted mt-0.5">
+                          <span className="truncate">{activity.description}</span>
+                          <span className="w-1 h-1 rounded-full bg-[var(--text-muted)] flex-shrink-0"></span>
+                          <span className="flex-shrink-0 whitespace-nowrap">{activity.time}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs muted">Total Quizzes</p>
-                      <p className="text-xl font-bold text-blue-400">{upcomingQuizzes.length}</p>
-                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 card-strong rounded-xl border border-dashed border-[var(--border-color)]">
+                    <p className="text-sm muted">No recent activities</p>
                   </div>
-                </div>
-                <div className="card-strong p-4 rounded-xl flex items-center justify-between group hover:bg-white/[0.03] transition-all duration-300">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                      <FaCheckCircle className="w-5 h-5 text-emerald-400" />
-                    </div>
-                    <div>
-                      <p className="text-xs muted">Completed</p>
-                      <p className="text-xl font-bold text-emerald-400">0</p>
-                    </div>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
 
@@ -305,9 +334,7 @@ const Dashboard = () => {
             <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-6 sm:mb-8 pb-4 border-b-2 border-[var(--border-subtle)]">
               <div className="flex items-center gap-2 sm:gap-3">
                 <div className="w-9 h-9 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-xl bg-blue-500/10 border-2 border-blue-500/30 flex items-center justify-center flex-shrink-0">
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13M3 6.253C4.168 5.477 5.754 5 7.5 5S10.832 5.477 12 6.253M12 6.253C13.168 5.477 14.754 5 16.5 5S19.832 5.477 21 6.253M3 19.253C4.168 18.477 5.754 18 7.5 18S10.832 18.477 12 19.253M12 19.253C13.168 18.477 14.754 18 16.5 18S19.832 18.477 21 19.253" />
-                  </svg>
+                   <FaBook className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-[var(--text-primary)] truncate">
@@ -354,9 +381,7 @@ const Dashboard = () => {
                     {/* Meta */}
                     <div className="flex items-center justify-between text-xs mb-3 gap-2">
                       <span className="text-[var(--text-muted)] flex items-center gap-1.5 truncate">
-                        <svg className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13M3 6.253C4.168 5.477 5.754 5 7.5 5S10.832 5.477 12 6.253" />
-                        </svg>
+                        <FaLayerGroup className="w-3 h-3 text-cyan-400" />
                         <span className="truncate">{course.course_content?.length ?? 0} modules</span>
                       </span>
                       <span

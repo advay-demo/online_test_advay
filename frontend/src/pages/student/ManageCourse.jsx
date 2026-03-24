@@ -99,9 +99,10 @@ const ManageCourseStudent = () => {
                         {/* Course Header */}
                         <div className="flex sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-4">
                             <div className="flex items-center gap-3 sm:gap-4">
+                                
                                 <Link
                                     to="/courses"
-                                    className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[var(--input-bg)] border border-[var(--border-color)] flex items-center justify-center hover:bg-[var(--border-subtle)] transition flex-shrink-0"
+                                    className="w-10 h-10 rounded-xl bg-[var(--input-bg)] border-2 border-[var(--border-strong)] flex items-center justify-center hover:bg-[var(--border-subtle)] transition-all duration-300 flex-shrink-0 active:scale-95"
                                 >
                                     <FaChevronLeft className="w-4 h-4" />
                                 </Link>
@@ -137,7 +138,7 @@ const ManageCourseStudent = () => {
                                         key={tab}
                                         onClick={() => setActiveTab(tab)}
                                         className={`flex-1 sm:flex-none px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg text-[11px] sm:text-sm font-bold transition-all duration-300 whitespace-nowrap ${activeTab === tab
-                                            ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-600/30 sm:scale-105 border border-blue-400/50 sm:border-2'
+                                            ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white sm:scale-105 border border-blue-400/50 sm:border-2'
                                             : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--border-subtle)] border border-transparent sm:border-2'
                                             }`}
                                     >
