@@ -1703,7 +1703,7 @@ def lesson_detail(request, lesson_id):
         )
     
     serializer = LessonDetailSerializer(
-        lesson, context={'user': user, 'course_id': course.id}
+        lesson, context={'request': request, 'user': user, 'course_id': course.id}
     )
     
     return Response(serializer.data, status=status.HTTP_200_OK)

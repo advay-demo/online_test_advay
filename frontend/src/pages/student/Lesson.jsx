@@ -1,26 +1,49 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { FaPlay, FaArrowRight, FaCheck, FaImage, FaCheckCircle } from 'react-icons/fa';
+import {
+  FaPlay,
+  FaLayerGroup,
+  FaBook,
+  FaArrowRight,
+  FaCheck,
+  FaCheckCircle,
+  FaChevronLeft,
+  FaFileAlt,
+  FaDownload,
+  FaVideo,
+  FaClock,
+  FaBookmark,
+  FaUser,
+  FaListOl
+} from 'react-icons/fa';
 import Sidebar from '../../components/layout/Sidebar';
 import Header from '../../components/layout/Header';
 import { fetchLessonDetail, markLessonComplete } from '../../api/api';
+import useManageCourseStore from '../../store/student/manageCourseStore';
 
 const Lesson = () => {
   const { lessonId } = useParams();
   const navigate = useNavigate();
+  const { loadCourseModules } = useManageCourseStore();
+
   const [lesson, setLesson] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [completing, setCompleting] = useState(false);
   const [completed, setCompleted] = useState(false);
-  const [comment, setComment] = useState('');
-  const [isAnonymous, setIsAnonymous] = useState(false);
 
   useEffect(() => {
     if (lessonId) {
       loadLesson();
     }
   }, [lessonId]);
+
+  useEffect(() => {
+    // Load modules for progress tracking
+    if (lesson && lesson.course_id) {
+      loadCourseModules(lesson.course_id);
+    }
+  }, [lesson]);
 
   const loadLesson = async () => {
     try {
@@ -42,10 +65,10 @@ const Lesson = () => {
       setCompleting(true);
       await markLessonComplete(lessonId);
       setCompleted(true);
-      // Show success message
-      setTimeout(() => {
-        // Optionally navigate back or to next lesson
-      }, 2000);
+      // Reload modules to update progress
+      if (lesson && lesson.course_id) {
+        loadCourseModules(lesson.course_id);
+      }
     } catch (err) {
       console.error('Failed to mark lesson as complete:', err);
       alert('Failed to mark lesson as complete');
@@ -56,7 +79,7 @@ const Lesson = () => {
 
   const getVideoEmbedUrl = (videoUrl) => {
     if (!videoUrl) return null;
-    
+
     // Check if it's a YouTube URL
     if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
       const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
@@ -65,7 +88,7 @@ const Lesson = () => {
         return `https://www.youtube.com/embed/${match[1]}`;
       }
     }
-    
+
     // Check if it's a Vimeo URL
     if (videoUrl.includes('vimeo.com')) {
       const vimeoRegex = /(?:vimeo\.com\/)(\d+)/;
@@ -74,12 +97,12 @@ const Lesson = () => {
         return `https://player.vimeo.com/video/${match[1]}`;
       }
     }
-    
+
     // If it's already an embed URL or just an ID, use it directly
     if (videoUrl.includes('embed') || videoUrl.length < 20) {
       return videoUrl.includes('http') ? videoUrl : `https://www.youtube.com/embed/${videoUrl}`;
     }
-    
+
     return videoUrl;
   };
 
@@ -91,8 +114,11 @@ const Lesson = () => {
           <Header isAuth />
           <div className="p-8 flex items-center justify-center h-96">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mx-auto mb-4"></div>
-              <p className="text-gray-400">Loading lesson...</p>
+              <div className="relative w-16 h-16 mb-4 mx-auto">
+                <div className="absolute inset-0 rounded-full border-4 border-blue-500/20"></div>
+                <div className="absolute inset-0 rounded-full border-4 border-t-blue-500 border-r-cyan-400 animate-spin"></div>
+              </div>
+              <p className="text-[var(--text-muted)] text-sm font-medium">Loading lesson...</p>
             </div>
           </div>
         </main>
@@ -106,9 +132,23 @@ const Lesson = () => {
         <Sidebar />
         <main className="flex-1">
           <Header isAuth />
-          <div className="p-8">
-            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-red-300">
-              {error || 'Lesson not found'}
+          <div className="p-4 sm:p-8">
+            <div className="max-w-3xl mx-auto text-center py-16">
+              <div className="p-8 rounded-2xl bg-gradient-to-br from-red-500/10 to-red-600/5 border-2 border-red-500/30 shadow-xl">
+                <div className="w-20 h-20 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-6 border-2 border-red-500/30">
+                  <svg className="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <p className="text-red-600 dark:text-red-400 font-bold text-xl mb-6">{error || 'Lesson not found'}</p>
+                <Link
+                  to="/courses"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl"
+                >
+                  <FaChevronLeft className="w-4 h-4" />
+                  Back to Courses
+                </Link>
+              </div>
             </div>
           </div>
         </main>
@@ -117,236 +157,224 @@ const Lesson = () => {
   }
 
   const videoEmbedUrl = getVideoEmbedUrl(lesson.video_url);
+  const hasVideo = lesson.video_url || lesson.video_file;
+
+  const handleBack = () => {
+    if (lesson.course_id) {
+      navigate(`/courses/${lesson.course_id}/manage`);
+    } else {
+      navigate('/courses');
+    }
+  };
 
   return (
-    <div className="flex min-h-screen relative grid-texture">
+    <div className="flex flex-col md:flex-row min-h-screen relative grid-texture">
       <Sidebar />
 
       <main className="flex-1">
         <Header isAuth />
 
-        <div className="p-8">
-          {/* Heading */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold">{lesson.name}</h1>
-            <p className="text-gray-400 text-sm mt-1">
-              <Link to="/courses" className="hover:text-white transition">Courses</Link> /
-              <span className="text-white"> {lesson.name}</span>
-            </p>
+        <div className="p-4 sm:p-8">
+          {/* Page Header */}
+          <div className="mb-6 lg:mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2">Courses</h1>
+            <p className="text-sm muted">Browse, enroll, and manage your learning courses</p>
           </div>
 
-          {/* Lesson Content */}
-          <div className="max-w-5xl mx-auto">
-            <div className="card-strong p-8 mb-8">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                    completed ? 'bg-green-500/20 border border-green-500/30' : 'bg-green-500/20 border border-green-500/30'
-                  }`}>
-                    {completed ? (
-                      <FaCheckCircle className="w-6 h-6 text-green-400" />
-                    ) : (
-                      <FaPlay className="w-6 h-6 text-green-400" />
-                    )}
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold">{lesson.name}</h2>
-                    {completed && (
-                      <p className="text-sm text-green-400 flex items-center gap-1 mt-1">
-                        <FaCheckCircle className="w-3 h-3" />
-                        Completed
-                      </p>
-                    )}
+          {/* Lesson Container */}
+          <div className="space-y-4">
+            {/* Main Card */}
+            <div className="card-strong p-5 sm:p-6 min-h-[600px] border-2 border-[var(--border-strong)] shadow-lg rounded-2xl">
+              {/* Header Section */}
+              <div className="mb-6 pb-5 border-b-2 border-[var(--border-subtle)]">
+                <div className="flex items-start gap-4 mb-4">
+                  <button
+                    onClick={handleBack}
+                    className="w-10 h-10 rounded-xl bg-[var(--input-bg)] border-2 border-[var(--border-strong)] flex items-center justify-center hover:border-blue-500/40 hover:bg-blue-500/5 transition-all duration-300 flex-shrink-0 active:scale-95"
+                  >
+                    <FaChevronLeft className="w-4 h-4" />
+                  </button>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h2 className="text-xl sm:text-2xl font-bold line-clamp-2">{lesson.name}</h2>
+                      <span className="text-[10px] px-2.5 py-1 rounded-lg border-2 uppercase font-bold tracking-wider whitespace-nowrap bg-cyan-500/20 text-cyan-400 border-cyan-500/30">
+                        Lesson
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-4 text-xs muted">
+                      <div className="flex items-center gap-1.5">
+                        <FaBook className="w-3.5 h-3.5" />
+                        <span className="font-medium">{lesson.course_name}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <FaLayerGroup className="w-3.5 h-3.5" />
+                        <span className="font-medium">{lesson.module_name}</span>
+                      </div>
+                      {completed && (
+                        <div className="flex items-center gap-1.5 text-emerald-400">
+                          <FaCheckCircle className="w-3.5 h-3.5" />
+                          <span className="font-medium">Completed</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-                {!completed && (
+                <p className="text-sm muted">Watch the videos, read the attached files to understand the concept better.</p>
+              </div>
+
+              {/* Video Section */}
+              {hasVideo && (
+                <div className="mb-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <FaVideo className="w-6 h-6 sm:w-7 sm:h-7 text-cyan-400" />
+                    <h3 className="text-lg font-bold">Video Content</h3>
+                  </div>
+
+                  {/* Video File */}
+                  {lesson.video_file && (
+                    <div className="mb-4">
+                      {lesson.video_file && videoEmbedUrl && (
+                        <p className="text-sm font-semibold mb-2 text-[var(--text-muted)]">
+                          Uploaded Video
+                        </p>
+                      )}
+                      <div className="aspect-video rounded-xl overflow-hidden shadow-xl border-2 border-[var(--border-color)]">
+                        <video
+                          className="w-full h-full bg-black"
+                          controls
+                          controlsList="nodownload"
+                          preload="metadata"
+                        >
+                          <source src={lesson.video_file} type="video/mp4" />
+                          <source src={lesson.video_file} type="video/webm" />
+                          <source src={lesson.video_file} type="video/ogg" />
+                          Your browser does not support the video tag.
+                        </video>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Video URL (YouTube/Vimeo) */}
+                  {videoEmbedUrl && (
+                    <div className="mb-4">
+                      {lesson.video_file && videoEmbedUrl && (
+                        <p className="text-sm font-semibold mb-2 text-[var(--text-muted)]">
+                          External Video
+                        </p>
+                      )}
+                      <div className="aspect-video rounded-xl overflow-hidden shadow-xl border-2 border-[var(--border-color)]">
+                        <iframe
+                          className="w-full h-full"
+                          src={videoEmbedUrl}
+                          title={lesson.name}
+                          frameBorder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Lesson Description */}
+              {lesson.description && (
+                <div className="mb-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    
+                    <h3 className="text-lg font-bold">Lesson Description</h3>
+                  </div>
+                  <div
+                    className="prose prose-invert max-w-none text-sm sm:text-base leading-relaxed p-4 sm:p-5 bg-[var(--input-bg)] border-2 border-[var(--border-color)] rounded-xl"
+                    dangerouslySetInnerHTML={{ __html: lesson.html_data || lesson.description }}
+                  />
+                </div>
+              )}
+
+              {/* Attached Files */}
+              {lesson.files && lesson.files.length > 0 && (
+                <div className="mb-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <h3 className="text-lg font-bold">Attached Files</h3>
+                    <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 border-2 border-amber-500/30">
+                      {lesson.files.length} {lesson.files.length === 1 ? 'File' : 'Files'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {lesson.files.map((file, index) => {
+                      const fileUrl = file.file || file.url || file.name;
+                      const fileName = file.name || file.file_name || `File ${index + 1}`;
+
+                      return (
+                        <a
+                          key={file.id || index}
+                          href={fileUrl}
+                          download={fileName}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-3 p-4 bg-[var(--input-bg)] border-2 border-[var(--border-color)] rounded-xl hover:border-blue-500/50 hover:bg-blue-500/5 transition-all group shadow-md hover:shadow-lg cursor-pointer"
+                        >
+                          <div className="w-12 h-12 rounded-xl bg-blue-500/10 border-2 border-blue-500/30 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-500/20 group-hover:scale-110 transition-all">
+                            <FaFileAlt className="w-6 h-6 text-blue-500" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className="text-sm font-semibold text-[var(--text-primary)] group-hover:text-blue-500 transition-colors block truncate">
+                              {fileName}
+                            </span>
+                            <span className="text-xs text-[var(--text-muted)]">Click to download</span>
+                          </div>
+                          <FaDownload className="w-4 h-4 text-[var(--text-muted)] group-hover:text-blue-500 transition-colors flex-shrink-0" />
+                        </a>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Mark as Complete Button */}
+              {!completed && (
+                <div className="pt-5 border-t-2 border-[var(--border-subtle)]">
                   <button
                     onClick={handleComplete}
                     disabled={completing}
-                    className="bg-green-500 text-white px-6 py-2 rounded-lg font-semibold hover:bg-green-600 transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full sm:w-auto px-6 py-3 sm:px-8 sm:py-3.5 rounded-xl font-bold text-sm sm:text-base transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-500 hover:to-green-400 text-white shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:scale-105 border-2 border-emerald-400/30"
                   >
                     {completing ? (
                       <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        Completing...
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                        <span>Completing...</span>
                       </>
                     ) : (
                       <>
-                        <FaCheck className="w-4 h-4" />
-                        Mark as Complete
+                        <FaCheck className="w-4 h-4 sm:w-5 sm:h-5" />
+                        <span>Mark as Complete</span>
                       </>
                     )}
                   </button>
-                )}
-              </div>
+                </div>
+              )}
 
-              <div className="mb-6">
-                {/* Video Player */}
-                {videoEmbedUrl && (
-                  <div className="aspect-video mb-6 rounded-2xl overflow-hidden shadow-2xl border border-white/10">
-                    <iframe
-                      className="w-full h-full"
-                      src={videoEmbedUrl}
-                      title={lesson.name}
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen>
-                    </iframe>
-                  </div>
-                )}
-
-                {/* Lesson Description */}
-                {lesson.description && (
-                  <div className="mb-6">
-                    <h3 className="text-xl font-bold mb-3">Description</h3>
-                    <div 
-                      className="prose prose-invert max-w-none text-gray-300"
-                      dangerouslySetInnerHTML={{ __html: lesson.html_data || lesson.description }}
-                    />
-                  </div>
-                )}
-
-                {/* Attached Files */}
-                {lesson.files && lesson.files.length > 0 && (
-                  <div className="mb-6">
-                    <h3 className="text-xl font-bold mb-3">Attached Files</h3>
-                    <div className="space-y-2">
-                      {lesson.files.map((file) => (
-                        <a
-                          key={file.id}
-                          href={file.name}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block p-3 bg-white/5 rounded-lg hover:bg-white/10 transition"
-                        >
-                          <span className="text-indigo-400">{file.name}</span>
-                        </a>
-                      ))}
+              {/* Completed Message */}
+              {completed && (
+                <div className="pt-5 border-t-2 border-[var(--border-subtle)]">
+                  <div className="flex items-center gap-3 p-4 sm:p-5 bg-emerald-500/10 border-2 border-emerald-500/30 rounded-xl">
+                    <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                      <FaCheckCircle className="w-6 h-6 text-emerald-500" />
                     </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-bold text-emerald-400 mb-1">Lesson Completed!</p>
+                      <p className="text-xs muted">Great job! You've completed this lesson.</p>
+                    </div>
+                    <Link
+                      to={lesson.course_id ? `/courses/${lesson.course_id}/manage` : "/courses"}
+                      className="px-4 py-2 rounded-lg font-semibold text-sm transition-all bg-emerald-500/20 text-emerald-400 border-2 border-emerald-500/30 hover:bg-emerald-500/30 hover:scale-105"
+                    >
+                      Continue
+                      <FaArrowRight className="inline ml-2 w-3 h-3" />
+                    </Link>
                   </div>
-                )}
-
-                {/* Next Button */}
-                <Link
-                  to="/courses"
-                  className="bg-cyan-500 text-white px-8 py-3 rounded-xl font-semibold hover:bg-cyan-600 transition flex items-center gap-2 w-fit"
-                >
-                  Back to Courses
-                  <FaArrowRight className="w-5 h-5" />
-                </Link>
-              </div>
-            </div>
-
-            {/* Comments Section */}
-            <div className="card p-8">
-              <div className="flex items-center gap-3 mb-6">
-                <svg className="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-                </svg>
-                <h3 className="text-xl font-bold">Comments</h3>
-              </div>
-
-              <div className="mb-6">
-                <label className="block text-sm font-semibold mb-3 soft">Add your comment:</label>
-
-                {/* Rich Text Editor Toolbar */}
-                <div className="rounded-t-lg px-4 py-2 flex items-center gap-2 text-sm flex-wrap bg-white/[0.02] border border-white/[0.08]">
-                  <select className="bg-white/[0.03] border border-white/[0.08] text-soft px-3 py-1.5 rounded text-sm">
-                    <option>File</option>
-                  </select>
-                  <select className="bg-white/[0.03] border border-white/[0.08] text-soft px-3 py-1.5 rounded text-sm">
-                    <option>Edit</option>
-                  </select>
-                  <select className="bg-white/[0.03] border border-white/[0.08] text-soft px-3 py-1.5 rounded text-sm">
-                    <option>View</option>
-                  </select>
-                  <select className="bg-white/[0.03] border border-white/[0.08] text-soft px-3 py-1.5 rounded text-sm">
-                    <option>Insert</option>
-                  </select>
-                  <select className="bg-white/[0.03] border border-white/[0.08] text-soft px-3 py-1.5 rounded text-sm">
-                    <option>Format</option>
-                  </select>
-                  <select className="bg-white/[0.03] border border-white/[0.08] text-soft px-3 py-1.5 rounded text-sm">
-                    <option>Tools</option>
-                  </select>
                 </div>
-
-                <div className="px-4 py-2 flex items-center gap-2 flex-wrap bg-white/[0.02] border border-white/[0.08] border-t-0">
-                  <button className="p-1.5 hover:bg-white/10 rounded">
-                    <svg className="w-5 h-5 soft" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m6-6l6 6" />
-                    </svg>
-                  </button>
-                  <button className="p-1.5 hover:bg-white/10 rounded">
-                    <svg className="w-5 h-5 soft" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6 6l6-6" />
-                    </svg>
-                  </button>
-
-                  <div className="h-6 mx-1 border-l border-white/10"></div>
-
-                  <select className="bg-white/[0.03] border-0 text-soft px-2 py-1 rounded text-sm">
-                    <option>Paragraph</option>
-                  </select>
-
-                  <div className="h-6 mx-1 border-l border-white/10"></div>
-
-                  <button className="p-1.5 hover:bg-white/10 rounded font-bold soft">B</button>
-                  <button className="p-1.5 hover:bg-white/10 rounded italic soft">I</button>
-
-                  <div className="h-6 mx-1 border-l border-white/10"></div>
-
-                  <button className="p-1.5 hover:bg-white/10 rounded">
-                    <svg className="w-5 h-5 soft" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16m-7 6h7" />
-                    </svg>
-                  </button>
-                </div>
-
-                {/* Text Area */}
-                <textarea
-                  className="w-full px-4 py-3 min-h-[200px] rounded-b-lg border-t-0 border border-white/[0.08]"
-                  placeholder="Enter your comment..."
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                ></textarea>
-
-                <p className="text-xs muted text-right mt-1">POWERED BY TINY</p>
-              </div>
-
-              {/* Image Upload */}
-              <div className="mb-6">
-                <label className="block text-sm font-semibold mb-2 soft">Attach Image (optional):</label>
-                <div className="flex items-center gap-3">
-                  <label className="px-6 py-2.5 rounded-lg cursor-pointer transition bg-white/[0.05] border border-white/10 hover:bg-white/[0.08]">
-                    <span className="text-sm font-medium flex items-center gap-2">
-                      <FaImage className="w-4 h-4" />
-                      Choose File
-                    </span>
-                    <input type="file" className="hidden" accept="image/*" />
-                  </label>
-                  <span className="text-sm muted">No file chosen</span>
-                </div>
-              </div>
-
-              {/* Anonymous Checkbox */}
-              <div className="mb-6">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="w-4 h-4 rounded border-gray-600 bg-transparent text-indigo-500"
-                    checked={isAnonymous}
-                    onChange={(e) => setIsAnonymous(e.target.checked)}
-                  />
-                  <span className="text-sm soft">Post anonymously</span>
-                </label>
-              </div>
-
-              {/* Submit Button */}
-              <button className="bg-green-500 text-white px-8 py-3 rounded-xl font-semibold hover:bg-green-600 transition flex items-center gap-2">
-                <FaCheck className="w-5 h-5" />
-                Submit Comment
-              </button>
+              )}
             </div>
           </div>
         </div>

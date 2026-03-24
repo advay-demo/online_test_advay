@@ -673,6 +673,10 @@ class LessonDetailSerializer(serializers.ModelSerializer):
     video_url = serializers.SerializerMethodField()
     files = serializers.SerializerMethodField()
     is_completed = serializers.SerializerMethodField()
+    course_id = serializers.SerializerMethodField()
+    course_name = serializers.SerializerMethodField()
+    module_id = serializers.SerializerMethodField()
+    module_name = serializers.SerializerMethodField()
     
     def get_video_url(self, obj):
         if obj.video_path:
@@ -680,8 +684,82 @@ class LessonDetailSerializer(serializers.ModelSerializer):
         return None
     
     def get_files(self, obj):
+        request = self.context.get('request')
         files = obj.get_files()
-        return [{'id': f.id, 'name': f.file.name} for f in files]
+        
+        result = []
+        for f in files:
+            if not f.file:
+                continue
+            
+            # Construct absolute URL if request is available, otherwise use default url
+            file_url = request.build_absolute_uri(f.file.url) if request else f.file.url
+            
+            result.append({
+                'id': f.id, 
+                'url': file_url,
+                'name': f.file.name.split('/')[-1]  # Clean display name without folder path
+            })
+            
+        return result
+        
+    def get_course_id(self, obj):
+        # course_id is already passed from the view via context
+        course_id = self.context.get('course_id')
+        if course_id:
+            return course_id
+            
+        # Fallback if accessed elsewhere without course_id in context
+        from yaksh.models import LearningUnit, Course
+        learning_unit = LearningUnit.objects.filter(lesson=obj).first()
+        if learning_unit:
+            course = Course.objects.filter(learning_module__learning_unit=learning_unit).first()
+            if course:
+                return course.id
+        return None
+
+    def get_course_name(self, obj):
+        course = self.context.get('course')
+        if course:
+            return course.name
+            
+        course_id = self.context.get('course_id')
+        from yaksh.models import LearningUnit, Course
+        
+        if course_id:
+            try:
+                course = Course.objects.get(id=course_id)
+                return course.name
+            except Course.DoesNotExist:
+                pass
+                
+        # Fallback
+        learning_unit = LearningUnit.objects.filter(lesson=obj).first()
+        if learning_unit:
+            course = Course.objects.filter(learning_module__learning_unit=learning_unit).first()
+            if course:
+                return course.name
+        return None
+        
+    def get_module_id(self, obj):
+        # Find the module containing this lesson's learning unit
+        from yaksh.models import LearningUnit, LearningModule
+        learning_unit = LearningUnit.objects.filter(lesson=obj).first()
+        if learning_unit:
+            module = LearningModule.objects.filter(learning_unit=learning_unit).first()
+            if module:
+                return module.id
+        return None
+        
+    def get_module_name(self, obj):
+        # Find the module containing this lesson's learning unit
+        from yaksh.models import LearningUnit, LearningModule
+        learning_unit = LearningUnit.objects.filter(lesson=obj).first()
+        if learning_unit:
+            module = LearningModule.objects.filter(learning_unit=learning_unit).first()
+            if module:
+                return module.name
+        return None
     
     def get_is_completed(self, obj):
         user = self.context.get('user')
@@ -712,8 +790,8 @@ class LessonDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lesson
         fields = ['id', 'name', 'description', 'html_data', 'video_url', 
-                 'video_file', 'files', 'is_completed', 'active']
-
+                 'video_file', 'files', 'is_completed', 'active', 
+                 'course_id', 'course_name', 'module_id', 'module_name']
 
 class LearningUnitDetailSerializer(serializers.ModelSerializer):
     """Detailed learning unit with quiz or lesson data"""
