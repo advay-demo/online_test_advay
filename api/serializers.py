@@ -3,7 +3,7 @@ from yaksh.models import (
     Question, Quiz, QuestionPaper, AnswerPaper, Answer, Course,
     LearningModule, LearningUnit, Lesson, CourseStatus,
     Badge, UserBadge, BadgeProgress, UserStats, DailyActivity, UserActivity, Post, Comment, User, Profile,
-    QuestionSet
+    QuestionSet, AssignmentUpload
 )
 from grades.models import GradingSystem, GradeRange
 from notifications_plugin.models import Notification
@@ -1093,3 +1093,37 @@ class QuestionSetSerializer(serializers.ModelSerializer):
     class Meta:
         model = QuestionSet
         fields = '__all__'      
+
+
+
+class StudentAnswerPaperSerializer(serializers.ModelSerializer):
+    """Minimal nested serializer for returning answer paper data to students."""
+    questions = QuestionSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = AnswerPaper
+        fields = [
+            'id', 'user', 'question_paper', 'attempt_number', 
+            'start_time', 'end_time', 'status', 'marks_obtained', 
+            'questions', 'percent'
+        ]  # Removed percent_completed and time_left, added percent
+
+
+class ViewAnswerPaperResponseSerializer(serializers.Serializer):
+    """Wrapper serializer for the view_answerpaper response."""
+    quiz = QuizSerializer(read_only=True)
+    course_id = serializers.IntegerField(read_only=True)
+    has_user_assignments = serializers.BooleanField(read_only=True)
+    
+    # Nested data object matching get_user_data structure
+    data = serializers.SerializerMethodField()
+
+    def get_data(self, obj):
+        user = obj.get('user')
+        papers = obj.get('papers')
+        return {
+            'user': SimpleUserSerializer(user).data if user else None,
+            'profile': ProfileSerializer(user.profile).data if hasattr(user, 'profile') else None,
+            'papers': StudentAnswerPaperSerializer(papers, many=True).data,
+            'questionpaperid': obj.get('questionpaper_id')
+        }        

@@ -22,8 +22,14 @@ urlpatterns = [
     url(r'student/modules/(?P<module_id>[0-9]+)/$', views.module_detail, name='module_detail'), #ok
 
     # Course Enrollment
-    url(r'student/courses/(?P<course_id>[0-9]+)/enroll-request/$', views.enroll_request_api, name='enroll_request_api'),
-    url(r'student/courses/(?P<course_id>[0-9]+)/self-enroll/$', views.self_enroll_api, name='self_enroll_api'),
+    url(r'student/courses/(?P<course_id>[0-9]+)/enroll-request/$', views.enroll_request_api, name='enroll_request_api'), #ok
+    url(r'student/courses/(?P<course_id>[0-9]+)/self-enroll/$', views.self_enroll_api, name='self_enroll_api'), #ok
+
+    # Lesson Content & Completion
+    url(r'student/lessons/(?P<lesson_id>[0-9]+)/$', views.lesson_detail, name='lesson_detail'), #ok
+    url(r'student/lessons/(?P<lesson_id>[0-9]+)/complete/$', views.complete_lesson, name='complete_lesson'), #ok
+
+    url(r'view_answerpaper/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/$', views.view_answerpaper_api, name='api_view_answerpaper'),
         
     
 
@@ -39,8 +45,7 @@ urlpatterns = [
     
     
    
-    url(r'student/lessons/(?P<lesson_id>[0-9]+)/$', views.lesson_detail, name='lesson_detail'),
-    url(r'student/lessons/(?P<lesson_id>[0-9]+)/complete/$', views.complete_lesson, name='complete_lesson'),
+    
     
     # Badges & Insights
     url(r'student/insights/badges/$', views.user_badges, name='user_badges'),

@@ -50,7 +50,7 @@ from api.serializers import (
     UserActivitySerializer, CourseProgressSerializer, CourseCatalogSerializer,
     LessonDetailSerializer, LearningModuleDetailSerializer, LearningUnitDetailSerializer, MinimalLearningUnitSerializer,
     SimpleUserSerializer, ProfileSerializer, AnswerDetailSerializer, AnswerPaperGradingSerializer, UserAttemptSerializer, GradeUpdateSerializer, GradingCourseSerializer,
-    MonitorAnswerPaperSerializer, StudentDashboardCourseSerializer, CourseWithCompletionSerializer, QuestionSetSerializer, TagSerializer
+    MonitorAnswerPaperSerializer, StudentDashboardCourseSerializer, CourseWithCompletionSerializer, QuestionSetSerializer, TagSerializer, ViewAnswerPaperResponseSerializer
 )
 
 from rest_framework import generics, permissions, status
@@ -1784,6 +1784,118 @@ def complete_lesson(request, lesson_id):
     )
 
 
+
+
+# ============================================================
+#  ANSWERPAPER APIs
+# ============================================================
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def view_answerpaper_api(request, questionpaper_id, course_id):
+    """
+    API endpoint equivalent of view_answerpaper from yaksh.views.
+    Validates if the user is a student in the course and if the quiz allows viewing.
+    """
+    user = request.user
+    quiz = get_object_or_404(QuestionPaper, pk=questionpaper_id).quiz
+    course = get_object_or_404(Course, pk=course_id)
+    
+    # Mirror equivalent logic directly from your view
+    if quiz.view_answerpaper and user in course.students.all():
+        # Get raw data dict from model
+        user_data = AnswerPaper.objects.get_user_data(user, questionpaper_id, course_id)
+        
+        has_user_assignments = AssignmentUpload.objects.filter(
+            answer_paper__user=user, 
+            answer_paper__course_id=course.id,
+            answer_paper__question_paper_id=questionpaper_id
+        ).exists()
+
+        # Find module name connected to this quiz and course
+        module_name = None
+        # Get learning units for this quiz
+        units = LearningUnit.objects.filter(quiz=quiz)
+        if units.exists():
+            # Find the module that contains this unit and belongs to this course
+            module = course.learning_module.filter(learning_unit__in=units).first()
+            if module:
+                module_name = module.name
+
+        # Format the papers data to include student answers alongside questions,
+        # just like in api_grade_user_attempt
+        papers_data = []
+        for paper in user_data.get('papers', []):
+            questions_data = []
+            total_marks = 0.0
+            
+            # Fetch the specific answers for this attempt
+            for question, answers in paper.get_question_answers().items():
+                question_data = QuestionSerializer(question).data
+                total_marks += float(question_data.get('points', 0) or 0)
+                answer_data = None
+                
+                if answers and answers[0] is not None:
+                    if isinstance(answers[0], dict) and answers[0].get('answer'):
+                        ans_obj = answers[0]['answer']
+                        answer_data = {
+                            'id': ans_obj.id,
+                            'answer_content': ans_obj.answer,
+                            'marks': ans_obj.marks,
+                            'correct': ans_obj.correct,
+                            'error': ans_obj.error,
+                            'skipped': getattr(ans_obj, 'skipped', False)
+                        }
+                if answer_data is None:
+                    answer_data = {
+                        'id': None,
+                        'answer_content': None,
+                        'marks': 0.0,
+                        'correct': False,
+                        'error': None,
+                        'skipped': True
+                    }
+                questions_data.append({
+                    'question': question_data,
+                    'answer': answer_data
+                })
+                
+            papers_data.append({
+                'id': paper.id,
+                'attempt_number': paper.attempt_number,
+                'start_time': paper.start_time,
+                'end_time': paper.end_time,
+                'marks_obtained': paper.marks_obtained,
+                'total_marks': total_marks,
+                'percent': paper.percent,
+                'status': paper.status,
+                'comments': paper.comments,
+                'questions': questions_data
+            })
+        
+        # Package directly as a dictionary rather than wrapping in a serializer
+        # This gives you total control over the output structure
+        response_data = {
+            'quiz': QuizSerializer(quiz).data,
+            'course_id': course.id,
+            'course_name': course.name,      # <--- Added
+            'module_name': module_name,      # <--- Added
+            'has_user_assignments': has_user_assignments,
+            'user': SimpleUserSerializer(user_data.get('user')).data if user_data.get('user') else None,
+            'profile': ProfileSerializer(user_data.get('user').profile).data if hasattr(user_data.get('user'), 'profile') else None,
+            'papers': papers_data,
+            'questionpaper_id': user_data.get('questionpaperid')
+        }
+        
+        return Response(response_data, status=status.HTTP_200_OK)
+        
+    else:
+        # User not enrolled or quiz has view_answerpaper turned off
+        return Response(
+            {"detail": "You do not have permission to view this answer paper."},
+            status=status.HTTP_403_FORBIDDEN
+        )
+        
 # ============================================================
 #  BADGES & INSIGHTS APIs
 # ============================================================

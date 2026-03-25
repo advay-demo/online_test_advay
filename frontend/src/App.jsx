@@ -11,6 +11,7 @@ import ManageCourseStudent from './pages/student/ManageCourse';
 
 import Quiz from './pages/student/Quiz';
 import Lesson from './pages/student/Lesson';
+import ViewAnswerPaper from './pages/student/ViewAnswerPaper';
 import Insights from './pages/student/Insights';
 import Profile from './pages/Profile';
 import Submission from './pages/student/Submission';
@@ -51,6 +52,7 @@ function App() {
           <Route path="/courses" element={<CourseStudent />} />
           <Route path="/add-course" element={<AddNewCourseStudent />} />
           <Route path="/courses/:courseId/manage" element={<ManageCourseStudent />} />
+          <Route path="/student/courses/:courseId/view-answerpaper/:questionPaperId" element={<ViewAnswerPaper />} />
 
 
           <Route path="/lessons/:lessonId" element={<Lesson />} />

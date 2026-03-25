@@ -233,6 +233,17 @@ export const markLessonComplete = async (lessonId) => {
   return response.data;
 };
 
+// ============================================================
+// ANSWER PAPER APIs
+// ============================================================
+
+
+export const viewAnswerPaper = async (questionPaperId, courseId) => {
+  const response = await api.get(`/api/view_answerpaper/${questionPaperId}/${courseId}/`);
+  return response.data;
+};
+
+
 
 // ============================================================
 // BADGES & INSIGHTS APIs
