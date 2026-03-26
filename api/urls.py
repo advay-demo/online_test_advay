@@ -29,7 +29,7 @@ urlpatterns = [
     url(r'student/lessons/(?P<lesson_id>[0-9]+)/$', views.lesson_detail, name='lesson_detail'), #ok
     url(r'student/lessons/(?P<lesson_id>[0-9]+)/complete/$', views.complete_lesson, name='complete_lesson'), #ok
 
-    url(r'view_answerpaper/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/$', views.view_answerpaper_api, name='api_view_answerpaper'),
+    url(r'view_answerpaper/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/$', views.view_answerpaper_api, name='api_view_answerpaper'), #ok
         
     
 

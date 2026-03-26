@@ -158,7 +158,7 @@ const QuizListContent = ({
                                             <div className="flex flex-col sm:flex-row items-start gap-4">
                                                 {/* Icon */}
                                                 <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-blue-500/15 flex items-center justify-center flex-shrink-0 border-2 border-blue-500/40 dark:border-blue-500/30 group-hover:border-blue-500/60 dark:group-hover:border-blue-500/50 group-hover:scale-110 transition-all duration-300">
-                                                    <FaBook className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
+                                                    <FaBook className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
                                                 </div>
 
                                                 {/* Content */}
@@ -174,7 +174,7 @@ const QuizListContent = ({
                                                     {/* Stats */}
                                                     <div className="flex flex-wrap gap-3 sm:gap-4 text-xs text-[var(--text-muted)] mt-2">
                                                         <div className="flex items-center gap-1.5">
-                                                            <FaTrophy className="w-3.5 h-3.5 flex-shrink-0 text-blue-600 dark:text-blue-400" />
+                                                            <FaTrophy className="w-3.5 h-3.5 flex-shrink-0 text-blue-400" />
                                                             <span className="font-medium">{course.quizzes.length} quizzes and exercises</span>
                                                         </div>
                                                         

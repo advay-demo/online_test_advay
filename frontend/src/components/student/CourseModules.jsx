@@ -16,6 +16,7 @@ import {
     FaSpinner
 } from 'react-icons/fa';
 
+
 const CourseModules = () => {
     const { modules, modulesLoading, modulesError } = useManageCourseStore();
     const { courseId } = useParams();
@@ -29,6 +30,12 @@ const CourseModules = () => {
             navigate(`/courses/${courseId}/quizzes/${unit.quiz?.id}`);
         } else if (unit.type === 'lesson') {
             navigate(`/lessons/${unit.lesson?.id}`);
+        }
+    };
+
+    const handleViewAnswerPaper = (unit) => {
+        if (unit.type === 'quiz' && unit.quiz?.questionpaper_id) {
+            navigate(`/student/courses/${courseId}/view-answerpaper/${unit.quiz.questionpaper_id}`);
         }
     };
 
@@ -283,6 +290,7 @@ const CourseModules = () => {
                                                                             isUnitCompleted={isUnitCompleted}
                                                                             isInProgress={isInProgress}
                                                                             handleUnitClick={handleUnitClick}
+                                                                            handleViewAnswerPaper={handleViewAnswerPaper}
                                                                         />
                                                                     </td>
                                                                 </tr>
@@ -346,6 +354,7 @@ const CourseModules = () => {
                                                                     isUnitCompleted={isUnitCompleted}
                                                                     isInProgress={isInProgress}
                                                                     handleUnitClick={handleUnitClick}
+                                                                    handleViewAnswerPaper={handleViewAnswerPaper}
                                                                     isMobile={true}
                                                                 />
                                                             </div>
@@ -366,14 +375,15 @@ const CourseModules = () => {
 };
 
 // Helper Component for consistent buttons across Mobile/Desktop
-const DesktopActionButtons = ({ unit, module, isLocked, isUnitCompleted, isInProgress, handleUnitClick, isMobile }) => {
+const DesktopActionButtons = ({ unit, module, isLocked, isUnitCompleted, isInProgress, handleUnitClick, handleViewAnswerPaper, isMobile }) => {
     return (
         <div className="flex items-center gap-2 justify-end">
             {!isLocked && unit.type === 'quiz' && unit.quiz?.view_answerpaper && (
                  <button
                     onClick={(e) => {
                         e.stopPropagation();
-                    }}
+                        if (handleViewAnswerPaper) handleViewAnswerPaper(unit);
+                    }} 
                     className="px-3 py-1.5 text-blue-500 bg-blue-500/10 hover:bg-blue-500/20 rounded-lg transition-colors border border-blue-500/20 flex items-center gap-2 text-xs font-medium"
                 >
                     <FaClipboardList className="w-3 h-3" /> {isMobile ? "Ans." : "Answer Paper"}

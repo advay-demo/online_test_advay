@@ -2081,7 +2081,8 @@ def teacher_dashboard(request):
                         'course_id': course.id,
                         'name': quiz.description,
                         'course_name': course.name,
-                        'module_name': module.name
+                        'module_name': module.name,
+                        'is_exercise': getattr(quiz, 'is_exercise', False)
                     })
 
     # Top Students Logic
@@ -2163,7 +2164,9 @@ def teacher_dashboard(request):
                 'name': course.name,
                 'active': course.active,
                 'students_count': course.students.count(),
-                'modules_count': course.learning_module.count()
+                'modules_count': course.learning_module.count(),
+                'start_date': course.start_enroll_time,
+                'end_date': course.end_enroll_time
             }
             for course in recent_courses
         ],

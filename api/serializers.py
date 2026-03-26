@@ -282,9 +282,21 @@ class QuestionSerializer(serializers.ModelSerializer):
 
 
 class QuizSerializer(serializers.ModelSerializer):
+    questionpaper_id = serializers.SerializerMethodField()
+
     class Meta:
         model = Quiz
         fields = '__all__'
+        
+    def get_questionpaper_id(self, obj):
+        # Dynamically fetch the attached Question Paper ID
+        qp = obj.questionpaper_set.first()
+        if qp:
+            return qp.id
+        # Fallback logic in case of legacy data
+        if obj.question_paper:
+            return obj.question_paper.id
+        return None
 
 
 class QuestionPaperSerializer(serializers.ModelSerializer):
