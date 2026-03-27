@@ -11,7 +11,7 @@ import useGradingSystemStore from '../../store/teacherGradeStore';
 
 
 const Courses = () => {
-    const [activeTab, setActiveTab] = useState('All Quizzes');
+    const [activeTab, setActiveTab] = useState('All Courses');
     const [courses, setCourses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -147,7 +147,7 @@ const Courses = () => {
                         {/* Filters and Search */}
                         <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3 sm:gap-4 mb-6">
                             <div className="flex bg-[var(--input-bg)] p-1.5 rounded-xl overflow-x-auto scrollbar-hide border-2 border-[var(--border-strong)]">
-                                {['All Quizzes', 'Active'].map((tab) => (
+                                {['All Courses', 'Active'].map((tab) => (
                                     <button
                                         key={tab}
                                         onClick={() => setActiveTab(tab)}

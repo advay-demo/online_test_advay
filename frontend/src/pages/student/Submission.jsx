@@ -161,7 +161,7 @@ const Submission = () => {
           </div>
 
           {/* Confirmation / Completion Box */}
-          {submission.status === 'completed' ? (
+          {['completed', 'quit'].includes(submission.status) ? (
             <div className="card p-8 text-center">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center bg-green-500/20 border border-green-500/30">
                 <FaCheck className="w-8 h-8 text-green-400" />

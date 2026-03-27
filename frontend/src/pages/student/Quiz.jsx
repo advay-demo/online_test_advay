@@ -391,9 +391,14 @@ const Quiz = () => {
         handleImmediateResult(questionId, result);
       }
     } catch (err) {
+      if (err.response?.status === 403 && err.response?.data?.error === 'Time is up!') {
+         alert('Time is up! Your exam has ended.');
+         navigate(`/student/submission/${answerPaper.id}`);
+         return;
+      }
+
       console.error('Failed to submit answer:', err);
-      const errorMessage = err.response?.data?.error || 'Failed to submit answer. Please try again.';
-      alert(errorMessage);
+      alert(err.response?.data?.error || 'Failed to submit answer. Please try again.');
     } finally {
       setSubmitting(false);
     }

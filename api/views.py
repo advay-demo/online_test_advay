@@ -699,6 +699,8 @@ class CourseList(APIView):
 
 
 class StartQuiz(APIView):
+    permission_classes = [IsAuthenticated] # FIX 1: Secure the view
+
     def get_quiz(self, pk, user):
         try:
             return Quiz.objects.get(pk=pk)
@@ -715,21 +717,35 @@ class StartQuiz(APIView):
             questionpaper, user, course_id)
 
         if last_attempt and last_attempt.is_attempt_inprogress():
-            serializer = AnswerPaperSerializer(last_attempt)
-            context["time_left"] = last_attempt.time_left()
-            context["answerpaper"] = serializer.data
-            return Response(context)
+            # NEW FIX: Did their time expire while they were offline?
+            if last_attempt.time_left() <= 0:
+                last_attempt.update_marks()
+                last_attempt.set_end_time(timezone.now())
+                last_attempt.refresh_from_db()
+                # Do NOT return Response(context) here. Let it drop down 
+                # so the system checks if they have another valid attempt left
+            else:
+                # Time is still valid, let them resume
+                serializer = AnswerPaperSerializer(last_attempt)
+                context["time_left"] = last_attempt.time_left()
+                context["answerpaper"] = serializer.data
+                return Response(context)
 
         can_attempt, msg = questionpaper.can_attempt_now(user, course_id)
         if not can_attempt:
-            return Response({'message': msg})
+            return Response({'message': msg}, status=status.HTTP_403_FORBIDDEN)
 
         attempt_number = 1 if not last_attempt else last_attempt.attempt_number + 1
-        ip = request.META['REMOTE_ADDR']
+        ip = request.META.get('REMOTE_ADDR', '0.0.0.0')
 
-        answerpaper = questionpaper.make_answerpaper(
-            user, ip, attempt_number, course_id
-        )
+        # FIX: Catch Double-click Race conditions (Integrity Error)
+        try:
+            answerpaper = questionpaper.make_answerpaper(
+                user, ip, attempt_number, course_id
+            )
+        except IntegrityError:
+            answerpaper = AnswerPaper.objects.get_user_last_attempt(
+                questionpaper, user, course_id)
 
         serializer = AnswerPaperSerializer(answerpaper)
         context["time_left"] = answerpaper.time_left()
@@ -898,113 +914,96 @@ class AnswerPaperList(APIView):
 
 
 class AnswerValidator(APIView):
+    permission_classes = [IsAuthenticated] # FIX 1: Secure the view
+
     def post(self, request, answerpaper_id, question_id, format=None):
         user = request.user
         
-        # Get answerpaper with error handling
         try:
             answerpaper = AnswerPaper.objects.get(pk=answerpaper_id, user=user)
         except AnswerPaper.DoesNotExist:
-            return Response(
-                {'error': 'Answer paper not found'},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({'error': 'Answer paper not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # FIX 2: Prevent users from submitting after time is up
+        if answerpaper.time_left() <= -10 or answerpaper.status == 'completed':
+            if answerpaper.status == 'inprogress':
+                answerpaper.update_marks()
+                answerpaper.set_end_time(timezone.now())
+            return Response({'error': 'Time is up!'}, status=status.HTTP_403_FORBIDDEN)
         
-        # Get question with error handling
         try:
             question = Question.objects.get(pk=question_id)
         except Question.DoesNotExist:
-            return Response(
-                {'error': 'Question not found'},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({'error': 'Question not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        # Verify question belongs to this answer paper
         if question not in answerpaper.questions.all():
-            return Response(
-                {'error': 'Question not in this answer paper'},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({'error': 'Question not in this answer paper'}, status=status.HTTP_404_NOT_FOUND)
 
-        # Extract and normalize answer based on question type
+        user_answer = None
+
+        # FIX 4: Handle File Uploads correctly
+        if question.type == 'upload':
+            uploaded_files = request.FILES.getlist('assignment')
+            if not uploaded_files:
+                return Response({'error': 'Please upload an assignment file'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            AssignmentUpload.objects.filter(assignmentQuestion=question, answer_paper=answerpaper).delete()
+            
+            uploads_to_create = []
+            for fname in uploaded_files:
+                fname._name = fname._name.replace(" ", "_")
+                uploads_to_create.append(AssignmentUpload(
+                    assignmentQuestion=question, assignmentFile=fname, answer_paper=answerpaper
+                ))
+            AssignmentUpload.objects.bulk_create(uploads_to_create)
+            user_answer = 'ASSIGNMENT UPLOADED'
+        else:
+            # Normal text/array answers
+            try:
+                raw_answer = request.data.get('answer')
+                if raw_answer is None:
+                    return Response({'error': 'Answer is required'}, status=status.HTTP_400_BAD_REQUEST)
+                
+                if question.type in ['mcq', 'mcc', 'arrange']:
+                    user_answer = raw_answer if isinstance(raw_answer, list) else [raw_answer]
+                elif question.type == 'integer':
+                    user_answer = int(raw_answer[0] if isinstance(raw_answer, list) else raw_answer)
+                elif question.type == 'float':
+                    user_answer = float(raw_answer[0] if isinstance(raw_answer, list) else raw_answer)
+                else:
+                    user_answer = raw_answer[0] if isinstance(raw_answer, list) else str(raw_answer)
+            except (ValueError, TypeError) as e:
+                return Response({'error': f'Invalid answer format'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # FIX 3: Don't duplicate answers. Update existing one if user changes answer
         try:
-            raw_answer = request.data.get('answer')
-            
-            if raw_answer is None:
-                return Response(
-                    {'error': 'Answer is required'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
-            # Normalize answer format - handle both array and direct value
-            if question.type in ['mcq', 'mcc']:
-                # MCQ/MCC can be single value or array
-                if isinstance(raw_answer, list):
-                    user_answer = raw_answer
-                else:
-                    user_answer = [raw_answer] if raw_answer else []
-                    
-            elif question.type == 'integer':
-                # Extract integer from array or direct value
-                if isinstance(raw_answer, list):
-                    user_answer = int(raw_answer[0]) if raw_answer else 0
-                else:
-                    user_answer = int(raw_answer)
-                    
-            elif question.type == 'float':
-                # Extract float from array or direct value
-                if isinstance(raw_answer, list):
-                    user_answer = float(raw_answer[0]) if raw_answer else 0.0
-                else:
-                    user_answer = float(raw_answer)
-                    
-            elif question.type in ['code', 'upload']:
-                # Code/upload expects string, extract from array if needed
-                if isinstance(raw_answer, list):
-                    user_answer = raw_answer[0] if raw_answer else ''
-                else:
-                    user_answer = raw_answer
-                    
+            if question in answerpaper.get_questions_answered() and question.type not in ['code', 'upload']:
+                ans = answerpaper.get_latest_answer(question.id)
+                ans.answer = user_answer
+                ans.correct = False
+                ans.save()
             else:
-                # Default: use as-is or extract from array
-                if isinstance(raw_answer, list):
-                    user_answer = raw_answer[0] if raw_answer else ''
-                else:
-                    user_answer = raw_answer
-                    
-        except (ValueError, TypeError, IndexError) as e:
-            return Response(
-                {'error': f'Invalid answer format for {question.type} question: {str(e)}'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Create answer object
-        try:
-            ans = Answer.objects.create(question=question, answer=user_answer)
-            answerpaper.answers.add(ans)
-            answerpaper.save()
+                ans = Answer.objects.create(question=question, answer=user_answer)
+                answerpaper.answers.add(ans)
         except Exception as e:
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.error(f"Failed to save answer for question {question_id}: {str(e)}", exc_info=True)
-            return Response(
-                {'error': f'Failed to save answer: {str(e)}'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            return Response({'error': f'Failed to save answer'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Validate answer
         try:
             json_data = None
-            if question.type in ['code', 'upload']:
+            if question.type == 'code':
                 json_data = question.consolidate_answer_data(user_answer, user)
 
             result = answerpaper.validate_answer(user_answer, question, json_data, ans.id)
 
-            # Update answer object for non-code questions
             if question.type not in ['code', 'upload']:
                 if result.get('success'):
                     ans.correct = True
-                    ans.marks = question.points
+                    ans.marks = (question.points * result.get('weight', 1) / question.get_maximum_test_case_weight()) if question.partial_grading else question.points
+                else:
+                    ans.correct = False
+                    ans.marks = 0
+                
                 ans.error = json.dumps(result.get('error'))
                 ans.save()
                 answerpaper.update_marks(state='inprogress')
@@ -1012,31 +1011,18 @@ class AnswerValidator(APIView):
             return Response(result)
             
         except Exception as e:
-            # Log the error for debugging
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.error(f"Error validating answer for question {question_id}: {str(e)}", exc_info=True)
-            
             # Check if it's a code server connection error
-            error_str = str(e)
-            if 'ConnectionError' in str(type(e).__name__) or 'Connection refused' in error_str or 'Max retries exceeded' in error_str:
-                # Code server is not available
-                if question.type in ['code', 'upload']:
-                    return Response({
-                        'success': False,
-                        'error': 'Code evaluation server is currently unavailable. Your answer has been saved and will be evaluated when the server is available. Please contact your instructor if this persists.',
-                        'message': 'Answer saved for later evaluation'
-                    }, status=status.HTTP_202_ACCEPTED)
-            
-            return Response(
-                {'error': f'Failed to validate answer: {str(e)}'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            if 'ConnectionError' in str(type(e).__name__) or 'Connection refused' in str(e):
+                return Response({
+                    'success': False,
+                    'error': 'Code server unavailable. Try again later.'
+                }, status=status.HTTP_202_ACCEPTED)
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def get(self, request, uid):
+        # Code execution polling
         ans = Answer.objects.get(pk=uid)
         url = f"{SERVER_HOST_NAME}:{SERVER_POOL_PORT}"
-
         result = get_result_from_code_server(url, uid)
 
         if result['status'] == 'done':
@@ -1047,11 +1033,11 @@ class AnswerValidator(APIView):
                 ans.marks = ans.question.points
             ans.save()
 
-            answerpaper = ans.answerpaper_set.get()
-            answerpaper.update_marks(state='inprogress')
+            answerpaper = ans.answerpaper_set.first()
+            if answerpaper:
+                answerpaper.update_marks(state='inprogress')
 
         return Response(result)
-
 
 class GetCourse(APIView):
     def get(self, request, pk, format=None):
@@ -1061,12 +1047,23 @@ class GetCourse(APIView):
 
 
 class QuitQuiz(APIView):
+    permission_classes = [IsAuthenticated] # FIX 1: Secure the view
+
     def get(self, request, answerpaper_id, format=None):
-        answerpaper = AnswerPaper.objects.get(id=answerpaper_id)
-        answerpaper.status = 'completed'
-        answerpaper.save()
+        try:
+            answerpaper = AnswerPaper.objects.get(id=answerpaper_id, user=request.user)
+        except AnswerPaper.DoesNotExist:
+            return Response({'error': 'AnswerPaper not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # FIX 5: Stop the timer so the attempt registers as closed correctly
+        if answerpaper.status == 'inprogress':
+            answerpaper.update_marks() # Score their paper before quitting!
+            answerpaper.status = 'quit'
+            answerpaper.save()
+            answerpaper.set_end_time(timezone.now())
+            
         serializer = AnswerPaperSerializer(answerpaper)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
@@ -1083,16 +1080,32 @@ def quiz_submission_status(request, answerpaper_id):
             status=status.HTTP_404_NOT_FOUND
         )
     
+    # =======================================================
+    # FIX 1: Close out "inprogress" papers automatically
+    # like the original Yaksh backend complete() function did.
+    # =======================================================
+    if answerpaper.status == 'inprogress':
+        answerpaper.update_marks()
+        answerpaper.set_end_time(timezone.now())
+        answerpaper.refresh_from_db()  # Ensure we have the latest graded math
+    
     # Get course ID from answerpaper
     course_id = None
     if hasattr(answerpaper, 'course_id'):
         course_id = answerpaper.course_id
+        
+    # =======================================================
+    # FIX 2: Correctly count unattempted questions using 
+    # FOSSEE's M2M 'questions_answered' instead of .exists()
+    # =======================================================
+    #answered_question_ids = set(answerpaper.questions_answered.values_list('id', flat=True))
     
     # Get all questions and their attempt status
     questions_data = []
     for question in answerpaper.questions.all():
         # Check if question has been answered
         answered = answerpaper.answers.filter(question=question).exists()
+        
         question_title = question.summary if hasattr(question, 'summary') and question.summary else (
             question.description[:50] + '...' if question.description else f'Question {question.id}'
         )
@@ -1120,7 +1133,7 @@ def quiz_submission_status(request, answerpaper_id):
         'percent': getattr(answerpaper, 'percent', 0)
     }, status=status.HTTP_200_OK)
 
-
+    
 # ============================================================
 #  STUDENT DASHBOARD APIs
 # ============================================================

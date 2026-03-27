@@ -398,12 +398,31 @@ export const apiSkipQuestion = async (questionId, attemptNum, moduleId, question
 // ============================================================
 
 
+
 export const startQuiz = async (courseId, quizId) => {
   const response = await api.get(`/api/start_quiz/${courseId}/${quizId}/`);
   return response.data;
 };
 
 export const submitAnswer = async (answerpaperId, questionId, answer) => {
+  // Check if the answer is a file or contains files (for upload questions)
+  if (answer instanceof File || (Array.isArray(answer) && answer.length > 0 && answer[0] instanceof File)) {
+    const formData = new FormData();
+    const files = Array.isArray(answer) ? answer : [answer];
+    
+    files.forEach(file => {
+      formData.append('assignment', file); // Matches request.FILES.getlist('assignment') in backend
+    });
+
+    const response = await api.post(`/api/validate/${answerpaperId}/${questionId}/`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data;
+  }
+
+  // Standard JSON for MCQ, String, Integer, Code, etc.
   const response = await api.post(`/api/validate/${answerpaperId}/${questionId}/`, {
     answer: answer
   });
