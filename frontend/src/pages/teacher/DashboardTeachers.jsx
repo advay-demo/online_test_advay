@@ -6,6 +6,7 @@ import { useTeacherDashboardStore } from '../../store/teacherDashboardStore';
 import { toggleModeratorRole } from '../../api/api';
 import {
     FaBook,
+    FaPuzzlePiece,
     FaLayerGroup,
 } from 'react-icons/fa';
 
@@ -42,9 +43,7 @@ const DashboardTeachers = () => {
       label: 'Total Courses',
       value: dashboardData?.total_courses ?? 0,
       icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13M3 6.253C4.168 5.477 5.754 5 7.5 5S10.832 5.477 12 6.253M12 6.253C13.168 5.477 14.754 5 16.5 5S19.832 5.477 21 6.253M3 19.253C4.168 18.477 5.754 18 7.5 18S10.832 18.477 12 19.253M12 19.253C13.168 18.477 14.754 18 16.5 18S19.832 18.477 21 19.253" />
-        </svg>
+        <FaBook className="w-6 h-6" />
       ),
       color: 'rgb(234, 179, 8)',
     },
@@ -52,9 +51,7 @@ const DashboardTeachers = () => {
       label: 'Active Courses',
       value: dashboardData?.active_courses ?? 0,
       icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
+        <FaBook className="w-6 h-6" />
       ),
       color: 'rgb(34, 197, 94)',
     },
@@ -231,38 +228,53 @@ const DashboardTeachers = () => {
                 </div>
                 <div>
                   <h2 className="text-lg sm:text-xl font-bold mb-0.5">Recent Events</h2>
-                  <p className="text-xs sm:text-sm muted">Manage your upcoming and active quiz events</p>
+                  <p className="text-xs sm:text-sm muted">Manage your upcoming active quiz & exercise events</p>
                 </div>
               </div>
               <div className="space-y-3 sm:space-y-4">
                 {recentEvents.length > 0 ? recentEvents.map((event, index) => (
-                  <div key={index} className="card-strong p-4 sm:p-5 rounded-xl hover:border-emerald-500 hover:shadow-md hover:bg-white/[0.03] transition-all duration-300 group">
+                  <div 
+                    key={index} 
+                    className={`card-strong p-4 sm:p-5 rounded-xl hover:shadow-md hover:bg-white/[0.03] transition-all duration-300 group ${
+                      event.is_exercise ? 'hover:border-purple-500' : 'hover:border-green-500'
+                    }`}
+                  >
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                       <div className="flex gap-3 sm:gap-4 flex-1">
                         <div
-                          className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300"
-                          style={{
-                            background: 'rgba(16,185,129,0.15)',
-                            border: '2px solid rgba(16,185,129,0.3)',
-                          }}
+                          className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300 border-2 ${
+                            event.is_exercise 
+                              ? 'bg-purple-500/15 border-purple-500/30' 
+                              : 'bg-green-500/15 border-green-500/30'
+                          }`}
                         >
-                          <svg className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
+                          {event.is_exercise ? (
+                            <FaPuzzlePiece className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500 dark:text-purple-400" />
+                          ) : (
+                            <svg className="w-5 h-5 sm:w-6 sm:h-6 text-green-500 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-base sm:text-lg mb-1 truncate  transition-colors duration-300">{event.name}</h3>
+                          <h3 className="font-semibold text-base sm:text-lg mb-1 flex items-center gap-2">
+                            <span className="truncate">{event.name}</span>
+                            <span className={`px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg border-2 text-[10px] sm:text-xs font-bold whitespace-nowrap flex-shrink-0 ${
+                              event.is_exercise
+                                ? 'bg-purple-500/10 text-purple-500 border-purple-500/20'
+                                : 'bg-green-500/10 text-green-500 border-green-500/20'
+                            } `}>
+                              {event.is_exercise ? 'Exercise' : 'Quiz'}
+                            </span>
+                          </h3>
                           <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm muted">
                             <div className="flex items-center gap-1.5">
-                              <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
+                              
+                              <FaBook className="w-2.5 h-2.5 sm:w-3 sm:h-3 " />
                               {event.course_name}
                             </div>
                             <div className="flex items-center gap-1.5">
-                              <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857" />
-                              </svg>
+                              <FaLayerGroup className="w-2.5 h-2.5 sm:w-3 sm:h-3 " />
                               {event.module_name}
                             </div>
                           </div>
@@ -270,13 +282,13 @@ const DashboardTeachers = () => {
                       </div>
                       {event.course_id ? (
                         <Link
-                          to={`/teacher/courses/${event.course_id}/manage`}
-                          className="w-full sm:w-auto border border-[var(--border-color)] px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold hover:bg-[var(--input-bg)] transition whitespace-nowrap"
+                          to={`/courses/${event.course_id}/manage`}
+                          className="w-full sm:w-auto border border-[var(--border-color)] px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold hover:bg-[var(--input-bg)] transition whitespace-nowrap text-center"
                         >
                           Manage
                         </Link>
                       ) : (
-                        <span className="w-full sm:w-auto border border-[var(--border-color)] px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold text-muted opacity-50 cursor-not-allowed whitespace-nowrap">
+                        <span className="w-full sm:w-auto border border-[var(--border-color)] px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold text-muted opacity-50 cursor-not-allowed whitespace-nowrap text-center">
                           Manage
                         </span>
                       )}
@@ -289,7 +301,7 @@ const DashboardTeachers = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                     </div>
-                    <p className="text-muted font-medium">No upcoming quizzes</p>
+                    <p className="text-muted font-medium">No upcoming recent events</p>
                   </div>
                 )}
               </div>
@@ -384,6 +396,15 @@ const DashboardTeachers = () => {
                   <h3 className="text-sm sm:text-base font-bold leading-snug line-clamp-2 mb-1.5 text-[var(--text-primary)] group-hover:text-blue-400 transition-colors duration-300">
                     {course.name}
                   </h3>
+
+                  <div className="flex justify-between text-[10px] sm:text-[11px] text-[var(--text-muted)] mb-4 sm:mb-5 gap-2">
+                    <span className="truncate flex items-center gap-1">
+                      <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                      </svg>
+                      {course.students_count} students
+                    </span>
+                  </div>
                   <div className="flex items-center justify-between text-xs mb-3 gap-2 sm:mb-4">
                     <span className="text-[var(--text-muted)] flex items-center gap-1.5 truncate">
                        <FaLayerGroup className="w-3 h-3 text-cyan-400" />
@@ -416,13 +437,10 @@ const DashboardTeachers = () => {
                     </div>
                   </div>
                   <div className="flex justify-between text-[10px] sm:text-[11px] text-[var(--text-muted)] mb-4 sm:mb-5 gap-2">
-                    <span className="truncate flex items-center gap-1">
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857" />
-                      </svg>
-                      {course.students_count} students
-                    </span>
+                    <span className="truncate">{new Date(course.start_date).toLocaleDateString()}</span>
+                    <span className="truncate">{new Date(course.end_date).toLocaleDateString()}</span>
                   </div>
+                  
                 </Link>
               )) : (
                 <div className="

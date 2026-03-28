@@ -457,7 +457,7 @@ const QuizGradingPanel = ({ quiz, course, onBack }) => {
                                                 }
 
                                                 return (
-                                                    <div key={question.id} className="card p-4 rounded-xl border-l-4 border-l-blue-500 hover:shadow-md transition-all">
+                                                    <div key={question.id} className="card p-4 sm:p-5  border-2 border-[var(--border-medium)] hover:shadow-lg hover:border-blue-500/70 dark:hover:border-blue-500/50 transition-all duration-300 group bg-[var(--card-bg)] rounded-xl">
                                                         <div className="flex items-start justify-between mb-2">
                                                             <div className="flex-1">
                                                                 <div className="font-semibold text-blue-600 dark:text-blue-400 mb-3 flex items-start gap-2">

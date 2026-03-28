@@ -3,7 +3,7 @@ from yaksh.models import (
     Question, Quiz, QuestionPaper, AnswerPaper, Answer, Course,
     LearningModule, LearningUnit, Lesson, CourseStatus,
     Badge, UserBadge, BadgeProgress, UserStats, DailyActivity, UserActivity, Post, Comment, User, Profile,
-    QuestionSet
+    QuestionSet, AssignmentUpload
 )
 from grades.models import GradingSystem, GradeRange
 from notifications_plugin.models import Notification
@@ -282,9 +282,21 @@ class QuestionSerializer(serializers.ModelSerializer):
 
 
 class QuizSerializer(serializers.ModelSerializer):
+    questionpaper_id = serializers.SerializerMethodField()
+
     class Meta:
         model = Quiz
         fields = '__all__'
+        
+    def get_questionpaper_id(self, obj):
+        # Dynamically fetch the attached Question Paper ID
+        qp = obj.questionpaper_set.first()
+        if qp:
+            return qp.id
+        # Fallback logic in case of legacy data
+        if obj.question_paper:
+            return obj.question_paper.id
+        return None
 
 
 class QuestionPaperSerializer(serializers.ModelSerializer):
@@ -673,6 +685,10 @@ class LessonDetailSerializer(serializers.ModelSerializer):
     video_url = serializers.SerializerMethodField()
     files = serializers.SerializerMethodField()
     is_completed = serializers.SerializerMethodField()
+    course_id = serializers.SerializerMethodField()
+    course_name = serializers.SerializerMethodField()
+    module_id = serializers.SerializerMethodField()
+    module_name = serializers.SerializerMethodField()
     
     def get_video_url(self, obj):
         if obj.video_path:
@@ -680,8 +696,82 @@ class LessonDetailSerializer(serializers.ModelSerializer):
         return None
     
     def get_files(self, obj):
+        request = self.context.get('request')
         files = obj.get_files()
-        return [{'id': f.id, 'name': f.file.name} for f in files]
+        
+        result = []
+        for f in files:
+            if not f.file:
+                continue
+            
+            # Construct absolute URL if request is available, otherwise use default url
+            file_url = request.build_absolute_uri(f.file.url) if request else f.file.url
+            
+            result.append({
+                'id': f.id, 
+                'url': file_url,
+                'name': f.file.name.split('/')[-1]  # Clean display name without folder path
+            })
+            
+        return result
+        
+    def get_course_id(self, obj):
+        # course_id is already passed from the view via context
+        course_id = self.context.get('course_id')
+        if course_id:
+            return course_id
+            
+        # Fallback if accessed elsewhere without course_id in context
+        from yaksh.models import LearningUnit, Course
+        learning_unit = LearningUnit.objects.filter(lesson=obj).first()
+        if learning_unit:
+            course = Course.objects.filter(learning_module__learning_unit=learning_unit).first()
+            if course:
+                return course.id
+        return None
+
+    def get_course_name(self, obj):
+        course = self.context.get('course')
+        if course:
+            return course.name
+            
+        course_id = self.context.get('course_id')
+        from yaksh.models import LearningUnit, Course
+        
+        if course_id:
+            try:
+                course = Course.objects.get(id=course_id)
+                return course.name
+            except Course.DoesNotExist:
+                pass
+                
+        # Fallback
+        learning_unit = LearningUnit.objects.filter(lesson=obj).first()
+        if learning_unit:
+            course = Course.objects.filter(learning_module__learning_unit=learning_unit).first()
+            if course:
+                return course.name
+        return None
+        
+    def get_module_id(self, obj):
+        # Find the module containing this lesson's learning unit
+        from yaksh.models import LearningUnit, LearningModule
+        learning_unit = LearningUnit.objects.filter(lesson=obj).first()
+        if learning_unit:
+            module = LearningModule.objects.filter(learning_unit=learning_unit).first()
+            if module:
+                return module.id
+        return None
+        
+    def get_module_name(self, obj):
+        # Find the module containing this lesson's learning unit
+        from yaksh.models import LearningUnit, LearningModule
+        learning_unit = LearningUnit.objects.filter(lesson=obj).first()
+        if learning_unit:
+            module = LearningModule.objects.filter(learning_unit=learning_unit).first()
+            if module:
+                return module.name
+        return None
     
     def get_is_completed(self, obj):
         user = self.context.get('user')
@@ -712,8 +802,8 @@ class LessonDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lesson
         fields = ['id', 'name', 'description', 'html_data', 'video_url', 
-                 'video_file', 'files', 'is_completed', 'active']
-
+                 'video_file', 'files', 'is_completed', 'active', 
+                 'course_id', 'course_name', 'module_id', 'module_name']
 
 class LearningUnitDetailSerializer(serializers.ModelSerializer):
     """Detailed learning unit with quiz or lesson data"""
@@ -1015,3 +1105,37 @@ class QuestionSetSerializer(serializers.ModelSerializer):
     class Meta:
         model = QuestionSet
         fields = '__all__'      
+
+
+
+class StudentAnswerPaperSerializer(serializers.ModelSerializer):
+    """Minimal nested serializer for returning answer paper data to students."""
+    questions = QuestionSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = AnswerPaper
+        fields = [
+            'id', 'user', 'question_paper', 'attempt_number', 
+            'start_time', 'end_time', 'status', 'marks_obtained', 
+            'questions', 'percent'
+        ]  # Removed percent_completed and time_left, added percent
+
+
+class ViewAnswerPaperResponseSerializer(serializers.Serializer):
+    """Wrapper serializer for the view_answerpaper response."""
+    quiz = QuizSerializer(read_only=True)
+    course_id = serializers.IntegerField(read_only=True)
+    has_user_assignments = serializers.BooleanField(read_only=True)
+    
+    # Nested data object matching get_user_data structure
+    data = serializers.SerializerMethodField()
+
+    def get_data(self, obj):
+        user = obj.get('user')
+        papers = obj.get('papers')
+        return {
+            'user': SimpleUserSerializer(user).data if user else None,
+            'profile': ProfileSerializer(user.profile).data if hasattr(user, 'profile') else None,
+            'papers': StudentAnswerPaperSerializer(papers, many=True).data,
+            'questionpaperid': obj.get('questionpaper_id')
+        }        

@@ -191,7 +191,7 @@ const Dashboard = () => {
                   <p className="text-xs sm:text-sm muted">Quizzes & Exercises scheduled for your courses</p>
                 </div>
               </div>
-                           <div className="space-y-3 sm:space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {upcomingQuizzes.length > 0 ? upcomingQuizzes.map((quiz, index) => (
                   <div 
                     key={index} 
@@ -229,15 +229,11 @@ const Dashboard = () => {
                           </h3>
                           <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm muted">
                             <div className="flex items-center gap-1.5">
-                              <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
+                              <FaBook className="w-2.5 h-2.5 sm:w-3 sm:h-3 " />
                               {quiz.course_name}
                             </div>
                             <div className="flex items-center gap-1.5">
-                              <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857" />
-                              </svg>
+                              <FaLayerGroup className="w-2.5 h-2.5 sm:w-3 sm:h-3 " />
                               {quiz.module_name}
                             </div>
                           </div>
@@ -264,7 +260,7 @@ const Dashboard = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
                     </div>
-                    <p className="text-muted font-medium">No upcoming quizzes</p>
+                    <p className="text-muted font-medium">No upcoming quizzes & exercises</p>
                   </div>
                 )}
               </div>
