@@ -232,6 +232,181 @@ def logout_user(request):
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+# ----------------------------
+# SOCIAL AUTH API (SPA Flow)
+# ----------------------------
+import urllib.parse
+import requests as http_requests
+from social_django.utils import load_strategy, load_backend
+from django.conf import settings as django_settings
+
+
+@api_view(['GET'])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def get_social_auth_url(request):
+    """Return the OAuth authorization URL for a given provider.
+    Query params: provider, redirect_uri
+    """
+    provider = request.GET.get('provider')
+    redirect_uri = request.GET.get('redirect_uri', '')
+
+    if not provider or not redirect_uri:
+        return Response(
+            {'error': 'provider and redirect_uri are required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    encoded_redirect = urllib.parse.quote(redirect_uri, safe='')
+
+    if provider == 'google-oauth2':
+        client_id = django_settings.SOCIAL_AUTH_GOOGLE_OAUTH2_KEY
+        if not client_id:
+            return Response({'error': 'Google OAuth2 is not configured'}, status=400)
+        url = (
+            f"https://accounts.google.com/o/oauth2/v2/auth?"
+            f"client_id={client_id}&"
+            f"redirect_uri={encoded_redirect}&"
+            f"response_type=code&"
+            f"scope=email%20profile&"
+            f"access_type=offline&"
+            f"state=google-oauth2"
+        )
+    elif provider == 'github':
+        client_id = django_settings.SOCIAL_AUTH_GITHUB_KEY
+        if not client_id:
+            return Response({'error': 'GitHub OAuth is not configured'}, status=400)
+        url = (
+            f"https://github.com/login/oauth/authorize?"
+            f"client_id={client_id}&"
+            f"redirect_uri={encoded_redirect}&"
+            f"scope=user:email&"
+            f"state=github"
+        )
+    else:
+        return Response({'error': f'Unsupported provider: {provider}'}, status=400)
+
+    return Response({'url': url})
+
+
+def _exchange_code_for_token(provider, code, redirect_uri):
+    """Exchange an OAuth authorization code for an access token."""
+    if provider == 'google-oauth2':
+        resp = http_requests.post(
+            'https://oauth2.googleapis.com/token',
+            data={
+                'code': code,
+                'client_id': django_settings.SOCIAL_AUTH_GOOGLE_OAUTH2_KEY,
+                'client_secret': django_settings.SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET,
+                'redirect_uri': redirect_uri,
+                'grant_type': 'authorization_code',
+            },
+            timeout=10,
+        )
+    elif provider == 'github':
+        resp = http_requests.post(
+            'https://github.com/login/oauth/access_token',
+            data={
+                'code': code,
+                'client_id': django_settings.SOCIAL_AUTH_GITHUB_KEY,
+                'client_secret': django_settings.SOCIAL_AUTH_GITHUB_SECRET,
+                'redirect_uri': redirect_uri,
+            },
+            headers={'Accept': 'application/json'},
+            timeout=10,
+        )
+    else:
+        raise ValueError(f'Unsupported provider: {provider}')
+
+    data = resp.json()
+    print(f"[Social Auth Debug] Provider: {provider}")
+    print(f"[Social Auth Debug] redirect_uri sent: {redirect_uri}")
+    print(f"[Social Auth Debug] Response status: {resp.status_code}")
+    print(f"[Social Auth Debug] Response body: {data}")
+    if 'error' in data:
+        raise ValueError(data.get('error_description', data.get('error')))
+
+    access_token = data.get('access_token')
+    if not access_token:
+        raise ValueError('No access_token in provider response')
+    return access_token
+
+
+@api_view(['POST'])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def social_login(request):
+    """Exchange an OAuth authorization code for a DRF auth token.
+    Body: { provider, code, redirect_uri }
+    Returns: { user, token } (same format as login_user)
+    """
+    provider = request.data.get('provider')
+    code = request.data.get('code')
+    redirect_uri = request.data.get('redirect_uri')
+
+    if not provider or not code or not redirect_uri:
+        return Response(
+            {'error': 'provider, code, and redirect_uri are required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Step 1: Exchange authorization code for access token
+    try:
+        access_token = _exchange_code_for_token(provider, code, redirect_uri)
+    except ValueError as e:
+        return Response(
+            {'error': f'Token exchange failed: {str(e)}'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Step 2: Use social_core to authenticate / create user via pipeline
+    try:
+        strategy = load_strategy(request)
+        backend = load_backend(strategy, provider, redirect_uri=redirect_uri)
+        user = backend.do_auth(access_token)
+    except Exception as e:
+        return Response(
+            {'error': f'Authentication failed: {str(e)}'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    if not user or not user.is_active:
+        return Response(
+            {'error': 'Authentication failed or user is inactive'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Step 3: Generate DRF token and return user data
+    token, _ = Token.objects.get_or_create(user=user)
+    profile, _ = Profile.objects.get_or_create(user=user)
+
+    return Response({
+        'user': {
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'is_moderator': profile.is_moderator,
+            'roll_number': profile.roll_number,
+            'institute': profile.institute,
+            'department': profile.department,
+            'position': profile.position,
+            'timezone': profile.timezone,
+            'bio': profile.bio,
+            'phone': profile.phone,
+            'city': profile.city,
+            'country': profile.country,
+            'linkedin': profile.linkedin,
+            'github': profile.github,
+            'display_name': profile.display_name,
+        },
+        'token': token.key,
+        'message': 'Social login successful'
+    }, status=status.HTTP_200_OK)
+
+
+
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
 def get_moderator_status(request):

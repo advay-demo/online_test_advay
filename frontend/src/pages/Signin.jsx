@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaBook, FaStar, FaCheckCircle, FaGoogle, FaGithub, FaLinkedin } from 'react-icons/fa';
+import { FaBook, FaStar, FaCheckCircle, FaGoogle, FaGithub } from 'react-icons/fa';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import Logo from '../components/ui/Logo';
 import { useAuthStore } from '../store/authStore';
+import api from '../api/api';
 
 const Signin = () => {
   const navigate = useNavigate();
@@ -79,15 +80,29 @@ const Signin = () => {
     }
   };
 
-  const handleSocialLogin = (provider) => {
-    // For now, just show an alert
-    alert(`${provider} login coming soon!`);
+  const handleSocialLogin = async (provider) => {
+    const providerMap = {
+      'Google': 'google-oauth2',
+      'GitHub': 'github',
+    };
+    const backend = providerMap[provider];
+    if (!backend) return;
+
+    try {
+      const redirectUri = `${window.location.origin}/auth/callback`;
+      const response = await api.get('api/auth/social-urls/', {
+        params: { provider: backend, redirect_uri: redirectUri },
+      });
+      window.location.href = response.data.url;
+    } catch (err) {
+      console.error('Failed to get social auth URL:', err);
+    }
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row overflow-hidden">
+    <div className="min-h-screen h-screen flex overflow-hidden">
       {/* Left side (Brand / Illustration) */}
-      <div className="hidden lg:flex flex-col justify-center items-center w-full lg:w-1/2 min-h-screen bg-gradient-to-br from-[#0e0e14] to-[#1a1a2e] text-white relative overflow-hidden">
+      <div className="hidden lg:flex flex-col justify-center items-center w-1/2 h-screen bg-gradient-to-br from-[#0e0e14] to-[#1a1a2e] text-white relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-radial from-purple-500/15 via-transparent to-transparent"></div>
 
         <div className="relative z-10 max-w-md px-6 md:px-10 text-center">
@@ -118,8 +133,8 @@ const Signin = () => {
       </div>
 
       {/* Right side (Login Form) */}
-      <div className="flex items-center justify-center w-full lg:w-1/2 bg-gradient-to-b from-[var(--bg-1)] to-[var(--bg-2)] px-4 sm:px-6 md:px-8 lg:px-16 overflow-y-auto min-h-screen relative grid-texture">
-        <div className="w-full max-w-md space-y-4 sm:space-y-6 py-6 sm:py-8 md:py-10">
+      <div className="flex flex-col w-full lg:w-1/2 bg-gradient-to-b from-[var(--bg-primary)] to-[var(--bg-secondary)] px-4 sm:px-6 md:px-8 lg:px-16 overflow-y-auto h-screen relative grid-texture">
+        <div className="w-full max-w-md mx-auto space-y-4 sm:space-y-6 py-6 sm:py-8 md:py-10">
           {/* Mobile Logo */}
           <div className="lg:hidden flex justify-center mb-4">
             <div className="w-14 h-14 logo-badge rounded-xl flex items-center justify-center">
@@ -235,7 +250,7 @@ const Signin = () => {
             <button
               type="button"
               onClick={() => handleSocialLogin('Google')}
-              className="social-btn flex items-center justify-center rounded-lg sm:rounded-xl p-2.5 sm:p-3 w-12 h-12 sm:w-14 sm:h-14 bg-[var(--input-bg)] hover:bg-[var(--hover-bg)] border border-[var(--border-color)] transition"
+              className="social-btn flex items-center justify-center rounded-lg sm:rounded-xl p-2.5 sm:p-3 w-12 h-12 sm:w-14 sm:h-14 bg-[var(--input-bg)] hover:bg-[var(--surface-2)] border border-[var(--border-color)] transition"
               disabled={isLoading}
             >
               <FaGoogle className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />
@@ -243,18 +258,10 @@ const Signin = () => {
             <button
               type="button"
               onClick={() => handleSocialLogin('GitHub')}
-              className="social-btn flex items-center justify-center rounded-lg sm:rounded-xl p-2.5 sm:p-3 w-12 h-12 sm:w-14 sm:h-14 bg-[var(--input-bg)] hover:bg-[var(--hover-bg)] border border-[var(--border-color)] transition"
+              className="social-btn flex items-center justify-center rounded-lg sm:rounded-xl p-2.5 sm:p-3 w-12 h-12 sm:w-14 sm:h-14 bg-[var(--input-bg)] hover:bg-[var(--surface-2)] border border-[var(--border-color)] transition"
               disabled={isLoading}
             >
               <FaGithub className="w-5 h-5 sm:w-6 sm:h-6 text-[var(--text-primary)]" />
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSocialLogin('LinkedIn')}
-              className="social-btn flex items-center justify-center rounded-lg sm:rounded-xl p-2.5 sm:p-3 w-12 h-12 sm:w-14 sm:h-14 bg-[var(--input-bg)] hover:bg-[var(--hover-bg)] border border-[var(--border-color)] transition"
-              disabled={isLoading}
-            >
-              <FaLinkedin className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
             </button>
           </div>
 
