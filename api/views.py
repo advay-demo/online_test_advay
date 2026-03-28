@@ -58,7 +58,7 @@ from grades.models import GradingSystem
 from .serializers import GradingSystemSerializer
 
 from yaksh.forms import LessonForm, LessonFileForm, ExerciseForm
-from yaksh.views import get_html_text, is_moderator
+from yaksh.views import get_html_text, is_moderator, test_mode
 from django.shortcuts import get_object_or_404
 from yaksh.models import MicroManager
 from yaksh.tasks import update_user_marks
@@ -8095,6 +8095,54 @@ def teacher_upload_course_md(request, course_id):
             {'error': f'Unexpected error: {str(e)}'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def api_test_quiz(request, mode, quiz_id, course_id):
+    """
+    Creates a trial quiz/course/module sandbox for moderators.
+    Equivalent to the monolith's test_quiz view.
+    """
+    user = request.user
+    
+    # Check if the user is a teacher/moderator
+    if not _check_teacher_permission(user):
+        return Response({'error': 'Permission denied. Only teachers can test quizzes.'}, status=status.HTTP_403_FORBIDDEN)
+        
+    godmode = (mode == "godmode")
+    
+    try:
+        quiz = Quiz.objects.get(id=quiz_id)
+    except Quiz.DoesNotExist:
+        return Response({'error': 'Quiz not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    # If it's a regular user test (usermode) and the quiz is expired/inactive, block it.
+    if (quiz.is_expired() or not quiz.active) and not godmode:
+        return Response(
+            {'error': f'"{quiz.description}" is either expired or inactive.'}, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Create the isolated sandbox database objects
+    trial_questionpaper, trial_course, trial_module = test_mode(
+        user, godmode, None, quiz_id, course_id
+    )
+    
+    # The trial question paper is linked to a new trial quiz.
+    trial_quiz = trial_questionpaper.quiz
+
+    # Instead of an HTTP redirect, we return the IDs of the sandbox objects.
+    # The React frontend can then route to the quiz taker page with these trial IDs.
+    return Response({
+        'message': 'Trial sandbox created successfully',
+        'trial_course_id': trial_course.id,
+        'trial_quiz_id': trial_quiz.id,
+        'trial_module_id': trial_module.id,
+        'trial_questionpaper_id': trial_questionpaper.id
+    }, status=status.HTTP_201_CREATED)        
 
 
 

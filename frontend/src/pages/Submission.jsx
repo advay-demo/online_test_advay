@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { FaCheck, FaTimes, FaExclamationTriangle } from 'react-icons/fa';
-import Logo from '../../components/ui/Logo';
-import { getQuizSubmissionStatus, quitQuiz } from '../../api/api';
+import Logo from '../components/ui/Logo';
+import { getQuizSubmissionStatus, quitQuiz } from '../api/api';
+import { useAuthStore } from '../store/authStore';
 
 const Submission = () => {
   const { answerpaperId } = useParams();
+  const { user } = useAuthStore(); 
+  const isTeacher = user?.is_moderator; 
   const [submission, setSubmission] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -76,7 +79,7 @@ const Submission = () => {
             <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-red-300 mb-4">
               {error || 'Submission not found'}
             </div>
-            <Link to="/courses" className="text-indigo-400 hover:text-indigo-300">
+            <Link to={isTeacher ? "/teacher/courses" : "/courses"} className="text-indigo-400 hover:text-indigo-300">
               Back to Courses
             </Link>
           </div>
@@ -175,10 +178,10 @@ const Submission = () => {
               )}
 
               <Link
-                to="/courses"
+                to={isTeacher ? "/teacher/courses" : "/courses"}
                 className="bg-indigo-600 text-white px-10 py-3 rounded-xl font-semibold hover:bg-indigo-700 transition text-lg inline-flex items-center gap-2"
-              >
-                Back to Courses
+              >  
+                Back to Courses 
               </Link>
             </div>
           ) : (

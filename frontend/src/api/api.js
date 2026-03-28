@@ -807,6 +807,12 @@ export const deleteTeacherExercise = async (courseId, moduleId, quizId) => {
   return response.data;
 };
 
+// Test a full quiz - creates a trial course and quiz for testing (Sandbox)
+export const testQuiz = async (mode, quizId, courseId) => {
+  const response = await api.post(`/api/teacher/test-quiz/${mode}/${quizId}/${courseId}/`);
+  return response.data;
+};
+
 
 
 // Quiz APIs ============================================================

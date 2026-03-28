@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { FaClock, FaCheck, FaArrowRight, FaTimes } from 'react-icons/fa';
 import { AiOutlineWarning } from 'react-icons/ai';
-import QuizSidebar from '../../components/layout/QuizSidebar';
-import { startQuiz, submitAnswer, getAnswerResult, quitQuiz } from '../../api/api';
+import QuizSidebar from '../components/layout/QuizSidebar';
+import { startQuiz, submitAnswer, getAnswerResult, quitQuiz } from '../api/api';
 
 const Quiz = () => {
   const { courseId, quizId } = useParams();

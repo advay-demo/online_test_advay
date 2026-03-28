@@ -185,6 +185,7 @@ urlpatterns = [
     url(r'^teacher/courses/(?P<course_id>\d+)/modules/(?P<module_id>\d+)/quizzes/$', views.api_quiz_handler, name='api_quiz_handler_create'), #ok  # IMP USE ^ for this, otherwise it will conflict with the update route which also has quizzes in the url
     url(r'^teacher/courses/(?P<course_id>\d+)/modules/(?P<module_id>\d+)/quizzes/(?P<quiz_id>\d+)/$', views.api_quiz_handler, name='api_quiz_handler_update'), #ok #IMP USE ^ for this, otherwise it will conflict with the create route which also has quizzes in the url
 
+    url(r'teacher/test-quiz/(?P<mode>godmode|usermode)/(?P<quiz_id>\d+)/(?P<course_id>\d+)/$', views.api_test_quiz, name='api_test_quiz'),
 
     url(r'^teacher/designquestionpaper/(?P<course_id>[0-9]+)/(?P<quiz_id>[0-9]+)/(?P<questionpaper_id>[0-9]+)/$', views.design_questionpaper_api, name='designquestionpaper_api'),
     url(r'^teacher/designquestionpaper/(?P<course_id>[0-9]+)/(?P<quiz_id>[0-9]+)/$', views.design_questionpaper_api, name='designquestionpaper_api'),
@@ -258,6 +259,7 @@ urlpatterns = [
     url(r'teacher/micromanager/special_start/(?P<micromanager_id>\d+)/$', views.special_start, name='special_start'),    
     url(r'teacher/micromanager/special_revoke/(?P<micromanager_id>\d+)/$', views.revoke_special_attempt, name='revoke_special_attempt'),
 
+    
 
 
     

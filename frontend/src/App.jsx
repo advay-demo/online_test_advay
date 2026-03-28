@@ -1,20 +1,21 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+
 import Home from './pages/Home';
 import Signup from './pages/Signup';
 import Signin from './pages/Signin';
 import ForgotPassword from './pages/ForgotPassword';
 import DashboardHome from './pages/DashboardHome';
 import CourseStudent from './pages/student/Courses';
+import Quiz from './pages/Quiz';
+import Submission from './pages/Submission';
+
 import AddNewCourseStudent from './pages/student/AddCourse';
 import ManageCourseStudent from './pages/student/ManageCourse';
-
-import Quiz from './pages/student/Quiz';
 import Lesson from './pages/student/Lesson';
 import ViewAnswerPaper from './pages/student/ViewAnswerPaper';
 import Insights from './pages/student/Insights';
 import Profile from './pages/Profile';
-import Submission from './pages/student/Submission';
 
 import DashboardTeachers from './pages/teacher/DashboardTeachers';
 import AddCourse from './pages/teacher/AddCourse';
