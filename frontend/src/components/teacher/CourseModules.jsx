@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FaPlus, FaBook, FaCalendarAlt, FaEdit, FaTrash, FaCheckCircle, FaEllipsisV, FaVideo, FaTimes, FaUpload, FaFileAlt, FaExternalLinkAlt, FaArrowUp, FaArrowDown, FaCheck, FaCog, FaRandom, FaList, FaSync, FaSearch, FaPuzzlePiece, FaChevronDown, FaChevronUp, FaLayerGroup } from 'react-icons/fa';
 import useManageCourseStore from '../../store/manageCourseStore';
-import { useParams } from 'react-router-dom';
+import { useSandboxStore } from '../../store/sandboxStore'; 
+import { useNavigate, useParams } from 'react-router-dom';
 import { FaBookOpen } from 'react-icons/fa';
 
 const CourseModules = () => {
@@ -43,6 +44,7 @@ const CourseModules = () => {
         handleDeleteQuiz,
         showExerciseForm,
         editingExercise,
+        setEditingExercise,
         exerciseFormData,
         handleExerciseFormChange,
         handleCreateExercise,
@@ -83,6 +85,10 @@ const CourseModules = () => {
     } = useManageCourseStore();
 
     const { courseId } = useParams();
+        // Inside CourseModules component definition:
+    const navigate = useNavigate();
+    const { isGenerating, generateTestSandbox } = useSandboxStore();
+    
 
     // Dropdown state management
     const [openDropdownId, setOpenDropdownId] = useState(null);
@@ -1081,31 +1087,38 @@ const CourseModules = () => {
                             <div className="flex flex-col sm:flex-row gap-3 sm:gap-3 justify-between pt-2">
                                 {/* Left side - Try buttons (only show when editing) */}
                                 {editingQuiz && (
-                                    <div className="flex flex-wrap gap-2 sm:mt-3 ">
-                                        <button
+                                    <div className="flex flex-wrap gap-2 sm:mt-3">
+                                         <button
                                             type="button"
-                                            onClick={() => {
-                                                // TODO: Implement try as student
-                                                console.log('Try as student');
-                                            }}
-                                            className="flex-1 sm:flex-none px-4 py-2 rounded-lg border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 text-xs sm:text-sm font-medium hover:bg-cyan-500/20 transition flex items-center justify-center gap-2"
+                                            // Fix: Pass editingQuiz?.quiz_id instead of currentQuizId
+                                            onClick={() => generateTestSandbox('usermode', editingQuiz?.quiz_id, courseId, navigate)}
+                                            disabled={isGenerating}
+                                            className="flex-1 sm:flex-none px-4 py-2 rounded-lg border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 text-xs sm:text-sm font-medium hover:bg-cyan-500/20 transition flex items-center justify-center gap-2 disabled:opacity-50"
                                         >
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                            </svg>
+                                            {isGenerating ? (
+                                                <span className="w-4 h-4 border-2 border-cyan-400 border-t-cyan-400/20 rounded-full animate-spin"></span>
+                                            ) : (
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                                </svg>
+                                            )}
                                             <span>Try as Student</span>
                                         </button>
+
                                         <button
                                             type="button"
-                                            onClick={() => {
-                                                // TODO: Implement try as teacher
-                                                console.log('Try as teacher');
-                                            }}
-                                            className="flex-1 sm:flex-none px-4 py-2 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-400 text-xs sm:text-sm font-medium hover:bg-amber-500/20 transition flex items-center justify-center gap-2"
+                                            // Fix: Pass editingQuiz?.quiz_id here as well
+                                            onClick={() => generateTestSandbox('godmode', editingQuiz?.quiz_id, courseId, navigate)}
+                                            disabled={isGenerating}
+                                            className="flex-1 sm:flex-none px-4 py-2 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-400 text-xs sm:text-sm font-medium hover:bg-amber-500/20 transition flex items-center justify-center gap-2 disabled:opacity-50"
                                         >
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                                            </svg>
+                                            {isGenerating ? (
+                                                <span className="w-4 h-4 border-2 border-amber-400 border-t-amber-400/20 rounded-full animate-spin"></span>
+                                            ) : (
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                                </svg>
+                                            )}
                                             <span>Try as Teacher</span>
                                         </button>
                                     </div>

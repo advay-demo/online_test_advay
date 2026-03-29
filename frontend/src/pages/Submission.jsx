@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { FaCheck, FaTimes, FaExclamationTriangle } from 'react-icons/fa';
 import Logo from '../components/ui/Logo';
-import { getQuizSubmissionStatus, quitQuiz } from '../api/api';
+import { getQuizSubmissionStatus, quitQuiz, getModeratorStatus } from '../api/api';
 import { useAuthStore } from '../store/authStore';
 
 const Submission = () => {
@@ -13,12 +13,32 @@ const Submission = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [quitting, setQuitting] = useState(false);
+  const [isModeratorActive, setIsModeratorActive] = useState(null);
 
   useEffect(() => {
     if (answerpaperId) {
       loadSubmissionStatus();
     }
   }, [answerpaperId]);
+
+  useEffect(() => {
+    const fetchModeratorStatus = async () => {
+      if (user?.is_moderator) {
+        try {
+          const status = await getModeratorStatus();
+          setIsModeratorActive(status.is_moderator_active);
+        } catch (error) {
+          console.error('Failed to fetch moderator status:', error);
+          // Default to false if we can't fetch status
+          setIsModeratorActive(false);
+        }
+      } else {
+        setIsModeratorActive(false);
+      }
+    };
+
+    fetchModeratorStatus();
+  }, [user]);
 
   const loadSubmissionStatus = async () => {
     try {
@@ -79,7 +99,7 @@ const Submission = () => {
             <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-red-300 mb-4">
               {error || 'Submission not found'}
             </div>
-            <Link to={isTeacher ? "/teacher/courses" : "/courses"} className="text-indigo-400 hover:text-indigo-300">
+            <Link to={(isTeacher && isModeratorActive) ? "/teacher/courses" : "/courses"} className="text-indigo-400 hover:text-indigo-300">
               Back to Courses
             </Link>
           </div>
@@ -178,7 +198,7 @@ const Submission = () => {
               )}
 
               <Link
-                to={isTeacher ? "/teacher/courses" : "/courses"}
+                to={(isTeacher && isModeratorActive) ? "/teacher/courses" : "/courses"}
                 className="bg-indigo-600 text-white px-10 py-3 rounded-xl font-semibold hover:bg-indigo-700 transition text-lg inline-flex items-center gap-2"
               >  
                 Back to Courses 
