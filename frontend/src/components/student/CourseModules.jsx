@@ -227,6 +227,7 @@ const CourseModules = () => {
                                                             const unitName = unit.type === 'lesson' ? unit.lesson?.name : (unit.quiz?.description || unit.quiz?.name || `Quiz ${unit.order}`);
                                                             const isLocked = unit.check_prerequisite && unit.status === 'locked';
                                                             const isUnitCompleted = unit.status === 'completed' || unit.status === 'passed';
+                                                            const isUnitQuitted = unit.status === 'quit';
                                                             const isInProgress = unit.status === 'inprogress';
 
                                                             return (
@@ -243,6 +244,10 @@ const CourseModules = () => {
                                                                         ) : isInProgress ? (
                                                                             <div className="flex items-center gap-2 text-amber-500 bg-amber-500/10 px-2.5 py-1 rounded-md border border-amber-500/20 w-fit shadow-[0_0_10px_rgba(251,191,36,0.1)]">
                                                                                 <FaSpinner className="animate-spin" size={10} /> <span className="text-[10px] font-bold uppercase">In Progress</span>
+                                                                            </div>
+                                                                        ) : isUnitQuitted ? (
+                                                                            <div className="flex items-center gap-2 text-red-400 bg-red-500/10 px-2.5 py-1 rounded-md border border-red-500/20 w-fit shadow-[0_0_10px_rgba(239,68,68,0.1)]">
+                                                                                <FaCheckCircle size={10} /> <span className="text-[10px] font-bold uppercase">Quitted</span>
                                                                             </div>
                                                                         ) : (
                                                                             <div className="flex items-center gap-2 text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-md border border-blue-500/20 w-fit shadow-[0_0_10px_rgba(59,130,246,0.1)]">
@@ -288,6 +293,7 @@ const CourseModules = () => {
                                                                             module={module}
                                                                             isLocked={isLocked}
                                                                             isUnitCompleted={isUnitCompleted}
+                                                                            isUnitQuitted={isUnitQuitted}
                                                                             isInProgress={isInProgress}
                                                                             handleUnitClick={handleUnitClick}
                                                                             handleViewAnswerPaper={handleViewAnswerPaper}
@@ -305,6 +311,7 @@ const CourseModules = () => {
                                                 {module.units.map((unit) => {
                                                     const unitName = unit.type === 'lesson' ? unit.lesson?.name : (unit.quiz?.description || unit.quiz?.name || `Quiz ${unit.order}`);
                                                     const isLocked = unit.check_prerequisite && unit.status === 'locked';
+                                                    const isUnitQuitted = unit.status === 'quit';
                                                     const isUnitCompleted = unit.status === 'completed' || unit.status === 'passed';
                                                     const isInProgress = unit.status === 'inprogress';
 
@@ -337,6 +344,8 @@ const CourseModules = () => {
                                                                         <FaCheckCircle className="text-emerald-500" size={16} />
                                                                     ) : isInProgress ? (
                                                                         <FaSpinner className="text-amber-500 animate-spin" size={16} />
+                                                                    ) : isUnitQuitted ? (
+                                                                        <FaCheckCircle className="text-red-500" size={16} />
                                                                     ) : (
                                                                         <div className="w-3 h-3 rounded-full border-2 border-blue-500 bg-blue-500"></div>
                                                                     )}
@@ -352,6 +361,7 @@ const CourseModules = () => {
                                                                     module={module}
                                                                     isLocked={isLocked}
                                                                     isUnitCompleted={isUnitCompleted}
+                                                                    isUnitQuitted={isUnitQuitted}
                                                                     isInProgress={isInProgress}
                                                                     handleUnitClick={handleUnitClick}
                                                                     handleViewAnswerPaper={handleViewAnswerPaper}
@@ -375,7 +385,7 @@ const CourseModules = () => {
 };
 
 // Helper Component for consistent buttons across Mobile/Desktop
-const DesktopActionButtons = ({ unit, module, isLocked, isUnitCompleted, isInProgress, handleUnitClick, handleViewAnswerPaper, isMobile }) => {
+const DesktopActionButtons = ({ unit, module, isLocked, isUnitCompleted, isInProgress, isUnitQuitted, handleUnitClick, handleViewAnswerPaper, isMobile }) => {
     return (
         <div className="flex items-center gap-2 justify-end">
             {!isLocked && unit.type === 'quiz' && unit.quiz?.view_answerpaper && (
@@ -390,7 +400,7 @@ const DesktopActionButtons = ({ unit, module, isLocked, isUnitCompleted, isInPro
                 </button>
             )}
 
-            {!isLocked && !isUnitCompleted && isInProgress && (
+            {!isLocked && !isUnitCompleted && isInProgress && !isUnitQuitted && (
                 <button
                     onClick={() => handleUnitClick(module, unit)}
                     className="px-4 py-1.5 rounded-lg text-white text-xs font-bold transition-all shadow-lg shadow-amber-500/20 bg-amber-600 hover:bg-amber-500 hover:shadow-amber-500/40 flex items-center gap-1.5"
@@ -399,7 +409,7 @@ const DesktopActionButtons = ({ unit, module, isLocked, isUnitCompleted, isInPro
                 </button>
             )}
 
-            {!isLocked && !isUnitCompleted && !isInProgress && (
+            {!isLocked && !isUnitCompleted && !isInProgress && !isUnitQuitted && (
                 <button
                     onClick={() => handleUnitClick(module, unit)}
                     className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-white text-xs font-bold transition-all shadow-lg shadow-blue-500/20 bg-blue-600 hover:bg-blue-500 hover:shadow-blue-500/40"
@@ -408,7 +418,8 @@ const DesktopActionButtons = ({ unit, module, isLocked, isUnitCompleted, isInPro
                 </button>
             )}
 
-            {isUnitCompleted && (
+            {/* FIX HERE: Only check if it was quitted (which implies it failed/aborted) */}
+            {(isUnitQuitted || isUnitCompleted) && (
                 <button
                         onClick={() => handleUnitClick(module, unit)}
                         className="flex items-center gap-1.5 text-gray-600 hover:text-red-500 text-xs px-4 py-1.5 rounded-lg border border-transparent hover:border-white/10 hover:bg-white/5 transition"
@@ -417,6 +428,11 @@ const DesktopActionButtons = ({ unit, module, isLocked, isUnitCompleted, isInPro
                 </button>
             )}
 
+            {isLocked && (
+                <span className="text-gray-600 px-2 py-1 text-xs italic flex items-center gap-1">
+                    Wait <FaClock size={10}/>
+                </span>
+            )}
             {isLocked && (
                 <span className="text-gray-600 px-2 py-1 text-xs italic flex items-center gap-1">
                     Wait <FaClock size={10}/>

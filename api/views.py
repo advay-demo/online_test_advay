@@ -8126,11 +8126,17 @@ def api_test_quiz(request, mode, quiz_id, course_id):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    # Create the isolated sandbox database objects
+        # Create the isolated sandbox database objects
     trial_questionpaper, trial_course, trial_module = test_mode(
         user, godmode, None, quiz_id, course_id
     )
     
+    # ------------------ ADD THIS LINE HERE ------------------
+    # Force the duplicate sandbox paper to sum its cloned question point counts!
+    # Without this, empty "0.0" totals trigger a ZeroDivisionError at submission.
+    trial_questionpaper.update_total_marks()
+    # --------------------------------------------------------
+
     # The trial question paper is linked to a new trial quiz.
     trial_quiz = trial_questionpaper.quiz
 
