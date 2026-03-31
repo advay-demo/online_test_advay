@@ -1,46 +1,46 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FaPlus, FaBook, FaCalendarAlt, FaEdit, FaTrash, FaCheckCircle, FaEllipsisV, FaVideo, FaTimes, FaUpload, FaFileAlt, FaExternalLinkAlt, FaArrowUp, FaArrowDown, FaCheck, FaCog, FaRandom, FaList, FaSync, FaSearch, FaPuzzlePiece, FaChevronDown, FaChevronUp, FaLayerGroup } from 'react-icons/fa';
 import useManageCourseStore from '../../store/manageCourseStore';
-import { useSandboxStore } from '../../store/sandboxStore'; 
+import { useSandboxStore } from '../../store/sandboxStore';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FaBookOpen } from 'react-icons/fa';
 
 const CourseModules = () => {
     const {
-        modules, 
-        showModuleForm, 
-        editingModule, 
-        moduleFormData, 
-        handleModuleFormChange, 
-        handleCreateModule, 
-        handleUpdateModule, 
-        setShowModuleForm, 
+        modules,
+        showModuleForm,
+        editingModule,
+        moduleFormData,
+        handleModuleFormChange,
+        handleCreateModule,
+        handleUpdateModule,
+        setShowModuleForm,
         setEditingModule,
-        showLessonForm, 
-        editingLesson, 
-        lessonFormData, 
-        handleLessonFormChange, 
-        handleCreateLesson, 
-        handleUpdateLesson, 
-        setShowLessonForm, 
-        setSelectedModule, 
+        showLessonForm,
+        editingLesson,
+        lessonFormData,
+        handleLessonFormChange,
+        handleCreateLesson,
+        handleUpdateLesson,
+        setShowLessonForm,
+        setSelectedModule,
         setEditingLesson,
-        showQuizForm, 
-        editingQuiz, 
-        quizFormData, 
-        handleQuizFormChange, 
-        handleCreateQuiz, 
-        handleUpdateQuiz, 
-        setShowQuizForm, 
-        setSelectedModule: setSelectedModuleQuiz, 
+        showQuizForm,
+        editingQuiz,
+        quizFormData,
+        handleQuizFormChange,
+        handleCreateQuiz,
+        handleUpdateQuiz,
+        setShowQuizForm,
+        setSelectedModule: setSelectedModuleQuiz,
         setEditingQuiz,
-        openCreateLesson, 
-        openCreateQuiz, 
-        openEditModule, 
-        handleDeleteModule, 
-        openEditLesson, 
-        handleDeleteLesson,  
-        openEditQuiz, 
+        openCreateLesson,
+        openCreateQuiz,
+        openEditModule,
+        handleDeleteModule,
+        openEditLesson,
+        handleDeleteLesson,
+        openEditQuiz,
         handleDeleteQuiz,
         showExerciseForm,
         editingExercise,
@@ -85,10 +85,10 @@ const CourseModules = () => {
     } = useManageCourseStore();
 
     const { courseId } = useParams();
-        // Inside CourseModules component definition:
+    // Inside CourseModules component definition:
     const navigate = useNavigate();
     const { isGenerating, generateTestSandbox } = useSandboxStore();
-    
+
 
     // Dropdown state management
     const [openDropdownId, setOpenDropdownId] = useState(null);
@@ -160,7 +160,7 @@ const CourseModules = () => {
     // Helper to get embed URL
     const getVideoEmbedUrl = (url) => {
         if (!url) return null;
-        
+
         // YouTube
         const youtubeRegex = /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
         const ytMatch = url.match(youtubeRegex);
@@ -192,14 +192,14 @@ const CourseModules = () => {
         });
     };
 
-     
+
 
     const handleRemoveExistingFile = (fileId) => {
-        if(!window.confirm("Mark this file for deletion logic? (Will be deleted on Save)")) return;
-        
+        if (!window.confirm("Mark this file for deletion logic? (Will be deleted on Save)")) return;
+
         const updatedFiles = lessonFormData.files.filter(f => f.id !== fileId);
         const filesToDelete = [...(lessonFormData.filesToDelete || []), fileId];
-        
+
         setLessonFormData({
             ...lessonFormData,
             files: updatedFiles,
@@ -208,25 +208,25 @@ const CourseModules = () => {
     };
 
     const handleClearUploadedVideo = () => {
-         // Clears selected file input and marks existing video for removal
-         setLessonFormData({
-             ...lessonFormData,
-             video_file: null,
-             newVideoFile: null,
-             existing_video_file_url: null,
-             clearVideoFile: true 
-         });
-         
-         // Helper to reset file input value visually
-         const fileInput = document.getElementById('video-file-upload');
-         if(fileInput) fileInput.value = "";
+        // Clears selected file input and marks existing video for removal
+        setLessonFormData({
+            ...lessonFormData,
+            video_file: null,
+            newVideoFile: null,
+            existing_video_file_url: null,
+            clearVideoFile: true
+        });
+
+        // Helper to reset file input value visually
+        const fileInput = document.getElementById('video-file-upload');
+        if (fileInput) fileInput.value = "";
     };
 
 
     // --- DESIGN MODULE LOCAL STATE ---
     const [selectedInSelected, setSelectedInSelected] = useState(null); // ID of selected unit (Left side)
     const [selectedInPool, setSelectedInPool] = useState(null); // ValueKey of selected pool item (Right side)
-    
+
     // Local state for immediate UI updates before API refresh
     const [localSelected, setLocalSelected] = useState([]);
     const [localPool, setLocalPool] = useState([]);
@@ -235,7 +235,7 @@ const CourseModules = () => {
     useEffect(() => {
         if (designModule) {
             // Sort units by order
-            const sortedUnits = [...(designModule.learning_units || [])].sort((a,b) => a.order - b.order);
+            const sortedUnits = [...(designModule.learning_units || [])].sort((a, b) => a.order - b.order);
             setLocalSelected(sortedUnits);
             setLocalPool(designModule.quiz_les_list || []);
             setSelectedInSelected(null);
@@ -244,7 +244,7 @@ const CourseModules = () => {
     }, [designModule]);
 
     // HANDLERS FOR DESIGN MODAL
-    
+
     // Add item from Pool -> Module
     const handleAddUnit = async () => {
         if (selectedInPool && designingModuleId) {
@@ -272,7 +272,7 @@ const CourseModules = () => {
                 // Swap
                 [newOrderList[idx - 1], newOrderList[idx]] = [newOrderList[idx], newOrderList[idx - 1]];
                 setLocalSelected(newOrderList);
-                
+
                 // Construct API payload "unit_id:order"
                 const orderedListPayload = newOrderList.map((u, i) => `${u.id}:${i + 1}`);
                 await handleChangeModuleUnitOrder(designingModuleId, orderedListPayload, courseId);
@@ -304,17 +304,17 @@ const CourseModules = () => {
         }
     };
 
-    {/* DESIGN QUESTION PAPER MODAL */}
+    {/* DESIGN QUESTION PAPER MODAL */ }
 
     const [qPaperTab, setQPaperTab] = useState('FIXED');
     const [shuffleQuestions, setShuffleQuestions] = useState(false);
     const [shuffleTestcases, setShuffleTestcases] = useState(false);
-    
+
     // Filtering State
     const [filterMarks, setFilterMarks] = useState('');
     const [filterTags, setFilterTags] = useState('');
     const [filterType, setFilterType] = useState('');
-    
+
     // Checkbox Selections
     const [selectedPoolQs, setSelectedPoolQs] = useState([]);
     const [selectedFixedQs, setSelectedFixedQs] = useState([]);
@@ -338,7 +338,7 @@ const CourseModules = () => {
     const handleAddFixed = async () => {
         if (!selectedPoolQs.length) return;
         await handleAddFixedQuestions(courseId, designingQuizId, paperId, selectedPoolQs);
-        setSelectedPoolQs([]); 
+        setSelectedPoolQs([]);
     };
 
     const handleRemoveFixed = async () => {
@@ -358,7 +358,7 @@ const CourseModules = () => {
         const autoMarks = firstSelectedQ?.points || 1;
 
         await handleAddRandomQuestionsSet(courseId, designingQuizId, paperId, selectedPoolQs, autoMarks, randomSetCount);
-        
+
         setSelectedPoolQs([]);
         setRandomSetMarks('');
         setRandomSetCount('');
@@ -424,124 +424,122 @@ const CourseModules = () => {
                 )}
             </div>
 
-            
+
             {/* MODULE FORM MODAL */}
             {showModuleForm && (
-            <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm px-2">
-                <div className="card-strong w-full max-w-full sm:max-w-2xl p-4 sm:p-6 relative rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
-                {/* Close (Cross) Button */}
-                <button
-                    className="absolute right-4 top-4 text-lg sm:text-xl p-2 rounded-full border border-[var(--border-color)] bg-[var(--input-bg)] hover:bg-white/10 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"
-                    onClick={() => {
-                    setShowModuleForm(false);
-                    setEditingModule(null);
-                    }}
-                    aria-label="Close"
-                >
-                    <FaTimes />
-                </button>
-                {/* Header */}
-                <div className="flex flex-row items-center gap-4 mb-4 sm:mt-0">
-                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
-                    <FaLayerGroup className="w-7 h-7 sm:w-8 sm:h-8 text-blue-400" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                    <h2 className="text-xl sm:text-2xl font-bold mb-1 line-clamp-1">
-                        {editingModule ? 'Edit Module' : 'Create New Module'}
-                    </h2>
-                    <p className="text-xs sm:text-sm muted line-clamp-2">
-                        {editingModule
-                        ? 'Update the details of this module.'
-                        : 'Add a new module to your course.'}
-                    </p>
-                    </div>
-                </div>
-                {/* Form */}
-                <form
-                    onSubmit={e => {
-                    e.preventDefault();
-                    if (editingModule) {
-                        handleUpdateModule(courseId);
-                    } else {
-                        handleCreateModule(courseId);
-                    }
-                    }}
-                    className="space-y-4 mt-2"
-                >
-                    <div className="flex flex-col gap-2">
-                    <input
-                        className="input bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-sm focus-visible:outline-none"
-                        name="name"
-                        placeholder="Module Name *"
-                        value={moduleFormData.name}
-                        onChange={handleModuleFormChange}
-                        required
-                    />
-                    <textarea
-                        className="input bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-sm focus-visible:outline-none"
-                        name="description"
-                        placeholder="Description (markdown supported)"
-                        value={moduleFormData.description}
-                        onChange={handleModuleFormChange}
-                        rows={4}
-                    />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-semibold mb-2">Order</label>
-                        <input
-                        className="input bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-sm w-full focus-visible:outline-none"
-                        type="number"
-                        name="order"
-                        placeholder="Order"
-                        value={moduleFormData.order}
-                        onChange={handleModuleFormChange}
-                        />
-                    </div>
-                    
-                    {/* Toggle Switches */}
-                    <div className="space-y-3 pt-2">
-                        <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--input-bg)] border border-[var(--border-color)]">
-                            <div className="flex-1">
-                                <label className="text-sm font-semibold block">Active</label>
-                                <p className="text-xs muted mt-0.5">Make this module visible to students</p>
+                <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm px-2">
+                    <div className="card-strong w-full max-w-full sm:max-w-2xl p-4 sm:p-6 relative rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
+                        {/* Close (Cross) Button */}
+                        <button
+                            className="absolute right-4 top-4 text-lg sm:text-xl p-2 rounded-full border border-[var(--border-color)] bg-[var(--input-bg)] hover:bg-white/10 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"
+                            onClick={() => {
+                                setShowModuleForm(false);
+                                setEditingModule(null);
+                            }}
+                            aria-label="Close"
+                        >
+                            <FaTimes />
+                        </button>
+                        {/* Header */}
+                        <div className="flex flex-row items-center gap-4 mb-4 sm:mb-6 pb-4 border-b-2 border-[var(--border-subtle)] pr-12">
+                            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
+                                <FaLayerGroup className="w-7 h-7 sm:w-8 sm:h-8 text-blue-400" />
                             </div>
-                            <button
-                                type="button"
-                                onClick={handleToggleActive}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-[var(--bg-primary)] ${
-                                    moduleFormData.active ? 'bg-blue-600' : 'bg-gray-600'
-                                }`}
-                            >
-                                <span
-                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                        moduleFormData.active ? 'translate-x-6' : 'translate-x-1'
-                                    }`}
-                                />
-                            </button>
+                            <div className="flex-1 min-w-0">
+                                <h2 className="text-xl sm:text-2xl font-bold mb-1 line-clamp-1">
+                                    {editingModule ? 'Edit Module' : 'Create New Module'}
+                                </h2>
+                                <p className="text-xs sm:text-sm muted line-clamp-2">
+                                    {editingModule
+                                        ? 'Update the details of this module.'
+                                        : 'Add a new module to your course.'}
+                                </p>
+                            </div>
                         </div>
-                    </div>
+                        {/* Form */}
+                        <form
+                            onSubmit={e => {
+                                e.preventDefault();
+                                if (editingModule) {
+                                    handleUpdateModule(courseId);
+                                } else {
+                                    handleCreateModule(courseId);
+                                }
+                            }}
+                            className="space-y-4 sm:space-y-5"
+                        >
+                            <div className="flex flex-col gap-2">
+                                <input
+                                    className="input bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-sm focus-visible:outline-none"
+                                    name="name"
+                                    placeholder="Module Name *"
+                                    value={moduleFormData.name}
+                                    onChange={handleModuleFormChange}
+                                    required
+                                />
+                                <textarea
+                                    className="input bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-sm focus-visible:outline-none"
+                                    name="description"
+                                    placeholder="Description (markdown supported)"
+                                    value={moduleFormData.description}
+                                    onChange={handleModuleFormChange}
+                                    rows={4}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold mb-2">Order</label>
+                                <input
+                                    className="input bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-sm w-full focus-visible:outline-none"
+                                    type="number"
+                                    name="order"
+                                    placeholder="Order"
+                                    value={moduleFormData.order}
+                                    onChange={handleModuleFormChange}
+                                />
+                            </div>
 
-                    <div className="flex gap-2 justify-end mt-6 flex-wrap">
-                    <button
-                        type="button"
-                        className="px-4 py-2 rounded-lg border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/10 font-medium transition"
-                        onClick={() => {
-                        setShowModuleForm(false);
-                        setEditingModule(null);
-                        }}
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="submit"
-                        className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition disabled:opacity-60"
-                    >
-                        {editingModule ? 'Update' : 'Create'}
-                    </button>
+                            {/* Toggle Switches */}
+                            <div className="space-y-3 pt-2">
+                                <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--input-bg)] border border-[var(--border-color)]">
+                                    <div className="flex-1">
+                                        <label className="text-sm font-semibold block">Active</label>
+                                        <p className="text-xs muted mt-0.5">Make this module visible to students</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={handleToggleActive}
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-[var(--bg-primary)] ${moduleFormData.active ? 'bg-blue-600' : 'bg-gray-600'
+                                            }`}
+                                    >
+                                        <span
+                                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${moduleFormData.active ? 'translate-x-6' : 'translate-x-1'
+                                                }`}
+                                        />
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-2 justify-end mt-6 flex-wrap">
+                                <button
+                                    type="button"
+                                    className="px-4 py-2 rounded-lg border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/10 font-medium transition"
+                                    onClick={() => {
+                                        setShowModuleForm(false);
+                                        setEditingModule(null);
+                                    }}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition disabled:opacity-60"
+                                >
+                                    {editingModule ? 'Update' : 'Create'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
-                </form>
                 </div>
-            </div>
             )}
 
             {/* LESSON FORM MODAL - Enhanced UI with File Upload */}
@@ -562,7 +560,7 @@ const CourseModules = () => {
                         </button>
 
                         {/* Header */}
-                        <div className="flex flex-row items-center gap-4 mb-4 sm:mt-0">
+                        <div className="flex flex-row items-center gap-4 mb-4 sm:mb-6 pb-4 border-b-2 border-[var(--border-subtle)] pr-12">
                             <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-cyan-500/10 flex items-center justify-center border border-cyan-500/20">
                                 <FaVideo className="w-7 h-7 sm:w-8 sm:h-8 text-cyan-400" />
                             </div>
@@ -607,13 +605,13 @@ const CourseModules = () => {
                                 <label className="block text-sm font-bold text-cyan-400 mb-2">
                                     Video Source (Select one)
                                 </label>
-                                
+
                                 {/* Option A: Video File Upload */}
                                 <div className="mb-4">
                                     <label className="text-xs font-semibold text-gray-300 block mb-1">
                                         Upload Video File (MP4, OGV, WEBM)
                                     </label>
-                                    
+
                                     {(lessonFormData.existing_video_file_url && !lessonFormData.clearVideoFile) ? (
                                         <div className="flex items-center gap-3 bg-green-500/10 border border-green-500/20 rounded-lg p-3">
                                             <div className="bg-green-500/20 p-2 rounded-full">
@@ -627,8 +625,8 @@ const CourseModules = () => {
                                                     View current video
                                                 </a>
                                             </div>
-                                            <button 
-                                                type="button" 
+                                            <button
+                                                type="button"
                                                 onClick={handleClearUploadedVideo}
                                                 className="text-gray-400 hover:text-red-400 p-2 hover:bg-red-500/10 rounded-lg transition"
                                                 title="Remove Video"
@@ -698,8 +696,8 @@ const CourseModules = () => {
                                     </div>
                                 </div>
 
-                                 {/* Video Preview (Link) */}
-                                 {lessonFormData.video_path && videoPreview && (
+                                {/* Video Preview (Link) */}
+                                {lessonFormData.video_path && videoPreview && (
                                     <div className="mt-3 relative rounded-lg overflow-hidden bg-black aspect-video border border-white/10">
                                         {videoPreview.type === 'iframe' ? (
                                             <iframe
@@ -721,9 +719,9 @@ const CourseModules = () => {
                                 <label className="block text-sm font-bold text-gray-200 mb-2">
                                     Attached Files
                                 </label>
-                                
+
                                 <div className="space-y-4">
-                                     {/* Existing Files List */}
+                                    {/* Existing Files List */}
                                     {editingLesson && lessonFormData.files && lessonFormData.files.length > 0 && (
                                         <div className="space-y-2">
                                             {lessonFormData.files.map((file) => (
@@ -761,7 +759,7 @@ const CourseModules = () => {
                                             onChange={handleLessonFormChange}
                                             className="hidden"
                                         />
-                                        <label 
+                                        <label
                                             htmlFor="lesson-files-upload"
                                             className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-600 rounded-lg cursor-pointer hover:border-cyan-500 hover:bg-cyan-500/5 transition-all"
                                         >
@@ -802,14 +800,12 @@ const CourseModules = () => {
                                 <button
                                     type="button"
                                     onClick={handleLessonToggleActive}
-                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 focus:ring-offset-[var(--bg-primary)] ${
-                                        lessonFormData.active ? 'bg-cyan-600' : 'bg-gray-600'
-                                    }`}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 focus:ring-offset-[var(--bg-primary)] ${lessonFormData.active ? 'bg-cyan-600' : 'bg-gray-600'
+                                        }`}
                                 >
                                     <span
-                                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                            lessonFormData.active ? 'translate-x-6' : 'translate-x-1'
-                                        }`}
+                                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${lessonFormData.active ? 'translate-x-6' : 'translate-x-1'
+                                            }`}
                                     />
                                 </button>
                             </div>
@@ -843,7 +839,7 @@ const CourseModules = () => {
             {showQuizForm && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-2">
                     <div className="card-strong w-full max-w-full sm:max-w-2xl p-4 sm:p-6 relative rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
-                        
+
                         {/* Close Button */}
                         <button
                             className="absolute right-4 top-4 text-lg sm:text-xl p-2 rounded-full border border-[var(--border-color)] bg-[var(--input-bg)] hover:bg-white/10 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"
@@ -858,7 +854,7 @@ const CourseModules = () => {
                         </button>
 
                         {/* Header */}
-                        <div className="flex flex-row items-center gap-4 mb-4 sm:mt-0">
+                        <div className="flex flex-row items-center gap-4 mb-4 sm:mb-6 pb-4 border-b-2 border-[var(--border-subtle)] pr-12">
                             <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-green-500/10 flex items-center justify-center border border-green-500/20">
                                 <svg className="w-7 h-7 sm:w-8 sm:h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -884,7 +880,7 @@ const CourseModules = () => {
                                 handleCreateQuiz();
                             }
                         }} className="space-y-6 mt-2">
-                            
+
                             {/* Quiz Name & Description */}
                             <div className="flex flex-col gap-2">
                                 <input
@@ -908,7 +904,7 @@ const CourseModules = () => {
 
                             {/* Settings Grid */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-[var(--input-bg)] bg-opacity-50 border border-[var(--border-color)] rounded-xl p-4">
-                                
+
                                 {/* Dates Row */}
                                 <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 pb-2 border-b border-white/5 mb-2">
                                     <div>
@@ -999,7 +995,7 @@ const CourseModules = () => {
                                         className="w-full px-3 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-purple-500/50 text-sm"
                                     />
                                 </div>
-                                
+
                                 <div >
                                     <label className="block text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">
                                         Weightage %
@@ -1026,7 +1022,7 @@ const CourseModules = () => {
                                         className="w-full px-3 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:border-purple-500/50 text-sm"
                                     />
                                 </div>
-                                
+
                             </div>
 
                             {/* Toggles */}
@@ -1040,9 +1036,8 @@ const CourseModules = () => {
                                     <button
                                         type="button"
                                         onClick={() => handleQuizFormChange({ target: { name: 'allow_skip', type: 'checkbox', checked: !quizFormData.allow_skip } })}
-                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-[var(--bg-primary)] ${
-                                            quizFormData.allow_skip ? 'bg-yellow-600' : 'bg-gray-600'
-                                        }`}
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-[var(--bg-primary)] ${quizFormData.allow_skip ? 'bg-yellow-600' : 'bg-gray-600'
+                                            }`}
                                     >
                                         <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${quizFormData.allow_skip ? 'translate-x-6' : 'translate-x-1'}`} />
                                     </button>
@@ -1057,9 +1052,8 @@ const CourseModules = () => {
                                     <button
                                         type="button"
                                         onClick={() => handleQuizFormChange({ target: { name: 'view_answerpaper', type: 'checkbox', checked: !quizFormData.view_answerpaper } })}
-                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-[var(--bg-primary)] ${
-                                            quizFormData.view_answerpaper ? 'bg-purple-600' : 'bg-gray-600'
-                                        }`}
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-[var(--bg-primary)] ${quizFormData.view_answerpaper ? 'bg-purple-600' : 'bg-gray-600'
+                                            }`}
                                     >
                                         <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${quizFormData.view_answerpaper ? 'translate-x-6' : 'translate-x-1'}`} />
                                     </button>
@@ -1074,9 +1068,8 @@ const CourseModules = () => {
                                     <button
                                         type="button"
                                         onClick={() => handleQuizFormChange({ target: { name: 'active', type: 'checkbox', checked: !quizFormData.active } })}
-                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-[var(--bg-primary)] ${
-                                            quizFormData.active ? 'bg-green-600' : 'bg-gray-600'
-                                        }`}
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-[var(--bg-primary)] ${quizFormData.active ? 'bg-green-600' : 'bg-gray-600'
+                                            }`}
                                     >
                                         <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${quizFormData.active ? 'translate-x-6' : 'translate-x-1'}`} />
                                     </button>
@@ -1088,7 +1081,7 @@ const CourseModules = () => {
                                 {/* Left side - Try buttons (only show when editing) */}
                                 {editingQuiz && (
                                     <div className="flex flex-wrap gap-2 sm:mt-3">
-                                         <button
+                                        <button
                                             type="button"
                                             // Fix: Pass editingQuiz?.quiz_id instead of currentQuizId
                                             onClick={() => generateTestSandbox('usermode', editingQuiz?.quiz_id, courseId, navigate)}
@@ -1164,9 +1157,9 @@ const CourseModules = () => {
                             <FaTimes />
                         </button>
 
-                        <div className="flex flex-row items-center gap-4 mb-6">
+                        <div className="flex flex-row items-center gap-4 mb-4 sm:mb-6 pb-4 border-b-2 border-[var(--border-subtle)] pr-12">
                             <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20 text-purple-400">
-                                <FaCheckCircle className="w-7 h-7 sm:w-8 sm:h-8" />
+                                <FaPuzzlePiece className="w-7 h-7 sm:w-8 sm:h-8" />
                             </div>
                             <div className="flex-1 min-w-0">
                                 <h2 className="text-xl sm:text-2xl font-bold mb-1">
@@ -1197,9 +1190,8 @@ const CourseModules = () => {
                                     <button
                                         type="button"
                                         onClick={() => handleExerciseFormChange({ target: { name: 'view_answerpaper', type: 'checkbox', checked: !exerciseFormData.view_answerpaper } })}
-                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-                                            exerciseFormData.view_answerpaper ? 'bg-purple-600' : 'bg-gray-600'
-                                        }`}
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${exerciseFormData.view_answerpaper ? 'bg-purple-600' : 'bg-gray-600'
+                                            }`}
                                     >
                                         <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${exerciseFormData.view_answerpaper ? 'translate-x-6' : 'translate-x-1'}`} />
                                     </button>
@@ -1212,9 +1204,8 @@ const CourseModules = () => {
                                     <button
                                         type="button"
                                         onClick={() => handleExerciseFormChange({ target: { name: 'active', type: 'checkbox', checked: !exerciseFormData.active } })}
-                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-                                            exerciseFormData.active ? 'bg-green-600' : 'bg-gray-600'
-                                        }`}
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${exerciseFormData.active ? 'bg-green-600' : 'bg-gray-600'
+                                            }`}
                                     >
                                         <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${exerciseFormData.active ? 'translate-x-6' : 'translate-x-1'}`} />
                                     </button>
@@ -1274,7 +1265,7 @@ const CourseModules = () => {
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
-                                    
+
                                     {/* Left Column: SELECTED UNITS (In Module) */}
                                     <div className="flex flex-col h-full bg-black/20 rounded-xl border border-white/10 overflow-hidden shadow-inner">
                                         <div className="p-2.5 sm:p-3 md:p-4 border-b border-white/10 bg-white/5">
@@ -1284,24 +1275,22 @@ const CourseModules = () => {
                                             </h3>
                                             <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">Items currently in this module</p>
                                         </div>
-                                        
+
                                         <div className="flex-1 overflow-y-auto p-2 sm:p-2.5 md:p-3 space-y-1.5 sm:space-y-2 custom-scrollbar">
                                             {localSelected.length > 0 ? (
                                                 localSelected.map((unit) => {
                                                     const isSelected = selectedInSelected === unit.id;
                                                     return (
                                                         <div key={unit.id} className="group">
-                                                            <div 
+                                                            <div
                                                                 onClick={() => setSelectedInSelected(isSelected ? null : unit.id)}
-                                                                className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all border ${
-                                                                    isSelected 
-                                                                    ? 'bg-blue-600/20 border-blue-500/50' 
+                                                                className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all border ${isSelected
+                                                                    ? 'bg-blue-600/20 border-blue-500/50'
                                                                     : 'bg-[#27272a] border-white/5 hover:border-white/10'
-                                                                }`}
+                                                                    }`}
                                                             >
-                                                                <div className={`w-8 h-8 rounded flex items-center justify-center flex-shrink-0 ${
-                                                                    unit.type === 'lesson' ? 'bg-cyan-500/10 text-cyan-400' : 'bg-green-500/10 text-green-400'
-                                                                }`}>
+                                                                <div className={`w-8 h-8 rounded flex items-center justify-center flex-shrink-0 ${unit.type === 'lesson' ? 'bg-cyan-500/10 text-cyan-400' : 'bg-green-500/10 text-green-400'
+                                                                    }`}>
                                                                     {unit.type === 'lesson' ? <FaBook className="w-3.5 h-3.5" /> : <FaCheckCircle className="w-3.5 h-3.5" />}
                                                                 </div>
                                                                 <div className="flex-1 min-w-0">
@@ -1311,8 +1300,8 @@ const CourseModules = () => {
                                                                         {unit.check_prerequisite && <span className="text-[10px] text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded border border-purple-500/20">Prerequisite</span>}
                                                                     </div>
                                                                 </div>
-                                                                <input 
-                                                                    type="radio" 
+                                                                <input
+                                                                    type="radio"
                                                                     checked={isSelected}
                                                                     readOnly
                                                                     className="w-4 h-4 text-blue-500 bg-gray-700 border-gray-600 focus:ring-blue-500 focus:ring-offset-gray-800"
@@ -1323,7 +1312,7 @@ const CourseModules = () => {
                                                             <div className={`transition-all duration-300 overflow-hidden ${isSelected ? 'max-h-20 opacity-100 py-2' : 'max-h-0 opacity-0'}`}>
                                                                 <div className="mx-2 p-2 bg-black/30 rounded-lg flex items-center justify-between border border-white/5">
                                                                     <label className="flex items-center gap-2 cursor-pointer select-none">
-                                                                        <input 
+                                                                        <input
                                                                             type="checkbox"
                                                                             checked={unit.check_prerequisite}
                                                                             onChange={() => handleTogglePrereq(unit.id)}
@@ -1346,7 +1335,7 @@ const CourseModules = () => {
 
                                         {/* Left Actions Footer */}
                                         <div className="p-4 border-t border-white/10 bg-white/5 flex items-center justify-between gap-2">
-                                            <button 
+                                            <button
                                                 onClick={handleRemoveUnit}
                                                 disabled={!selectedInSelected}
                                                 className="px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 bg-red-600 hover:bg-red-700 rounded-lg text-xs sm:text-sm font-medium transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 flex-shrink-0"
@@ -1354,7 +1343,7 @@ const CourseModules = () => {
                                                 <FaTrash className="inline mr-1" /> Remove
                                             </button>
                                             <div className="flex gap-1.5 sm:gap-2">
-                                                <button 
+                                                <button
                                                     onClick={moveUp}
                                                     disabled={!selectedInSelected}
                                                     className="px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 border border-[var(--border-color)] rounded-lg text-xs sm:text-sm font-medium hover:bg-[var(--input-bg)] transition flex items-center justify-center gap-1 sm:gap-1.5 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
@@ -1362,7 +1351,7 @@ const CourseModules = () => {
                                                     <FaArrowUp className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                                                     <span className="hidden md:inline">Up</span>
                                                 </button>
-                                                <button 
+                                                <button
                                                     onClick={moveDown}
                                                     disabled={!selectedInSelected}
                                                     className="px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 border border-[var(--border-color)] rounded-lg text-xs sm:text-sm font-medium hover:bg-[var(--input-bg)] transition flex items-center justify-center gap-1 sm:gap-1.5 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
@@ -1383,25 +1372,23 @@ const CourseModules = () => {
                                             </h3>
                                             <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">Unassigned lessons and quizzes</p>
                                         </div>
-                                        
+
                                         <div className="flex-1 overflow-y-auto p-2 sm:p-2.5 md:p-3 space-y-1.5 sm:space-y-2 custom-scrollbar">
                                             {localPool.length > 0 ? (
                                                 localPool.map((item) => {
                                                     const isSelected = selectedInPool === item.value_key;
                                                     return (
-                                                        <div 
+                                                        <div
                                                             key={item.value_key}
                                                             onClick={() => setSelectedInPool(isSelected ? null : item.value_key)}
-                                                            className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all border ${
-                                                                isSelected 
-                                                                ? 'bg-green-600/20 border-green-500/50' 
+                                                            className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all border ${isSelected
+                                                                ? 'bg-green-600/20 border-green-500/50'
                                                                 : 'bg-[#27272a] border-white/5 hover:border-white/10'
-                                                            }`}
+                                                                }`}
                                                         >
-                                                            <div className={`w-8 h-8 rounded flex items-center justify-center flex-shrink-0 ${
-                                                                item.type === 'lesson' ? 'bg-cyan-500/10 text-cyan-400' : 'bg-green-500/10 text-green-400'
-                                                            }`}>
-                                                                {item.type === 'lesson' ? <FaBook className="w-3.5 h-3.5"/> : <FaCheckCircle className="w-3.5 h-3.5"/>}
+                                                            <div className={`w-8 h-8 rounded flex items-center justify-center flex-shrink-0 ${item.type === 'lesson' ? 'bg-cyan-500/10 text-cyan-400' : 'bg-green-500/10 text-green-400'
+                                                                }`}>
+                                                                {item.type === 'lesson' ? <FaBook className="w-3.5 h-3.5" /> : <FaCheckCircle className="w-3.5 h-3.5" />}
                                                             </div>
                                                             <div className="flex-1 min-w-0">
                                                                 <div className="font-medium text-xs sm:text-sm text-gray-300 truncate">{item.display_name.replace(/\(quiz\)|\(lesson\)/gi, '')}</div>
@@ -1409,8 +1396,8 @@ const CourseModules = () => {
                                                                     <span className="text-[10px] uppercase font-bold text-gray-600 bg-black/30 px-1.5 py-0.5 rounded">{item.type}</span>
                                                                 </div>
                                                             </div>
-                                                            <input 
-                                                                type="radio" 
+                                                            <input
+                                                                type="radio"
                                                                 checked={isSelected}
                                                                 readOnly
                                                                 className="w-4 h-4 text-green-500 bg-gray-700 border-gray-600 focus:ring-green-500 focus:ring-offset-gray-800 flex-shrink-0"
@@ -1429,7 +1416,7 @@ const CourseModules = () => {
 
                                         {/* Right Actions Footer */}
                                         <div className="flex items-center justify-between p-4 border-t border-white/10 bg-white/5">
-                                            <button 
+                                            <button
                                                 onClick={handleAddUnit}
                                                 disabled={!selectedInPool}
                                                 className="px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 bg-green-600 hover:bg-green-700 rounded-lg text-xs sm:text-sm font-medium transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 flex-shrink-0"
@@ -1447,13 +1434,13 @@ const CourseModules = () => {
             )}
 
 
-            
+
             {/* DESIGN QUESTION PAPER MODAL */}
             {showDesignQuestionPaperModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-2 animate-fade-in">
                     {/* Replaced bg-[#1e1e24] with card-strong for consistent theme and updated sizing */}
                     <div className="card-strong w-full max-w-full sm:max-w-6xl h-[95vh] flex flex-col relative rounded-xl shadow-2xl overflow-hidden border border-[var(--border-color)]">
-                        
+
                         {/* Styled consistent absolute cross button */}
                         <button
                             className="absolute right-4 top-4 z-10 text-lg sm:text-xl p-2 rounded-full border border-[var(--border-color)] bg-[var(--input-bg)] hover:bg-white/10 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"
@@ -1477,364 +1464,358 @@ const CourseModules = () => {
                             </div>
                         </div>
 
-            {/* Tab Bar + Save Settings button on same row */}
-            <div className="flex items-center justify-between px-4 pt-3 bg-[#18181b] border-b border-white/10">
-                <div className="flex items-center gap-1">
-                    {[
-                        { id: 'FIXED', label: 'Fixed Questions', icon: <FaCheck className="w-3.5 h-3.5" /> },
-                        { id: 'RANDOM', label: 'Random Sets', icon: <FaRandom className="w-3.5 h-3.5" /> },
-                    ].map(tab => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setQPaperTab(tab.id)}
-                            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg border-b-2 transition-all ${
-                                qPaperTab === tab.id
-                                ? 'border-amber-500 text-amber-400 bg-black/20'
-                                : 'border-transparent text-gray-500 hover:text-gray-300 hover:bg-white/5'
-                            }`}
-                        >
-                            {tab.icon}
-                            <span className="hidden sm:inline">{tab.label}</span>
-                        </button>
-                    ))}
-                </div>
-                {/* Save settings button — always visible, right aligned in tab row */}
-                <form onSubmit={handleSaveQPaperSettings} className="flex items-center pb-2">
-                    <button
-                        type="submit"
-                        disabled={loadingQuestionPaper}
-                        className="px-8 py-2.5 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all flex items-center justify-center min-w-[120px]"
-                    >
-                        Save 
-                    </button>
-                </form>
-            </div>
+                        {/* Tab Bar + Save Settings button on same row */}
+                        <div className="flex items-center justify-between px-4 pt-3 bg-[#18181b] border-b border-white/10">
+                            <div className="flex items-center gap-1">
+                                {[
+                                    { id: 'FIXED', label: 'Fixed Questions', icon: <FaCheck className="w-3.5 h-3.5" /> },
+                                    { id: 'RANDOM', label: 'Random Sets', icon: <FaRandom className="w-3.5 h-3.5" /> },
+                                ].map(tab => (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setQPaperTab(tab.id)}
+                                        className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg border-b-2 transition-all ${qPaperTab === tab.id
+                                            ? 'border-amber-500 text-amber-400 bg-black/20'
+                                            : 'border-transparent text-gray-500 hover:text-gray-300 hover:bg-white/5'
+                                            }`}
+                                    >
+                                        {tab.icon}
+                                        <span className="hidden sm:inline">{tab.label}</span>
+                                    </button>
+                                ))}
+                            </div>
+                            {/* Save settings button — always visible, right aligned in tab row */}
+                            <form onSubmit={handleSaveQPaperSettings} className="flex items-center pb-2">
+                                <button
+                                    type="submit"
+                                    disabled={loadingQuestionPaper}
+                                    className="px-8 py-2.5 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all flex items-center justify-center min-w-[120px]"
+                                >
+                                    Save
+                                </button>
+                            </form>
+                        </div>
 
-            {/* Shuffle Toggles — always visible below tab bar, above body */}
-            
+                        {/* Shuffle Toggles — always visible below tab bar, above body */}
 
 
-            {/* Modal Body */}
-            <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 bg-[#18181b]">
-                {loadingQuestionPaper && !questionPaperDesign ? (
-                    <div className="h-full flex flex-col items-center justify-center text-gray-400 gap-3">
-                        <FaSync className="animate-spin text-3xl text-amber-500" />
-                        <span>Loading paper design...</span>
-                    </div>
-                ) : questionPaperError ? (
-                    <div className="h-full flex items-center justify-center text-red-400">
-                        <p>{questionPaperError}</p>
-                    </div>
-                ) : (
-                    <>
-                    {/* FIXED / RANDOM TABS: Two-column layout */}
-                    {(qPaperTab === 'FIXED' || qPaperTab === 'RANDOM') && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
 
-                            {/* LEFT: Added questions / Configured sets */}
-                            <div className="flex flex-col h-full bg-black/20 rounded-xl border border-white/10 overflow-hidden shadow-inner">
-                                <div className="p-2.5 sm:p-3 md:p-4 border-b border-white/10 bg-white/5">
-                                    <h3 className="font-bold text-sm sm:text-base md:text-lg text-white flex items-center gap-2">
-                                        <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${qPaperTab === 'FIXED' ? 'bg-blue-500' : 'bg-purple-500'}`}></span>
-                                        {qPaperTab === 'FIXED' ? 'Fixed Questions' : 'Random Sets'}
-                                    </h3>
-                                    <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">
-                                        {qPaperTab === 'FIXED' ? 'Questions always included in this paper' : 'Sets where N questions are picked randomly'}
-                                    </p>
+                        {/* Modal Body */}
+                        <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 bg-[#18181b]">
+                            {loadingQuestionPaper && !questionPaperDesign ? (
+                                <div className="h-full flex flex-col items-center justify-center text-gray-400 gap-3">
+                                    <FaSync className="animate-spin text-3xl text-amber-500" />
+                                    <span>Loading paper design...</span>
                                 </div>
-                                <div className="flex-1 overflow-y-auto p-2 sm:p-2.5 md:p-3 space-y-1.5 sm:space-y-2 custom-scrollbar">
+                            ) : questionPaperError ? (
+                                <div className="h-full flex items-center justify-center text-red-400">
+                                    <p>{questionPaperError}</p>
+                                </div>
+                            ) : (
+                                <>
+                                    {/* FIXED / RANDOM TABS: Two-column layout */}
+                                    {(qPaperTab === 'FIXED' || qPaperTab === 'RANDOM') && (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
 
-                                    {/* FIXED list */}
-                                    {qPaperTab === 'FIXED' && (
-                                        questionPaperDesign?.fixed_questions?.length > 0 ? (
-                                            questionPaperDesign.fixed_questions.map(q => (
-                                                <div
-                                                    key={q.id}
-                                                    onClick={() => toggleQPaperSelection(q.id, selectedFixedQs, setSelectedFixedQs)}
-                                                    className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all border ${
-                                                        selectedFixedQs.includes(q.id)
-                                                        ? 'bg-red-600/15 border-red-500/50'
-                                                        : 'bg-[#27272a] border-white/5 hover:border-white/10'
-                                                    }`}
-                                                >
-                                                    <div className="w-8 h-8 rounded flex items-center justify-center flex-shrink-0 bg-blue-500/10 text-blue-400">
-                                                        <FaCheck className="w-3.5 h-3.5" />
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="font-medium text-sm text-gray-200 truncate">{q.summary || 'Untitled Question'}</div>
-                                                        <div className="flex items-center gap-2 mt-0.5">
-                                                            <span className="text-[10px] uppercase font-bold text-gray-500 bg-black/30 px-1.5 py-0.5 rounded">{q.type}</span>
-                                                            <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">{q.points} pts</span>
-                                                        </div>
-                                                    </div>
-                                                    <input type="checkbox" readOnly checked={selectedFixedQs.includes(q.id)} className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-red-500 focus:ring-red-500 focus:ring-offset-0 flex-shrink-0" />
+                                            {/* LEFT: Added questions / Configured sets */}
+                                            <div className="flex flex-col h-full bg-black/20 rounded-xl border border-white/10 overflow-hidden shadow-inner">
+                                                <div className="p-2.5 sm:p-3 md:p-4 border-b border-white/10 bg-white/5">
+                                                    <h3 className="font-bold text-sm sm:text-base md:text-lg text-white flex items-center gap-2">
+                                                        <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${qPaperTab === 'FIXED' ? 'bg-blue-500' : 'bg-purple-500'}`}></span>
+                                                        {qPaperTab === 'FIXED' ? 'Fixed Questions' : 'Random Sets'}
+                                                    </h3>
+                                                    <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">
+                                                        {qPaperTab === 'FIXED' ? 'Questions always included in this paper' : 'Sets where N questions are picked randomly'}
+                                                    </p>
                                                 </div>
-                                            ))
-                                        ) : (
-                                            <div className="h-full flex flex-col items-center justify-center text-gray-500 opacity-50 py-8">
-                                                <FaCheck className="w-8 h-8 mb-2" />
-                                                <p className="text-sm">No fixed questions yet</p>
-                                                <p className="text-xs mt-1">Search and add from the right panel</p>
-                                            </div>
-                                        )
-                                    )}
+                                                <div className="flex-1 overflow-y-auto p-2 sm:p-2.5 md:p-3 space-y-1.5 sm:space-y-2 custom-scrollbar">
 
-                                    {/* RANDOM list */}
-                                    {qPaperTab === 'RANDOM' && (
-                                        questionPaperDesign?.random_sets?.length > 0 ? (
-                                            questionPaperDesign.random_sets.map(set => (
-                                                <div
-                                                    key={set.id}
-                                                    onClick={() => toggleQPaperSelection(set.id, selectedRandomSets, setSelectedRandomSets)}
-                                                    className={`flex flex-col gap-2 p-3 rounded-lg cursor-pointer transition-all border ${
-                                                        selectedRandomSets.includes(set.id)
-                                                        ? 'bg-red-600/15 border-red-500/50'
-                                                        : 'bg-[#27272a] border-white/5 hover:border-white/10'
-                                                    }`}
-                                                >
-                                                    {/* Header Row */}
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded flex items-center justify-center flex-shrink-0 bg-purple-500/10 text-purple-400">
-                                                            <FaRandom className="w-3.5 h-3.5" />
-                                                        </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="font-medium text-sm text-gray-200">
-                                                                Pick <span className="text-amber-400 font-bold">{set.num_questions}</span> from <span className="text-cyan-400 font-bold">{set.questions?.length || 0}</span> questions
-                                                            </div>
-                                                            <div className="flex items-center gap-2 mt-0.5">
-                                                                
-                                                                <span className="text-[10px] text-gray-500">Set #{set.id}</span>
-                                                            </div>
-                                                        </div>
-                                                        
-                                                        {/* Expand/Collapse Dropdown Trigger */}
-                                                        <button 
-                                                            onClick={(e) => {
-                                                                e.stopPropagation(); // Prevents checking the box when opening the dropdown
-                                                                setExpandedRandomSets(prev => 
-                                                                    prev.includes(set.id) ? prev.filter(id => id !== set.id) : [...prev, set.id]
-                                                                );
-                                                            }}
-                                                            className="p-1.5 hover:bg-white/10 rounded ml-1 text-gray-400 transition"
-                                                            title="View Questions"
-                                                        >
-                                                            <svg className={`w-4 h-4 transition-transform ${expandedRandomSets.includes(set.id) ? 'rotate-180 text-amber-400' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                                                        </button>
-
-                                                        <input type="checkbox" readOnly checked={selectedRandomSets.includes(set.id)} className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-red-500 focus:ring-red-500 focus:ring-offset-0 flex-shrink-0 ml-1" />
-                                                    </div>
-
-                                                    {/* Inner Questions List (Revealed cleanly when expanded) */}
-                                                    {expandedRandomSets.includes(set.id) && set.questions?.length > 0 && (
-                                                        <div 
-                                                            className="mt-1 pt-2 border-t border-white/5 space-y-2 max-h-48 overflow-y-auto custom-scrollbar"
-                                                            onClick={(e) => e.stopPropagation()} // Stop propagation here too so clicking text doesn't check the set
-                                                        >
-                                                            {set.questions.map((q, idx) => (
-                                                                <div key={q.id || idx} className="flex gap-2 items-start text-xs text-gray-400 bg-black/20 p-2 rounded border border-white/5">
-                                                                    <span className="text-gray-500 font-mono mt-0.5">{idx + 1}.</span>
-                                                                    <div className="flex-1">
-                                                                        <div 
-                                                                            className="line-clamp-2 mb-1.5 text-gray-300" 
-                                                                            dangerouslySetInnerHTML={{ __html: q.summary || q.description || `Question ID: ${q.id}` }}
-                                                                        />
-                                                                        {/* Sub-tags showing individual marks underneath each list item */}
-                                                                        <div className="flex items-center gap-2">
-                                                                            <span className="text-[9px] uppercase font-bold text-gray-500 bg-black/30 px-1 py-0.5 rounded">{q.type || 'Question'}</span>
-                                                                            <span className="text-[9px] font-bold text-amber-400 bg-amber-500/10 px-1 py-0.5 rounded">{q.points} pts</span>
+                                                    {/* FIXED list */}
+                                                    {qPaperTab === 'FIXED' && (
+                                                        questionPaperDesign?.fixed_questions?.length > 0 ? (
+                                                            questionPaperDesign.fixed_questions.map(q => (
+                                                                <div
+                                                                    key={q.id}
+                                                                    onClick={() => toggleQPaperSelection(q.id, selectedFixedQs, setSelectedFixedQs)}
+                                                                    className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all border ${selectedFixedQs.includes(q.id)
+                                                                        ? 'bg-red-600/15 border-red-500/50'
+                                                                        : 'bg-[#27272a] border-white/5 hover:border-white/10'
+                                                                        }`}
+                                                                >
+                                                                    <div className="w-8 h-8 rounded flex items-center justify-center flex-shrink-0 bg-blue-500/10 text-blue-400">
+                                                                        <FaCheck className="w-3.5 h-3.5" />
+                                                                    </div>
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <div className="font-medium text-sm text-gray-200 truncate">{q.summary || 'Untitled Question'}</div>
+                                                                        <div className="flex items-center gap-2 mt-0.5">
+                                                                            <span className="text-[10px] uppercase font-bold text-gray-500 bg-black/30 px-1.5 py-0.5 rounded">{q.type}</span>
+                                                                            <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">{q.points} pts</span>
                                                                         </div>
                                                                     </div>
+                                                                    <input type="checkbox" readOnly checked={selectedFixedQs.includes(q.id)} className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-red-500 focus:ring-red-500 focus:ring-offset-0 flex-shrink-0" />
                                                                 </div>
-                                                            ))}
+                                                            ))
+                                                        ) : (
+                                                            <div className="h-full flex flex-col items-center justify-center text-gray-500 opacity-50 py-8">
+                                                                <FaCheck className="w-8 h-8 mb-2" />
+                                                                <p className="text-sm">No fixed questions yet</p>
+                                                                <p className="text-xs mt-1">Search and add from the right panel</p>
+                                                            </div>
+                                                        )
+                                                    )}
+
+                                                    {/* RANDOM list */}
+                                                    {qPaperTab === 'RANDOM' && (
+                                                        questionPaperDesign?.random_sets?.length > 0 ? (
+                                                            questionPaperDesign.random_sets.map(set => (
+                                                                <div
+                                                                    key={set.id}
+                                                                    onClick={() => toggleQPaperSelection(set.id, selectedRandomSets, setSelectedRandomSets)}
+                                                                    className={`flex flex-col gap-2 p-3 rounded-lg cursor-pointer transition-all border ${selectedRandomSets.includes(set.id)
+                                                                        ? 'bg-red-600/15 border-red-500/50'
+                                                                        : 'bg-[#27272a] border-white/5 hover:border-white/10'
+                                                                        }`}
+                                                                >
+                                                                    {/* Header Row */}
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="w-8 h-8 rounded flex items-center justify-center flex-shrink-0 bg-purple-500/10 text-purple-400">
+                                                                            <FaRandom className="w-3.5 h-3.5" />
+                                                                        </div>
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <div className="font-medium text-sm text-gray-200">
+                                                                                Pick <span className="text-amber-400 font-bold">{set.num_questions}</span> from <span className="text-cyan-400 font-bold">{set.questions?.length || 0}</span> questions
+                                                                            </div>
+                                                                            <div className="flex items-center gap-2 mt-0.5">
+
+                                                                                <span className="text-[10px] text-gray-500">Set #{set.id}</span>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        {/* Expand/Collapse Dropdown Trigger */}
+                                                                        <button
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation(); // Prevents checking the box when opening the dropdown
+                                                                                setExpandedRandomSets(prev =>
+                                                                                    prev.includes(set.id) ? prev.filter(id => id !== set.id) : [...prev, set.id]
+                                                                                );
+                                                                            }}
+                                                                            className="p-1.5 hover:bg-white/10 rounded ml-1 text-gray-400 transition"
+                                                                            title="View Questions"
+                                                                        >
+                                                                            <svg className={`w-4 h-4 transition-transform ${expandedRandomSets.includes(set.id) ? 'rotate-180 text-amber-400' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                                                                        </button>
+
+                                                                        <input type="checkbox" readOnly checked={selectedRandomSets.includes(set.id)} className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-red-500 focus:ring-red-500 focus:ring-offset-0 flex-shrink-0 ml-1" />
+                                                                    </div>
+
+                                                                    {/* Inner Questions List (Revealed cleanly when expanded) */}
+                                                                    {expandedRandomSets.includes(set.id) && set.questions?.length > 0 && (
+                                                                        <div
+                                                                            className="mt-1 pt-2 border-t border-white/5 space-y-2 max-h-48 overflow-y-auto custom-scrollbar"
+                                                                            onClick={(e) => e.stopPropagation()} // Stop propagation here too so clicking text doesn't check the set
+                                                                        >
+                                                                            {set.questions.map((q, idx) => (
+                                                                                <div key={q.id || idx} className="flex gap-2 items-start text-xs text-gray-400 bg-black/20 p-2 rounded border border-white/5">
+                                                                                    <span className="text-gray-500 font-mono mt-0.5">{idx + 1}.</span>
+                                                                                    <div className="flex-1">
+                                                                                        <div
+                                                                                            className="line-clamp-2 mb-1.5 text-gray-300"
+                                                                                            dangerouslySetInnerHTML={{ __html: q.summary || q.description || `Question ID: ${q.id}` }}
+                                                                                        />
+                                                                                        {/* Sub-tags showing individual marks underneath each list item */}
+                                                                                        <div className="flex items-center gap-2">
+                                                                                            <span className="text-[9px] uppercase font-bold text-gray-500 bg-black/30 px-1 py-0.5 rounded">{q.type || 'Question'}</span>
+                                                                                            <span className="text-[9px] font-bold text-amber-400 bg-amber-500/10 px-1 py-0.5 rounded">{q.points} pts</span>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            ))
+                                                        ) : (
+                                                            <div className="h-full flex flex-col items-center justify-center text-gray-500 opacity-50 py-8">
+                                                                <FaRandom className="w-8 h-8 mb-2" />
+                                                                <p className="text-sm">No random sets yet</p>
+                                                                <p className="text-xs mt-1">Search and build sets from the right panel</p>
+                                                            </div>
+                                                        )
+                                                    )}
+                                                </div>
+
+                                                {/* Left Footer: Remove button */}
+
+                                                <div className="flex items-center justify-between p-4 border-t border-white/10 bg-white/5">
+                                                    <button
+                                                        onClick={qPaperTab === 'FIXED' ? handleRemoveFixed : handleRemoveRandomSets}
+                                                        disabled={qPaperTab === 'FIXED' ? (!selectedFixedQs.length || loadingQuestionPaper) : (!selectedRandomSets.length || loadingQuestionPaper)}
+                                                        className="px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 bg-red-600 hover:bg-red-700 rounded-lg text-xs sm:text-sm font-medium transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 flex-shrink-0"
+                                                    >
+                                                        <FaTrash className="w-3 h-3 inline mr-1" />
+                                                        Remove ({qPaperTab === 'FIXED' ? selectedFixedQs.length : selectedRandomSets.length})
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {/* RIGHT: Search + Results */}
+                                            <div className="flex flex-col h-full bg-black/20 rounded-xl border border-white/10 overflow-hidden shadow-inner">
+                                                <div className="p-2.5 sm:p-3 md:p-4 border-b border-white/10 bg-white/5">
+                                                    <h3 className="font-bold text-sm sm:text-base md:text-lg text-white flex items-center gap-2">
+                                                        <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-green-500"></span>
+                                                        Question Bank
+                                                    </h3>
+                                                    <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">Filter and select questions to add</p>
+                                                </div>
+
+                                                {/* Filter controls */}
+                                                <div className="p-2.5 sm:p-3 border-b border-white/10 bg-black/10 flex items-center gap-2">
+                                                    <input
+                                                        type="number"
+                                                        placeholder="Marks"
+                                                        value={filterMarks}
+                                                        onChange={e => setFilterMarks(e.target.value)}
+                                                        className="w-20 bg-[#27272a] border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500/60 transition-colors"
+                                                    />
+                                                    <select
+                                                        value={filterType}
+                                                        onChange={e => setFilterType(e.target.value)}
+                                                        className="flex-1 bg-[#27272a] border border-white/10 rounded-lg px-2 py-1.5 text-xs text-gray-300 focus:outline-none focus:border-amber-500/60 transition-colors"
+                                                    >
+                                                        <option value="">----------</option>
+                                                        <option value="mcq">Single Correct Choice</option>
+                                                        <option value="mcc">Multiple Correct Choices</option>
+                                                        <option value="code">Code</option>
+                                                        <option value="assignment_upload">Assignment Upload</option>
+                                                        <option value="integer">Answer in Integer</option>
+                                                        <option value="string">Answer in String</option>
+                                                        <option value="float">Answer in Float</option>
+                                                        <option value="arrange">Arrange in Order</option>
+                                                    </select>
+
+                                                    <button
+                                                        onClick={handleSearchQPaper}
+                                                        disabled={loadingQuestionPaper}
+                                                        className="px-3 py-1.5 bg-green-600 hover:bg-green-700 rounded-lg text-xs font-bold transition active:scale-95 disabled:opacity-50 flex items-center gap-1.5 flex-shrink-0"
+                                                    >
+                                                        {loadingQuestionPaper ? <FaSync className="animate-spin w-3 h-3" /> : <FaSearch className="w-3 h-3" />}
+                                                        Find
+                                                    </button>
+                                                </div>
+
+                                                {/* Results */}
+                                                <div className="flex-1 overflow-y-auto p-2 sm:p-2.5 md:p-3 space-y-1.5 sm:space-y-2 custom-scrollbar">
+                                                    {availableQuestions.length > 0 ? (
+                                                        availableQuestions.map(q => (
+                                                            <div
+                                                                key={q.id}
+                                                                onClick={() => toggleQPaperSelection(q.id, selectedPoolQs, setSelectedPoolQs)}
+                                                                className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all border ${selectedPoolQs.includes(q.id)
+                                                                    ? 'bg-green-600/20 border-green-500/50'
+                                                                    : 'bg-[#27272a] border-white/5 hover:border-white/10'
+                                                                    }`}
+                                                            >
+                                                                <div className="w-8 h-8 rounded flex items-center justify-center flex-shrink-0 bg-green-500/10 text-green-400">
+                                                                    <FaList className="w-3.5 h-3.5" />
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <div className="font-medium text-xs sm:text-sm text-gray-300 truncate">{q.summary || 'Untitled Question'}</div>
+                                                                    <div className="flex items-center gap-2 mt-0.5">
+                                                                        <span className="text-[10px] uppercase font-bold text-gray-600 bg-black/30 px-1.5 py-0.5 rounded">{q.type}</span>
+                                                                        <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">{q.points} pts</span>
+                                                                    </div>
+                                                                </div>
+                                                                <input type="radio" readOnly checked={selectedPoolQs.includes(q.id)} className="w-4 h-4 text-green-500 bg-gray-700 border-gray-600 focus:ring-green-500 focus:ring-offset-0 flex-shrink-0" />
+                                                            </div>
+                                                        ))
+                                                    ) : (
+                                                        <div className="h-full flex flex-col items-center justify-center text-gray-500 opacity-50 py-8 sm:py-12">
+                                                            <FaSearch className="w-6 h-6 sm:w-8 sm:h-8 mb-2" />
+                                                            <p className="text-xs sm:text-sm">No results yet</p>
+                                                            <p className="text-[10px] sm:text-xs mt-1">Use filters above and click Find</p>
                                                         </div>
                                                     )}
                                                 </div>
-                                            ))
-                                        ) : (
-                                            <div className="h-full flex flex-col items-center justify-center text-gray-500 opacity-50 py-8">
-                                                <FaRandom className="w-8 h-8 mb-2" />
-                                                <p className="text-sm">No random sets yet</p>
-                                                <p className="text-xs mt-1">Search and build sets from the right panel</p>
-                                            </div>
-                                        )
-                                    )}
-                                </div>
 
-                                {/* Left Footer: Remove button */}
-                                
-                                <div className="flex items-center justify-between p-4 border-t border-white/10 bg-white/5">
-                                    <button
-                                        onClick={qPaperTab === 'FIXED' ? handleRemoveFixed : handleRemoveRandomSets}
-                                        disabled={qPaperTab === 'FIXED' ? (!selectedFixedQs.length || loadingQuestionPaper) : (!selectedRandomSets.length || loadingQuestionPaper)}
-                                        className="px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 bg-red-600 hover:bg-red-700 rounded-lg text-xs sm:text-sm font-medium transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 flex-shrink-0"
-                                    >
-                                        <FaTrash className="w-3 h-3 inline mr-1" />
-                                        Remove ({qPaperTab === 'FIXED' ? selectedFixedQs.length : selectedRandomSets.length})
-                                    </button>
+                                                {/* Right Footer: Add button(s) */}
+
+
+
+
+                                                <div className="flex items-center justify-between p-4 border-t border-white/10 bg-white/5">
+                                                    {qPaperTab === 'FIXED' && (
+
+                                                        <button
+                                                            onClick={handleAddFixed}
+                                                            disabled={!selectedPoolQs.length || loadingQuestionPaper}
+                                                            className="px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 bg-green-600 hover:bg-green-700 rounded-lg text-xs sm:text-sm font-medium transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 flex-shrink-0"
+                                                        >
+                                                            <FaPlus className="w-3 h-3 inline mr-1" />
+                                                            Add {selectedPoolQs.length > 0 ? selectedPoolQs.length : ''} to Fixed
+                                                        </button>
+                                                    )}
+
+                                                    {qPaperTab === 'RANDOM' && (
+                                                        <div className="w-full flex items-center justify-between ">
+                                                            <button
+                                                                onClick={handleAddRandomSet}
+                                                                disabled={!selectedPoolQs.length || loadingQuestionPaper || !randomSetCount}
+                                                                className="px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 bg-green-600 hover:bg-green-700 rounded-lg text-xs sm:text-sm font-medium transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 flex-shrink-0"
+                                                            >
+                                                                <FaRandom className="w-3 h-3 inline mr-1" />
+                                                                Pick {randomSetCount || 'N'} from {selectedPoolQs.length > 0 ? selectedPoolQs.length : '0'}
+                                                            </button>
+                                                            <input
+                                                                type="number"
+                                                                placeholder="Pick N"
+                                                                title="Number of random questions to pick from selected"
+                                                                value={randomSetCount}
+                                                                onChange={e => setRandomSetCount(e.target.value)}
+                                                                className="w-24 bg-[#27272a] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500/60 transition-colors flex-shrink-0 text-center"
+                                                                min="1"
+                                                                max={selectedPoolQs.length || 1}
+                                                            />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+
+                        {/* Shuffle Toggles — always visible below tab bar, above body */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 px-4 sm:px-6 pb-3 bg-[#18181b] border-b border-white/5">
+                            <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--input-bg)] border border-[var(--border-color)]">
+                                <div className="flex-1 pr-3">
+                                    <span className="text-sm font-semibold text-gray-200">Shuffle Questions</span>
+                                    <p className="text-xs muted mt-0.5">Randomize question order for each attempt</p>
                                 </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setShuffleQuestions(prev => !prev)}
+                                    className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-[var(--bg-primary)] ${shuffleQuestions ? 'bg-amber-600' : 'bg-gray-600'
+                                        }`}
+                                >
+                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${shuffleQuestions ? 'translate-x-6' : 'translate-x-1'}`} />
+                                </button>
                             </div>
-
-                            {/* RIGHT: Search + Results */}
-                            <div className="flex flex-col h-full bg-black/20 rounded-xl border border-white/10 overflow-hidden shadow-inner">
-                                <div className="p-2.5 sm:p-3 md:p-4 border-b border-white/10 bg-white/5">
-                                    <h3 className="font-bold text-sm sm:text-base md:text-lg text-white flex items-center gap-2">
-                                        <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-green-500"></span>
-                                        Question Bank
-                                    </h3>
-                                    <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">Filter and select questions to add</p>
+                            <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--input-bg)] border border-[var(--border-color)]">
+                                <div className="flex-1 pr-3">
+                                    <span className="text-sm font-semibold text-gray-200">Shuffle Test Cases</span>
+                                    <p className="text-xs muted mt-0.5">Randomize test case order for coding questions</p>
                                 </div>
-
-                                {/* Filter controls */}
-                                <div className="p-2.5 sm:p-3 border-b border-white/10 bg-black/10 flex items-center gap-2">
-                                    <input
-                                        type="number"
-                                        placeholder="Marks"
-                                        value={filterMarks}
-                                        onChange={e => setFilterMarks(e.target.value)}
-                                        className="w-20 bg-[#27272a] border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500/60 transition-colors"
-                                    />
-                                    <select
-                                        value={filterType}
-                                        onChange={e => setFilterType(e.target.value)}
-                                        className="flex-1 bg-[#27272a] border border-white/10 rounded-lg px-2 py-1.5 text-xs text-gray-300 focus:outline-none focus:border-amber-500/60 transition-colors"
-                                    >
-                                        <option value="">----------</option>
-                                        <option value="mcq">Single Correct Choice</option>
-                                        <option value="mcc">Multiple Correct Choices</option>
-                                        <option value="code">Code</option>
-                                        <option value="assignment_upload">Assignment Upload</option>
-                                        <option value="integer">Answer in Integer</option>
-                                        <option value="string">Answer in String</option>
-                                        <option value="float">Answer in Float</option>
-                                        <option value="arrange">Arrange in Order</option>
-                                    </select>
-                                    
-                                    <button
-                                        onClick={handleSearchQPaper}
-                                        disabled={loadingQuestionPaper}
-                                        className="px-3 py-1.5 bg-green-600 hover:bg-green-700 rounded-lg text-xs font-bold transition active:scale-95 disabled:opacity-50 flex items-center gap-1.5 flex-shrink-0"
-                                    >
-                                        {loadingQuestionPaper ? <FaSync className="animate-spin w-3 h-3" /> : <FaSearch className="w-3 h-3" />}
-                                        Find
-                                    </button>
-                                </div>
-
-                                {/* Results */}
-                                <div className="flex-1 overflow-y-auto p-2 sm:p-2.5 md:p-3 space-y-1.5 sm:space-y-2 custom-scrollbar">
-                                    {availableQuestions.length > 0 ? (
-                                        availableQuestions.map(q => (
-                                            <div
-                                                key={q.id}
-                                                onClick={() => toggleQPaperSelection(q.id, selectedPoolQs, setSelectedPoolQs)}
-                                                className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all border ${
-                                                    selectedPoolQs.includes(q.id)
-                                                    ? 'bg-green-600/20 border-green-500/50'
-                                                    : 'bg-[#27272a] border-white/5 hover:border-white/10'
-                                                }`}
-                                            >
-                                                <div className="w-8 h-8 rounded flex items-center justify-center flex-shrink-0 bg-green-500/10 text-green-400">
-                                                    <FaList className="w-3.5 h-3.5" />
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="font-medium text-xs sm:text-sm text-gray-300 truncate">{q.summary || 'Untitled Question'}</div>
-                                                    <div className="flex items-center gap-2 mt-0.5">
-                                                        <span className="text-[10px] uppercase font-bold text-gray-600 bg-black/30 px-1.5 py-0.5 rounded">{q.type}</span>
-                                                        <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">{q.points} pts</span>
-                                                    </div>
-                                                </div>
-                                                <input type="radio" readOnly checked={selectedPoolQs.includes(q.id)} className="w-4 h-4 text-green-500 bg-gray-700 border-gray-600 focus:ring-green-500 focus:ring-offset-0 flex-shrink-0" />
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <div className="h-full flex flex-col items-center justify-center text-gray-500 opacity-50 py-8 sm:py-12">
-                                            <FaSearch className="w-6 h-6 sm:w-8 sm:h-8 mb-2" />
-                                            <p className="text-xs sm:text-sm">No results yet</p>
-                                            <p className="text-[10px] sm:text-xs mt-1">Use filters above and click Find</p>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Right Footer: Add button(s) */}
-
-                                
-
-                                
-                                <div className="flex items-center justify-between p-4 border-t border-white/10 bg-white/5">
-                                    {qPaperTab === 'FIXED' && (
-                                        
-                                        <button
-                                            onClick={handleAddFixed}
-                                            disabled={!selectedPoolQs.length || loadingQuestionPaper}
-                                            className="px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 bg-green-600 hover:bg-green-700 rounded-lg text-xs sm:text-sm font-medium transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 flex-shrink-0"
-                                        >
-                                            <FaPlus className="w-3 h-3 inline mr-1" />
-                                            Add {selectedPoolQs.length > 0 ? selectedPoolQs.length : ''} to Fixed
-                                        </button>
-                                    )}
-                                    
-                                    {qPaperTab === 'RANDOM' && (
-                                        <div className="w-full flex items-center justify-between ">
-                                            <button
-                                                onClick={handleAddRandomSet}
-                                                disabled={!selectedPoolQs.length || loadingQuestionPaper || !randomSetCount}
-                                                className="px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 bg-green-600 hover:bg-green-700 rounded-lg text-xs sm:text-sm font-medium transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 flex-shrink-0"
-                                            >
-                                                <FaRandom className="w-3 h-3 inline mr-1" />
-                                                Pick {randomSetCount || 'N'} from {selectedPoolQs.length > 0 ? selectedPoolQs.length : '0'}
-                                            </button>
-                                            <input
-                                                type="number"
-                                                placeholder="Pick N"
-                                                title="Number of random questions to pick from selected"
-                                                value={randomSetCount}
-                                                onChange={e => setRandomSetCount(e.target.value)}
-                                                className="w-24 bg-[#27272a] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500/60 transition-colors flex-shrink-0 text-center"
-                                                min="1"
-                                                max={selectedPoolQs.length || 1}
-                                            />
-                                        </div>
-                                    )}
-                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setShuffleTestcases(prev => !prev)}
+                                    className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-[var(--bg-primary)] ${shuffleTestcases ? 'bg-amber-600' : 'bg-gray-600'
+                                        }`}
+                                >
+                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${shuffleTestcases ? 'translate-x-6' : 'translate-x-1'}`} />
+                                </button>
                             </div>
                         </div>
-                    )}
-                    </>
-                )}
-            </div>
-
-            {/* Shuffle Toggles — always visible below tab bar, above body */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 px-4 sm:px-6 pb-3 bg-[#18181b] border-b border-white/5">
-                <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--input-bg)] border border-[var(--border-color)]">
-                    <div className="flex-1 pr-3">
-                        <span className="text-sm font-semibold text-gray-200">Shuffle Questions</span>
-                        <p className="text-xs muted mt-0.5">Randomize question order for each attempt</p>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={() => setShuffleQuestions(prev => !prev)}
-                        className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-[var(--bg-primary)] ${
-                            shuffleQuestions ? 'bg-amber-600' : 'bg-gray-600'
-                        }`}
-                    >
-                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${shuffleQuestions ? 'translate-x-6' : 'translate-x-1'}`} />
-                    </button>
-                </div>
-                <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--input-bg)] border border-[var(--border-color)]">
-                    <div className="flex-1 pr-3">
-                        <span className="text-sm font-semibold text-gray-200">Shuffle Test Cases</span>
-                        <p className="text-xs muted mt-0.5">Randomize test case order for coding questions</p>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={() => setShuffleTestcases(prev => !prev)}
-                        className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-[var(--bg-primary)] ${
-                            shuffleTestcases ? 'bg-amber-600' : 'bg-gray-600'
-                        }`}
-                    >
-                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${shuffleTestcases ? 'translate-x-6' : 'translate-x-1'}`} />
-                    </button>
-                </div>
-            </div>
                     </div>
                 </div>
             )}
@@ -1847,41 +1828,38 @@ const CourseModules = () => {
 
                         return (
                             <div
-                            key={module.id}
-                            style={{ zIndex: openDropdownId === module.id ? 9999 : 10 }}
-                            className={`
+                                key={module.id}
+                                style={{ zIndex: openDropdownId === module.id ? 9999 : 10 }}
+                                className={`
                                 relative border-2 hover:shadow-lg transition-all duration-300 group bg-[var(--card-bg)] rounded-xl
                                 ${isExpanded ? 'border-blue-500/70 dark:border-blue-500/50 bg-[var(--surface-2)]' : 'border-[var(--border-color)] hover:border-[var(--border-strong)] bg-[var(--surface)]'}
                             `}
-                        >
+                            >
                                 {/* Module Row Header */}
                                 <div className="p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
 
                                     {/* Info Section */}
                                     <div className="flex-1 min-w-0 flex items-start sm:items-center gap-4">
                                         {/* Icon Box */}
-                                        <div className={`p-3 rounded-xl shrink-0 transition-all duration-300 border-2 shadow-lg ${
-                                            isExpanded
-                                                ? 'bg-gradient-to-br from-blue-600 to-blue-500 border-blue-400 text-white'
-                                                : 'bg-[var(--input-bg)] border-[var(--border-color)] text-gray-600 dark:text-gray-400'
-                                        }`}>
+                                        <div className={`p-3 rounded-xl shrink-0 transition-all duration-300 border-2 shadow-lg ${isExpanded
+                                            ? 'bg-gradient-to-br from-blue-600 to-blue-500 border-blue-400 text-white'
+                                            : 'bg-[var(--input-bg)] border-[var(--border-color)] text-gray-600 dark:text-gray-400'
+                                            }`}>
                                             <FaLayerGroup className="w-5 h-5" />
                                         </div>
 
                                         {/* Text Info */}
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                                <h3 className={`font-bold text-base sm:text-lg truncate group-hover:text-blue-500 transition-colors ${
-                                                    isExpanded ? 'text-blue-600 dark:text-blue-400' : 'text-[var(--text-primary)]'
-                                                }`}>
+                                                <h3 className={`font-bold text-base sm:text-lg truncate group-hover:text-blue-500 transition-colors ${isExpanded ? 'text-blue-600 dark:text-blue-400' : 'text-[var(--text-primary)]'
+                                                    }`}>
                                                     {module.name}
                                                 </h3>
                                                 <span
-                                                    className={`text-[10px] px-2 py-0.5 rounded-md border-2 uppercase font-bold tracking-wider whitespace-nowrap flex-shrink-0 transition-all duration-200 shadow-md ${
-                                                        module.active
-                                                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 shadow-emerald-500/20'
-                                                            : 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30 shadow-orange-500/20'
-                                                    }`}
+                                                    className={`text-[10px] px-2 py-0.5 rounded-md border-2 uppercase font-bold tracking-wider whitespace-nowrap flex-shrink-0 transition-all duration-200 shadow-md ${module.active
+                                                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 shadow-emerald-500/20'
+                                                        : 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30 shadow-orange-500/20'
+                                                        }`}
                                                 >
                                                     {module.active ? 'Active' : 'Inactive'}
                                                 </span>
@@ -1896,7 +1874,7 @@ const CourseModules = () => {
                                                     <FaBook className="w-3 h-3" />
                                                     <span>{module.units_count} unit{module.units_count !== 1 ? 's' : ''}</span>
                                                 </div>
-                                                <span>•</span>
+
                                                 <span>Order: {module.order}</span>
                                             </div>
                                         </div>
@@ -1948,11 +1926,10 @@ const CourseModules = () => {
                                         <div className="relative flex-shrink-0 z-[100]" ref={openDropdownId === module.id ? dropdownRef : null}>
                                             <button
                                                 onClick={() => toggleDropdown(module.id)}
-                                                className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-300 border-2 ${
-                                                    openDropdownId === module.id
-                                                        ? 'bg-[var(--input-bg)] border-[var(--border-strong)] text-[var(--text-primary)]'
-                                                        : 'bg-[var(--input-bg)] border-[var(--border-color)] text-[var(--text-muted)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]'
-                                                }`}
+                                                className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-300 border-2 ${openDropdownId === module.id
+                                                    ? 'bg-[var(--input-bg)] border-[var(--border-strong)] text-[var(--text-primary)]'
+                                                    : 'bg-[var(--input-bg)] border-[var(--border-color)] text-[var(--text-muted)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]'
+                                                    }`}
                                             >
                                                 <FaEllipsisV className="w-3.5 h-3.5" />
                                             </button>
@@ -1992,11 +1969,10 @@ const CourseModules = () => {
                                         {/* Toggle CTA */}
                                         <button
                                             onClick={() => toggleModule(module.id)}
-                                            className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 border-2 flex-shrink-0 ${
-                                                isExpanded
-                                                    ? 'bg-gradient-to-br from-blue-600 to-blue-500 text-white border-blue-400 shadow-lg shadow-blue-500/50 scale-110'
-                                                    : 'bg-[var(--input-bg)] text-[var(--text-muted)] border-[var(--border-color)] hover:bg-[var(--border-subtle)] hover:text-[var(--text-primary)] hover:border-[var(--border-strong)]'
-                                            }`}
+                                            className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 border-2 flex-shrink-0 ${isExpanded
+                                                ? 'bg-gradient-to-br from-blue-600 to-blue-500 text-white border-blue-400 shadow-lg shadow-blue-500/50 scale-110'
+                                                : 'bg-[var(--input-bg)] text-[var(--text-muted)] border-[var(--border-color)] hover:bg-[var(--border-subtle)] hover:text-[var(--text-primary)] hover:border-[var(--border-strong)]'
+                                                }`}
                                         >
                                             {isExpanded ? <FaChevronUp size={14} /> : <FaChevronDown size={14} />}
                                         </button>
@@ -2019,13 +1995,12 @@ const CourseModules = () => {
                                                     >
                                                         <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
                                                             {/* Type Icon */}
-                                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center border-2 flex-shrink-0 ${
-                                                                unit.type === 'lesson'
-                                                                    ? 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/30'
-                                                                    : unit.is_exercise
-                                                                        ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30'
-                                                                        : 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/30'
-                                                            }`}>
+                                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center border-2 flex-shrink-0 ${unit.type === 'lesson'
+                                                                ? 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/30'
+                                                                : unit.is_exercise
+                                                                    ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30'
+                                                                    : 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/30'
+                                                                }`}>
                                                                 {unit.type === 'lesson' ? (
                                                                     <FaVideo className="w-4 h-4" />
                                                                 ) : unit.is_exercise ? (
@@ -2043,13 +2018,12 @@ const CourseModules = () => {
                                                                     {unit.name || `${unit.type} #${unit.id}`}
                                                                 </div>
                                                                 <div className="text-xs muted flex items-center gap-2 mt-0.5">
-                                                                    <span className={`uppercase font-bold text-[10px] px-1.5 py-0.5 rounded border ${
-                                                                        unit.type === 'lesson'
-                                                                            ? 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/30'
-                                                                            : unit.is_exercise
-                                                                                ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30'
-                                                                                : 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/30'
-                                                                    }`}>
+                                                                    <span className={`uppercase font-bold text-[10px] px-1.5 py-0.5 rounded border ${unit.type === 'lesson'
+                                                                        ? 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/30'
+                                                                        : unit.is_exercise
+                                                                            ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30'
+                                                                            : 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/30'
+                                                                        }`}>
                                                                         {unit.type === 'lesson' ? 'LESSON' : unit.is_exercise ? 'EXERCISE' : 'QUIZ'}
                                                                     </span>
                                                                     <span className="text-[11px] font-mono">ORDER #{unit.order}</span>

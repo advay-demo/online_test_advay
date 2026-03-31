@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import useStudentForumStore from '../../store/student/forumStore';
 import useManageCourseStore from '../../store/student/manageCourseStore';
-import { FaTimes, FaPaperPlane, FaComments, FaEllipsisV, FaTrash } from 'react-icons/fa';
+import { FaTimes, FaPaperPlane, FaComments, FaEllipsisV, FaTrash, FaBook, FaVideo, FaUser, FaCalendar } from 'react-icons/fa';
 
 export default function CourseDiscussion({ courseId, showAddPostModal, setShowAddPostModal, closeCreatePost }) {
   const {
@@ -78,10 +78,10 @@ export default function CourseDiscussion({ courseId, showAddPostModal, setShowAd
   // Delete Post (only for Course Forum posts owned by student)
   const handleDelete = async (post) => {
     setActionMenuOpen(null);
-    
+
     if (window.confirm(`Are you sure you want to delete the post "${post.title}"?`)) {
       await deleteCoursePost(courseId, post.id);
-      
+
       if (selectedPostId === post.id) {
         setSelectedPostId(null);
         clearComments();
@@ -231,11 +231,10 @@ export default function CourseDiscussion({ courseId, showAddPostModal, setShowAd
             <button
               key={tab}
               onClick={() => setActiveForumTab(tab)}
-              className={`flex-1 sm:flex-none px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg text-[11px] sm:text-sm font-bold transition-all duration-300 whitespace-nowrap ${
-                activeForumTab === tab
-                  ? 'bg-gradient-to-r from-cyan-600 to-blue-500 text-white shadow-lg shadow-cyan-600/30 sm:scale-105 border border-cyan-400/50 sm:border-2'
-                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--border-subtle)] border border-transparent sm:border-2'
-              }`}
+              className={`flex-1 sm:flex-none px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg text-[11px] sm:text-sm font-bold transition-all duration-300 whitespace-nowrap ${activeForumTab === tab
+                ? 'bg-gradient-to-r from-cyan-600 to-blue-500 text-white shadow-lg shadow-cyan-600/30 sm:scale-105 border border-cyan-400/50 sm:border-2'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--border-subtle)] border border-transparent sm:border-2'
+                }`}
             >
               {tab}
             </button>
@@ -244,51 +243,67 @@ export default function CourseDiscussion({ courseId, showAddPostModal, setShowAd
       </div>
 
       {/* Posts List */}
-      <div className="p-2 sm:p-5 bg-[var(--surface)] rounded-xl border-2 border-[var(--border-strong)] shadow-lg mt-4 space-y-8">
+      <div className="p-3 sm:p-4 bg-[var(--surface)] rounded-xl border-2 border-[var(--border-strong)] mt-2 space-y-8">
         <div>
           <div className="flex items-center gap-3 mb-4">
             <div className="w-8 h-8 rounded-lg bg-blue-500/15 border border-blue-500/30 flex items-center justify-center">
-              <FaComments className="text-blue-400 w-4 h-4" />
+              {activeForumTab === 'Course Forum' ? (
+                <FaBook className="text-blue-400 w-4 h-4" />
+              ) : (
+                <FaVideo className="text-blue-400 w-4 h-4" />
+              )}
             </div>
             <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)]">
-              {activeForumTab === 'Course Forum' ? 'Course Discussions' : 'Lesson Discussions'} 
+              {activeForumTab === 'Course Forum' ? 'Course Discussions' : 'Lesson Discussions'}
               <span className="ml-2 text-blue-500 dark:text-blue-400">({posts.length})</span>
             </h3>
           </div>
           {posts.length === 0 ? (
-             <div className="text-center py-12 border-2 border-dashed border-[var(--border-color)] rounded-xl bg-[var(--input-bg)]">
-                <div className="mb-4 p-4 bg-blue-500/10 rounded-full w-16 h-16 mx-auto flex items-center justify-center">
-                  <FaComments className="text-blue-400 w-8 h-8" />
-                </div>
-                <p className="text-[var(--text-primary)] font-semibold">No posts yet.</p>
-                {activeForumTab === 'Course Forum' && (
-                  <p className="text-sm mt-2 muted">Be the first to start a topic!</p>
+            <div className="text-center py-12 border-2 border-dashed border-[var(--border-color)] rounded-xl bg-[var(--input-bg)]">
+              <div className="mb-4 p-4 bg-blue-500/10 rounded-full w-16 h-16 mx-auto flex items-center justify-center">
+                {activeForumTab === 'Course Forum' ? (
+                  <FaBook className="text-blue-400 w-8 h-8" />
+                ) : (
+                  <FaVideo className="text-blue-400 w-8 h-8" />
                 )}
-             </div>
+              </div>
+              <p className="text-[var(--text-primary)] font-semibold">No posts yet.</p>
+              {activeForumTab === 'Course Forum' && (
+                <p className="text-sm mt-2 muted">Be the first to start a topic!</p>
+              )}
+            </div>
           ) : (
             <div className="space-y-4">
               {posts.map((post) => (
                 <div
                   key={post.id}
-                  className="card p-2 sm:p-5 flex flex-col gap-2 border-2 border-[var(--border-color)] hover:border-blue-500/30 rounded-xl group shadow-md hover:shadow-xl transition-all duration-300"
+                  className="card p-2 sm:p-5 flex flex-col gap-2 border-2 border-[var(--border-medium)] hover:shadow-lg hover:border-blue-500/70 dark:hover:border-blue-500/50 transition-all duration-300 group bg-[var(--surface-2)] hover:shadow-md hover:bg-white/[0.03] transition-all rounded-xl"
                 >
                   <div className="flex flex-row flex-wrap items-center gap-3 sm:gap-4">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-blue-500/15 to-purple-500/10 flex items-center justify-center flex-shrink-0 border-2 border-blue-500/30 group-hover:border-blue-500/50 group-hover:scale-110 transition-all duration-300 shadow-lg group-hover:shadow-blue-500/20">
-                      <FaPaperPlane className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
-                    </div>
+
                     <div className="flex-1 min-w-0 w-full sm:w-auto">
+
                       <div className="flex flex-wrap items-center gap-2 mb-1">
-                        <h3 className="font-bold text-base sm:text-lg line-clamp-1 group-hover:text-blue-400 transition-colors duration-200 text-[var(--text-primary)]">
-                          {post.title}
-                        </h3>
-                        <span className="text-xs text-[var(--text-secondary)] ml-2">
-                           by {post.anonymous ? (post.is_me ? "Anonymous (You)" : "Anonymous") : post.author}
-                        </span>
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-blue-500/15 to-purple-500/10 flex items-center justify-center flex-shrink-0 border-2 border-blue-500/30 group-hover:border-blue-500/50 group-hover:scale-110 transition-all duration-300 shadow-lg group-hover:shadow-blue-500/20">
+                          <FaPaperPlane className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
+                        </div>
+                        <div>
+                          <div>
+                            <h3 className="font-bold text-base sm:text-lg line-clamp-1 group-hover:text-blue-400 transition-colors duration-200 text-[var(--text-primary)]">
+                              {post.title}
+                            </h3>
+                            <p className="text-xs sm:text-sm muted">
+                              {post.description}
+                            </p>
+                          </div>
+                        </div>
+
                       </div>
                       <div
                         className="text-xs sm:text-sm text-[var(--text-secondary)] mb-2 sm:mb-3 line-clamp-2"
-                        dangerouslySetInnerHTML={{ __html: post.description }}
+
                       />
+
                       {post.image && (
                         <div className="my-2">
                           <img
@@ -299,48 +314,59 @@ export default function CourseDiscussion({ courseId, showAddPostModal, setShowAd
                           />
                         </div>
                       )}
-                      <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
-                        {post.created_at && (
-                          <span className="ml-2">
-                            {new Date(post.created_at).toLocaleString()}
+
+                      <div className="flex items-center justify-between sm:justify-start gap-4 text-xs text-[var(--text-muted)]">
+
+                        <div className="flex items-center">
+                          <FaUser className="w-3 h-3" />
+                          <span className="text-xs text-[var(--text-secondary)] ml-2">
+                            {post.anonymous ? (post.is_me ? "Anonymous (You)" : "Anonymous") : post.author}
                           </span>
+                        </div>
+
+                        {post.created_at && (
+                          <div className="flex items-center">
+                            <FaCalendar className="w-3 h-3" />
+                            <span className="ml-1">
+                              {new Date(post.created_at).toLocaleString()}
+                            </span>
+                          </div>
                         )}
                       </div>
                     </div>
+
                     <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto sm:self-start mt-2 sm:mt-0">
                       <button
                         onClick={() => handleShowComments(post)}
-                        className="w-full sm:w-auto px-3 sm:px-4 py-2 border-2 border-[var(--border-color)] hover:border-blue-500/50 rounded-xl text-xs sm:text-sm font-bold hover:bg-gradient-to-r hover:from-blue-500/10 hover:to-purple-500/10 active:scale-95 transition-all duration-300 text-center whitespace-nowrap text-[var(--text-primary)] shadow-md hover:shadow-lg"
+                        className="w-full sm:w-auto px-3 sm:px-4 py-2 border border-[var(--border-color)] rounded-lg text-xs sm:text-sm font-medium hover:bg-[var(--input-bg)] active:scale-95 transition-all duration-200 text-center whitespace-nowrap"
                       >
                         {selectedPostId === post.id ? 'Hide Comments' : 'Comments'}
                       </button>
-                      
-                      {/* Only show delete for Course Forum posts owned by student */}
-                      {activeForumTab === 'Course Forum' && post.is_me && (
-                        <div className="relative post-action-menu">
-                          <button
-                            className="p-2 border-2 border-[var(--border-color)] hover:border-purple-500/50 rounded-xl hover:bg-gradient-to-r hover:from-purple-500/10 hover:to-pink-500/10 active:scale-95 transition-all duration-300 text-[var(--text-muted)] hover:text-[var(--text-primary)] shadow-md hover:shadow-lg"
-                            onClick={() => setActionMenuOpen(actionMenuOpen === post.id ? null : post.id)}
-                            aria-label="Actions"
-                            tabIndex={0}
-                          >
-                            <FaEllipsisV className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                          </button>
-                          {actionMenuOpen === post.id && (
-                            <div className="absolute right-0 mt-2 z-50 w-32 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg shadow-lg py-1 flex flex-col text-sm animate-fade-in">
-                              <button
-                                className="flex items-center gap-2 px-4 py-2 text-red-500 hover:bg-red-500/10 transition"
-                                onClick={() => handleDelete(post)}
-                              >
-                                <FaTrash className="w-4 h-4" /> Delete
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      )}
+
+                      <div className="relative post-action-menu">
+                        <button
+                          className="p-2 border border-[var(--border-color)] rounded-lg hover:bg-[var(--input-bg)] active:scale-95 transition-all duration-200 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                          onClick={() => setActionMenuOpen(actionMenuOpen === post.id ? null : post.id)}
+                          aria-label="Actions"
+                          tabIndex={0}
+                        >
+                          <FaEllipsisV className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        </button>
+
+                        {actionMenuOpen === post.id && (
+                          <div className="absolute right-0 mt-2 z-50 w-32 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg shadow-lg py-1 flex flex-col text-sm animate-fade-in">
+                            <button
+                              className="flex items-center gap-2 px-4 py-2 text-red-500 hover:bg-red-500/10 transition"
+                              onClick={() => handleDelete(post)}
+                            >
+                              <FaTrash className="w-4 h-4" /> Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                  
+
                   {/* Comments Section */}
                   {selectedPostId === post.id && (
                     <div className="mt-4 border-t-2 border-[var(--border-subtle)] pt-4">
@@ -378,12 +404,12 @@ export default function CourseDiscussion({ courseId, showAddPostModal, setShowAd
                                 {comment.is_me && (
                                   <div className="absolute top-2 right-2">
                                     <button
-                                        className="p-1 rounded hover:bg-red-100/20 text-red-500"
-                                        onClick={() => handleDeleteComment(comment)}
-                                        aria-label="Delete Comment"
-                                        title="Delete Comment"
+                                      className="p-1 rounded hover:bg-red-100/20 text-red-500"
+                                      onClick={() => handleDeleteComment(comment)}
+                                      aria-label="Delete Comment"
+                                      title="Delete Comment"
                                     >
-                                        <FaTrash />
+                                      <FaTrash />
                                     </button>
                                   </div>
                                 )}

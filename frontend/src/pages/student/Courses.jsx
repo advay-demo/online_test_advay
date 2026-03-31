@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FaBook, FaUserFriends, FaEllipsisV, FaLayerGroup } from 'react-icons/fa';
+import { FaBook, FaUserFriends, FaEllipsisV, FaLayerGroup, FaCalendar } from 'react-icons/fa';
 import { VscLibrary } from "react-icons/vsc";
 import Sidebar from '../../components/layout/Sidebar';
 import Header from '../../components/layout/Header';
@@ -15,8 +15,8 @@ const CourseStudent = () => {
     fetchCourses();
   }, [fetchCourses]);
 
-  
-  const getCourseStatus = (course) => { 
+
+  const getCourseStatus = (course) => {
     if (course.modules && course.modules.length > 0) {
       return course.modules.some((mod) => mod.active) ? 'Active' : 'Inactive';
     }
@@ -50,7 +50,7 @@ const CourseStudent = () => {
           <CourseActionButtons activeButton="enrolled" />
 
           {/* Course Library Section */}
-          <div className="card p-4 sm:p-5 lg:p-6 min-h-[600px] border-2 border-[var(--border-strong)] shadow-lg rounded-2xl">
+          <div className="card-strong p-4 sm:p-5 lg:p-6 min-h-[600px] border-2 border-[var(--border-strong)] shadow-lg rounded-2xl">
             <div className="mb-5 sm:mb-7 pb-4 border-b-2 border-[var(--border-subtle)] flex items-center gap-3">
               <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-blue-500/10 border-2 border-blue-500/30 flex items-center justify-center flex-shrink-0">
                 <VscLibrary className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
@@ -95,7 +95,7 @@ const CourseStudent = () => {
                     return (
                       <div
                         key={course.id}
-                        className="card-strong p-4 sm:p-5 border-2 border-[var(--border-medium)] hover:shadow-lg hover:border-blue-500/70 dark:hover:border-blue-500/50 transition-all duration-300 group bg-[var(--card-bg)] rounded-xl"
+                        className="card-strong p-4 sm:p-5 border-2 border-[var(--border-medium)] hover:shadow-lg hover:border-blue-500/70 dark:hover:border-blue-500/50 transition-all duration-300 group rounded-xl hover:shadow-md bg-[var(--surface)]"
                       >
                         <div className="flex flex-row flex-wrap items-center gap-3 sm:gap-4">
                           {/* Icon */}
@@ -135,14 +135,16 @@ const CourseStudent = () => {
                                 <span>{item.completion_percentage ?? 0}% complete</span>
                               </div>
                               {course.created_on && (
-                                <>
-                                  <div className="hidden sm:block text-white/20">|</div>
-                                  <div>{new Date(course.created_on).toLocaleDateString()}</div>
-                                </>
+
+                                <div className="flex items-center gap-1.5">
+                                  <FaCalendar className="w-2 h-2 sm:w-2.5 sm:h-2.5 flex-shrink-0" />
+                                  <span>{new Date(course.created_on).toLocaleDateString()}</span>
+                                </div>
+
                               )}
                             </div>
                           </div>
-                          
+
                           <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto sm:self-start">
                             <Link
                               to={`/courses/${course.id}/manage`}
@@ -150,7 +152,7 @@ const CourseStudent = () => {
                             >
                               Manage
                             </Link>
-                            
+
                           </div>
                         </div>
                       </div>

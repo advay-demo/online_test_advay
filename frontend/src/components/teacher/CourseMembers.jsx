@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { FaUser, FaTrash, FaCheck } from 'react-icons/fa';
+import { FaUser, FaTrash, FaCheck, FaUsers } from 'react-icons/fa';
 import { getCourseTeachers, removeTeachersFromCourse } from '../../api/api';
 
 const CourseMembers = () => {
@@ -76,8 +76,14 @@ const CourseMembers = () => {
 
     return (
         <div>
-            <div className="text-cyan-400 text-sm sm:text-base font-medium mb-6 flex items-center gap-2">
-                TEACHER(S)/TA(S) <span>&rarr;</span>
+            <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/15 to-blue-500/15 border-2 border-cyan-500/30 flex items-center justify-center ">
+                    <FaUsers className="w-5 h-5 text-cyan-400" />
+                </div>
+                <div>
+                    <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)]">Course Members</h3>
+                    <p className="text-xs muted">Manage your teaching staff</p>
+                </div>
             </div>
 
             {/* Message Display */}
@@ -140,7 +146,7 @@ const CourseMembers = () => {
                     <button
                         type="submit"
                         disabled={removing || selectedTeachers.length === 0}
-                        className="px-6 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-6 py-2.5 bg-gradient-to-r from-red-600 to-red-500 text-white rounded-xl hover:from-red-700 hover:to-red-600 shadow-lg shadow-red-500/20 transition-all duration-300 font-bold text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <FaTrash className="w-4 h-4" />
                         {removing ? 'Removing...' : 'Remove Teachers'}

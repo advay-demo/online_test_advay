@@ -123,12 +123,12 @@ const ManageCourse = () => {
                         <p className="text-sm muted">Create, manage and analyze your courses</p>
                     </div>
 
-                    <div className="card-strong p-3 sm:p-6 min-h-[400px] sm:min-h-[600px] w-full max-w-full overflow-x-auto border border-[var(--border-strong)] shadow-lg rounded-2xl">
+                    <div className="card-strong p-3 sm:p-6 min-h-[400px] sm:min-h-[600px] w-full max-w-full overflow-x-auto border-2 border-[var(--border-strong)] shadow-lg rounded-2xl">
                         <div className="flex sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-4">
-                            <div className="flex items-center gap-3 sm:gap-4">
+                            <div className="flex items-start gap-4 mb-4">
                                 <Link
                                     to="/teacher/courses"
-                                    className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[var(--input-bg)] border border-[var(--border-color)] flex items-center justify-center hover:bg-[var(--border-subtle)] transition flex-shrink-0"
+                                    className="w-10 h-10 rounded-xl bg-[var(--input-bg)] border-2 border-[var(--border-strong)] flex items-center justify-center hover:border-blue-500/40 hover:bg-blue-500/5 transition-all duration-300 flex-shrink-0 active:scale-95"
                                 >
                                     <FaChevronLeft className="w-4 h-4" />
                                 </Link>
@@ -172,11 +172,10 @@ const ManageCourse = () => {
                                     <button
                                         key={tab}
                                         onClick={() => setActiveTab(tab)}
-                                        className={`flex-1 sm:flex-none px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg text-[11px] sm:text-sm font-bold transition-all duration-300 whitespace-nowrap ${
-                                            activeTab === tab
+                                        className={`flex-1 sm:flex-none px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg text-[11px] sm:text-sm font-bold transition-all duration-300 whitespace-nowrap ${activeTab === tab
                                             ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-600/30 sm:scale-105 border border-blue-400/50 sm:border-2'
                                             : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--border-subtle)] border border-transparent sm:border-2'
-                                        }`}
+                                            }`}
                                     >
                                         {tab}
                                     </button>
@@ -190,9 +189,7 @@ const ManageCourse = () => {
                             {activeTab === 'Design Course' && <CourseDesign />}
                             {activeTab === 'Analytics' && (
                                 <div>
-                                    <div className="text-cyan-500 dark:text-cyan-400 text-xs sm:text-sm font-medium mb-4 sm:mb-6 flex items-center gap-2">
-                                        COURSE ANALYTICS <span>&rarr;</span>
-                                    </div>
+
                                     <CourseAnalytics analytics={analytics} loading={loadingAnalytics} />
                                 </div>
                             )}

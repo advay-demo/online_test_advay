@@ -32,25 +32,10 @@ urlpatterns = [
     # View AnswerPaper
     url(r'view_answerpaper/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/$', views.view_answerpaper_api, name='api_view_answerpaper'), #ok
     
-    # Quiz Participation
-    url(r'start_quiz/(?P<course_id>[0-9]+)/(?P<quiz_id>[0-9]+)/$', views.StartQuiz.as_view(), name='start_quiz'),
-    url(r'validate/(?P<answerpaper_id>[0-9]+)/(?P<question_id>[0-9]+)/$', views.AnswerValidator.as_view(), name='validators'),
-    url(r'quit/(?P<answerpaper_id>\d+)/$', views.QuitQuiz.as_view(), name="quit_quiz"),
-    url(r'validate/(?P<uid>[0-9]+)/$', views.AnswerValidator.as_view(), name='validator'),
-    url(r'student/answerpapers/(?P<answerpaper_id>[0-9]+)/submission/$', views.quiz_submission_status, name='quiz_submission_status'),
-
-
-
-
-
     # Course Catalog & Enrollment
     url(r'student/courses/catalog/$', views.course_catalog, name='course_catalog'),
     url(r'student/courses/enrolled/$', views.enrolled_courses, name='enrolled_courses'),
     url(r'student/courses/(?P<course_id>[0-9]+)/enroll/$', views.enroll_course, name='enroll_course'),
-    
-    
-   
-    
     
     # Badges & Insights
     url(r'student/insights/badges/$', views.user_badges, name='user_badges'),
@@ -127,19 +112,17 @@ urlpatterns = [
     url(r'^forum/courses/(?P<course_id>\d+)/comments/(?P<comment_id>\d+)/$', views.LessonForumCommentDetailView.as_view(), name='api_lesson_forum_comment_detail'), #ok
 
     
-   
+   # Quiz Participation
+    url(r'start_quiz/(?P<course_id>[0-9]+)/(?P<quiz_id>[0-9]+)/$', views.StartQuiz.as_view(), name='start_quiz'),
+    url(r'validate/(?P<answerpaper_id>[0-9]+)/(?P<question_id>[0-9]+)/$', views.AnswerValidator.as_view(), name='validators'),
+    url(r'quit/(?P<answerpaper_id>\d+)/$', views.QuitQuiz.as_view(), name="quit_quiz"),
+    url(r'validate/(?P<uid>[0-9]+)/$', views.AnswerValidator.as_view(), name='validator'),
+    url(r'student/answerpapers/(?P<answerpaper_id>[0-9]+)/submission/$', views.quiz_submission_status, name='quiz_submission_status'),
+
+
+
     
-   # for quiz functionality
-    url(r'^quiz/start/(?P<questionpaper_id>\d+)/(?P<module_id>\d+)/(?P<course_id>\d+)/$', views.api_start_quiz),  # First time start (shows intro) //  #teacher : ok
-    url(r'^quiz/start/(?P<attempt_num>\d+)/(?P<module_id>\d+)/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/$', views.api_start_quiz), # Resume with attempt number // #teacher : ok
-    url(r'^quiz/quit/(?P<attempt_num>\d+)/(?P<module_id>\d+)/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/$', views.api_quit_quiz, name='api_quit_quiz'),
-    url(r'^quiz/complete/$', views.api_complete_quiz, name='api_complete_quiz_error'), # Route 1: Error/generic completion (no parameters required)
-    url(r'^quiz/complete/(?P<attempt_num>\d+)/(?P<module_id>\d+)/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/$', views.api_complete_quiz, name='api_complete_quiz'), # Route 2: Normal completion with all parameters
-    url(r'^quiz/check/(?P<q_id>\d+)/(?P<attempt_num>\d+)/(?P<module_id>\d+)/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/$', views.api_check_answer, name='api_check_answer'),
-    url(r'^quiz/skip/(?P<q_id>\d+)/(?P<attempt_num>\d+)/(?P<module_id>\d+)/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/$', views.api_skip_question, name='api_skip_question'),
-    url(r'^quiz/skip/(?P<q_id>\d+)/(?P<next_q>\d+)/(?P<attempt_num>\d+)/(?P<module_id>\d+)/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/$', views.api_skip_question, name='api_skip_question_with_next'),
-
-
+   
     ##============================================================================================================================================================================================
     ##============================================================================================================================================================================================
     
@@ -260,6 +243,18 @@ urlpatterns = [
     url(r'teacher/micromanager/special_revoke/(?P<micromanager_id>\d+)/$', views.revoke_special_attempt, name='revoke_special_attempt'),
 
     
+
+    # for quiz question testing functionality
+    url(r'^quiz/start/(?P<questionpaper_id>\d+)/(?P<module_id>\d+)/(?P<course_id>\d+)/$', views.api_start_quiz),  # First time start (shows intro) //  #teacher : ok
+    url(r'^quiz/start/(?P<attempt_num>\d+)/(?P<module_id>\d+)/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/$', views.api_start_quiz), # Resume with attempt number // #teacher : ok
+    url(r'^quiz/quit/(?P<attempt_num>\d+)/(?P<module_id>\d+)/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/$', views.api_quit_quiz, name='api_quit_quiz'),
+    url(r'^quiz/complete/$', views.api_complete_quiz, name='api_complete_quiz_error'), # Route 1: Error/generic completion (no parameters required)
+    url(r'^quiz/complete/(?P<attempt_num>\d+)/(?P<module_id>\d+)/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/$', views.api_complete_quiz, name='api_complete_quiz'), # Route 2: Normal completion with all parameters
+    url(r'^quiz/check/(?P<q_id>\d+)/(?P<attempt_num>\d+)/(?P<module_id>\d+)/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/$', views.api_check_answer, name='api_check_answer'),
+    url(r'^quiz/skip/(?P<q_id>\d+)/(?P<attempt_num>\d+)/(?P<module_id>\d+)/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/$', views.api_skip_question, name='api_skip_question'),
+    url(r'^quiz/skip/(?P<q_id>\d+)/(?P<next_q>\d+)/(?P<attempt_num>\d+)/(?P<module_id>\d+)/(?P<questionpaper_id>\d+)/(?P<course_id>\d+)/$', views.api_skip_question, name='api_skip_question_with_next'),
+
+
 
 
     

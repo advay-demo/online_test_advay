@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FaArrowUp, FaArrowDown, FaPlus, FaTrash } from 'react-icons/fa';
+import { FaArrowUp, FaArrowDown, FaPlus, FaTrash, FaPuzzlePiece } from 'react-icons/fa';
 import useManageCourseStore from '../../store/manageCourseStore';
 
 const CourseDesign = () => {
@@ -10,7 +10,7 @@ const CourseDesign = () => {
         handleAddModulesToCourse,
         handleRemoveModulesFromCourse,
         handleChangeCourseModuleOrder,
-        handleChangeCourseModulePrerequisiteCompletion,   
+        handleChangeCourseModulePrerequisiteCompletion,
         handleChangeCourseModulePrerequisitePassing,
     } = useManageCourseStore();
 
@@ -113,13 +113,20 @@ const CourseDesign = () => {
     }
 
     return (
-        <div>
-            <div className="text-cyan-400 text-sm sm:text-base font-medium mb-6 flex items-center gap-2">
-                COURSE DESIGN <span>&rarr;</span>
+        <div className='px-1 mb-1'>
+            <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/15 to-blue-500/15 border-2 border-cyan-500/30 flex items-center justify-center ">
+
+                    <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" /></svg>
+                </div>
+                <div>
+                    <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)]">Course Design</h3>
+                    <p className="text-xs muted">Organize your course modules</p>
+                </div>
             </div>
             <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
                 {/* Selected Modules */}
-                <div className="card p-4 sm:p-6 rounded-xl">
+                <div className="card p-4 sm:p-6 border-2 hover:shadow-lg transition-all duration-300 group bg-[var(--card-bg)] rounded-xl border-[var(--border-color)] hover:border-[var(--border-strong)] bg-[var(--surface)]">
                     <div className="mb-3 sm:mb-4">
                         <h4 className="font-bold text-base sm:text-lg mb-1">Selected Modules</h4>
                         <p className="text-xs sm:text-sm muted">Modules currently in this course</p>
@@ -134,11 +141,10 @@ const CourseDesign = () => {
                                 <div key={module.id}>
                                     <div
                                         onClick={() => handleSelectedClick(module.id)}
-                                        className={`flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg cursor-pointer transition active:scale-95 ${
-                                            isSelected
-                                                ? 'bg-blue-600/20 border-2 border-blue-600'
-                                                : 'bg-[var(--surface)] border border-[var(--border-subtle)] hover:border-[var(--border-color)]'
-                                        }`}
+                                        className={`flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg cursor-pointer transition active:scale-95 ${isSelected
+                                            ? 'bg-blue-600/20 border-2 border-blue-600'
+                                            : 'bg-[var(--surface-2)] border border-[var(--border-color)] hover:shadow-md hover:bg-white/[0.03] hover:border-blue-400'
+                                            }`}
                                     >
                                         <input
                                             type="radio"
@@ -157,7 +163,7 @@ const CourseDesign = () => {
                                         style={{ background: 'rgba(0,0,0,0.03)' }}
                                     >
                                         {isSelected && (
-                                            <div className="bg-black/5 rounded-lg p-4 flex flex-col gap-4 shadow-inner border border-[var(--border-subtle)]">
+                                            <div className="bg-black/5 rounded-lg p-4 flex flex-col gap-4 shadow-inner border-2 border-[var(--border-color)]">
                                                 <div className="font-semibold text-sm text-blue-400 mb-1">Prerequisite Options</div>
                                                 <div className="flex items-center gap-3">
                                                     <input
@@ -201,25 +207,25 @@ const CourseDesign = () => {
                         <button
                             onClick={removeModule}
                             disabled={selectedInSelected === null}
-                            className="px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 bg-red-600 hover:bg-red-700 rounded-lg text-xs sm:text-sm font-medium transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 flex-shrink-0"
+                            className="px-4 py-2 border-2 border-red-500/50 hover:bg-red-500/10 text-red-500 rounded-xl font-bold transition-all duration-300 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent text-xs sm:text-sm"
                         >
-                            <FaTrash className="inline mr-1" /> Remove
+                            <FaTrash className="inline" /> Remove
                         </button>
-                        <div className="flex gap-1.5 sm:gap-2">
+                        <div className="flex gap-2">
                             <button
                                 onClick={moveUp}
                                 disabled={selectedInSelected === null}
-                                className="px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 border border-[var(--border-color)] rounded-lg text-xs sm:text-sm font-medium hover:bg-[var(--input-bg)] transition flex items-center justify-center gap-1 sm:gap-1.5 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+                                className="px-4 py-2 rounded-xl border-2 border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--border-subtle)] font-bold transition-all duration-300 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm"
                             >
-                                <FaArrowUp className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                                <FaArrowUp className="w-3 h-3" />
                                 <span className="hidden md:inline">Up</span>
                             </button>
                             <button
                                 onClick={moveDown}
                                 disabled={selectedInSelected === null}
-                                className="px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 border border-[var(--border-color)] rounded-lg text-xs sm:text-sm font-medium hover:bg-[var(--input-bg)] transition flex items-center justify-center gap-1 sm:gap-1.5 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+                                className="px-4 py-2 rounded-xl border-2 border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--border-subtle)] font-bold transition-all duration-300 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm"
                             >
-                                <FaArrowDown className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                                <FaArrowDown className="w-3 h-3" />
                                 <span className="hidden md:inline">Down</span>
                             </button>
                         </div>
@@ -228,23 +234,22 @@ const CourseDesign = () => {
 
 
                 {/* Pool of Modules */}
-                <div className="card p-4 sm:p-6 rounded-xl">
+                <div className="card p-4 sm:p-6 border-2 hover:shadow-lg transition-all duration-300 group bg-[var(--card-bg)] rounded-xl border-[var(--border-color)] hover:border-[var(--border-strong)] bg-[var(--surface)]">
                     <div className="mb-3 sm:mb-4">
                         <h4 className="font-bold text-base sm:text-lg mb-1">Pool of Modules</h4>
                         <p className="text-xs sm:text-sm muted">Available modules to add</p>
                     </div>
                     <div className="space-y-2 sm:space-y-3 mb-3 sm:mb-4"
-                         style={{ maxHeight: '290px', minHeight: '120px', overflowY: 'auto' }}
+                        style={{ maxHeight: '290px', minHeight: '120px', overflowY: 'auto' }}
                     >
                         {localPool.map((module) => (
                             <div
                                 key={module.id}
                                 onClick={() => handlePoolClick(module.id)}
-                                className={`flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg cursor-pointer transition active:scale-95 ${
-                                    selectedInPool === module.id
-                                        ? 'bg-green-600/20 border-2 border-green-600'
-                                        : 'bg-[var(--surface)] border border-[var(--border-subtle)] hover:border-[var(--border-color)]'
-                                }`}
+                                className={`flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg cursor-pointer transition active:scale-95 ${selectedInPool === module.id
+                                    ? 'bg-green-600/20 border-2 border-green-600'
+                                    : 'bg-[var(--surface-2)] border border-[var(--border-color)] hover:shadow-md hover:bg-white/[0.03] hover:border-green-400'
+                                    }`}
                             >
                                 <input
                                     type="radio"
@@ -260,12 +265,12 @@ const CourseDesign = () => {
                         ))}
                         {localPool.length === 0 && (
                             <div className="flex flex-col items-center justify-center py-12 sm:py-16 text-center">
-                            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[var(--surface)] flex items-center justify-center mb-3 sm:mb-4">
-                                <FaPlus className="w-5 h-5 sm:w-6 sm:h-6 text-[var(--text-muted)]" />
-                            </div>
-                            <p className="text-xs sm:text-sm text-muted max-w-[200px]">
-                                All modules are selected
-                            </p>
+                                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[var(--surface)] flex items-center justify-center mb-3 sm:mb-4">
+                                    <FaPlus className="w-5 h-5 sm:w-6 sm:h-6 text-[var(--text-muted)]" />
+                                </div>
+                                <p className="text-xs sm:text-sm text-muted max-w-[200px]">
+                                    All modules are selected
+                                </p>
                             </div>
                         )}
                     </div>
@@ -273,11 +278,11 @@ const CourseDesign = () => {
                         <button
                             onClick={addModule}
                             disabled={selectedInPool === null}
-                            className="px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 bg-green-600 hover:bg-green-700 rounded-lg text-xs sm:text-sm font-medium transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 flex-shrink-0"
+                            className="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white rounded-xl font-bold transition-all duration-300 shadow-lg shadow-green-500/20 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm"
                         >
-                            <FaPlus className="inline mr-1" /> Add
+                            <FaPlus className="inline" /> Add
                         </button>
-                        
+
                     </div>
                 </div>
             </div>
