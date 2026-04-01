@@ -6,7 +6,11 @@ import {
   FaPaperPlane,
   FaComments,
   FaEllipsisV,
-  FaTrash
+  FaTrash,
+  FaBook,
+  FaVideo,
+  FaUser,
+  FaCalendar
 } from 'react-icons/fa';
 
 export default function CourseDiscussionsTab({ courseId, showAddPostModal, setShowAddPostModal, closeCreatePost }) {
@@ -240,11 +244,10 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
             <button
               key={tab}
               onClick={() => setActiveForumTab(tab)}
-              className={`flex-1 sm:flex-none px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg text-[11px] sm:text-sm font-bold transition-all duration-300 whitespace-nowrap ${
-                activeForumTab === tab
-                  ? 'bg-gradient-to-r from-cyan-600 to-blue-500 text-white shadow-lg shadow-cyan-600/30 sm:scale-105 border border-cyan-400/50 sm:border-2'
-                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--border-subtle)] border border-transparent sm:border-2'
-              }`}
+              className={`flex-1 sm:flex-none px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg text-[11px] sm:text-sm font-bold transition-all duration-300 whitespace-nowrap ${activeForumTab === tab
+                ? 'bg-gradient-to-r from-cyan-600 to-blue-500 text-white shadow-lg shadow-cyan-600/30 sm:scale-105 border border-cyan-400/50 sm:border-2'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--border-subtle)] border border-transparent sm:border-2'
+                }`}
             >
               {tab}
             </button>
@@ -252,14 +255,18 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
         </div>
       </div>
 
-      <div className="p-3 sm:p-4 bg-[var(--surface)] rounded-xl border border-[var(--border-subtle)] mt-2 space-y-8">
+      <div className="p-3 sm:p-4 bg-[var(--surface)] rounded-xl border-2 border-[var(--border-strong)] mt-2 space-y-8">
         <div>
           <div className="flex items-center gap-3 mb-4">
             <div className="w-8 h-8 rounded-lg bg-blue-500/15 border border-blue-500/30 flex items-center justify-center">
-              <FaComments className="text-blue-400 w-4 h-4" />
+              {activeForumTab === 'Course Forum' ? (
+                <FaBook className="text-blue-400 w-4 h-4" />
+              ) : (
+                <FaVideo className="text-blue-400 w-4 h-4" />
+              )}
             </div>
             <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)]">
-              {activeForumTab === 'Course Forum' ? 'Course Discussions' : 'Lesson Discussions'} 
+              {activeForumTab === 'Course Forum' ? 'Course Discussions' : 'Lesson Discussions'}
               <span className="ml-2 text-blue-500 dark:text-blue-400">({posts.length})</span>
             </h3>
           </div>
@@ -267,7 +274,11 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
           {posts.length === 0 ? (
             <div className="text-center py-12 border-2 border-dashed border-[var(--border-color)] rounded-xl bg-[var(--input-bg)]">
               <div className="mb-4 p-4 bg-blue-500/10 rounded-full w-16 h-16 mx-auto flex items-center justify-center">
-                <FaComments className="text-blue-400 w-8 h-8" />
+                {activeForumTab === 'Course Forum' ? (
+                  <FaBook className="text-blue-400 w-8 h-8" />
+                ) : (
+                  <FaVideo className="text-blue-400 w-8 h-8" />
+                )}
               </div>
               <p className="text-[var(--text-primary)] font-semibold">No posts yet.</p>
               {activeForumTab === 'Course Forum' && (
@@ -279,24 +290,31 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
               {posts.map((post) => (
                 <div
                   key={post.id}
-                  className="card p-2 sm:p-5 flex flex-col gap-2 border-2 border-[var(--border-color)] hover:border-blue-500/30 rounded-xl group shadow-md hover:shadow-xl transition-all duration-300"
+                  className="card p-2 sm:p-5 flex flex-col gap-2 border-2 border-[var(--border-medium)] hover:shadow-lg hover:border-blue-500/70 dark:hover:border-blue-500/50 transition-all duration-300 group bg-[var(--surface-2)] hover:shadow-md hover:bg-white/[0.03] transition-all rounded-xl"
                 >
                   <div className="flex flex-row flex-wrap items-center gap-3 sm:gap-4">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-blue-500/15 to-purple-500/10 flex items-center justify-center flex-shrink-0 border-2 border-blue-500/30 group-hover:border-blue-500/50 group-hover:scale-110 transition-all duration-300 shadow-lg group-hover:shadow-blue-500/20">
-                      <FaPaperPlane className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
-                    </div>
+
                     <div className="flex-1 min-w-0 w-full sm:w-auto">
+
                       <div className="flex flex-wrap items-center gap-2 mb-1">
-                        <h3 className="font-bold text-base sm:text-lg line-clamp-1 group-hover:text-blue-400 transition-colors duration-200 text-[var(--text-primary)]">
-                          {post.title}
-                        </h3>
-                        <span className="text-xs text-[var(--text-secondary)] ml-2">
-                          by {post.anonymous ? (post.is_me ? "Anonymous (You)" : "Anonymous") : post.author}
-                        </span>
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-blue-500/15 to-purple-500/10 flex items-center justify-center flex-shrink-0 border-2 border-blue-500/30 group-hover:border-blue-500/50 group-hover:scale-110 transition-all duration-300 shadow-lg group-hover:shadow-blue-500/20">
+                          <FaPaperPlane className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
+                        </div>
+                        <div>
+                          <div>
+                            <h3 className="font-bold text-base sm:text-lg line-clamp-1 group-hover:text-blue-400 transition-colors duration-200 text-[var(--text-primary)]">
+                              {post.title}
+                            </h3>
+                            <p className="text-xs sm:text-sm muted">
+                              {post.description}
+                            </p>
+                          </div>
+                        </div>
+
                       </div>
                       <div
                         className="text-xs sm:text-sm text-[var(--text-secondary)] mb-2 sm:mb-3 line-clamp-2"
-                        dangerouslySetInnerHTML={{ __html: post.description }}
+
                       />
 
                       {post.image && (
@@ -310,11 +328,22 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
                         </div>
                       )}
 
-                      <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
-                        {post.created_at && (
-                          <span className="ml-1">
-                            {new Date(post.created_at).toLocaleString()}
+                      <div className="flex items-center justify-between sm:justify-start gap-4 text-xs text-[var(--text-muted)]">
+
+                        <div className="flex items-center">
+                          <FaUser className="w-3 h-3" />
+                          <span className="text-xs text-[var(--text-secondary)] ml-2">
+                            {post.anonymous ? (post.is_me ? "Anonymous (You)" : "Anonymous") : post.author}
                           </span>
+                        </div>
+
+                        {post.created_at && (
+                          <div className="flex items-center">
+                            <FaCalendar className="w-3 h-3" />
+                            <span className="ml-1">
+                              {new Date(post.created_at).toLocaleString()}
+                            </span>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -412,74 +441,76 @@ export default function CourseDiscussionsTab({ courseId, showAddPostModal, setSh
         </div>
       </div>
 
-      {showAddCommentModal && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm px-1 sm:px-2">
-          <div className="card-strong w-full max-w-full sm:max-w-md p-2 sm:p-6 relative rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
-            <button
-              className="absolute right-4 top-4 text-lg sm:text-xl p-2 rounded-full border border-[var(--border-color)] bg-[var(--input-bg)] hover:bg-white/10 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"
-              onClick={() => setShowAddCommentModal(false)}
-              
-            >
-              <FaTimes />
-            </button>
+      {
+        showAddCommentModal && (
+          <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm px-1 sm:px-2">
+            <div className="card-strong w-full max-w-full sm:max-w-md p-2 sm:p-6 relative rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
+              <button
+                className="absolute right-4 top-4 text-lg sm:text-xl p-2 rounded-full border border-[var(--border-color)] bg-[var(--input-bg)] hover:bg-white/10 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"
+                onClick={() => setShowAddCommentModal(false)}
 
-            <div className="flex flex-col sm:flex-row items-center gap-4 mb-4 sm:mt-0">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
-                <FaComments className="w-7 h-7 sm:w-8 sm:h-8 text-blue-400" />
+              >
+                <FaTimes />
+              </button>
+
+              <div className="flex flex-col sm:flex-row items-center gap-4 mb-4 sm:mt-0">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
+                  <FaComments className="w-7 h-7 sm:w-8 sm:h-8 text-blue-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-lg sm:text-2xl font-bold mb-1">Add Comment</h2>
+                  <p className="text-xs sm:text-sm muted">Share your thoughts.</p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <h2 className="text-lg sm:text-2xl font-bold mb-1">Add Comment</h2>
-                <p className="text-xs sm:text-sm muted">Share your thoughts.</p>
-              </div>
+
+              <form
+                onSubmit={async e => {
+                  e.preventDefault();
+                  const formData = new FormData(e.target);
+                  await handleAddComment({
+                    description: formData.get('description'),
+                    anonymous: formData.get('anonymous') ? 'true' : 'false'
+                  });
+                }}
+                className="space-y-4 mt-2"
+              >
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium mb-1" htmlFor="comment-description">Comment:</label>
+                  <textarea
+                    name="description"
+                    id="comment-description"
+                    className="input bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-sm focus-visible:outline-none"
+                    placeholder="Write your comment..."
+                    rows={4}
+                    required
+                  />
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input type="checkbox" name="anonymous" id="comment-anonymous" className="toggle-checkbox" />
+                  <label htmlFor="comment-anonymous" className="text-sm">Anonymous</label>
+                </div>
+
+                <div className="flex gap-2 justify-end mt-6 flex-wrap">
+                  <button
+                    type="button"
+                    className="px-4 py-2 rounded-lg border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--border-subtle)] font-medium transition"
+                    onClick={() => setShowAddCommentModal(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 text-white font-semibold hover:from-blue-700 hover:to-blue-600 transition"
+                  >
+                    Submit
+                  </button>
+                </div>
+              </form>
             </div>
-
-            <form
-              onSubmit={async e => {
-                e.preventDefault();
-                const formData = new FormData(e.target);
-                await handleAddComment({
-                  description: formData.get('description'),
-                  anonymous: formData.get('anonymous') ? 'true' : 'false'
-                });
-              }}
-              className="space-y-4 mt-2"
-            >
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium mb-1" htmlFor="comment-description">Comment:</label>
-                <textarea
-                  name="description"
-                  id="comment-description"
-                  className="input bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-sm focus-visible:outline-none"
-                  placeholder="Write your comment..."
-                  rows={4}
-                  required
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <input type="checkbox" name="anonymous" id="comment-anonymous" className="toggle-checkbox" />
-                <label htmlFor="comment-anonymous" className="text-sm">Anonymous</label>
-              </div>
-
-              <div className="flex gap-2 justify-end mt-6 flex-wrap">
-                <button
-                  type="button"
-                  className="px-4 py-2 rounded-lg border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--border-subtle)] font-medium transition"
-                  onClick={() => setShowAddCommentModal(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 text-white font-semibold hover:from-blue-700 hover:to-blue-600 transition"
-                >
-                  Submit
-                </button>
-              </div>
-            </form>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+    </div >
   );
 }

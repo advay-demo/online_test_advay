@@ -1,5 +1,6 @@
 import React from 'react';
 import useManageCourseStore from '../../store/manageCourseStore';
+import { FaUserPlus, FaUserCheck, FaUserTimes, FaUsers } from 'react-icons/fa';
 
 const CourseEnrollment = ({ courseId }) => {
     const {
@@ -29,9 +30,15 @@ const CourseEnrollment = ({ courseId }) => {
 
     // (see below for the full JSX update)
     return (
-        <div>
-            <div className="text-cyan-400 text-sm sm:text-base font-medium mb-6 flex items-center gap-2">
-                COURSE ENROLLMENTS<span>&rarr;</span>
+        <div className="px-1">
+            <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/15 to-blue-500/15 border-2 border-cyan-500/30 flex items-center justify-center ">
+                    <FaUsers className="w-5 h-5 text-cyan-400" />
+                </div>
+                <div>
+                    <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)]">Course Enrollments</h3>
+                    <p className="text-xs muted">Manage student access</p>
+                </div>
             </div>
 
             {loadingEnrollments ? (
@@ -51,7 +58,7 @@ const CourseEnrollment = ({ courseId }) => {
                                 {enrollments.pending_requests.map((student) => (
                                     <div
                                         key={student.user_id}
-                                        className="card p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0"
+                                        className="card p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-2 hover:shadow-lg transition-all duration-300 group  bg-[var(--surface)] rounded-xl border-[var(--border-color)] hover:border-yellow-500/70 dark:hover:border-yellow-500/50"
                                     >
                                         <div>
                                             <h4 className="font-semibold text-base sm:text-lg">{student.first_name} {student.last_name}</h4>
@@ -60,15 +67,15 @@ const CourseEnrollment = ({ courseId }) => {
                                         <div className="flex gap-2 flex-wrap">
                                             <button
                                                 onClick={() => handleApprove(student.id)}
-                                                className="px-3 py-1.5 sm:px-4 sm:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-xs sm:text-sm font-medium"
+                                                className="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white rounded-xl font-bold transition-all duration-300 shadow-lg shadow-green-500/20 text-xs sm:text-sm flex items-center gap-2"
                                             >
-                                                Approve
+                                                <FaUserCheck /> Approve
                                             </button>
                                             <button
                                                 onClick={() => handleReject(student.id)}
-                                                className="px-3 py-1.5 sm:px-4 sm:py-2 border border-red-500/30 text-red-400 rounded-lg hover:bg-red-500/20 transition text-xs sm:text-sm font-medium"
+                                                className="px-4 py-2 border-2 border-red-500/50 hover:bg-red-500/10 text-red-500 rounded-xl font-bold transition-all duration-300 shadow-sm text-xs sm:text-sm flex items-center gap-2"
                                             >
-                                                Reject
+                                                <FaUserTimes /> Reject
                                             </button>
                                         </div>
                                     </div>
@@ -88,7 +95,7 @@ const CourseEnrollment = ({ courseId }) => {
                                 {enrollments.enrolled.map((student) => (
                                     <div
                                         key={student.user_id}
-                                        className="card p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0"
+                                        className="card p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-2 hover:shadow-lg transition-all duration-300 group  bg-[var(--surface)] rounded-xl border-[var(--border-color)] hover:border-green-500/70 dark:hover:border-green-500/50 "
                                     >
                                         <div className="flex-1">
                                             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 mb-2">
@@ -106,16 +113,16 @@ const CourseEnrollment = ({ courseId }) => {
                                         </div>
                                         <button
                                             onClick={() => handleRemove(student.id)}
-                                            className="px-3 py-1.5 sm:px-4 sm:py-2 border border-red-500/30 text-red-400 rounded-lg hover:bg-red-500/20 transition text-xs sm:text-sm font-medium"
+                                            className="px-4 py-2 border-2 border-red-500/50 hover:bg-red-500/10 text-red-500 rounded-xl font-bold transition-all duration-300 shadow-sm text-xs sm:text-sm flex items-center gap-2"
                                         >
-                                            Remove
+                                            <FaUserTimes /> Remove
                                         </button>
                                     </div>
                                 ))}
                             </div>
                         ) : (
-                            <div className="text-center py-8 text-muted">
-                                No enrolled students yet
+                            <div className="text-center py-12 border-2 border-dashed border-[var(--border-color)] rounded-xl bg-[var(--input-bg)] text-[var(--text-muted)] font-medium">
+                                No enrolled students yet.
                             </div>
                         )}
                     </div>
@@ -131,7 +138,7 @@ const CourseEnrollment = ({ courseId }) => {
                                 {enrollments.rejected.map((student) => (
                                     <div
                                         key={student.user_id}
-                                        className="card p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0"
+                                        className="card p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 border-2 hover:shadow-lg transition-all duration-300 group  bg-[var(--surface)] rounded-xl border-[var(--border-color)] hover:border-red-500/70 dark:hover:border-red-500/50 "
                                     >
                                         <div>
                                             <h4 className="font-semibold text-base sm:text-lg">{student.first_name} {student.last_name}</h4>
@@ -139,9 +146,9 @@ const CourseEnrollment = ({ courseId }) => {
                                         </div>
                                         <button
                                             onClick={() => handleApprove(student.id, true)}
-                                            className="px-3 py-1.5 sm:px-4 sm:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-xs sm:text-sm font-medium"
+                                            className="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white rounded-xl font-bold transition-all duration-300 shadow-lg shadow-green-500/20 text-xs sm:text-sm flex items-center gap-2"
                                         >
-                                            Approve
+                                            <FaUserCheck /> Approve
                                         </button>
                                     </div>
                                 ))}
@@ -153,7 +160,7 @@ const CourseEnrollment = ({ courseId }) => {
                     {enrollments.pending_requests.length === 0 &&
                         enrollments.enrolled.length === 0 &&
                         enrollments.rejected.length === 0 && (
-                            <div className="text-center py-12 text-muted">
+                            <div className="text-center py-16 border-2 border-dashed border-[var(--border-color)] rounded-xl bg-[var(--input-bg)] text-[var(--text-muted)] font-medium">
                                 <p>No enrollment requests or enrolled students</p>
                             </div>
                         )}

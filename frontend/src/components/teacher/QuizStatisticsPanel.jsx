@@ -1,5 +1,5 @@
 import React from "react";
-import { FaChevronLeft, FaListOl } from "react-icons/fa";
+import { FaChevronLeft, FaUser } from "react-icons/fa";
 
 const QuizStatisticsPanel = ({
   statsData,
@@ -31,7 +31,7 @@ const QuizStatisticsPanel = ({
           </div>
           <div className="flex flex-wrap gap-4 text-xs muted">
             <div className="flex items-center gap-1.5">
-              <FaListOl className="w-3.5 h-3.5" />
+              <FaUser className="w-2.5 h-2.5" />
               <span className="font-medium">Total Participants: {total_attempts_count}</span>
             </div>
           </div>
@@ -47,11 +47,10 @@ const QuizStatisticsPanel = ({
               <button
                 key={attempt.id}
                 onClick={() => onAttemptChange(attempt)}
-                className={`flex-1 sm:flex-initial px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 whitespace-nowrap ${
-                  currentAttempt === attempt.attempt_number
-                    ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg'
-                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/5'
-                }`}
+                className={`flex-1 sm:flex-initial px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 whitespace-nowrap ${currentAttempt === attempt.attempt_number
+                  ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/5'
+                  }`}
                 disabled={loading}
               >
                 Attempt {attempt.attempt_number}
@@ -94,11 +93,10 @@ const QuizStatisticsPanel = ({
                     <td className="px-4 py-3 text-center font-semibold">{q.total_attempts}</td>
                     <td className="px-4 py-3 text-center font-semibold">{q.correct_attempts}</td>
                     <td className="px-4 py-3 text-center">
-                      <span className={`px-2.5 py-1 rounded-lg font-bold text-sm ${
-                        q.correct_percentage > 70 ? "bg-emerald-500/20 text-emerald-400" :
+                      <span className={`px-2.5 py-1 rounded-lg font-bold text-sm ${q.correct_percentage > 70 ? "bg-emerald-500/20 text-emerald-400" :
                         q.correct_percentage > 40 ? "bg-yellow-500/20 text-yellow-400" :
-                        "bg-red-500/20 text-red-400"
-                      }`}>
+                          "bg-red-500/20 text-red-400"
+                        }`}>
                         {q.correct_percentage}%
                       </span>
                     </td>

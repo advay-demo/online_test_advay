@@ -3226,9 +3226,11 @@ def api_design_module(request, module_id, course_id=None):
         
         available_pool = []
         for q in quizzes:
-            available_pool.append(("quiz", q.id))
+            # Pass the is_exercise flag for quizzes (third argument)
+            available_pool.append(("quiz", q.id, getattr(q, 'is_exercise', False)))
         for l in lessons:
-            available_pool.append(("lesson", l.id))
+            # Lessons cannot be exercises, default to False
+            available_pool.append(("lesson", l.id, False))
         
         # Sort or format for display
         quiz_les_display = [
@@ -3237,9 +3239,11 @@ def api_design_module(request, module_id, course_id=None):
                 "id": obj_id,
                 # Create a composite key often used by frontend (e.g., "15:quiz")
                 "value_key": f"{obj_id}:{typ}", 
-                "display_name": get_quiz_les_display_name((typ, obj_id))
+                "display_name": get_quiz_les_display_name((typ, obj_id)),
+                # Inject the boolean value
+                "is_exercise": is_exc
             }
-            for typ, obj_id in available_pool
+            for typ, obj_id, is_exc in available_pool
         ]
         
         return Response({
@@ -8301,11 +8305,17 @@ def api_test_quiz(request, mode, quiz_id, course_id):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    # Create the isolated sandbox database objects
+        # Create the isolated sandbox database objects
     trial_questionpaper, trial_course, trial_module = test_mode(
         user, godmode, None, quiz_id, course_id
     )
     
+    # ------------------ ADD THIS LINE HERE ------------------
+    # Force the duplicate sandbox paper to sum its cloned question point counts!
+    # Without this, empty "0.0" totals trigger a ZeroDivisionError at submission.
+    trial_questionpaper.update_total_marks()
+    # --------------------------------------------------------
+
     # The trial question paper is linked to a new trial quiz.
     trial_quiz = trial_questionpaper.quiz
 

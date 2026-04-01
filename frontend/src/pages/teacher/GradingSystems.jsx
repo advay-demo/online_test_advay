@@ -84,7 +84,7 @@ export default function GradingSystems() {
                   <p className="text-xs sm:text-sm muted">Browse and manage all your grading systems</p>
                 </div>
               </div>
-              
+
               {mode === 'list' && (
                 <div className="flex gap-2 sm:gap-3 w-full md:w-auto">
                   {/* Search Bar */}
@@ -140,7 +140,7 @@ export default function GradingSystems() {
                   filteredGradingSystems.map((gs) => (
                     <div
                       key={gs.id}
-                      className="card-strong p-4 sm:p-5 border-2 border-[var(--border-medium)] hover:shadow-lg hover:border-blue-500/70 dark:hover:border-blue-500/50 transition-all duration-300 group bg-[var(--card-bg)] rounded-xl"
+                      className="card-strong p-4 sm:p-5 border-2 border-[var(--border-medium)] hover:shadow-lg hover:border-blue-500/70 dark:hover:border-blue-500/50 transition-all duration-300 group bg-[var(--surface)] hover:shadow-md rounded-xl"
                     >
                       <div className="flex flex-row flex-wrap items-center gap-3 sm:gap-4">
                         {/* Icon */}
@@ -166,8 +166,8 @@ export default function GradingSystems() {
                               <span>{gs.grade_ranges?.length || 0} grade ranges</span>
                             </div>
                             <div className="flex items-center gap-1.5">
-                              
-                              
+
+
                             </div>
                           </div>
                         </div>

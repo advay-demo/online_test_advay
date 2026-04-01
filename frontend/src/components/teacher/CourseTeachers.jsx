@@ -62,7 +62,7 @@ const CourseTeachers = () => {
     };
 
     const handleToggleSelect = (teacherId) => {
-        setSelectedTeachers(prev => 
+        setSelectedTeachers(prev =>
             prev.includes(teacherId)
                 ? prev.filter(id => id !== teacherId)
                 : [...prev, teacherId]
@@ -127,25 +127,30 @@ const CourseTeachers = () => {
 
     return (
         <div>
-            <div className="text-cyan-400 text-sm sm:text-base font-medium mb-6 flex items-center gap-2">
-                ADD TEACHERS/TAs <span>&rarr;</span>
+            <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/15 to-blue-500/15 border-2 border-cyan-500/30 flex items-center justify-center ">
+                    <FaUser className="w-5 h-5 text-cyan-400" />
+                </div>
+                <div>
+                    <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)]">Add Teachers / TAs</h3>
+                    <p className="text-xs muted">Search and add co-teachers</p>
+                </div>
             </div>
 
             {/* Message Display */}
             {message.text && (
-                <div className={`mb-4 p-3 rounded-lg ${
-                    message.type === 'success' ? 'bg-green-500/10 border border-green-500/30 text-green-300' :
+                <div className={`mb-4 p-3 rounded-lg ${message.type === 'success' ? 'bg-green-500/10 border border-green-500/30 text-green-300' :
                     message.type === 'error' ? 'bg-red-500/10 border border-red-500/30 text-red-300' :
-                    message.type === 'warning' ? 'bg-yellow-500/10 border border-yellow-500/30 text-yellow-300' :
-                    'bg-blue-500/10 border border-blue-500/30 text-blue-300'
-                }`}>
+                        message.type === 'warning' ? 'bg-yellow-500/10 border border-yellow-500/30 text-yellow-300' :
+                            'bg-blue-500/10 border border-blue-500/30 text-blue-300'
+                    }`}>
                     {message.text}
                 </div>
             )}
 
             {/* Search Section */}
             <div className="mb-8">
-                <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
+                <form onSubmit={handleSearch} className="flex flex-row sm:flex-row gap-3">
                     <div className="flex-1 relative">
                         <input
                             type="text"
@@ -158,10 +163,12 @@ const CourseTeachers = () => {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-3 sm:px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl hover:from-blue-700 hover:to-blue-600 transition-all duration-300 font-bold shadow-lg shadow-blue-500/20 text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <FaSearch className="w-4 h-4" />
-                        {loading ? 'Searching...' : 'Search'}
+                        <div className='hidden sm:inline'>
+                            {loading ? 'Searching...' : 'Search'}
+                        </div>
                     </button>
                 </form>
             </div>
@@ -180,13 +187,13 @@ const CourseTeachers = () => {
                             {selectedTeachers.length === searchResults.length ? 'Deselect All' : 'Select All'}
                         </button>
                     </div>
-                    <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 mb-4 text-xs sm:text-sm text-blue-300">
+                    <div className="bg-blue-500/20  border-2 border-blue-500/40 dark:border-blue-500/30 rounded-lg p-3 mb-4 text-sm text-blue-700 dark:text-blue-400 font-semibold">
                         Search results do not include teachers already added
                     </div>
-                    <div className="card overflow-x-auto">
-                        <table className="w-full">
+                    <div className="overflow-x-auto rounded-2xl border-2 border-[var(--border-strong)]">
+                        <table className="min-w-full text-sm">
                             <thead>
-                                <tr className="border-b border-[var(--border-color)]">
+                                <tr className="bg-blue-500/10 border-b-2 border-[var(--border-strong)]">
                                     <th className="px-4 py-3 text-left text-xs sm:text-sm font-semibold">
                                         <input
                                             type="checkbox"
@@ -195,19 +202,19 @@ const CourseTeachers = () => {
                                             className="w-4 h-4 rounded border-[var(--border-color)] bg-[var(--input-bg)]"
                                         />
                                     </th>
-                                    <th className="px-4 py-3 text-left text-xs sm:text-sm font-semibold">Username</th>
-                                    <th className="px-4 py-3 text-left text-xs sm:text-sm font-semibold">Name</th>
-                                    <th className="px-4 py-3 text-left text-xs sm:text-sm font-semibold">Email</th>
-                                    <th className="px-4 py-3 text-left text-xs sm:text-sm font-semibold">Institute</th>
-                                    <th className="px-4 py-3 text-left text-xs sm:text-sm font-semibold">Department</th>
-                                    <th className="px-4 py-3 text-left text-xs sm:text-sm font-semibold">Position</th>
+                                    <th className="px-4 py-3 text-left text-xs sm:text-sm font-semibold text-blue-400">Username</th>
+                                    <th className="px-4 py-3 text-left text-xs sm:text-sm font-semibold text-blue-400">Name</th>
+                                    <th className="px-4 py-3 text-left text-xs sm:text-sm font-semibold text-blue-400">Email</th>
+                                    <th className="px-4 py-3 text-left text-xs sm:text-sm font-semibold text-blue-400">Institute</th>
+                                    <th className="px-4 py-3 text-left text-xs sm:text-sm font-semibold text-blue-400">Department</th>
+                                    <th className="px-4 py-3 text-left text-xs sm:text-sm font-semibold text-blue-400">Position</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {searchResults.map((teacher) => (
                                     <tr
                                         key={teacher.id}
-                                        className="border-b border-[var(--border-color)] hover:bg-white/5 transition"
+                                        className="border-b border-[var(--border-subtle)] hover:bg-[var(--input-bg)] transition-colors"
                                     >
                                         <td className="px-4 py-3">
                                             <input
@@ -235,7 +242,7 @@ const CourseTeachers = () => {
                             <button
                                 onClick={handleAddTeachers}
                                 disabled={adding}
-                                className="px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-6 py-2.5 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-xl hover:from-green-700 hover:to-green-600 transition-all duration-300 font-bold shadow-lg shadow-green-500/20 text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <FaPlus className="w-4 h-4" />
                                 {adding ? 'Adding...' : `Add Selected (${selectedTeachers.length})`}

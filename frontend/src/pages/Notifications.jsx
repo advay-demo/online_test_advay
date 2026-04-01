@@ -152,7 +152,7 @@ const Notifications = () => {
       <main className="flex-1">
         <Header isAuth />
 
-        <div className="p-4 sm:p-6 lg:p-8">
+        <div className="p-4 sm:p-6 lg:p-8 ">
           {/* Header Section */}
           <div className="mb-6 lg:mb-8">
             <h1 className="text-2xl sm:text-3xl font-bold mb-2">Notifications</h1>
@@ -161,52 +161,52 @@ const Notifications = () => {
 
           <div className="flex flex-col xl:flex-row gap-4 sm:gap-6 lg:gap-8">
             {/* Main Card */}
-            <div className="flex-1 card-strong rounded-xl sm:rounded-2xl overflow-hidden">
+            <div className="flex-1 card-strong border-2 border-[var(--border-strong)] shadow-lg rounded-2xl">
               {/* Card Header */}
-            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-[var(--border-color)] gap-3 sm:gap-4">
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                <div className="p-2 sm:p-3 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-lg sm:rounded-xl flex-shrink-0">
-                 <FaBell className="w-5 h-5 sm:w-6 sm:h-6 text-purple-400" />
+              <div className="flex items-center justify-between p-4 sm:p-6  gap-3 sm:gap-4 border-b-2 border-[var(--border-subtle)]">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 ">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-blue-500/10 border-2 border-blue-500/30 flex items-center justify-center flex-shrink-0">
+                    <FaBell className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                    <h2 className="text-lg sm:text-xl font-bold truncate">
+                        All Notifications
+                    </h2>
+                    <p className="text-xs sm:text-sm muted">
+                        {notifications.length} total • {unreadCount} unread
+                    </p>
+                    </div>
                 </div>
-                <div className="min-w-0 flex-1">
-                <h2 className="text-lg sm:text-xl font-bold truncate">
-                    All Notifications
-                </h2>
-                <p className="text-xs sm:text-sm muted">
-                    {notifications.length} total • {unreadCount} unread
-                </p>
+
+                {/* Action Buttons */}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                    {/* Statistics Button - Mobile/Tablet only */}
+                    {notifications.length > 0 && (
+                    <button
+                        onClick={() => setIsSummaryOpen(true)}
+                        className="xl:hidden bg-green-600 text-white px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-semibold hover:bg-purple-700 active:scale-95 transition text-xs sm:text-sm whitespace-nowrap"
+                    >
+                        <FaChartLine className="inline w-4 h-4 sm:mr-2" />
+                        <span className="hidden sm:inline">Stats</span>
+                    </button>
+                    )}
+
+                    {/* Mark All Read Button */}
+                    {notifications.length > 0 && unreadCount > 0 && (
+                    <button
+                        onClick={handleMarkAllAsRead}
+                        disabled={isLoading}
+                        className="bg-blue-600 text-white px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg font-semibold hover:bg-blue-700 active:scale-95 transition text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <FaCheckDouble className="inline w-4 h-4 sm:mr-2" />
+                        <span className="hidden sm:inline">Mark All Read</span>
+                    </button>
+                    )}
                 </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex items-center gap-2 flex-shrink-0">
-                {/* Statistics Button - Mobile/Tablet only */}
-                {notifications.length > 0 && (
-                <button
-                    onClick={() => setIsSummaryOpen(true)}
-                    className="xl:hidden bg-green-600 text-white px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-semibold hover:bg-purple-700 active:scale-95 transition text-xs sm:text-sm whitespace-nowrap"
-                >
-                    <FaChartLine className="inline w-4 h-4 sm:mr-2" />
-                    <span className="hidden sm:inline">Stats</span>
-                </button>
-                )}
-
-                {/* Mark All Read Button */}
-                {notifications.length > 0 && unreadCount > 0 && (
-                <button
-                    onClick={handleMarkAllAsRead}
-                    disabled={isLoading}
-                    className="bg-blue-600 text-white px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg font-semibold hover:bg-blue-700 active:scale-95 transition text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    <FaCheckDouble className="inline w-4 h-4 sm:mr-2" />
-                    <span className="hidden sm:inline">Mark All Read</span>
-                </button>
-                )}
-            </div>
             </div>
               {/* Filters */}
                 {notifications.length > 0 && (
-                <div className="p-4 sm:p-6 border-b border-[var(--border-color)]">
+                <div className="p-4 sm:p-6 border-b-2 border-[var(--border-subtle)]">
                     <div className="grid grid-cols-2 sm:grid-cols-2  gap-3 sm:gap-4">
                     {/* Status Filter */}
                     <div>
@@ -214,7 +214,7 @@ const Notifications = () => {
                         <select
                         value={filter}
                         onChange={(e) => setFilter(e.target.value)}
-                        className="w-full px-2 sm:px-3 md:px-4 py-2 bg-black/20 border border-white/10 rounded-lg text-xs sm:text-sm focus:outline-none focus:border-blue-500/50"
+                        className="w-full px-2 sm:px-3 md:px-4 py-2 bg-[var(--input-bg)] border-2 border-[var(--border-strong)] rounded-xl text-sm focus:outline-none focus:border-blue-500/50 transition-colors"
                         >
                         <option value="all">All</option>
                         <option value="unread">Unread</option>
@@ -228,7 +228,7 @@ const Notifications = () => {
                         <select
                         value={typeFilter}
                         onChange={(e) => setTypeFilter(e.target.value)}
-                        className="w-full px-2 sm:px-3 md:px-4 py-2 bg-black/20 border border-white/10 rounded-lg text-xs sm:text-sm focus:outline-none focus:border-blue-500/50"
+                        className="w-full px-2 sm:px-3 md:px-4 py-2 bg-[var(--input-bg)] border-2 border-[var(--border-strong)] rounded-xl text-sm focus:outline-none focus:border-blue-500/50 transition-colors"
                         >
                         <option value="all">All Types</option>
                         <option value="info">Info</option>
@@ -279,11 +279,7 @@ const Notifications = () => {
                       <div
                         key={notification.message_uid}
                         onClick={() => handleNotificationClick(notification)}
-                        className={`p-4 sm:p-5 rounded-lg sm:rounded-xl border transition-all duration-200 cursor-pointer group hover:shadow-lg hover:scale-[1.01] ${
-                          !notification.read 
-                            ? 'border-l-4 border-l-purple-500 bg-purple-500/5 border-[var(--border-color)]' 
-                            : 'border-[var(--border-color)] hover:border-purple-500/30'
-                        }`}
+                        className={`card-strong p-4 sm:p-5 border-2 border-[var(--border-medium)] hover:shadow-lg hover:border-purple-500/70 dark:hover:border-purple-500/50 transition-all duration-300 group bg-[var(--card-bg)] rounded-xl$`}
                         style={{
                           animationDelay: `${index * 50}ms`,
                           animation: 'slideInUp 0.3s ease-out forwards'
@@ -336,7 +332,7 @@ const Notifications = () => {
                             {/* Meta info */}
                             <div className="flex items-center gap-2 flex-wrap">
                               {notification.sender_name && (
-                                <span className="inline-flex items-center gap-1.5 text-xs bg-[var(--bg-secondary)] px-2.5 py-1 rounded-lg soft">
+                                <span className="inline-flex items-center gap-1.5 text-xs muted">
                                   <FaUser className="w-3 h-3" />
                                   <span>{notification.sender_name}</span>
                                 </span>
@@ -374,7 +370,7 @@ const Notifications = () => {
             {/* Summary Sidebar - Desktop only */}
             {notifications.length > 0 && (
               <aside className="hidden xl:block w-80 flex-shrink-0">
-                <div className="card-strong rounded-xl sm:rounded-2xl p-4 sm:p-6 sticky top-24">
+                <div className="card-strong border-2 border-[var(--border-strong)] shadow-lg rounded-2xl p-4 sm:p-6 sticky top-24">
                   <h3 className="text-base sm:text-lg font-bold mb-1">
                     
                     <FaChartLine className="inline w-4 h-4 mr-2" />
@@ -412,27 +408,8 @@ const Notifications = () => {
                     </div>
                   </div>
 
-                  {/* Completion Progress */}
-                  <div className="mt-6 pt-6 border-t border-[var(--border-color)]">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-xs sm:text-sm font-semibold soft">Read Progress</span>
-                      <span className="text-xs sm:text-sm font-bold text-purple-400">
-                        {notifications.length > 0 
-                          ? Math.round((notifications.filter(n => n.read).length / notifications.length) * 100)
-                          : 0}%
-                      </span>
-                    </div>
-                    <div className="w-full h-2 bg-[var(--bg-secondary)] rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-gradient-to-r from-purple-600 to-pink-600 transition-all duration-500"
-                        style={{ 
-                          width: notifications.length > 0 
-                            ? `${(notifications.filter(n => n.read).length / notifications.length) * 100}%`
-                            : '0%'
-                        }}
-                      />
-                    </div>
-                  </div>
+                  
+                  
                 </div>
               </aside>
             )}

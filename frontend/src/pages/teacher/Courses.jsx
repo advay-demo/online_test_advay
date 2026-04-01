@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { FaPlus, FaSearch, FaFilter, FaBook, FaClock, FaUserFriends, FaEllipsisV, FaEdit, FaTimes, FaLayerGroup, } from 'react-icons/fa';
+import { FaPlus, FaSearch, FaFilter, FaBook, FaClock, FaUserFriends, FaEllipsisV, FaEdit, FaTimes, FaLayerGroup, FaCalendar } from 'react-icons/fa';
 import { VscLibrary } from "react-icons/vsc";
 import TeacherSidebar from '../../components/layout/TeacherSidebar';
 import Header from '../../components/layout/Header';
@@ -17,16 +17,16 @@ const Courses = () => {
     const [error, setError] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [message, setMessage] = useState(null);
-    
+
     // Modal States
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [editingCourseId, setEditingCourseId] = useState(null);
-    
+
     // Dropdown States
     const [openDropdownId, setOpenDropdownId] = useState(null);
     const dropdownRef = useRef(null);
-    
+
     const { gradingSystems, loadGradingSystems, loading: gradingLoading } = useGradingSystemStore();
 
     useEffect(() => {
@@ -117,7 +117,7 @@ const Courses = () => {
                             <h1 className="text-2xl sm:text-3xl font-bold mb-2">Courses</h1>
                             <p className="text-sm muted">Create, manage and analyze your courses</p>
                         </div>
-                        
+
                     </div>
 
                     {/* Success/Error Message */}
@@ -151,11 +151,10 @@ const Courses = () => {
                                     <button
                                         key={tab}
                                         onClick={() => setActiveTab(tab)}
-                                        className={`flex-1 sm:flex-initial px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 whitespace-nowrap ${
-                                            activeTab === tab
-                                                ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg'
-                                                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/5'
-                                        }`}
+                                        className={`flex-1 sm:flex-initial px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 whitespace-nowrap ${activeTab === tab
+                                            ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg'
+                                            : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/5'
+                                            }`}
                                     >
                                         {tab}
                                     </button>
@@ -220,9 +219,9 @@ const Courses = () => {
                                     </div>
                                 ) : (
                                     courses.map((course) => (
-                                        <div 
+                                        <div
                                             key={course.id}
-                                            className="card-strong p-4 sm:p-5 border-2 border-[var(--border-medium)] hover:shadow-lg hover:border-blue-500/70 dark:hover:border-blue-500/50 transition-all duration-300 group bg-[var(--card-bg)] rounded-xl"
+                                            className="card-strong p-4 sm:p-5 border-2 border-[var(--border-medium)] hover:shadow-lg hover:border-blue-500/70 dark:hover:border-blue-500/50 transition-all duration-300 group bg-[var(--surface)] hover:shadow-md rounded-xl"
                                         >
                                             <div className="flex flex-row flex-wrap items-center gap-3 sm:gap-4">
                                                 {/* Icon */}
@@ -262,10 +261,12 @@ const Courses = () => {
                                                             <span>{course.completions} completions</span>
                                                         </div>
                                                         {course.created_on && (
-                                                            <>
-                                                                <div className="hidden sm:block text-white/20">|</div>
-                                                                <div>{new Date(course.created_on).toLocaleDateString()}</div>
-                                                            </>
+
+                                                            <div className="flex items-center gap-1.5">
+                                                                <FaCalendar className="w-2 h-2 sm:w-2.5 sm:h-2.5 flex-shrink-0" />
+                                                                <span>{new Date(course.created_on).toLocaleDateString()}</span>
+                                                            </div>
+
                                                         )}
                                                     </div>
                                                 </div>
@@ -278,16 +279,16 @@ const Courses = () => {
                                                         Manage
                                                     </Link>
                                                     <div className="relative" ref={openDropdownId === course.id ? dropdownRef : null}>
-                                                        <button 
+                                                        <button
                                                             onClick={() => toggleDropdown(course.id)}
                                                             className="p-2.5 border-2 border-[var(--border-strong)] rounded-lg hover:bg-[var(--input-bg)] hover:border-blue-500/30 active:scale-95 transition-all duration-300 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                                                         >
                                                             <FaEllipsisV className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                                         </button>
-                                                        
+
                                                         {/* Dropdown Menu */}
                                                         {openDropdownId === course.id && (
-                                                            
+
                                                             <div className="absolute right-0 mt-2 z-50 w-36 bg-[var(--card-strong-bg)] border-2 border-[var(--border-strong)] rounded-xl shadow-2xl py-1.5 flex flex-col text-sm animate-fade-in">
                                                                 <button
                                                                     className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-blue-500/10 text-emrald-400 hover:text-emrald-300 transition-colors duration-200"
@@ -295,7 +296,7 @@ const Courses = () => {
                                                                 >
                                                                     <FaEdit className="w-4 h-4" /> Edit
                                                                 </button>
-                                                                
+
                                                             </div>
                                                         )}
                                                     </div>
@@ -312,7 +313,7 @@ const Courses = () => {
 
             {/* Edit Course Modal */}
             {showEditModal && (
-                <AddCourseModal 
+                <AddCourseModal
                     onCancel={() => {
                         setShowEditModal(false);
                         setEditingCourseId(null);
@@ -322,10 +323,10 @@ const Courses = () => {
                     onSuccess={handleCourseSuccess}
                 />
             )}
-            
+
             {/* Add Course Modal */}
             {showAddModal && (
-                <AddCourseModal 
+                <AddCourseModal
                     onCancel={() => setShowAddModal(false)}
                     onSuccess={handleCourseSuccess}
                 />

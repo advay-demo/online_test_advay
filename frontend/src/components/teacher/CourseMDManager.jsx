@@ -31,10 +31,10 @@ const CourseMDManager = () => {
 
     const handleDownload = async () => {
         if (!courseId) return;
-        
+
         setDownloading(true);
         setMessage({ type: '', text: '' });
-        
+
         try {
             await downloadCourseMD(courseId);
             setMessage({
@@ -74,7 +74,7 @@ const CourseMDManager = () => {
             // Reset file input
             const fileInput = document.querySelector('input[type="file"]');
             if (fileInput) fileInput.value = '';
-            
+
             // Reload page after 2 seconds to reflect changes
             setTimeout(() => {
                 window.location.reload();
@@ -93,21 +93,22 @@ const CourseMDManager = () => {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div>
-                <div className="text-cyan-400 text-xs sm:text-sm font-medium mb-2 flex items-center gap-2">
-                    UPLOAD / DOWNLOAD MD <span>&rarr;</span>
+            <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/15 to-blue-500/15 border-2 border-cyan-500/30 flex items-center justify-center ">
+                    <FaFileArchive className="w-5 h-5 text-cyan-400" />
                 </div>
-                <p className="text-sm text-[var(--text-secondary)] mb-4">
-                    Export or import your course structure as Markdown files. Download to backup or edit offline, then upload to restore or update.
-                </p>
+                <div>
+                    <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)]">Upload / Download MD</h3>
+                    <p className="text-xs muted">Export or import your course structure as Markdown</p>
+                </div>
             </div>
 
             {/* Info Box */}
-            <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 flex items-start gap-3">
+            <div className="bg-blue-500/20  border-2 border-blue-500/40 dark:border-blue-500/30 rounded-lg p-4 flex items-start gap-3">
                 <FaInfoCircle className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
                 <div className="text-sm text-blue-300">
-                    <p className="font-medium mb-1">About Course MD Files:</p>
-                    <ul className="list-disc list-inside space-y-1 text-blue-200/80">
+                    <p className="font-medium mb-1 text-sm text-blue-700 dark:text-blue-400">About Course MD Files:</p>
+                    <ul className="list-disc list-inside space-y-1 text-xs text-blue-600 dark:text-blue-400/80">
                         <li>Download exports your entire course structure (modules, lessons, quizzes) as a ZIP file</li>
                         <li>Upload accepts a ZIP file containing Markdown course files</li>
                         <li>Files must include a valid <code className="bg-black/20 px-1 rounded">toc.yml</code> file</li>
@@ -117,7 +118,7 @@ const CourseMDManager = () => {
             </div>
 
             {/* Download Section */}
-            <div className="card-strong p-6">
+            <div className="card-strong p-6 border-2 border-[var(--border-strong)] shadow-lg rounded-2xl bg-[var(--surface)]">
                 <div className="flex items-center gap-3 mb-4">
                     <FaDownload className="w-5 h-5 text-green-400" />
                     <h3 className="text-lg font-semibold">Download Course Structure</h3>
@@ -128,7 +129,7 @@ const CourseMDManager = () => {
                 <button
                     onClick={handleDownload}
                     disabled={downloading}
-                    className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-lg font-medium transition flex items-center gap-2"
+                    className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-lg shadow-green-500/20 px-6 py-2.5 rounded-xl font-bold transition-all duration-300 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {downloading ? (
                         <>
@@ -145,7 +146,7 @@ const CourseMDManager = () => {
             </div>
 
             {/* Upload Section */}
-            <div className="card-strong p-6">
+            <div className="card-strong p-6 border-2 border-[var(--border-strong)] shadow-lg rounded-2xl bg-[var(--surface)]">
                 <div className="flex items-center gap-3 mb-4">
                     <FaUpload className="w-5 h-5 text-blue-400" />
                     <h3 className="text-lg font-semibold">Upload Course Structure</h3>
@@ -153,7 +154,7 @@ const CourseMDManager = () => {
                 <p className="text-sm text-[var(--text-secondary)] mb-4">
                     Import a course structure from a ZIP file. The file must contain valid Markdown files and a <code className="bg-black/20 px-1 rounded">toc.yml</code> file.
                 </p>
-                
+
                 <div className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium mb-2">
@@ -186,7 +187,7 @@ const CourseMDManager = () => {
                     <button
                         onClick={handleUpload}
                         disabled={uploading || !selectedFile}
-                        className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-lg font-medium transition flex items-center gap-2"
+                        className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white shadow-lg shadow-blue-500/20 px-6 py-2.5 rounded-xl font-bold transition-all duration-300 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {uploading ? (
                             <>
@@ -205,11 +206,10 @@ const CourseMDManager = () => {
 
             {/* Message Display */}
             {message.text && (
-                <div className={`rounded-lg p-4 ${
-                    message.type === 'success' 
-                        ? 'bg-green-500/10 border border-green-500/30 text-green-300'
-                        : 'bg-red-500/10 border border-red-500/30 text-red-300'
-                }`}>
+                <div className={`rounded-lg p-4 ${message.type === 'success'
+                    ? 'bg-green-500/10 border border-green-500/30 text-green-300'
+                    : 'bg-red-500/10 border border-red-500/30 text-red-300'
+                    }`}>
                     {message.text}
                 </div>
             )}

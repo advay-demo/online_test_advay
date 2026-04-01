@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  FaSearch, FaTimes, FaBook, FaSpinner, FaCheckCircle, 
+import {
+  FaSearch, FaTimes, FaBook, FaSpinner, FaCheckCircle,
   FaInfoCircle, FaUser, FaCalendarAlt, FaClock, FaExclamationTriangle,
   FaBan, FaHourglassHalf, FaLayerGroup
 } from 'react-icons/fa';
@@ -15,22 +15,22 @@ import toast from 'react-hot-toast';
 const AddNewCourseStudent = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedCourse, setExpandedCourse] = useState(null);
-  
-  const { 
-    newCourses, 
-    loading, 
-    error, 
+
+  const {
+    newCourses,
+    loading,
+    error,
     enrollmentLoading,
     enrollmentError,
     enrollmentSuccess,
-    searchCourses, 
+    searchCourses,
     clearSearch,
     requestEnrollment,
     selfEnroll,
     clearEnrollmentMessages
   } = useCourseStore();
 
-  
+
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchTerm.trim()) {
@@ -45,9 +45,9 @@ const AddNewCourseStudent = () => {
 
   const handleEnroll = async (course) => {
     clearEnrollmentMessages();
-    
+
     let result;
-    
+
     // Determine the enrollment type based on status
     if (course.enrollment_status === 'can_enroll_open') {
       // Self-enrollment
@@ -65,10 +65,10 @@ const AddNewCourseStudent = () => {
       toast.success(result.data.message);
       // Optionally refresh the search results
       if (searchTerm.trim()) {
-      setTimeout(() => {
-         searchCourses(searchTerm.trim());
-      }, 1000);
-       }
+        setTimeout(() => {
+          searchCourses(searchTerm.trim());
+        }, 1000);
+      }
     } else {
       toast.error(result.error);
     }
@@ -81,9 +81,9 @@ const AddNewCourseStudent = () => {
   const formatDateTime = (dateString) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
-    return date.toLocaleString('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
@@ -203,7 +203,7 @@ const AddNewCourseStudent = () => {
           <CourseActionButtons activeButton="create" />
 
           {/* Main Content Card */}
-          <div className="card p-4 sm:p-5 lg:p-6 min-h-[500px] border-2 border-[var(--border-strong)] shadow-lg rounded-2xl">
+          <div className="card-strong p-4 sm:p-5 lg:p-6 min-h-[500px] border-2 border-[var(--border-strong)] shadow-lg rounded-2xl">
             {/* Search Section */}
             <div className="mb-8">
               <div className="flex items-center gap-3 mb-4">
@@ -214,31 +214,31 @@ const AddNewCourseStudent = () => {
                   <h2 className="text-lg sm:text-xl font-bold mb-0.5">Search for Courses</h2>
                   <p className="text-xs sm:text-sm muted">Browse and explore new courses</p>
                 </div>
-              </div> 
+              </div>
 
               <form className="flex flex-row gap-2 sm:gap-3 mt-5" onSubmit={handleSearch}>
                 <div className="relative flex-1">
-                <input
-                  type="text"
-                  className="input input-bordered w-full pl-10 pr-10 py-3 text-sm border-2 focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all rounded-xl"
-                  placeholder="Enter course code (e.g., CS101, 0002)"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
-                {searchTerm && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchTerm('')}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors p-1 hover:bg-white/10 rounded"
-                  >
-                    <FaTimes className="w-3.5 h-3.5" />
-                  </button>
-                )}
+                  <input
+                    type="text"
+                    className="input input-bordered w-full pl-10 pr-10 py-3 text-sm border-2 focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all rounded-xl"
+                    placeholder="Enter course code (e.g., CS101, 0002)"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                  <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
+                  {searchTerm && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchTerm('')}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors p-1 hover:bg-white/10 rounded"
+                    >
+                      <FaTimes className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
                 <div className="flex gap-2 sm:gap-3">
-                  <button 
-                    type="submit" 
+                  <button
+                    type="submit"
                     disabled={!searchTerm.trim() || loading}
                     className="flex-1 sm:flex-none px-4 sm:px-7 py-3 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white text-sm font-bold rounded-xl shadow-xl shadow-purple-600/30 hover:shadow-2xl hover:shadow-purple-600/40 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 flex items-center justify-center gap-2.5 border-2 border-purple-500/50"
                   >
@@ -254,8 +254,8 @@ const AddNewCourseStudent = () => {
                       </>
                     )}
                   </button>
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={handleClearSearch}
                     disabled={loading || (newCourses.length === 0 && !searchTerm)}
                     className="flex-1 sm:flex-none px-4 sm:px-7 py-3 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white text-sm font-bold rounded-xl shadow-xl shadow-red-600/30 hover:shadow-2xl hover:shadow-red-600/40 transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 flex items-center justify-center gap-2.5 border-2 border-red-500/50"
@@ -265,7 +265,7 @@ const AddNewCourseStudent = () => {
                   </button>
                 </div>
               </form>
-              
+
               {/* Search Tips */}
               <div className="mt-5 p-4 bg-blue-500/10 border-2 border-blue-500/30 rounded-xl">
                 <div className="flex items-start gap-3">
@@ -273,7 +273,7 @@ const AddNewCourseStudent = () => {
                     <FaInfoCircle className="text-blue-400 w-4 h-4" />
                   </div>
                   <div className="text-xs sm:text-sm text-[var(--text-primary)]">
-                    <span className="font-bold text-blue-500 dark:text-blue-400">Search Tips:</span> Enter the exact course code to find available courses. 
+                    <span className="font-bold text-blue-500 dark:text-blue-400">Search Tips:</span> Enter the exact course code to find available courses.
                     Contact your instructor if you need the course code.
                   </div>
                 </div>
@@ -345,8 +345,8 @@ const AddNewCourseStudent = () => {
                   We couldn't find any courses matching "<span className="font-semibold text-[var(--text-primary)]">{searchTerm}</span>".
                   Please check the course code and try again.
                 </p>
-                <button 
-                 onClick={handleClearSearch}
+                <button
+                  onClick={handleClearSearch}
                   className="btn btn-info px-6 py-2"
                 >
                   Clear Search
@@ -368,15 +368,15 @@ const AddNewCourseStudent = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 {newCourses.map((item) => {
                   const course = item.data;
                   const isExpanded = expandedCourse === course.id;
-                  
+
                   return (
                     <div
                       key={course.id}
-                      className="card-strong p-5 sm:p-6 border-2 border-[var(--border-medium)] hover:shadow-lg hover:border-blue-500/70 dark:hover:border-blue-500/50 transition-all duration-300 group bg-[var(--card-bg)] rounded-xl"
+                      className="card-strong p-5 sm:p-6 border-2 border-[var(--border-medium)] hover:shadow-lg hover:border-blue-500/70 dark:hover:border-blue-500/50 transition-all duration-300 group bg-[var(--surface)] hover:shadow-md rounded-xl"
                     >
                       {/* Course Header and Enrollment Action */}
                       <div className="flex flex-row items-center justify-between gap-3 sm:gap-4 mb-5">
@@ -397,7 +397,7 @@ const AddNewCourseStudent = () => {
                             )}
                           </div>
                         </div>
-                      
+
                         {/* Dynamic Enrollment Action */}
                         {renderEnrollmentAction(course)}
                       </div>
@@ -413,21 +413,21 @@ const AddNewCourseStudent = () => {
                               </span>
                             </div>
                           )}
-                          
+
                           <div className="flex items-center gap-2 text-[var(--text-secondary)]">
                             <FaCalendarAlt className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" />
                             <span className="truncate">
                               <span className="font-semibold">Start:</span> {formatDateTime(course.start_date)}
                             </span>
                           </div>
-                          
+
                           <div className="flex items-center gap-2 text-[var(--text-secondary)]">
                             <FaCalendarAlt className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0" />
                             <span className="truncate">
                               <span className="font-semibold">End:</span> {formatDateTime(course.end_date)}
                             </span>
                           </div>
-                          
+
                           {course.modules && (
                             <div className="flex items-center gap-2 text-[var(--text-secondary)]">
                               <FaLayerGroup className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
