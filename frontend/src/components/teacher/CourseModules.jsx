@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FaPlus, FaBook, FaCalendarAlt, FaEdit, FaTrash, FaCheckCircle, FaEllipsisV, FaVideo, FaTimes, FaUpload, FaFileAlt, FaExternalLinkAlt, FaArrowUp, FaArrowDown, FaCheck, FaCog, FaRandom, FaList, FaSync, FaSearch, FaPuzzlePiece, FaChevronDown, FaChevronUp, FaLayerGroup } from 'react-icons/fa';
+import { FaPlus, FaBook, FaCalendarAlt, FaEdit, FaTrash, FaCheckCircle, FaEllipsisV, FaVideo, FaTimes, FaUpload, FaFileAlt, FaExternalLinkAlt, FaArrowUp, FaArrowDown, FaCheck, FaQuestionCircle, FaRandom, FaList, FaSync, FaSearch, FaPuzzlePiece, FaChevronDown, FaChevronUp, FaLayerGroup } from 'react-icons/fa';
 import useManageCourseStore from '../../store/manageCourseStore';
 import { useSandboxStore } from '../../store/sandboxStore';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -550,7 +550,7 @@ const CourseModules = () => {
 
             {/* LESSON FORM MODAL - Enhanced UI with File Upload */}
             {showLessonForm && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-2 py-4 overflow-y-auto">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-2 py-4 overflow-y-auto custom-scrollbar">
                     <div className="card-strong w-full max-w-full sm:max-w-2xl p-4 sm:p-6 relative my-4 rounded-2xl border-2 border-[var(--border-strong)] max-h-[90vh] overflow-y-auto">
                         {/* Close Button */}
                         <button
@@ -851,7 +851,7 @@ const CourseModules = () => {
             )}
             {/* QUIZ FORM MODAL */}
             {showQuizForm && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-2 py-4 overflow-y-auto">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-2 py-4 overflow-y-auto custom-scrollbar">
                     <div className="card-strong w-full max-w-full sm:max-w-2xl p-4 sm:p-6 relative my-4 rounded-2xl border-2 border-[var(--border-strong)] max-h-[90vh] overflow-y-auto">
 
                         {/* Close Button */}
@@ -1300,24 +1300,29 @@ const CourseModules = () => {
             {showDesignModuleModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-2 py-4 overflow-y-auto">
                     <div className="card-strong w-full max-w-6xl h-[85vh] flex flex-col relative rounded-2xl shadow-2xl overflow-hidden border-2 border-[var(--border-strong)]">
-                        {/* Modal Header */}
-                        <div className="p-4 border-b-2 border-[var(--border-subtle)] flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-amber-500/10 rounded-lg text-amber-500 border border-amber-500/20">
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" /></svg>
-                                </div>
-                                <div>
-                                    <h2 className="text-xl font-bold text-[var(--text-primary)]">Design Module Content</h2>
-                                    <p className="text-sm text-[var(--text-muted)]">Add, remove, and reorder lessons and quizzes</p>
-                                </div>
+                        {/* Styled consistent absolute cross button */}
+                        <button
+                            className="absolute right-4 top-4 z-10 text-lg sm:text-xl p-2 rounded-full border-2 border-[var(--border-strong)] bg-[var(--input-bg)] hover:bg-red-500/10 hover:border-red-500/30 text-[var(--text-muted)] hover:text-red-400 transition-all"
+                            onClick={closeDesignModule}
+                            aria-label="Close"
+                        >
+                            <FaTimes />
+                        </button>
+
+                        {/* Standardized Header */}
+                        <div className="flex flex-row items-center gap-4 p-4 sm:p-6 border-b-2 border-[var(--border-subtle)] bg-[var(--bg-primary)] pr-12">
+                            <div className="w-12 h-12 flex-shrink-0 sm:w-14 sm:h-14 rounded-xl bg-amber-500/10 flex items-center justify-center border-2 border-amber-500/30 text-amber-500">
+                                <svg className="w-6 h-6 sm:w-7 sm:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" /></svg>
                             </div>
-                            <button onClick={closeDesignModule} className="p-2 hover:bg-white/10 rounded-full transition text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-red-500/10 hover:text-red-400">
-                                <FaTimes className="w-5 h-5" />
-                            </button>
+                            <div className="flex-1 min-w-0">
+                                <h2 className="text-xl sm:text-2xl font-bold mb-1 line-clamp-1 text-[var(--text-primary)]">Design Module Content</h2>
+                                <p className="text-xs sm:text-sm text-[var(--text-muted)] line-clamp-2">Add, remove, and reorder lessons and quizzes</p>
+                            </div>
                         </div>
 
                         {/* Modal Body */}
                         <div className="flex-1 overflow-hidden p-4 sm:p-6 bg-[var(--bg-primary)]">
+
                             {loadingDesignModule && !designModule ? (
                                 <div className="h-full flex flex-col items-center justify-center text-gray-400 gap-3">
                                     <FaSync className="animate-spin text-3xl text-amber-500" />
@@ -1331,8 +1336,8 @@ const CourseModules = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
 
                                     {/* Left Column: SELECTED UNITS (In Module) */}
-                                    <div className="flex flex-col h-full bg-[var(--input-bg)] rounded-xl border-2 border-[var(--border-strong)] overflow-hidden shadow-inner">
-                                        <div className="p-2.5 sm:p-3 md:p-4 border-b-2 border-[var(--border-subtle)] bg-[var(--input-bg)]">
+                                    <div className="flex flex-col h-full bg-[var(--surface-2)] rounded-xl border-2 border-[var(--border-strong)] overflow-hidden shadow-inner">
+                                        <div className="p-3 sm:p-4 border-b-2 border-[var(--border-subtle)] bg-[var(--input-bg)]">
                                             <h3 className="font-bold text-sm sm:text-base md:text-lg text-[var(--text-primary)] flex items-center gap-2">
                                                 <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-blue-500"></span>
                                                 Included Content
@@ -1340,7 +1345,7 @@ const CourseModules = () => {
                                             <p className="text-[10px] sm:text-xs text-[var(--text-muted)] mt-0.5">Items currently in this module</p>
                                         </div>
 
-                                        <div className="flex-1 overflow-y-auto p-2 sm:p-2.5 md:p-3 space-y-1.5 sm:space-y-2 custom-scrollbar">
+                                        <div className="flex-1 overflow-y-auto p-2 sm:p-3 space-y-2 custom-scrollbar">
                                             {localSelected.length > 0 ? (
                                                 localSelected.map((unit) => {
                                                     const isSelected = selectedInSelected === unit.id;
@@ -1348,19 +1353,34 @@ const CourseModules = () => {
                                                         <div key={unit.id} className="group">
                                                             <div
                                                                 onClick={() => setSelectedInSelected(isSelected ? null : unit.id)}
-                                                                className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all border-2 ${isSelected
-                                                                    ? 'bg-blue-600/10 border-blue-500/50'
-                                                                    : 'bg-[var(--bg-primary)] border-[var(--border-subtle)] hover:border-[var(--border-strong)]'
+                                                                className={`flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg cursor-pointer transition active:scale-95 ${isSelected
+                                                                    ? 'bg-blue-600/20 border-2 border-blue-600'
+                                                                    : 'bg-[var(--surface)] border border-[var(--border-color)] hover:shadow-md hover:bg-[var(--surface-2)] hover:border-blue-400'
                                                                     }`}
                                                             >
-                                                                <div className={`w-8 h-8 rounded flex items-center justify-center flex-shrink-0 ${unit.type === 'lesson' ? 'bg-cyan-500/10 text-cyan-400' : 'bg-green-500/10 text-green-400'
+                                                                <div className={`w-8 h-8 rounded flex items-center justify-center flex-shrink-0 ${unit.type === 'lesson' ? ('bg-cyan-500/10 text-cyan-400') : unit.is_exercise ? ('bg-purple-500/10 text-purple-400') : ('bg-green-500/10 text-green-400')
                                                                     }`}>
-                                                                    {unit.type === 'lesson' ? <FaBook className="w-3.5 h-3.5" /> : <FaCheckCircle className="w-3.5 h-3.5" />}
+
+                                                                    {unit.type === 'lesson' ? (
+                                                                        <FaVideo className="w-3.5 h-3.5" />
+                                                                    ) : unit.is_exercise ? (
+                                                                        <FaPuzzlePiece className="w-3.5 h-3.5" />
+                                                                    ) : (
+                                                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                        </svg>
+                                                                    )}
                                                                 </div>
                                                                 <div className="flex-1 min-w-0">
                                                                     <div className="font-medium text-sm text-[var(--text-primary)] truncate">{unit.display_name.replace(/\(quiz\)|\(lesson\)/gi, '')}</div>
                                                                     <div className="flex items-center gap-2 mt-0.5">
-                                                                        <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] bg-[var(--input-bg)] border border-[var(--border-strong)] px-1.5 py-0.5 rounded">{unit.type}</span>
+                                                                        <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] bg-[var(--input-bg)] border border-[var(--border-strong)] px-1.5 py-0.5 rounded">{unit.type === 'lesson' ? (
+                                                                            'LESSON'
+                                                                        ) : unit.is_exercise ? (
+                                                                            'EXERCISE'
+                                                                        ) : (
+                                                                            'QUIZ'
+                                                                        )}</span>
                                                                         {unit.check_prerequisite && <span className="text-[10px] text-purple-500 bg-purple-500/10 px-1.5 py-0.5 rounded border border-purple-500/30">Prerequisite</span>}
                                                                     </div>
                                                                 </div>
@@ -1398,7 +1418,7 @@ const CourseModules = () => {
                                         </div>
 
                                         {/* Left Actions Footer */}
-                                        <div className="p-4 border-t-2 border-[var(--border-subtle)] bg-[var(--input-bg)] flex items-center justify-between gap-2">
+                                        <div className="p-4 border-t-2 border-[var(--border-subtle)] bg-[var(--surface-2)] flex items-center justify-between gap-2">
                                             <button
                                                 onClick={handleRemoveUnit}
                                                 disabled={!selectedInSelected}
@@ -1428,8 +1448,8 @@ const CourseModules = () => {
                                     </div>
 
                                     {/* Right Column: AVAILABLE POOL */}
-                                    <div className="flex flex-col h-full bg-[var(--input-bg)] rounded-xl border-2 border-[var(--border-strong)] overflow-hidden shadow-inner">
-                                        <div className="p-2.5 sm:p-3 md:p-4 border-b-2 border-[var(--border-subtle)] bg-[var(--input-bg)]">
+                                    <div className="flex flex-col h-full bg-[var(--surface-2)] rounded-xl border-2 border-[var(--border-strong)] overflow-hidden shadow-inner">
+                                        <div className="p-3 sm:p-4 border-b-2 border-[var(--border-subtle)] bg-[var(--input-bg)]">
                                             <h3 className="font-bold text-sm sm:text-base md:text-lg text-[var(--text-primary)] flex items-center gap-2">
                                                 <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-green-500"></span>
                                                 Available Items
@@ -1437,7 +1457,7 @@ const CourseModules = () => {
                                             <p className="text-[10px] sm:text-xs text-[var(--text-muted)] mt-0.5">Unassigned lessons and quizzes</p>
                                         </div>
 
-                                        <div className="flex-1 overflow-y-auto p-2 sm:p-2.5 md:p-3 space-y-1.5 sm:space-y-2 custom-scrollbar">
+                                        <div className="flex-1 overflow-y-auto p-2 sm:p-3 space-y-2 custom-scrollbar">
                                             {localPool.length > 0 ? (
                                                 localPool.map((item) => {
                                                     const isSelected = selectedInPool === item.value_key;
@@ -1445,19 +1465,34 @@ const CourseModules = () => {
                                                         <div
                                                             key={item.value_key}
                                                             onClick={() => setSelectedInPool(isSelected ? null : item.value_key)}
-                                                            className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all border-2 ${isSelected
-                                                                ? 'bg-green-600/10 border-green-500/50'
-                                                                : 'bg-[var(--bg-primary)] border-[var(--border-subtle)] hover:border-[var(--border-strong)]'
+                                                            className={`flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg cursor-pointer transition active:scale-95 ${isSelected
+                                                                ? 'bg-green-600/20 border-2 border-green-600'
+                                                                : 'bg-[var(--surface)] border border-[var(--border-color)] hover:shadow-md hover:bg-white/[0.03] hover:border-green-400'
                                                                 }`}
                                                         >
-                                                            <div className={`w-8 h-8 rounded flex items-center justify-center flex-shrink-0 ${item.type === 'lesson' ? 'bg-cyan-500/10 text-cyan-400' : 'bg-green-500/10 text-green-400'
+                                                            <div className={`w-8 h-8 rounded flex items-center justify-center flex-shrink-0 ${item.type === 'lesson' ? ('bg-cyan-500/10 text-cyan-400') : item.is_exercise ? ('bg-purple-500/10 text-purple-400') : ('bg-green-500/10 text-green-400')
                                                                 }`}>
-                                                                {item.type === 'lesson' ? <FaBook className="w-3.5 h-3.5" /> : <FaCheckCircle className="w-3.5 h-3.5" />}
+
+                                                                {item.type === 'lesson' ? (
+                                                                    <FaVideo className="w-3.5 h-3.5" />
+                                                                ) : item.is_exercise ? (
+                                                                    <FaPuzzlePiece className="w-3.5 h-3.5" />
+                                                                ) : (
+                                                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                    </svg>
+                                                                )}
                                                             </div>
                                                             <div className="flex-1 min-w-0">
                                                                 <div className="font-medium text-xs sm:text-sm text-[var(--text-primary)] truncate">{item.display_name.replace(/\(quiz\)|\(lesson\)/gi, '')}</div>
                                                                 <div className="flex items-center gap-2 mt-0.5">
-                                                                    <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] bg-[var(--input-bg)] border border-[var(--border-strong)] px-1.5 py-0.5 rounded">{item.type}</span>
+                                                                    <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] bg-[var(--input-bg)] border border-[var(--border-strong)] px-1.5 py-0.5 rounded">{item.type === 'lesson' ? (
+                                                                        'LESSON'
+                                                                    ) : item.is_exercise ? (
+                                                                        'EXERCISE'
+                                                                    ) : (
+                                                                        'QUIZ'
+                                                                    )}</span>
                                                                 </div>
                                                             </div>
                                                             <input
@@ -1479,7 +1514,7 @@ const CourseModules = () => {
                                         </div>
 
                                         {/* Right Actions Footer */}
-                                        <div className="flex items-center justify-between p-4 border-t-2 border-[var(--border-subtle)] bg-[var(--input-bg)]">
+                                        <div className="flex items-center justify-between p-4 border-t-2 border-[var(--border-subtle)] bg-[var(--surface-2)]">
                                             <button
                                                 onClick={handleAddUnit}
                                                 disabled={!selectedInPool}
@@ -1501,7 +1536,7 @@ const CourseModules = () => {
 
             {/* DESIGN QUESTION PAPER MODAL */}
             {showDesignQuestionPaperModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-2 py-4 overflow-y-auto animate-fade-in">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-2 py-4 overflow-y-auto">
                     <div className="card-strong w-full max-w-full sm:max-w-6xl h-[95vh] flex flex-col relative rounded-2xl shadow-2xl overflow-hidden border-2 border-[var(--border-strong)]">
 
                         {/* Styled consistent absolute cross button */}
@@ -1513,9 +1548,9 @@ const CourseModules = () => {
                         </button>
 
                         {/* Standardized Header */}
-                        <div className="flex flex-row items-center gap-4 p-4 sm:p-6 border-b-2 border-[var(--border-subtle)] bg-[var(--input-bg)]">
+                        <div className="flex flex-row items-center gap-4 p-4 sm:p-6  bg-[var(--bg-primary)] pr-12">
                             <div className="w-12 h-12 flex-shrink-0 sm:w-14 sm:h-14 rounded-xl bg-blue-500/10 flex items-center justify-center border-2 border-blue-500/30 text-blue-400">
-                                <FaList className="w-7 h-7 sm:w-8 sm:h-8" />
+                                <FaQuestionCircle className="w-7 h-7 sm:w-8 sm:h-8" />
                             </div>
                             <div className="flex-1 min-w-0 pr-12">
                                 <h2 className="text-xl sm:text-2xl font-bold mb-1 truncate text-[var(--text-primary)]">
@@ -1528,7 +1563,7 @@ const CourseModules = () => {
                         </div>
 
                         {/* Tab Bar + Save Settings button on same row */}
-                        <div className="flex items-center justify-between px-4 pt-3 bg-[var(--input-bg)] border-b-2 border-[var(--border-subtle)]">
+                        <div className="flex items-center justify-between px-4 sm:px-6 pt-4 sm:pt-6 bg-[var(--bg-primary)] border-b-2 border-[var(--border-subtle)] pb-2">
                             <div className="flex items-center gap-1">
                                 {[
                                     { id: 'FIXED', label: 'Fixed Questions', icon: <FaCheck className="w-3.5 h-3.5" /> },
@@ -1537,9 +1572,9 @@ const CourseModules = () => {
                                     <button
                                         key={tab.id}
                                         onClick={() => setQPaperTab(tab.id)}
-                                        className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg border-b-[3px] transition-all ${qPaperTab === tab.id
-                                            ? 'border-amber-500 text-amber-500 bg-[var(--bg-primary)]'
-                                            : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-primary)]'
+                                        className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl transition-all ${qPaperTab === tab.id
+                                            ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-xl shadow-blue-600/30 hover:shadow-2xl hover:shadow-blue-600/40 border-transparent scale-101'
+                                            : 'card-strong border-[var(--border-strong)] text-[var(--text-secondary)] hover:border-blue-500/40 hover:bg-blue-500/5 hover:text-blue-400 hover:shadow-md'
                                             }`}
                                     >
                                         {tab.icon}
@@ -1581,8 +1616,8 @@ const CourseModules = () => {
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
 
                                             {/* LEFT: Added questions / Configured sets */}
-                                            <div className="flex flex-col h-full bg-[var(--input-bg)] rounded-xl border-2 border-[var(--border-strong)] overflow-hidden shadow-inner">
-                                                <div className="p-2.5 sm:p-3 md:p-4 border-b-2 border-[var(--border-subtle)] bg-[var(--input-bg)]">
+                                            <div className="flex flex-col h-full bg-[var(--surface-2)] rounded-xl border-2 border-[var(--border-strong)] overflow-hidden shadow-inner">
+                                                <div className="p-3 sm:p-4 border-b-2 border-[var(--border-subtle)] bg-[var(--input-bg)]">
                                                     <h3 className="font-bold text-sm sm:text-base md:text-lg text-[var(--text-primary)] flex items-center gap-2">
                                                         <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${qPaperTab === 'FIXED' ? 'bg-blue-500' : 'bg-purple-500'}`}></span>
                                                         {qPaperTab === 'FIXED' ? 'Fixed Questions' : 'Random Sets'}
@@ -1591,7 +1626,7 @@ const CourseModules = () => {
                                                         {qPaperTab === 'FIXED' ? 'Questions always included in this paper' : 'Sets where N questions are picked randomly'}
                                                     </p>
                                                 </div>
-                                                <div className="flex-1 overflow-y-auto p-2 sm:p-2.5 md:p-3 space-y-1.5 sm:space-y-2 custom-scrollbar">
+                                                <div className="flex-1 overflow-y-auto p-2 sm:p-3 space-y-2 custom-scrollbar">
 
                                                     {/* FIXED list */}
                                                     {qPaperTab === 'FIXED' && (
@@ -1600,9 +1635,9 @@ const CourseModules = () => {
                                                                 <div
                                                                     key={q.id}
                                                                     onClick={() => toggleQPaperSelection(q.id, selectedFixedQs, setSelectedFixedQs)}
-                                                                    className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all border-2 ${selectedFixedQs.includes(q.id)
-                                                                        ? 'bg-red-600/10 border-red-500/50'
-                                                                        : 'bg-[var(--bg-primary)] border-[var(--border-subtle)] hover:border-[var(--border-strong)]'
+                                                                    className={`flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg cursor-pointer transition active:scale-95 ${selectedFixedQs.includes(q.id)
+                                                                        ? 'bg-blue-600/20 border-2 border-blue-600'
+                                                                        : 'bg-[var(--surface)] border border-[var(--border-color)] hover:shadow-md hover:bg-[var(--surface-2)] hover:border-blue-400'
                                                                         }`}
                                                                 >
                                                                     <div className="w-8 h-8 rounded flex items-center justify-center flex-shrink-0 bg-blue-500/10 text-blue-400">
@@ -1611,15 +1646,18 @@ const CourseModules = () => {
                                                                     <div className="flex-1 min-w-0">
                                                                         <div className="font-medium text-sm text-[var(--text-primary)] truncate">{q.summary || 'Untitled Question'}</div>
                                                                         <div className="flex items-center gap-2 mt-0.5">
-                                                                            <span className="text-[10px] uppercase font-bold text-gray-500 bg-black/30 px-1.5 py-0.5 rounded">{q.type}</span>
-                                                                            <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">{q.points} pts</span>
+                                                                            <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] bg-[var(--input-bg)] border border-[var(--border-strong)] px-1.5 py-0.5 rounded">{q.type}</span>
+                                                                            <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded">{q.points} pts</span>
                                                                         </div>
                                                                     </div>
-                                                                    <input type="checkbox" readOnly checked={selectedFixedQs.includes(q.id)} className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-red-500 focus:ring-red-500 focus:ring-offset-0 flex-shrink-0" />
+                                                                    <input type="radio"
+                                                                        readOnly
+                                                                        checked={selectedFixedQs.includes(q.id)}
+                                                                        className="w-4 h-4 text-blue-500 border-2 border-[var(--border-strong)] bg-[var(--input-bg)] focus:ring-blue-500 focus:ring-offset-[var(--bg-primary)] accent-blue-500" />
                                                                 </div>
                                                             ))
                                                         ) : (
-                                                            <div className="h-full flex flex-col items-center justify-center text-gray-500 opacity-50 py-8">
+                                                            <div className="h-full flex flex-col items-center justify-center text-[var(--text-muted)] opacity-50 py-8">
                                                                 <FaCheck className="w-8 h-8 mb-2" />
                                                                 <p className="text-sm">No fixed questions yet</p>
                                                                 <p className="text-xs mt-1">Search and add from the right panel</p>
@@ -1634,13 +1672,13 @@ const CourseModules = () => {
                                                                 <div
                                                                     key={set.id}
                                                                     onClick={() => toggleQPaperSelection(set.id, selectedRandomSets, setSelectedRandomSets)}
-                                                                    className={`flex flex-col gap-2 p-3 rounded-lg cursor-pointer transition-all border-2 ${selectedRandomSets.includes(set.id)
-                                                                        ? 'bg-red-600/10 border-red-500/50'
-                                                                        : 'bg-[var(--bg-primary)] border-[var(--border-subtle)] hover:border-[var(--border-strong)]'
+                                                                    className={`flex flex-col gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg cursor-pointer transition active:scale-95 ${selectedRandomSets.includes(set.id)
+                                                                        ? 'bg-blue-600/20 border-2 border-blue-600'
+                                                                        : 'bg-[var(--surface)] border border-[var(--border-color)] hover:shadow-md hover:bg-[var(--surface-2)] hover:border-blue-400'
                                                                         }`}
                                                                 >
                                                                     {/* Header Row */}
-                                                                    <div className="flex items-center gap-3">
+                                                                    <div className="flex items-center gap-3 w-full">
                                                                         <div className="w-8 h-8 rounded flex items-center justify-center flex-shrink-0 bg-purple-500/10 text-purple-400">
                                                                             <FaRandom className="w-3.5 h-3.5" />
                                                                         </div>
@@ -1650,7 +1688,7 @@ const CourseModules = () => {
                                                                             </div>
                                                                             <div className="flex items-center gap-2 mt-0.5">
 
-                                                                                <span className="text-[10px] text-gray-500">Set #{set.id}</span>
+                                                                                <span className="text-[10px] text-[var(--text-muted)]">Set #{set.id}</span>
                                                                             </div>
                                                                         </div>
 
@@ -1662,23 +1700,26 @@ const CourseModules = () => {
                                                                                     prev.includes(set.id) ? prev.filter(id => id !== set.id) : [...prev, set.id]
                                                                                 );
                                                                             }}
-                                                                            className="p-1.5 hover:bg-white/10 rounded ml-1 text-gray-400 transition"
+                                                                            className="p-1.5 hover:bg-[var(--surface-2)] rounded ml-1 text-[var(--text-muted)] transition"
                                                                             title="View Questions"
                                                                         >
-                                                                            <svg className={`w-4 h-4 transition-transform ${expandedRandomSets.includes(set.id) ? 'rotate-180 text-amber-400' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                                                                            <svg className={`w-4 h-4 transition-transform ${expandedRandomSets.includes(set.id) ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                                                                         </button>
 
-                                                                        <input type="checkbox" readOnly checked={selectedRandomSets.includes(set.id)} className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-red-500 focus:ring-red-500 focus:ring-offset-0 flex-shrink-0 ml-1" />
+                                                                        <input type="radio"
+                                                                            readOnly
+                                                                            checked={selectedRandomSets.includes(set.id)}
+                                                                            className="w-4 h-4 text-blue-500 border-2 border-[var(--border-strong)] bg-[var(--input-bg)] focus:ring-blue-500 focus:ring-offset-[var(--bg-primary)] accent-blue-500" />
                                                                     </div>
 
                                                                     {/* Inner Questions List (Revealed cleanly when expanded) */}
                                                                     {expandedRandomSets.includes(set.id) && set.questions?.length > 0 && (
                                                                         <div
-                                                                            className="mt-1 pt-2 border-t border-white/5 space-y-2 max-h-48 overflow-y-auto custom-scrollbar"
+                                                                            className="mt-1 pt-2 border-t border-[var(--border-subtle)] space-y-2 max-h-48 overflow-y-auto custom-scrollbar"
                                                                             onClick={(e) => e.stopPropagation()} // Stop propagation here too so clicking text doesn't check the set
                                                                         >
                                                                             {set.questions.map((q, idx) => (
-                                                                                <div key={q.id || idx} className="flex gap-2 items-start text-xs text-[var(--text-muted)] bg-[var(--input-bg)] p-2 rounded-xl border-2 border-[var(--border-subtle)]">
+                                                                                <div key={q.id || idx} className="flex gap-2 items-start text-xs text-[var(--text-muted)] bg-[var(--surface-2)] hover:bg-[var(--surface)] p-2 rounded-xl border-2 border-[var(--border-strong)]">
                                                                                     <span className="text-[var(--text-muted)] font-mono mt-0.5">{idx + 1}.</span>
                                                                                     <div className="flex-1">
                                                                                         <div
@@ -1687,8 +1728,8 @@ const CourseModules = () => {
                                                                                         />
                                                                                         {/* Sub-tags showing individual marks underneath each list item */}
                                                                                         <div className="flex items-center gap-2">
-                                                                                            <span className="text-[9px] uppercase font-bold text-gray-500 bg-black/30 px-1 py-0.5 rounded">{q.type || 'Question'}</span>
-                                                                                            <span className="text-[9px] font-bold text-amber-400 bg-amber-500/10 px-1 py-0.5 rounded">{q.points} pts</span>
+                                                                                            <span className="text-[9px] uppercase font-bold text-[var(--text-muted)] bg-[var(--input-bg)] border border-[var(--border-strong)] px-1 py-0.5 rounded">{q.type || 'Question'}</span>
+                                                                                            <span className="text-[9px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1 py-0.5 rounded">{q.points} pts</span>
                                                                                         </div>
                                                                                     </div>
                                                                                 </div>
@@ -1698,7 +1739,7 @@ const CourseModules = () => {
                                                                 </div>
                                                             ))
                                                         ) : (
-                                                            <div className="h-full flex flex-col items-center justify-center text-gray-500 opacity-50 py-8">
+                                                            <div className="h-full flex flex-col items-center justify-center text-[var(--text-muted)] opacity-50 py-8">
                                                                 <FaRandom className="w-8 h-8 mb-2" />
                                                                 <p className="text-sm">No random sets yet</p>
                                                                 <p className="text-xs mt-1">Search and build sets from the right panel</p>
@@ -1709,11 +1750,11 @@ const CourseModules = () => {
 
                                                 {/* Left Footer: Remove button */}
 
-                                                <div className="flex items-center justify-between p-4 border-t-2 border-[var(--border-subtle)] bg-[var(--input-bg)]">
+                                                <div className="p-4 border-t-2 border-[var(--border-subtle)] bg-[var(--surface-2)] flex items-center justify-between gap-2">
                                                     <button
                                                         onClick={qPaperTab === 'FIXED' ? handleRemoveFixed : handleRemoveRandomSets}
                                                         disabled={qPaperTab === 'FIXED' ? (!selectedFixedQs.length || loadingQuestionPaper) : (!selectedRandomSets.length || loadingQuestionPaper)}
-                                                        className="px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 bg-red-600 hover:bg-red-700 rounded-lg text-xs sm:text-sm font-medium transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 flex-shrink-0"
+                                                        className="px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 border-2 border-red-500/50 hover:bg-red-500/10 text-red-500 rounded-xl text-xs sm:text-sm font-bold transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 flex-shrink-0"
                                                     >
                                                         <FaTrash className="w-3 h-3 inline mr-1" />
                                                         Remove ({qPaperTab === 'FIXED' ? selectedFixedQs.length : selectedRandomSets.length})
@@ -1723,7 +1764,7 @@ const CourseModules = () => {
 
                                             {/* RIGHT: Search + Results */}
                                             <div className="flex flex-col h-full bg-[var(--input-bg)] rounded-xl border-2 border-[var(--border-strong)] overflow-hidden shadow-inner">
-                                                <div className="p-2.5 sm:p-3 md:p-4 border-b-2 border-[var(--border-subtle)] bg-[var(--input-bg)]">
+                                                <div className="p-3 sm:p-4  bg-[var(--input-bg)]">
                                                     <h3 className="font-bold text-sm sm:text-base md:text-lg text-[var(--text-primary)] flex items-center gap-2">
                                                         <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-green-500"></span>
                                                         Question Bank
@@ -1732,18 +1773,18 @@ const CourseModules = () => {
                                                 </div>
 
                                                 {/* Filter controls */}
-                                                <div className="p-2.5 sm:p-3 border-b-2 border-[var(--border-subtle)] bg-[var(--bg-primary)] flex items-center gap-2">
+                                                <div className="px-3 sm:px-4 pb-3 sm:pb-4 border-b-2 border-[var(--border-subtle)] bg-[var(--input-bg)] flex items-center gap-2">
                                                     <input
                                                         type="number"
                                                         placeholder="Marks"
                                                         value={filterMarks}
                                                         onChange={e => setFilterMarks(e.target.value)}
-                                                        className="w-20 bg-[var(--input-bg)] border-2 border-[var(--border-strong)] rounded-xl px-2 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-blue-500/50 transition-colors"
+                                                        className="w-20 bg-[var(--surface-2)] border-2 border-[var(--border-strong)] rounded-xl px-2 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-blue-500/50 transition-colors"
                                                     />
                                                     <select
                                                         value={filterType}
                                                         onChange={e => setFilterType(e.target.value)}
-                                                        className="flex-1 bg-[var(--input-bg)] border-2 border-[var(--border-strong)] rounded-xl px-2 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-blue-500/50 transition-colors"
+                                                        className="flex-1 bg-[var(--surface-2)] border-2 border-[var(--border-strong)] rounded-xl px-2 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-blue-500/50 transition-colors"
                                                     >
                                                         <option value="">----------</option>
                                                         <option value="mcq">Single Correct Choice</option>
@@ -1759,40 +1800,40 @@ const CourseModules = () => {
                                                     <button
                                                         onClick={handleSearchQPaper}
                                                         disabled={loadingQuestionPaper}
-                                                        className="px-3 py-1.5 bg-green-600 hover:bg-green-700 rounded-lg text-xs font-bold transition active:scale-95 disabled:opacity-50 flex items-center gap-1.5 flex-shrink-0"
+                                                        className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl text-xs font-bold transition active:scale-95 disabled:opacity-50 flex items-center gap-1.5 flex-shrink-0 text-[var(--text-primary)]"
                                                     >
-                                                        {loadingQuestionPaper ? <FaSync className="animate-spin w-3 h-3" /> : <FaSearch className="w-3 h-3" />}
+                                                        {loadingQuestionPaper ? <FaSync className="animate-spin w-3 h-3 text-[var(--text-muted)]" /> : <FaSearch className="w-3 h-3 " />}
                                                         Find
                                                     </button>
                                                 </div>
 
                                                 {/* Results */}
-                                                <div className="flex-1 overflow-y-auto p-2 sm:p-2.5 md:p-3 space-y-1.5 sm:space-y-2 custom-scrollbar">
+                                                <div className="flex-1 overflow-y-auto p-2 sm:p-3 space-y-2 custom-scrollbar items-center justify-between p-4 bg-[var(--surface-2)]">
                                                     {availableQuestions.length > 0 ? (
                                                         availableQuestions.map(q => (
                                                             <div
                                                                 key={q.id}
                                                                 onClick={() => toggleQPaperSelection(q.id, selectedPoolQs, setSelectedPoolQs)}
-                                                                className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all border-2 ${selectedPoolQs.includes(q.id)
-                                                                    ? 'bg-green-600/10 border-green-500/50'
-                                                                    : 'bg-[var(--bg-primary)] border-[var(--border-subtle)] hover:border-[var(--border-strong)]'
+                                                                className={`flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg cursor-pointer transition active:scale-95 ${selectedPoolQs.includes(q.id)
+                                                                    ? 'bg-green-600/20 border-2 border-green-600'
+                                                                    : 'bg-[var(--surface)] border border-[var(--border-color)] hover:shadow-md hover:bg-white/[0.03] hover:border-green-400'
                                                                     }`}
                                                             >
                                                                 <div className="w-8 h-8 rounded flex items-center justify-center flex-shrink-0 bg-green-500/10 text-green-400">
-                                                                    <FaList className="w-3.5 h-3.5" />
+                                                                    <FaQuestionCircle className="w-3.5 h-3.5" />
                                                                 </div>
                                                                 <div className="flex-1 min-w-0">
                                                                     <div className="font-medium text-xs sm:text-sm text-[var(--text-primary)] truncate">{q.summary || 'Untitled Question'}</div>
                                                                     <div className="flex items-center gap-2 mt-0.5">
-                                                                        <span className="text-[10px] uppercase font-bold text-gray-600 bg-black/30 px-1.5 py-0.5 rounded">{q.type}</span>
-                                                                        <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">{q.points} pts</span>
+                                                                        <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] bg-[var(--input-bg)] border border-[var(--border-strong)] px-1.5 py-0.5 rounded">{q.type}</span>
+                                                                        <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded">{q.points} pts</span>
                                                                     </div>
                                                                 </div>
-                                                                <input type="radio" readOnly checked={selectedPoolQs.includes(q.id)} className="w-4 h-4 text-green-500 bg-gray-700 border-gray-600 focus:ring-green-500 focus:ring-offset-0 flex-shrink-0" />
+                                                                <input type="radio" readOnly checked={selectedPoolQs.includes(q.id)} className="w-4 h-4 text-green-500 rounded border-2 border-[var(--border-strong)] bg-[var(--input-bg)] focus:ring-green-500 focus:ring-offset-[var(--bg-primary)] accent-green-500 flex-shrink-0" />
                                                             </div>
                                                         ))
                                                     ) : (
-                                                        <div className="h-full flex flex-col items-center justify-center text-gray-500 opacity-50 py-8 sm:py-12">
+                                                        <div className="h-full flex flex-col items-center justify-center text-[var(--text-muted)] opacity-50 py-8 sm:py-12">
                                                             <FaSearch className="w-6 h-6 sm:w-8 sm:h-8 mb-2" />
                                                             <p className="text-xs sm:text-sm">No results yet</p>
                                                             <p className="text-[10px] sm:text-xs mt-1">Use filters above and click Find</p>
@@ -1805,13 +1846,13 @@ const CourseModules = () => {
 
 
 
-                                                <div className="flex items-center justify-between p-4 border-t-2 border-[var(--border-subtle)] bg-[var(--input-bg)]">
+                                                <div className="flex items-center justify-between p-4 border-t-2 border-[var(--border-subtle)] bg-[var(--surface-2)]">
                                                     {qPaperTab === 'FIXED' && (
 
                                                         <button
                                                             onClick={handleAddFixed}
                                                             disabled={!selectedPoolQs.length || loadingQuestionPaper}
-                                                            className="px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 bg-green-600 hover:bg-green-700 rounded-lg text-xs sm:text-sm font-medium transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 flex-shrink-0"
+                                                            className="px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-green-600 to-green-500 rounded-xl text-white text-xs sm:text-sm font-bold shadow-lg shadow-green-500/20 hover:from-green-700 hover:to-green-600 transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 flex-shrink-0"
                                                         >
                                                             <FaPlus className="w-3 h-3 inline mr-1" />
                                                             Add {selectedPoolQs.length > 0 ? selectedPoolQs.length : ''} to Fixed
@@ -1823,7 +1864,7 @@ const CourseModules = () => {
                                                             <button
                                                                 onClick={handleAddRandomSet}
                                                                 disabled={!selectedPoolQs.length || loadingQuestionPaper || !randomSetCount}
-                                                                className="px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 bg-green-600 hover:bg-green-700 rounded-lg text-xs sm:text-sm font-medium transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 flex-shrink-0"
+                                                                className="px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-green-600 to-green-500 rounded-xl text-white text-xs sm:text-sm font-bold shadow-lg shadow-green-500/20 hover:from-green-700 hover:to-green-600 transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 flex-shrink-0"
                                                             >
                                                                 <FaRandom className="w-3 h-3 inline mr-1" />
                                                                 Pick {randomSetCount || 'N'} from {selectedPoolQs.length > 0 ? selectedPoolQs.length : '0'}
@@ -1858,7 +1899,7 @@ const CourseModules = () => {
                                 <button
                                     type="button"
                                     onClick={() => setShuffleQuestions(prev => !prev)}
-                                    className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-[var(--bg-primary)] ${shuffleQuestions ? 'bg-blue-600' : 'bg-gray-600'
+                                    className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-[var(--bg-primary)] ${shuffleQuestions ? 'bg-purple-600' : 'bg-[var(--border-strong)]'
                                         }`}
                                 >
                                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${shuffleQuestions ? 'translate-x-6' : 'translate-x-1'}`} />
@@ -1872,7 +1913,7 @@ const CourseModules = () => {
                                 <button
                                     type="button"
                                     onClick={() => setShuffleTestcases(prev => !prev)}
-                                    className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-[var(--bg-primary)] ${shuffleTestcases ? 'bg-blue-600' : 'bg-gray-600'
+                                    className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-[var(--bg-primary)] ${shuffleTestcases ? 'bg-yellow-600' : 'bg-[var(--border-strong)]'
                                         }`}
                                 >
                                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${shuffleTestcases ? 'translate-x-6' : 'translate-x-1'}`} />

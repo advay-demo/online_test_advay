@@ -883,18 +883,25 @@ class LearningModuleSerializer(serializers.ModelSerializer):
 class MinimalLearningUnitSerializer(serializers.ModelSerializer):
     display_name = serializers.SerializerMethodField()
     check_prerequisite = serializers.BooleanField()
+    # Add a custom method field for is_exercise
+    is_exercise = serializers.SerializerMethodField()
 
     def get_display_name(self, obj):
+        # Restored original logic to prevent NameError
         if obj.type == "quiz" and obj.quiz:
             return f"{obj.quiz.description} (quiz)"
         elif obj.type == "lesson" and obj.lesson:
             return f"{obj.lesson.name} (lesson)"
         return ""
 
+    def get_is_exercise(self, obj):
+        if obj.type == 'quiz' and obj.quiz:
+            return obj.quiz.is_exercise
+        return False
+
     class Meta:
         model = LearningUnit
-        fields = ['id', 'type', 'order', 'display_name', 'check_prerequisite']                   
-
+        fields = ['id', 'type', 'order', 'display_name', 'check_prerequisite', 'is_exercise']
 
 
 #class SimpleUserSerializer(serializers.ModelSerializer):
