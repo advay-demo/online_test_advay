@@ -1936,7 +1936,7 @@ const CourseModules = () => {
                                 style={{ zIndex: openDropdownId === module.id ? 9999 : 10 }}
                                 className={`
                                 relative border-2 hover:shadow-lg transition-all duration-300 group bg-[var(--card-bg)] rounded-xl
-                                ${isExpanded ? 'border-blue-500/70 dark:border-blue-500/50 bg-[var(--surface-2)]' : 'border-[var(--border-color)] hover:border-[var(--border-strong)] bg-[var(--surface)]'}
+                                ${isExpanded ? 'border-blue-500/70 dark:border-blue-500/50 bg-[var(--surface-2)]' : 'border-[var(--border-color)] hover:border-blue-500/70 dark:hover:border-blue-500/50 transition-all duration-300 bg-[var(--surface)]'}
                             `}
                             >
                                 {/* Module Row Header */}
@@ -1946,7 +1946,7 @@ const CourseModules = () => {
                                     <div className="flex-1 min-w-0 flex items-start sm:items-center gap-4">
                                         {/* Icon Box */}
                                         <div className={`p-3 rounded-xl shrink-0 transition-all duration-300 border-2 shadow-lg ${isExpanded
-                                            ? 'bg-gradient-to-br from-blue-600 to-blue-500 border-blue-400 text-white'
+                                            ? 'bg-blue-500/15 border-blue-500/30 text-blue-400'
                                             : 'bg-[var(--input-bg)] border-[var(--border-color)] text-gray-600 dark:text-gray-400'
                                             }`}>
                                             <FaLayerGroup className="w-5 h-5" />
@@ -1975,7 +1975,7 @@ const CourseModules = () => {
                                             )}
                                             <div className="flex items-center gap-3 text-xs muted mt-2">
                                                 <div className="flex items-center gap-1.5">
-                                                    <FaBook className="w-3 h-3" />
+
                                                     <span>{module.units_count} unit{module.units_count !== 1 ? 's' : ''}</span>
                                                 </div>
 
@@ -2074,8 +2074,8 @@ const CourseModules = () => {
                                         <button
                                             onClick={() => toggleModule(module.id)}
                                             className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 border-2 flex-shrink-0 ${isExpanded
-                                                ? 'bg-gradient-to-br from-blue-600 to-blue-500 text-white border-blue-400 shadow-lg shadow-blue-500/50 scale-110'
-                                                : 'bg-[var(--input-bg)] text-[var(--text-muted)] border-[var(--border-color)] hover:bg-[var(--border-subtle)] hover:text-[var(--text-primary)] hover:border-[var(--border-strong)]'
+                                                ? 'bg-blue-500/15 border-blue-500/30 text-blue-400'
+                                                : 'bg-[var(--input-bg)] border-[var(--border-color)] text-gray-600 dark:text-gray-400'
                                                 }`}
                                         >
                                             {isExpanded ? <FaChevronUp size={14} /> : <FaChevronDown size={14} />}

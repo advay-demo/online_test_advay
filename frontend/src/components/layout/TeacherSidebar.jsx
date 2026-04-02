@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { FaHome, FaBook, FaChartBar, FaChevronRight, FaQuestionCircle, FaTimes } from 'react-icons/fa';
+import { FaPersonCircleQuestion } from "react-icons/fa6";
 import Logo from '../ui/Logo';
 
 const TeacherSidebar = () => {
@@ -9,9 +10,9 @@ const TeacherSidebar = () => {
 
     const navItems = [
         { path: '/teacher/dashboard', label: 'Dashboard', icon: FaHome },
-        { path: '/teacher/quizzes', label: 'Quizzes', icon: FaChartBar },
+        { path: '/teacher/quizzes', label: 'Quizzes', icon: FaQuestionCircle },
         { path: '/teacher/courses', label: 'Courses', icon: FaBook },
-        { path: '/teacher/questions', label: 'Questions', icon: FaQuestionCircle },
+        { path: '/teacher/questions', label: 'Questions', icon: FaPersonCircleQuestion },
     ];
 
     // Helper to determine if a nav item is active
@@ -74,7 +75,7 @@ const TeacherSidebar = () => {
                     >
                         <FaTimes className="w-5 h-5" />
                     </button>
-                    
+
                 </div>
 
                 {/* Navigation */}

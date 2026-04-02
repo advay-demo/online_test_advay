@@ -109,12 +109,14 @@ const CourseStudent = () => {
                                 {course.name}
                               </h3>
                               <span
-                                className={`text-[10px] px-2.5 py-1 rounded-lg border-2 ${getStatusColor(
-                                  status
-                                )} uppercase font-bold tracking-wider whitespace-nowrap flex-shrink-0 transition-all duration-300`}
+                                className={`text-[10px] px-2 py-0.5 rounded-md border-2 uppercase font-bold tracking-wider whitespace-nowrap flex-shrink-0 transition-all duration-200 shadow-md ${status === 'Active'
+                                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 shadow-emerald-500/20'
+                                  : 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30 shadow-orange-500/20'
+                                  }`}
                               >
                                 {status}
                               </span>
+
                             </div>
                             {course.code && (
                               <p className="text-xs sm:text-sm muted mb-2 sm:mb-3 line-clamp-2">Code: {course.code}</p>

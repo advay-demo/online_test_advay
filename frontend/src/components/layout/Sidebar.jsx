@@ -15,25 +15,25 @@ const Sidebar = () => {
 
 
   const isActive = (path) => {
-        if (path === '/dashboard') {
-            return location.pathname === path;
-        }
-        if (path === '/courses') {
-            return (
-                location.pathname === path ||
-                location.pathname.startsWith('/course') ||
-                location.pathname.startsWith('/courses') ||
-                location.pathname === '/add-course' ||
-                location.pathname.startsWith('/lessons/') ||
-                location.pathname.startsWith('/student/courses/')
-                
-            );
-        }
-       
-        return location.pathname === path || location.pathname.startsWith(path + '/');
-    };
+    if (path === '/dashboard') {
+      return location.pathname === path;
+    }
+    if (path === '/courses') {
+      return (
+        location.pathname === path ||
+        location.pathname.startsWith('/course') ||
+        location.pathname.startsWith('/courses') ||
+        location.pathname === '/add-course' ||
+        location.pathname.startsWith('/lessons/') ||
+        location.pathname.startsWith('/student/courses/')
 
-  
+      );
+    }
+
+    return location.pathname === path || location.pathname.startsWith(path + '/');
+  };
+
+
 
 
 
@@ -69,7 +69,7 @@ const Sidebar = () => {
           >
             <FaTimes className="w-5 h-5" />
           </button>
-          
+
         </div>
 
         {/* Navigation */}
@@ -83,8 +83,8 @@ const Sidebar = () => {
                 to={item.path}
                 onClick={handleLinkClick}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition ${active
-                    ? 'bg-blue-600 text-white'
-                    : 'text-soft hover:bg-white/3'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-soft hover:bg-white/3'
                   }`}
               >
                 <Icon className="w-5 h-5" />
@@ -92,7 +92,7 @@ const Sidebar = () => {
               </Link>
             );
           })}
-        </nav>  
+        </nav>
       </aside>
 
       {/* Mobile Menu Toggle Button - Floating */}

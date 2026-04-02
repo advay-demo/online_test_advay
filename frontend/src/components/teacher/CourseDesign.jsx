@@ -126,7 +126,7 @@ const CourseDesign = () => {
             </div>
             <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
                 {/* Selected Modules */}
-                <div className="card p-4 sm:p-6 border-2 hover:shadow-lg transition-all duration-300 group bg-[var(--card-bg)] rounded-xl border-[var(--border-color)] hover:border-[var(--border-strong)] bg-[var(--surface)]">
+                <div className="card p-4 sm:p-6 border-2  transition-all duration-300 group bg-[var(--card-bg)] rounded-xl border-[var(--border-color)] hover:border-blue-500/70 dark:hover:border-blue-500/50 hover:shadow-lg bg-[var(--surface)]">
                     <div className="mb-3 sm:mb-4">
                         <h4 className="font-bold text-base sm:text-lg mb-1">Selected Modules</h4>
                         <p className="text-xs sm:text-sm muted">Modules currently in this course</p>
@@ -142,8 +142,8 @@ const CourseDesign = () => {
                                     <div
                                         onClick={() => handleSelectedClick(module.id)}
                                         className={`flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg cursor-pointer transition active:scale-95 ${isSelected
-                                            ? 'bg-blue-600/20 border-2 border-blue-600'
-                                            : 'bg-[var(--surface-2)] border border-[var(--border-color)] hover:shadow-md hover:bg-white/[0.03] hover:border-blue-400'
+                                            ? 'bg-red-600/20 border-2 border-red-600'
+                                            : 'bg-[var(--surface-2)] border border-[var(--border-color)] hover:shadow-md hover:bg-white/[0.03] hover:border-red-400'
                                             }`}
                                     >
                                         <input
@@ -234,7 +234,7 @@ const CourseDesign = () => {
 
 
                 {/* Pool of Modules */}
-                <div className="card p-4 sm:p-6 border-2 hover:shadow-lg transition-all duration-300 group bg-[var(--card-bg)] rounded-xl border-[var(--border-color)] hover:border-[var(--border-strong)] bg-[var(--surface)]">
+                <div className="card p-4 sm:p-6 border-2 hover:shadow-lg transition-all duration-300 group bg-[var(--card-bg)] rounded-xl border-[var(--border-color)] hover:border-blue-500/70 dark:hover:border-blue-500/50 bg-[var(--surface)]">
                     <div className="mb-3 sm:mb-4">
                         <h4 className="font-bold text-base sm:text-lg mb-1">Pool of Modules</h4>
                         <p className="text-xs sm:text-sm muted">Available modules to add</p>
