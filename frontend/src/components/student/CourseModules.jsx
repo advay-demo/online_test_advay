@@ -104,7 +104,7 @@ const CourseModules = () => {
                             key={module.id}
                             className={`
                                 relative border-2 hover:shadow-lg transition-all duration-300 group bg-[var(--card-bg)] rounded-xl
-                                ${isExpanded ? 'border-blue-500/70 dark:border-blue-500/50 bg-[var(--surface-2)]' : 'border-[var(--border-color)] hover:border-[var(--border-strong)] bg-[var(--surface)]'}
+                                ${isExpanded ? 'border-blue-500/70 dark:border-blue-500/50 bg-[var(--surface-2)]' : 'border-[var(--border-color)] hover:border-blue-500/70 dark:hover:border-blue-500/50 transition-all duration-300 bg-[var(--surface)]'}
                             `}
                         >
                             {/* Module Row Header */}
@@ -113,20 +113,18 @@ const CourseModules = () => {
                                 {/* Info Section */}
                                 <div className="flex-1 min-w-0 flex items-start sm:items-center gap-4">
                                     {/* Icon Box */}
-                                    <div className={`p-3 rounded-xl shrink-0 transition-all duration-300 border-2 shadow-lg ${
-                                        isExpanded
-                                            ? 'bg-gradient-to-br from-blue-600 to-blue-500 border-blue-400 text-white'
-                                            : 'bg-[var(--input-bg)] border-[var(--border-color)] text-gray-600 dark:text-gray-400'
-                                    }`}>
+                                    <div className={`p-3 rounded-xl shrink-0 transition-all duration-300 border-2 shadow-lg ${isExpanded
+                                        ? 'bg-blue-500/15 border-blue-500/30 text-blue-400'
+                                        : 'bg-[var(--input-bg)] border-[var(--border-color)] text-gray-600 dark:text-gray-400'
+                                        }`}>
                                         <FaLayerGroup className="w-5 h-5" />
                                     </div>
 
                                     {/* Text Info */}
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                            <h3 className={`font-bold text-base sm:text-lg truncate group-hover:text-blue-500 transition-colors ${
-                                                isExpanded ? 'text-blue-600 dark:text-blue-400' : 'text-[var(--text-primary)]'
-                                            }`}>
+                                            <h3 className={`font-bold text-base sm:text-lg truncate group-hover:text-blue-500 transition-colors ${isExpanded ? 'text-blue-600 dark:text-blue-400' : 'text-[var(--text-primary)]'
+                                                }`}>
                                                 {module.name}
                                             </h3>
                                             {isCompleted && (
@@ -136,7 +134,7 @@ const CourseModules = () => {
                                             )}
                                         </div>
                                         {module.description && (
-                                             <p className="text-xs text-[var(--text-muted)] mt-1 line-clamp-1 max-w-md hidden sm:block">
+                                            <p className="text-xs text-[var(--text-muted)] mt-1 line-clamp-1 max-w-md hidden sm:block">
                                                 {module.description}
                                             </p>
                                         )}
@@ -154,12 +152,11 @@ const CourseModules = () => {
                                         <div className="flex items-center justify-between w-full mb-1.5">
                                             <span className="text-[10px] uppercase text-[var(--text-muted)] font-bold tracking-wider">Progress</span>
                                             <div className="flex items-center gap-1.5">
-                                                 {isExpanded && !isCompleted && <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 dark:bg-cyan-400 animate-pulse shadow-lg shadow-cyan-500/50"></div>}
-                                                <span className={`text-xs font-bold ${
-                                                    isCompleted
-                                                        ? 'text-emerald-600 dark:text-emerald-400'
-                                                        : 'text-cyan-600 dark:text-cyan-400'
-                                                }`}>
+                                                {isExpanded && !isCompleted && <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 dark:bg-cyan-400 animate-pulse shadow-lg shadow-cyan-500/50"></div>}
+                                                <span className={`text-xs font-bold ${isCompleted
+                                                    ? 'text-emerald-600 dark:text-emerald-400'
+                                                    : 'text-cyan-600 dark:text-cyan-400'
+                                                    }`}>
                                                     {Math.round(module.progress || 0)}%
                                                 </span>
                                             </div>
@@ -167,11 +164,10 @@ const CourseModules = () => {
                                         {/* Progress Bar Container */}
                                         <div className="h-2.5 w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-full overflow-hidden relative shadow-inner">
                                             <div
-                                                className={`h-full rounded-full transition-all duration-1000 ease-out relative shadow-lg ${
-                                                    isCompleted
-                                                        ? 'bg-gradient-to-r from-green-500 to-emerald-400 shadow-emerald-500/50'
-                                                        : 'bg-gradient-to-r from-blue-600 to-cyan-400 shadow-blue-500/50'
-                                                }`}
+                                                className={`h-full rounded-full transition-all duration-1000 ease-out relative shadow-lg ${isCompleted
+                                                    ? 'bg-gradient-to-r from-green-500 to-emerald-400 shadow-emerald-500/50'
+                                                    : 'bg-gradient-to-r from-blue-600 to-cyan-400 shadow-blue-500/50'
+                                                    }`}
                                                 style={{ width: `${module.progress || 0}%` }}
                                             >
                                                 {/* Shine effect */}
@@ -189,11 +185,10 @@ const CourseModules = () => {
                                     {/* Toggle CTA */}
                                     <button
                                         onClick={() => toggleModule(module.id)}
-                                        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 border-2 ${
-                                            isExpanded
-                                            ? 'bg-gradient-to-br from-blue-600 to-blue-500 text-white border-blue-400 shadow-lg shadow-blue-500/50 scale-110'
-                                            : 'bg-[var(--input-bg)] text-[var(--text-muted)] border-[var(--border-color)] hover:bg-[var(--border-subtle)] hover:text-[var(--text-primary)] hover:border-[var(--border-strong)]'
-                                        }`}
+                                        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 border-2 ${isExpanded
+                                            ? 'bg-blue-500/15 border-blue-500/30 text-blue-400'
+                                            : 'bg-[var(--input-bg)] border-[var(--border-color)] text-gray-600 dark:text-gray-400'
+                                            }`}
                                     >
                                         {isExpanded ? <FaChevronUp size={14} /> : <FaChevronDown size={14} />}
                                     </button>
@@ -234,9 +229,9 @@ const CourseModules = () => {
                                                                 <tr key={unit.id} className="hover:bg-white/[0.02] transition-colors group">
                                                                     <td className="pl-8 pr-4 py-4 whitespace-nowrap align-middle">
                                                                         {isLocked ? (
-                                                                             <div className="flex items-center gap-2 text-gray-400 bg-gray-800/40 px-2.5 py-1 rounded-md border border-gray-700/50 w-fit">
+                                                                            <div className="flex items-center gap-2 text-gray-400 bg-gray-800/40 px-2.5 py-1 rounded-md border border-gray-700/50 w-fit">
                                                                                 <FaLock size={10} /> <span className="text-[10px] font-bold uppercase">Locked</span>
-                                                                             </div>
+                                                                            </div>
                                                                         ) : isUnitCompleted ? (
                                                                             <div className="flex items-center gap-2 text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-md border border-emerald-500/20 w-fit shadow-[0_0_10px_rgba(16,185,129,0.1)]">
                                                                                 <FaCheckCircle size={10} /> <span className="text-[10px] font-bold uppercase">Completed </span>
@@ -267,12 +262,12 @@ const CourseModules = () => {
                                                                     <td className="px-4 py-4 align-middle">
                                                                         {unit.type === 'lesson' ? (
                                                                             <div className="flex items-center gap-2 text-cyan-600 dark:text-cyan-300 text-xs bg-cyan-500/10 dark:bg-cyan-950/30 px-3 py-1.5 rounded-xl w-fit border border-cyan-500/30">
-                                                                                <FaVideo className="text-cyan-500 dark:text-cyan-400" size={12}/>
+                                                                                <FaVideo className="text-cyan-500 dark:text-cyan-400" size={12} />
                                                                                 <span className="capitalize font-medium">Lesson</span>
                                                                             </div>
                                                                         ) : unit.quiz.is_exercise ? (
                                                                             <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300 text-xs bg-purple-500/10 dark:bg-purple-950/30 px-3 py-1.5 rounded-xl w-fit border border-purple-500/30">
-                                                                                <FaPuzzlePiece className="text-purple-500 dark:text-purple-400" size={12}/>
+                                                                                <FaPuzzlePiece className="text-purple-500 dark:text-purple-400" size={12} />
                                                                                 <span className="capitalize font-medium">Exercise</span>
                                                                             </div>
 
@@ -320,7 +315,7 @@ const CourseModules = () => {
 
                                                             <div className="flex justify-between items-start gap-3 mb-3">
                                                                 <div className="flex-1">
-                                                                     <div className="flex items-center gap-2 mb-1">
+                                                                    <div className="flex items-center gap-2 mb-1">
                                                                         {unit.type === 'lesson' ? (
                                                                             <span className="text-[10px] uppercase font-bold px-1.5 rounded bg-cyan-500/10 dark:bg-cyan-900/40 text-cyan-600 dark:text-cyan-300 border border-cyan-500/30">
                                                                                 Lesson
@@ -331,9 +326,9 @@ const CourseModules = () => {
                                                                             </span>
                                                                         )}
 
-                                                                        
-                                                                     </div>
-                                                                     <h4 className="text-sm font-bold text-[var(--text-primary)] line-clamp-2 leading-tight">{unitName}</h4>
+
+                                                                    </div>
+                                                                    <h4 className="text-sm font-bold text-[var(--text-primary)] line-clamp-2 leading-tight">{unitName}</h4>
                                                                 </div>
 
                                                                 {/* Mobile Status Badge */}
@@ -389,11 +384,11 @@ const DesktopActionButtons = ({ unit, module, isLocked, isUnitCompleted, isInPro
     return (
         <div className="flex items-center gap-2 justify-end">
             {!isLocked && unit.type === 'quiz' && unit.quiz?.view_answerpaper && (
-                 <button
+                <button
                     onClick={(e) => {
                         e.stopPropagation();
                         if (handleViewAnswerPaper) handleViewAnswerPaper(unit);
-                    }} 
+                    }}
                     className="px-3 py-1.5 text-blue-500 bg-blue-500/10 hover:bg-blue-500/20 rounded-lg transition-colors border border-blue-500/20 flex items-center gap-2 text-xs font-medium"
                 >
                     <FaClipboardList className="w-3 h-3" /> {isMobile ? "Ans." : "Answer Paper"}
@@ -421,8 +416,8 @@ const DesktopActionButtons = ({ unit, module, isLocked, isUnitCompleted, isInPro
             {/* FIX HERE: Only check if it was quitted (which implies it failed/aborted) */}
             {(isUnitQuitted || isUnitCompleted) && (
                 <button
-                        onClick={() => handleUnitClick(module, unit)}
-                        className="flex items-center gap-1.5 text-gray-600 hover:text-red-500 text-xs px-4 py-1.5 rounded-lg border border-transparent hover:border-white/10 hover:bg-white/5 transition"
+                    onClick={() => handleUnitClick(module, unit)}
+                    className="flex items-center gap-1.5 text-gray-600 hover:text-red-500 text-xs px-4 py-1.5 rounded-lg border border-transparent hover:border-white/10 hover:bg-white/5 transition"
                 >
                     Retry <FaPlay size={10} />
                 </button>
@@ -430,12 +425,12 @@ const DesktopActionButtons = ({ unit, module, isLocked, isUnitCompleted, isInPro
 
             {isLocked && (
                 <span className="text-gray-600 px-2 py-1 text-xs italic flex items-center gap-1">
-                    Wait <FaClock size={10}/>
+                    Wait <FaClock size={10} />
                 </span>
             )}
             {isLocked && (
                 <span className="text-gray-600 px-2 py-1 text-xs italic flex items-center gap-1">
-                    Wait <FaClock size={10}/>
+                    Wait <FaClock size={10} />
                 </span>
             )}
         </div>

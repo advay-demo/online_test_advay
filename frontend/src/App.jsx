@@ -24,7 +24,6 @@ import Courses from './pages/teacher/Courses';
 import ManageCourse from './pages/teacher/ManageCourse';
 import TeacherQuizzes from './pages/teacher/TeacherQuizzes';
 import Questions from './pages/teacher/Questions';
-import AddQuestion from './pages/teacher/AddQuestion';
 import PrivateRoute from './components/auth/PrivateRoute';
 import GradingSystems from './pages/teacher/GradingSystems';
 import UploadQuestion from './pages/teacher/UploadQuestion';
@@ -80,7 +79,6 @@ function App() {
           <Route path="/teacher/courses/:courseId/manage" element={<ManageCourse />} />
           <Route path="/teacher/courses/:courseId/edit" element={<AddCourse />} />
           <Route path="/teacher/questions" element={<Questions />} />
-          <Route path="/teacher/add-question" element={<AddQuestion />} />
           <Route path="/teacher/upload-question" element={<UploadQuestion />} />
           <Route path="/teacher/test-question/:questionpaperId/:moduleId/:courseId" element={<TestQuestion />} />
 
