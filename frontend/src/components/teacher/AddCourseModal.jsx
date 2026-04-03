@@ -109,7 +109,7 @@ export default function AddCourseModal({ onCancel, courseId = null, isEdit = fal
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-2 py-4 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-2 py-4 overflow-y-auto custom-scrollbar">
       <div className="card-strong w-full max-w-5xl p-4 sm:p-6 relative my-4 rounded-2xl border-2 border-[var(--border-strong)] max-h-[90vh] overflow-y-auto">
         
         {/* Close Button */}
