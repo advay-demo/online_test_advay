@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Home from './pages/Home';
 import Signup from './pages/Signup';
 import Signin from './pages/Signin';
+import SocialAuthCallback from './pages/SocialAuthCallback';
 import ForgotPassword from './pages/ForgotPassword';
 import DashboardHome from './pages/DashboardHome';
 import CourseStudent from './pages/student/Courses';
@@ -40,6 +41,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/signin" element={<Signin />} />
+        <Route path="/auth/callback" element={<SocialAuthCallback />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
 
         {/* Protected Routes */}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Editor } from '@tinymce/tinymce-react';
 import { FaPaperPlane } from 'react-icons/fa';
 import useManageCourseStore from '../../store/manageCourseStore';
@@ -11,10 +11,29 @@ const CourseMail = ({ courseId }) => {
     const [subject, setSubject] = useState('');
     const [body, setBody] = useState('');
     const [selectedStudents, setSelectedStudents] = useState([]);
-    const [selectAll, setSelectAll] = useState(false);
     const [sending, setSending] = useState(false);
     const [statusMessage, setStatusMessage] = useState(null); // { type: 'success' | 'error', text: '' }
     const editorRef = useRef(null);
+    const [searchQuery, setSearchQuery] = useState('');
+
+    // Filter enrolled students by search query
+    const filteredStudents = useMemo(() => {
+        if (!searchQuery.trim()) return enrollments.enrolled;
+        const q = searchQuery.trim().toLowerCase();
+        return enrollments.enrolled.filter((s) => {
+            const fullName = `${s.first_name ?? ''} ${s.last_name ?? ''}`.toLowerCase();
+            return (
+                fullName.includes(q) ||
+                (s.email && s.email.toLowerCase().includes(q)) ||
+                (s.roll_number && String(s.roll_number).toLowerCase().includes(q)) ||
+                (s.institute && s.institute.toLowerCase().includes(q))
+            );
+        });
+    }, [enrollments.enrolled, searchQuery]);
+
+    // Derive selectAll from whether all *visible* students are selected
+    const selectAll = filteredStudents.length > 0 &&
+        filteredStudents.every((s) => selectedStudents.includes(s.id || s.user_id));
 
     // Load enrollments on mount
     useEffect(() => {
@@ -29,15 +48,19 @@ const CourseMail = ({ courseId }) => {
         }
     }, [statusMessage]);
 
-    // Handle Select All
+    // Handle Select All — operates on filtered (visible) students only
     const handleSelectAll = (e) => {
         const checked = e.target.checked;
-        setSelectAll(checked);
+        const visibleIds = filteredStudents.map(s => s.id || s.user_id);
         if (checked) {
-            const allStudentIds = enrollments.enrolled.map(s => s.id || s.user_id);
-            setSelectedStudents(allStudentIds);
+            // Add all visible student IDs, keeping existing non-visible selections
+            setSelectedStudents((prev) => {
+                const combined = new Set([...prev, ...visibleIds]);
+                return [...combined];
+            });
         } else {
-            setSelectedStudents([]);
+            // Remove only the visible student IDs
+            setSelectedStudents((prev) => prev.filter(id => !visibleIds.includes(id)));
         }
     };
 
@@ -45,13 +68,8 @@ const CourseMail = ({ courseId }) => {
     const handleSelectStudent = (studentId) => {
         if (selectedStudents.includes(studentId)) {
             setSelectedStudents(selectedStudents.filter(id => id !== studentId));
-            setSelectAll(false);
         } else {
-            const newSelected = [...selectedStudents, studentId];
-            setSelectedStudents(newSelected);
-            if (newSelected.length === enrollments.enrolled.length) {
-                setSelectAll(true);
-            }
+            setSelectedStudents([...selectedStudents, studentId]);
         }
     };
 
@@ -173,20 +191,56 @@ const CourseMail = ({ courseId }) => {
 
             {/* Student Selection */}
             <div>
-                <div className="flex items-center gap-2 mb-4">
-                    <input
-                        type="checkbox"
-                        checked={selectAll}
-                        onChange={handleSelectAll}
-                        className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-offset-gray-900"
-                        id="select-all"
-                    />
-                    <label htmlFor="select-all" className="text-lg font-medium text-gray-200 cursor-pointer">
-                        Select all
-                    </label>
-                    <span className="text-sm text-muted ml-2">
-                        ({selectedStudents.length} selected)
-                    </span>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="checkbox"
+                            checked={selectAll}
+                            onChange={handleSelectAll}
+                            className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-offset-gray-900"
+                            id="select-all"
+                        />
+                        <label htmlFor="select-all" className="text-lg font-medium text-gray-200 cursor-pointer">
+                            Select all
+                        </label>
+                        <span className="text-sm text-muted ml-2">
+                            ({selectedStudents.length} selected)
+                        </span>
+                    </div>
+
+                    {/* Search Input */}
+                    <div className="relative flex-1 max-w-sm sm:ml-auto">
+                        <svg
+                            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                            />
+                        </svg>
+                        <input
+                            id="mail-student-search"
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Search students…"
+                            className="w-full pl-10 pr-10 py-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/40 transition"
+                        />
+                        {searchQuery && (
+                            <button
+                                onClick={() => setSearchQuery('')}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200 transition"
+                                aria-label="Clear search"
+                            >
+                                ✕
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 <div className="card overflow-hidden">
@@ -201,8 +255,8 @@ const CourseMail = ({ courseId }) => {
 
                     {/* Table Body */}
                     <div className="max-h-[300px] overflow-y-auto">
-                        {enrollments.enrolled.length > 0 ? (
-                            enrollments.enrolled.map((student, index) => (
+                        {filteredStudents.length > 0 ? (
+                            filteredStudents.map((student, index) => (
                                 <div
                                     key={student.id || student.user_id}
                                     className={`grid grid-cols-12 gap-4 p-3 items-center border-b border-white/5 hover:bg-white/5 transition
@@ -233,7 +287,7 @@ const CourseMail = ({ courseId }) => {
                             ))
                         ) : (
                             <div className="p-8 text-center text-muted">
-                                No students enrolled yet.
+                                {searchQuery.trim() ? 'No students match your search.' : 'No students enrolled yet.'}
                             </div>
                         )}
                     </div>

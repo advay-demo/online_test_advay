@@ -16,7 +16,6 @@ import {
   FaSave,
   FaTimes,
   FaEdit,
-  FaPlus,
   FaTrash,
   FaChartLine
 } from 'react-icons/fa';
@@ -54,8 +53,7 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
-  const [newSkill, setNewSkill] = useState('');
-  const [skills, setSkills] = useState(['Data Structures', 'Algorithms', 'SQL', 'React', 'Python', 'JavaScript']);
+
   const [loading, setLoading] = useState(true);
 
   // Determine if user is currently in teacher mode (not just has teacher privileges)
@@ -186,34 +184,9 @@ const Profile = () => {
     setIsEditing(false);
   };
 
-  const handleAddSkill = () => {
-    if (newSkill.trim() && !skills.includes(newSkill.trim())) {
-      setSkills([...skills, newSkill.trim()]);
-      setNewSkill('');
-    }
-  };
 
-  const handleRemoveSkill = (skillToRemove) => {
-    setSkills(skills.filter(skill => skill !== skillToRemove));
-  };
 
-  const calculateProfileCompleteness = () => {
-    const fields = [
-      formData.first_name,
-      formData.last_name,
-      formData.email,
-      formData.bio,
-      formData.phone,
-      formData.city,
-      formData.institute,
-      formData.department,
-      formData.linkedin || formData.github
-    ];
-    const filledFields = fields.filter(field => field && field.trim()).length;
-    return Math.round((filledFields / fields.length) * 100);
-  };
 
-  const completeness = calculateProfileCompleteness();
 
   if (!isAuthenticated || !user) {
     return (
@@ -600,55 +573,7 @@ const Profile = () => {
                             />
                           </div>
 
-                          {/* Skills */}
-                          <div className="pt-4 border-t border-[var(--border-color)]">
-                            <div className="flex justify-between items-center mb-3">
-                              <label className="text-xs sm:text-sm font-semibold soft">
-                                Skills
-                              </label>
-                              <span className="text-xs muted">{skills.length} skills</span>
-                            </div>
-                            
-                            <div className="flex flex-wrap gap-2 mb-3">
-                              {skills.map((skill, index) => (
-                                <div
-                                  key={index}
-                                  className="flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 border border-blue-500/30 rounded-full text-sm text-blue-300"
-                                >
-                                  <span>{skill}</span>
-                                  {isEditing && (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleRemoveSkill(skill)}
-                                      className="hover:text-red-400 transition-colors"
-                                    >
-                                      <FaTimes className="w-3 h-3" />
-                                    </button>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
 
-                            {isEditing && (
-                              <div className="flex gap-2">
-                                <input
-                                  type="text"
-                                  value={newSkill}
-                                  onChange={(e) => setNewSkill(e.target.value)}
-                                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddSkill())}
-                                  placeholder="Add a skill..."
-                                  className="flex-1 px-3 sm:px-4 py-2 rounded-lg text-sm"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={handleAddSkill}
-                                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-                                >
-                                  <FaPlus className="w-4 h-4" />
-                                </button>
-                              </div>
-                            )}
-                          </div>
                         </div>
                       </div>
 
@@ -740,28 +665,7 @@ const Profile = () => {
                   <p className="text-xs sm:text-sm muted">Your profile overview</p>
                 </div>
 
-                {/* Profile Completeness */}
-                <div className="mb-6">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium">Completeness</span>
-                    <span className="text-sm font-semibold">{completeness}%</span>
-                  </div>
-                  <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
-                    <div 
-                      className={`h-full rounded-full transition-all duration-500 ${
-                        completeness >= 80 ? 'bg-green-500' :
-                        completeness >= 50 ? 'bg-yellow-500' :
-                        'bg-red-500'
-                      }`}
-                      style={{ width: `${completeness}%` }}
-                    />
-                  </div>
-                  <p className="text-xs muted mt-2">
-                    {completeness >= 80 ? '🎉 Great! Your profile is looking complete' :
-                     completeness >= 50 ? '👍 Good progress! Add more details' :
-                     '📝 Let\'s complete your profile'}
-                  </p>
-                </div>
+
 
                 {/* Quick Stats */}
                 <div className="grid grid-cols-2 gap-3 mb-6">
@@ -863,28 +767,7 @@ const Profile = () => {
 
               {/* Drawer Content */}
               <div className="p-4">
-                {/* Profile Completeness */}
-                <div className="mb-6">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium">Completeness</span>
-                    <span className="text-sm font-semibold">{completeness}%</span>
-                  </div>
-                  <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
-                    <div 
-                      className={`h-full rounded-full transition-all duration-500 ${
-                        completeness >= 80 ? 'bg-green-500' :
-                        completeness >= 50 ? 'bg-yellow-500' :
-                        'bg-red-500'
-                      }`}
-                      style={{ width: `${completeness}%` }}
-                    />
-                  </div>
-                  <p className="text-xs muted mt-2">
-                    {completeness >= 80 ? '🎉 Great! Your profile is looking complete' :
-                     completeness >= 50 ? '👍 Good progress! Add more details' :
-                     '📝 Let\'s complete your profile'}
-                  </p>
-                </div>
+
 
                 {/* Quick Stats */}
                 <div className="grid grid-cols-2 gap-3 mb-6">

@@ -76,6 +76,8 @@ urlpatterns = [
     # Authentication endpoints
     url(r'auth/register/$', views.register_user, name='register'),
     url(r'auth/login/$', views.login_user, name='login'),
+    url(r'auth/social-urls/$', views.get_social_auth_url, name='social_auth_url'),
+    url(r'auth/social-login/$', views.social_login, name='social_login'),
     url(r'auth/logout/$', views.logout_user, name='logout'),
 
     # User common features

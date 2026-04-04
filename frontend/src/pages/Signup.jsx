@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaBook, FaStar, FaCheckCircle } from 'react-icons/fa';
-import { FaGoogle, FaGithub, FaLinkedin } from 'react-icons/fa';
+import { FaGoogle, FaGithub } from 'react-icons/fa';
 import Logo from '../components/ui/Logo';
 import { useAuthStore } from '../store/authStore';
+import api from '../api/api';
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -119,9 +120,23 @@ const Signup = () => {
     }
   };
 
-  const handleSocialLogin = (provider) => {
-    // For now, just show an alert
-    alert(`${provider} login coming soon!`);
+  const handleSocialLogin = async (provider) => {
+    const providerMap = {
+      'Google': 'google-oauth2',
+      'GitHub': 'github',
+    };
+    const backend = providerMap[provider];
+    if (!backend) return;
+
+    try {
+      const redirectUri = `${window.location.origin}/auth/callback`;
+      const response = await api.get('api/auth/social-urls/', {
+        params: { provider: backend, redirect_uri: redirectUri },
+      });
+      window.location.href = response.data.url;
+    } catch (err) {
+      console.error('Failed to get social auth URL:', err);
+    }
   };
 
   const handleBackToLogin = () => {
@@ -162,7 +177,7 @@ const Signup = () => {
       </div>
 
       {/* RIGHT: Scrollable Form Section */}
-      <div className="flex flex-col w-full lg:w-1/2 bg-gradient-to-b from-[var(--bg-1)] to-[var(--bg-2)] px-8 sm:px-16 pt-4 lg:pt-12 relative grid-texture overflow-y-auto h-screen">
+      <div className="flex flex-col w-full lg:w-1/2 bg-gradient-to-b from-[var(--bg-primary)] to-[var(--bg-secondary)] px-8 sm:px-16 pt-4 lg:pt-12 relative grid-texture overflow-y-auto h-screen">
         <div className="w-full max-w-md mx-auto space-y-6 pb-10">
           {/* Header */}
           <div className="flex items-center mb-4">
@@ -176,8 +191,8 @@ const Signup = () => {
           </div>
 
           <div>
-            <h2 className="text-3xl font-bold text-white">Registration ✨</h2>
-            <p className="muted text-sm mt-2">Please fill in the following details:</p>
+            <h2 className="text-3xl font-bold text-[var(--text-primary)]">Registration ✨</h2>
+            <p className="text-[var(--text-muted)] text-sm mt-2">Please fill in the following details:</p>
           </div>
 
           {/* Alert */}
@@ -190,13 +205,13 @@ const Signup = () => {
           {/* Registration Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium soft mb-2">Username</label>
+              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Username</label>
               <input
                 type="text"
                 name="username"
                 value={formData.username}
                 onChange={handleChange}
-                className={`w-full px-4 py-2.5 border ${formErrors.username ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm`}
+                className={`w-full px-4 py-2.5 border ${formErrors.username ? 'border-red-500' : 'border-[var(--border-color)]'} rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm`}
                 placeholder="Username"
                 required
                 disabled={isLoading}
@@ -204,17 +219,17 @@ const Signup = () => {
               {formErrors.username && (
                 <p className="text-red-500 text-xs mt-1">{formErrors.username}</p>
               )}
-              <p className="text-xs muted mt-1">Letters, digits, period and underscores only.</p>
+              <p className="text-xs text-[var(--text-muted)] mt-1">Letters, digits, period and underscores only.</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium soft mb-2">Email</label>
+              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Email</label>
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className={`w-full px-4 py-2.5 border ${formErrors.email ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm`}
+                className={`w-full px-4 py-2.5 border ${formErrors.email ? 'border-red-500' : 'border-[var(--border-color)]'} rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm`}
                 placeholder="you@example.com"
                 required
                 disabled={isLoading}
@@ -225,13 +240,13 @@ const Signup = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium soft mb-2">Password</label>
+              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Password</label>
               <input
                 type="password"
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                className={`w-full px-4 py-2.5 border ${formErrors.password ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm`}
+                className={`w-full px-4 py-2.5 border ${formErrors.password ? 'border-red-500' : 'border-[var(--border-color)]'} rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm`}
                 placeholder="•••••••"
                 required
                 disabled={isLoading}
@@ -242,13 +257,13 @@ const Signup = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium soft mb-2">Confirm Password</label>
+              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Confirm Password</label>
               <input
                 type="password"
                 name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className={`w-full px-4 py-2.5 border ${formErrors.confirmPassword ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm`}
+                className={`w-full px-4 py-2.5 border ${formErrors.confirmPassword ? 'border-red-500' : 'border-[var(--border-color)]'} rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm`}
                 placeholder="•••••••"
                 required
                 disabled={isLoading}
@@ -260,13 +275,13 @@ const Signup = () => {
 
             <div className="flex gap-3">
               <div className="w-1/2">
-                <label className="block text-sm font-medium soft mb-2">First Name</label>
+                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">First Name</label>
                 <input
                   type="text"
                   name="first_name"
                   value={formData.first_name}
                   onChange={handleChange}
-                  className={`w-full px-4 py-2.5 border ${formErrors.first_name ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm`}
+                  className={`w-full px-4 py-2.5 border ${formErrors.first_name ? 'border-red-500' : 'border-[var(--border-color)]'} rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm`}
                   placeholder="First Name"
                   required
                   disabled={isLoading}
@@ -276,13 +291,13 @@ const Signup = () => {
                 )}
               </div>
               <div className="w-1/2">
-                <label className="block text-sm font-medium soft mb-2">Last Name</label>
+                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Last Name</label>
                 <input
                   type="text"
                   name="last_name"
                   value={formData.last_name}
                   onChange={handleChange}
-                  className={`w-full px-4 py-2.5 border ${formErrors.last_name ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm`}
+                  className={`w-full px-4 py-2.5 border ${formErrors.last_name ? 'border-red-500' : 'border-[var(--border-color)]'} rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm`}
                   placeholder="Last Name"
                   required
                   disabled={isLoading}
@@ -294,64 +309,64 @@ const Signup = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium soft mb-2">Roll Number</label>
+              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Roll Number</label>
               <input
                 type="text"
                 name="roll_number"
                 value={formData.roll_number}
                 onChange={handleChange}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm"
+                className="w-full px-4 py-2.5 border border-[var(--border-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm"
                 placeholder="Use a dummy if you don't have one"
                 disabled={isLoading}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium soft mb-2">Institute/Organization</label>
+              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Institute/Organization</label>
               <input
                 type="text"
                 name="institute"
                 value={formData.institute}
                 onChange={handleChange}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm"
+                className="w-full px-4 py-2.5 border border-[var(--border-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm"
                 placeholder="Institute or Organization"
                 disabled={isLoading}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium soft mb-2">Department</label>
+              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Department</label>
               <input
                 type="text"
                 name="department"
                 value={formData.department}
                 onChange={handleChange}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm"
+                className="w-full px-4 py-2.5 border border-[var(--border-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm"
                 placeholder="Department you work/study at"
                 disabled={isLoading}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium soft mb-2">Position</label>
+              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Position</label>
               <input
                 type="text"
                 name="position"
                 value={formData.position}
                 onChange={handleChange}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm"
+                className="w-full px-4 py-2.5 border border-[var(--border-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm"
                 placeholder="Student / Faculty / Researcher / Industry / etc."
                 disabled={isLoading}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium soft mb-2">Timezone</label>
+              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Timezone</label>
               <select
                 name="timezone"
                 value={formData.timezone}
                 onChange={handleChange}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm"
+                className="w-full px-4 py-2.5 border border-[var(--border-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm"
                 disabled={isLoading}
               >
                 <option>Asia/Kolkata</option>
@@ -360,7 +375,7 @@ const Signup = () => {
                 <option>America/New_York</option>
                 <option>UTC</option>
               </select>
-              <p className="text-xs muted mt-1">All timings are shown based on the selected timezone.</p>
+              <p className="text-xs text-[var(--text-muted)] mt-1">All timings are shown based on the selected timezone.</p>
             </div>
 
             <div className="flex justify-center gap-3 pt-4">
@@ -382,39 +397,32 @@ const Signup = () => {
           </form>
 
           <div className="flex items-center my-6">
-            <div className="flex-grow h-px bg-white/10"></div>
-            <span className="mx-4 text-sm muted">or continue with</span>
-            <div className="flex-grow h-px bg-white/10"></div>
+            <div className="flex-grow h-px bg-[var(--border-color)]"></div>
+            <span className="mx-4 text-sm text-[var(--text-muted)]">or continue with</span>
+            <div className="flex-grow h-px bg-[var(--border-color)]"></div>
           </div>
 
           <div className="flex justify-center gap-3">
             <button
               type="button"
               onClick={() => handleSocialLogin('Google')}
-              className="social-btn flex items-center justify-center rounded-xl p-3 w-14 h-14"
+              className="social-btn flex items-center justify-center rounded-xl p-3 w-14 h-14 bg-[var(--input-bg)] hover:bg-[var(--surface-2)] border border-[var(--border-color)] transition"
               disabled={isLoading}
             >
-              <FaGoogle className="w-6 h-6 text-red-400" />
+              <FaGoogle className="w-6 h-6 text-red-500" />
             </button>
             <button
               type="button"
               onClick={() => handleSocialLogin('GitHub')}
-              className="social-btn flex items-center justify-center rounded-xl p-3 w-14 h-14"
+              className="social-btn flex items-center justify-center rounded-xl p-3 w-14 h-14 bg-[var(--input-bg)] hover:bg-[var(--surface-2)] border border-[var(--border-color)] transition"
               disabled={isLoading}
             >
-              <FaGithub className="w-6 h-6 text-white" />
+              <FaGithub className="w-6 h-6 text-[var(--text-primary)]" />
             </button>
-            <button
-              type="button"
-              onClick={() => handleSocialLogin('LinkedIn')}
-              className="social-btn flex items-center justify-center rounded-xl p-3 w-14 h-14"
-              disabled={isLoading}
-            >
-              <FaLinkedin className="w-6 h-6 text-blue-400" />
-            </button>
+
           </div>
 
-          <p className="text-center text-sm muted mt-6">
+          <p className="text-center text-sm text-[var(--text-muted)] mt-6">
             Already have an account?
             <Link to="/signin" className="text-indigo-400 font-medium hover:text-indigo-300 transition ml-1">
               Sign In
@@ -422,7 +430,7 @@ const Signup = () => {
           </p>
 
           {/* Footer */}
-          <div className="text-center text-xs muted pt-8 pb-4">
+          <div className="text-center text-xs text-[var(--text-muted)] pt-8 pb-4">
             © 2025 Yaksh. Developed by FOSSEE group, IIT Bombay
           </div>
         </div>

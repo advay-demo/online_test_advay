@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import Dashboard from './student/Dashboard';
-import DashboardTeachers from './teacher/DashboardTeachers';
 import { getModeratorStatus } from '../api/api';
 
 const DashboardHome = () => {
@@ -56,7 +55,7 @@ const DashboardHome = () => {
     // Check actual active moderator state, not just permanent designation
     // Only show teacher dashboard if user has moderator designation AND is actively in moderator group
     if (user?.is_moderator && isModeratorActive) {
-        return <DashboardTeachers />;
+        return <Navigate to="/teacher/dashboard" replace />;
     }
 
     // Otherwise, show Student Dashboard
