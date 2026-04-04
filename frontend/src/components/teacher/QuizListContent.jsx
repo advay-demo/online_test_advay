@@ -94,7 +94,7 @@ const QuizListContent = ({
 
             {/* Main Content Card */}
             <div className="card-strong p-4 sm:p-5 lg:p-6 min-h-[600px] border-2 border-[var(--border-strong)] shadow-lg rounded-2xl">
-                <div className="mb-5 sm:mb-7 pb-4 border-b-2 border-[var(--border-subtle)] flex items-center gap-3">
+                <div className="mb-6 pb-5 border-b-2 border-[var(--border-subtle)] flex items-center gap-3">
                     <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-blue-500/10 border-2 border-blue-500/30 flex items-center justify-center flex-shrink-0">
                         <FaQuestionCircle className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
                     </div>

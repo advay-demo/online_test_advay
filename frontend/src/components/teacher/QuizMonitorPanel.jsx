@@ -183,8 +183,8 @@ const QuizMonitorPanel = ({ quiz, course, onBack }) => {
               <FaChevronLeft className="w-4 h-4" />
             </button>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-2">
-                <h2 className="text-xl sm:text-2xl font-bold line-clamp-2">{quiz.description || quiz.name}</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg sm:text-xl font-bold mb-1">{quiz.description || quiz.name}</h2>
                 <span className={`text-[10px] px-2.5 py-1 rounded-lg border-2 uppercase font-bold tracking-wider whitespace-nowrap ${quiz.is_exercise
                   ? 'bg-purple-500/20 text-purple-400 border-purple-500/30'
                   : 'bg-blue-500/20 text-blue-400 border-blue-500/30'
@@ -192,18 +192,18 @@ const QuizMonitorPanel = ({ quiz, course, onBack }) => {
                   {quiz.is_exercise ? 'Exercise' : 'Quiz'}
                 </span>
               </div>
-              <div className="flex flex-wrap gap-4 text-xs muted">
+              <div className="flex flex-wrap gap-4 text-xs sm:text-sm muted">
                 <div className="flex items-center gap-1.5">
-                  <FaBook className="w-3.5 h-3.5" />
+                  <FaBook className="w-3 h-3" />
                   <span className="font-medium">{course.course_name || course.name}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <FaLayerGroup className="w-3.5 h-3.5" />
+                  <FaLayerGroup className="w-3 h-3" />
                   <span className="font-medium">{quiz.module_name}</span>
                 </div>
                 {quiz.start_date && (
                   <div className="flex items-center gap-1.5">
-                    <FaCalendar className="w-3.5 h-3.5" />
+                    <FaCalendar className="w-3 h-3" />
                     <span className="font-medium">{new Date(quiz.start_date).toLocaleDateString()}</span>
                   </div>
                 )}
