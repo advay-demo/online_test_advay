@@ -66,10 +66,13 @@ const Header = ({ isAuth = false, isLanding = false }) => {
   }, [isAuth, user]);
 
   const handleSignOut = async () => {
-    await logout();
+    const result = await logout();
     setIsDropdownOpen(false);
     setIsMobileMenuOpen(false);
-    navigate('/signin', { replace: true });
+    if (result?.success) {
+      navigate('/signin', { replace: true });
+    }
+    // If logout failed, user stays on current page — error is in authStore
   };
 
   const handleNotificationClick = async (notification) => {

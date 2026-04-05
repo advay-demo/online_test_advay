@@ -25,6 +25,7 @@ import ManageCourse from './pages/teacher/ManageCourse';
 import TeacherQuizzes from './pages/teacher/TeacherQuizzes';
 import Questions from './pages/teacher/Questions';
 import PrivateRoute from './components/auth/PrivateRoute';
+import PublicRoute from './components/auth/PublicRoute';
 import GradingSystems from './pages/teacher/GradingSystems';
 import UploadQuestion from './pages/teacher/UploadQuestion';
 import TestQuestion from './pages/teacher/TestQuestion';
@@ -38,7 +39,10 @@ function App() {
     <Router>
       <ThemeController />
       <Routes>
-        <Route path="/" element={<Home />} />
+        {/* Public-only routes: redirect authenticated users to their dashboard */}
+        <Route element={<PublicRoute />}>
+          <Route path="/" element={<Home />} />
+        </Route>
         <Route path="/signup" element={<Signup />} />
         <Route path="/signin" element={<Signin />} />
         <Route path="/auth/callback" element={<SocialAuthCallback />} />

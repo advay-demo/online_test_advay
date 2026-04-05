@@ -28,7 +28,9 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    if (error.response && error.response.status === 401) {
+    // Skip interceptor for logout requests — authStore.logout() handles its own 401 logic
+    const isLogoutRequest = error.config?.url?.includes('auth/logout');
+    if (error.response && error.response.status === 401 && !isLogoutRequest) {
       // Token expired or invalid - clear everything
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');

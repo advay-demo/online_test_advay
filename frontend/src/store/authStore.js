@@ -105,7 +105,7 @@ export const useAuthStore = create(
           // Call logout API
           await api.post('api/auth/logout/');
 
-          // Clear localStorage
+          // Server confirmed — clear localStorage
           localStorage.removeItem('authToken');
           localStorage.removeItem('user');
 
@@ -121,17 +121,32 @@ export const useAuthStore = create(
           return { success: true };
         } catch (error) {
           console.error('Logout API error:', error);
-          // Even if API call fails, clear local state
-          localStorage.removeItem('authToken');
-          localStorage.removeItem('user');
 
+          const errorStatus = error.response?.status;
+
+          if (errorStatus === 401) {
+            // Token already invalid on server — session is dead, clear local state
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('user');
+
+            set({
+              user: null,
+              token: null,
+              isAuthenticated: false,
+              isLoading: false,
+              error: null
+            });
+
+            return { success: true };
+          }
+
+          // Server error or network failure — keep user logged in locally
           set({
-            user: null,
-            token: null,
-            isAuthenticated: false,
             isLoading: false,
-            error: 'Logout failed but local state cleared'
+            error: 'Logout failed. Please check your connection and try again.'
           });
+
+          return { success: false, error: 'Logout failed. Please check your connection and try again.' };
         }
       },
 
