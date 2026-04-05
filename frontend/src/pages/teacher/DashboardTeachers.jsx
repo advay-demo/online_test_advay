@@ -5,9 +5,9 @@ import Header from '../../components/layout/Header';
 import { useTeacherDashboardStore } from '../../store/teacherDashboardStore';
 import { toggleModeratorRole } from '../../api/api';
 import {
-    FaBook,
-    FaPuzzlePiece,
-    FaLayerGroup,
+  FaBook,
+  FaPuzzlePiece,
+  FaLayerGroup,
 } from 'react-icons/fa';
 
 const DashboardTeachers = () => {
@@ -111,7 +111,7 @@ const DashboardTeachers = () => {
     // Check if user is in student mode and can toggle
     const canToggle = errorDetails?.can_toggle === true;
     const isModeratorDesignation = errorDetails?.is_moderator_designation === true;
-    
+
     return (
       <div className="flex min-h-screen relative grid-texture">
         <TeacherSidebar />
@@ -185,17 +185,17 @@ const DashboardTeachers = () => {
           {/* Stats Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 lg:mb-8">
             {stats.map((stat, index) => (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 className="card p-4 sm:p-5 lg:p-6 rounded-2xl border-2 border-[var(--border-subtle)] hover:shadow-lg transition-all duration-300 group relative overflow-hidden"
-                
+
               >
                 {/* Subtle background glow */}
-                <div 
+                <div
                   className="absolute top-0 right-0 w-24 h-24 rounded-full blur-3xl opacity-20 group-hover:opacity-40 transition-opacity duration-300"
                   style={{ background: stat.color }}
                 />
-                
+
                 <div className="relative flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                   <div className="flex-1 order-2 sm:order-1">
                     <p className="muted text-xs sm:text-sm mb-1.5 font-medium">{stat.label}</p>
@@ -233,20 +233,18 @@ const DashboardTeachers = () => {
               </div>
               <div className="space-y-3 sm:space-y-4">
                 {recentEvents.length > 0 ? recentEvents.map((event, index) => (
-                  <div 
-                    key={index} 
-                    className={`card-strong p-4 sm:p-5 rounded-xl hover:shadow-md hover:bg-white/[0.03] transition-all duration-300 group ${
-                      event.is_exercise ? 'hover:border-purple-500' : 'hover:border-green-500'
-                    }`}
+                  <div
+                    key={index}
+                    className={`card-strong p-4 sm:p-5 rounded-xl hover:shadow-md hover:bg-white/[0.03] transition-all duration-300 group ${event.is_exercise ? 'hover:border-purple-500' : 'hover:border-green-500'
+                      }`}
                   >
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                       <div className="flex gap-3 sm:gap-4 flex-1">
                         <div
-                          className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300 border-2 ${
-                            event.is_exercise 
-                              ? 'bg-purple-500/15 border-purple-500/30' 
-                              : 'bg-green-500/15 border-green-500/30'
-                          }`}
+                          className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300 border-2 ${event.is_exercise
+                            ? 'bg-purple-500/15 border-purple-500/30'
+                            : 'bg-green-500/15 border-green-500/30'
+                            }`}
                         >
                           {event.is_exercise ? (
                             <FaPuzzlePiece className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500 dark:text-purple-400" />
@@ -259,17 +257,16 @@ const DashboardTeachers = () => {
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold text-base sm:text-lg mb-1 flex items-center gap-2">
                             <span className="truncate">{event.name}</span>
-                            <span className={`px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg border-2 text-[10px] sm:text-xs font-bold whitespace-nowrap flex-shrink-0 ${
-                              event.is_exercise
-                                ? 'bg-purple-500/10 text-purple-500 border-purple-500/20'
-                                : 'bg-green-500/10 text-green-500 border-green-500/20'
-                            } `}>
+                            <span className={`px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg border-2 text-[10px] sm:text-xs font-bold whitespace-nowrap flex-shrink-0 ${event.is_exercise
+                              ? 'bg-purple-500/10 text-purple-500 border-purple-500/20'
+                              : 'bg-green-500/10 text-green-500 border-green-500/20'
+                              } `}>
                               {event.is_exercise ? 'Exercise' : 'Quiz'}
                             </span>
                           </h3>
                           <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm muted">
                             <div className="flex items-center gap-1.5">
-                              
+
                               <FaBook className="w-2.5 h-2.5 sm:w-3 sm:h-3 " />
                               {event.course_name}
                             </div>
@@ -282,7 +279,7 @@ const DashboardTeachers = () => {
                       </div>
                       {event.course_id ? (
                         <Link
-                          to={`/courses/${event.course_id}/manage`}
+                          to={`/teacher/courses/${event.course_id}/manage`}
                           className="w-full sm:w-auto border border-[var(--border-color)] px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold hover:bg-[var(--input-bg)] transition whitespace-nowrap text-center"
                         >
                           Manage
@@ -355,7 +352,7 @@ const DashboardTeachers = () => {
               rounded-2xl
               border-2 border-[var(--border-strong)]
               card
-              shadow-lg
+              hover:border-blue-500/70 dark:hover:border-blue-500/50 hover:shadow-lg
               p-5 sm:p-6 lg:p-8
             "
           >
@@ -407,18 +404,18 @@ const DashboardTeachers = () => {
                   </div>
                   <div className="flex items-center justify-between text-xs mb-3 gap-2 sm:mb-4">
                     <span className="text-[var(--text-muted)] flex items-center gap-1.5 truncate">
-                       <FaLayerGroup className="w-3 h-3 text-cyan-400" />
+                      <FaLayerGroup className="w-3 h-3 text-cyan-400" />
                       <span className="truncate">{course.modules_count} modules</span>
                     </span>
                     <span
-                      className={`px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg border-2 text-[10px] sm:text-xs font-bold whitespace-nowrap flex-shrink-0 ${
-                        course.active
-                          ? 'border-emerald-500/50 text-emerald-400 bg-emerald-500/10'
-                          : 'border-orange-500/50 text-orange-400 bg-orange-500/10'
-                      }`}
+                      className={`text-[10px] px-2 py-0.5 rounded-md border-2 uppercase font-bold tracking-wider whitespace-nowrap flex-shrink-0 transition-all duration-200 shadow-md ${course.active
+                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 shadow-emerald-500/20'
+                        : 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30 shadow-orange-500/20'
+                        }`}
                     >
                       {course.active ? 'Active' : 'Inactive'}
                     </span>
+
                   </div>
                   <div className="mb-4 sm:mb-5">
                     <div className="flex justify-between text-[10px] sm:text-[11px] mb-2">
@@ -440,7 +437,7 @@ const DashboardTeachers = () => {
                     <span className="truncate">{new Date(course.start_date).toLocaleDateString()}</span>
                     <span className="truncate">{new Date(course.end_date).toLocaleDateString()}</span>
                   </div>
-                  
+
                 </Link>
               )) : (
                 <div className="

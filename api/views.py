@@ -2433,6 +2433,8 @@ def teacher_courses_list(request):
             'completion_rate': round(completion_rate, 1),
             'modules_count': course.learning_module.count(),
             'created_on': course.created_on.isoformat() if course.created_on else None,
+            'start_date': course.start_enroll_time.isoformat() if course.start_enroll_time else None,
+            'end_date': course.end_enroll_time.isoformat() if course.end_enroll_time else None,
             'status': 'Active' if course.active else 'Inactive'
         })
     

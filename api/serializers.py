@@ -672,7 +672,7 @@ class CourseCatalogSerializer(serializers.ModelSerializer):
             'id', 'name', 'instructor', 'level', 'rating', 'students_count', 
             'duration', 'progress', 'color', 'is_enrolled', 'code', 
             'modules', 'instructions', 'start_date', 'end_date', 'enrollment',
-            'enrollment_status'  # ADD THIS TO FIELDS
+            'enrollment_status', 'active' 
         ]
 
 

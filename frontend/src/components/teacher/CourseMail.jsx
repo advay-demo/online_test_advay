@@ -121,7 +121,7 @@ const CourseMail = ({ courseId }) => {
     }
 
     return (
-        <div className="space-y-6 max-w-4xl mx-auto">
+        <div className="space-y-6 ">
             <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/15 to-blue-500/15 border-2 border-cyan-500/30 flex items-center justify-center ">
                     <FaPaperPlane className="w-5 h-5 text-cyan-400" />
@@ -134,6 +134,7 @@ const CourseMail = ({ courseId }) => {
 
             {/* Status Message */}
             {statusMessage && (
+
                 <div className={`p-4 rounded-md mb-4 flex justify-between items-center ${statusMessage.type === 'success' ? 'bg-green-900/50 text-green-200 border border-green-700/50' : 'bg-red-900/50 text-red-200 border border-red-700/50'
                     }`}>
                     <span>{statusMessage.text}</span>

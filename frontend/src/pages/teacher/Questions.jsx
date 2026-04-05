@@ -194,7 +194,7 @@ const Questions = () => {
             case 'arrange':
                 return 'bg-red-500/15 text-red-400 border-red-500/30';
             default:
-                return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+                return 'bg-pink-500/20 text-pink-400 border-pink-500/30';
         }
     };
 
@@ -296,9 +296,9 @@ const Questions = () => {
                                     </button>
                                 </div>
                             </div>
-                            
+
                             {/* NEW: Add Question Button aligned with filters */}
-                            
+
                         </div>
                         {/* Loading State */}
                         {loading && (
@@ -314,6 +314,7 @@ const Questions = () => {
                             </div>
                         )}
 
+
                         {/* Questions List */}
                         {!loading && !error && (
                             <div className="space-y-3 sm:space-y-4">
@@ -323,51 +324,68 @@ const Questions = () => {
                                             key={question.id}
                                             className="card-strong p-4 sm:p-5 border-2 border-[var(--border-medium)] hover:shadow-lg hover:border-blue-500/70 dark:hover:border-blue-500/50 transition-all duration-300 group bg-[var(--surface)] hover:shadow-md rounded-xl"
                                         >
-                                            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
-                                                {/* Icon + Content */}
-                                                <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
-                                                    <div className={`w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0 rounded-lg flex items-center justify-center ${getQuestionTypeColor(question.type)}`}>
+                                            <div className="flex flex-row flex-wrap items-center gap-3 sm:gap-4">
+                                                {/* Icon */}
+                                                <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center flex-shrink-0 border-2 group-hover:scale-110 transition-all duration-300 ${getQuestionTypeColor(question.type)} shadow-sm bg-opacity-10 dark:bg-opacity-20`}>
+                                                    <div className="text-xl sm:text-2xl">
                                                         {getQuestionTypeIcon(question.type)}
                                                     </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="flex flex-wrap items-center gap-2 mb-2">
-                                                            <h3 className="font-semibold text-sm sm:text-base lg:text-lg truncate">{question.summary}</h3>
-                                                            <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border ${getQuestionTypeColor(question.type)} uppercase font-bold flex-shrink-0`}>
-                                                                {question.type.toUpperCase()}
-                                                            </span>
+                                                </div>
 
-                                                            <span
-                                                                className={`text-[10px] px-2 py-0.5 rounded-md border-2 uppercase font-bold tracking-wider whitespace-nowrap flex-shrink-0 transition-all duration-200 shadow-md ${question.active
-                                                                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 shadow-emerald-500/20'
-                                                                    : 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30 shadow-orange-500/20'
-                                                                    }`}
-                                                            >
-                                                                {question.active ? 'Active' : 'Inactive'}
-                                                            </span>
+                                                {/* Content */}
+                                                <div className="flex-1 min-w-0 w-full sm:w-auto">
+                                                    <div className="flex flex-wrap items-center gap-2 mb-2 sm:mb-3">
+                                                        <h3 className="font-bold text-base sm:text-lg line-clamp-1 group-hover:text-blue-400 transition-colors duration-300">
+                                                            {question.summary}
+                                                        </h3>
+                                                        <span className={`text-[10px] px-2 py-0.5 rounded-md border-2 uppercase font-bold tracking-wider whitespace-nowrap flex-shrink-0 transition-all duration-200 shadow-md ${getQuestionTypeColor(question.type)}`}>
+                                                            {question.type.toUpperCase()}
+                                                        </span>
 
+                                                        <span
+                                                            className={`text-[10px] px-2 py-0.5 rounded-md border-2 uppercase font-bold tracking-wider whitespace-nowrap flex-shrink-0 transition-all duration-200 shadow-md ${question.active
+                                                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 shadow-emerald-500/20'
+                                                                : 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30 shadow-orange-500/20'
+                                                                }`}
+                                                        >
+                                                            {question.active ? 'Active' : 'Inactive'}
+                                                        </span>
+                                                    </div>
 
-
+                                                    {/* Meta Info (Grid equivalent to courses) */}
+                                                    <div className="flex flex-wrap gap-2 sm:gap-4 text-xs muted font-medium">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <span className="text-[var(--text-secondary)]">Lang:</span>
+                                                            <span>{question.language || 'N/A'}</span>
                                                         </div>
-                                                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 lg:gap-4 text-xs sm:text-sm muted">
-                                                            <span className="whitespace-nowrap">Lang: {question.language || 'N/A'}</span>
-                                                            <span className="whitespace-nowrap">Pts: {question.points}</span>
-                                                            <span className="whitespace-nowrap">Tests: {question.test_cases_count}</span>
-                                                            {question.topic && <span className="truncate max-w-[120px] sm:max-w-none">Topic: {question.topic}</span>}
+                                                        <div className="flex items-center gap-1.5">
+                                                            <span className="text-[var(--text-secondary)]">Pts:</span>
+                                                            <span>{question.points}</span>
                                                         </div>
+                                                        <div className="flex items-center gap-1.5">
+                                                            <span className="text-[var(--text-secondary)]">Tests:</span>
+                                                            <span>{question.test_cases_count}</span>
+                                                        </div>
+                                                        {question.topic && (
+                                                            <div className="flex items-center gap-1.5 col-span-2 sm:col-span-1 pt-1.5 sm:pt-0 mt-1 sm:mt-0 border-t border-[var(--border-subtle)] sm:border-t-0">
+                                                                <span className="text-[var(--text-secondary)]">Topic:</span>
+                                                                <span className="truncate">{question.topic}</span>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
 
                                                 {/* Action Buttons */}
-                                                <div className="flex items-center gap-2 sm:flex-shrink-0 self-end sm:self-start">
+                                                <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto sm:self-start">
                                                     {/* Test Button */}
                                                     <button
-                                                        className="px-3 sm:px-4 py-1.5 sm:py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium"
+                                                        className="flex-1 sm:flex-none px-4 sm:px-5 py-2 sm:py-2.5 bg-gradient-to-r from-purple-600 to-purple-500 text-white rounded-lg hover:shadow-lg hover:shadow-purple-500/30 active:scale-95 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-semibold whitespace-nowrap"
                                                         onClick={() => handleTestQuestion(question.id)}
                                                         disabled={testingQuestionId === question.id}
                                                     >
                                                         {testingQuestionId === question.id ? (
                                                             <>
-                                                                <svg className="animate-spin h-3 w-3 sm:h-4 sm:w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                                <svg className="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                                                 </svg>
@@ -375,7 +393,7 @@ const Questions = () => {
                                                             </>
                                                         ) : (
                                                             <>
-                                                                <FaPlay className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                                                                <FaPlay className="w-3 h-3" />
                                                                 Test
                                                             </>
                                                         )}
@@ -384,32 +402,32 @@ const Questions = () => {
                                                     {/* Actions Menu */}
                                                     <div className="relative gs-action-menu">
                                                         <button
-                                                            className="p-1.5 sm:p-2 border border-[var(--border-color)] rounded-lg hover:bg-[var(--input-bg)] active:scale-95 transition-all duration-200 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                                                            className="p-2 sm:p-2.5 border-2 border-[var(--border-strong)] rounded-lg hover:bg-[var(--input-bg)] hover:border-blue-500/30 active:scale-95 transition-all duration-300 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                                                             onClick={() => setActionMenuOpen(actionMenuOpen === question.id ? null : question.id)}
                                                             aria-label="Actions"
                                                             tabIndex={0}
                                                         >
-                                                            <FaEllipsisV className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                                                            <FaEllipsisV className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                                         </button>
                                                         {actionMenuOpen === question.id && (
-                                                            <div className="absolute right-0 mt-2 z-50 w-28 sm:w-32 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg shadow-lg py-1 flex flex-col text-xs sm:text-sm animate-fade-in">
+                                                            <div className="absolute right-0 mt-2 z-50 w-32 sm:w-36 bg-[var(--card-strong-bg)] border-2 border-[var(--border-strong)] rounded-xl shadow-2xl py-1.5 flex flex-col text-sm animate-fade-in">
                                                                 <button
-                                                                    className="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 hover:bg-blue-500/10 transition"
+                                                                    className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-blue-500/10 text-blue-400 transition-colors duration-200 font-medium"
                                                                     onClick={() => {
                                                                         setActionMenuOpen(null);
                                                                         handleEdit(question);
                                                                     }}
                                                                 >
-                                                                    <FaEdit className="w-3 h-3 sm:w-4 sm:h-4" /> Edit
+                                                                    <FaEdit className="w-4 h-4" /> Edit
                                                                 </button>
                                                                 <button
-                                                                    className="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-red-500 hover:bg-red-500/10 transition"
+                                                                    className="flex items-center gap-2.5 px-4 py-2.5 text-red-500 hover:bg-red-500/10 transition-colors duration-200 font-medium"
                                                                     onClick={() => {
                                                                         setActionMenuOpen(null);
                                                                         handleDelete(question.id);
                                                                     }}
                                                                 >
-                                                                    <FaTrash className="w-3 h-3 sm:w-4 sm:h-4" /> Delete
+                                                                    <FaTrash className="w-4 h-4" /> Delete
                                                                 </button>
                                                             </div>
                                                         )}
@@ -437,11 +455,11 @@ const Questions = () => {
 
             {/* Add / Edit Question Modal */}
             {showModal && (
-                <AddQuestionModal 
-                    onCancel={() => setShowModal(false)} 
-                    questionId={editingQuestionId} 
-                    isEdit={isEditMode} 
-                    onSuccess={handleModalSuccess} 
+                <AddQuestionModal
+                    onCancel={() => setShowModal(false)}
+                    questionId={editingQuestionId}
+                    isEdit={isEditMode}
+                    onSuccess={handleModalSuccess}
                 />
             )}
         </div>

@@ -179,8 +179,8 @@ const QuizGradingPanel = ({ quiz, course, onBack }) => {
                             <FaChevronLeft className="w-4 h-4" />
                         </button>
                         <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-2">
-                                <h2 className="text-xl sm:text-2xl font-bold line-clamp-2">{quiz.description || quiz.name}</h2>
+                            <div className="flex items-center gap-2 ">
+                                <h2 className="text-lg sm:text-xl font-bold mb-1">{quiz.description || quiz.name}</h2>
                                 <span className={`text-[10px] px-2.5 py-1 rounded-lg border-2 uppercase font-bold tracking-wider whitespace-nowrap ${quiz.is_exercise
                                     ? 'bg-purple-500/20 text-purple-400 border-purple-500/30'
                                     : 'bg-blue-500/20 text-blue-400 border-blue-500/30'
@@ -188,13 +188,13 @@ const QuizGradingPanel = ({ quiz, course, onBack }) => {
                                     {quiz.is_exercise ? 'Exercise' : 'Quiz'}
                                 </span>
                             </div>
-                            <div className="flex flex-wrap gap-4 text-xs muted">
+                            <div className="flex flex-wrap gap-4 text-xs sm:text-sm muted">
                                 <div className="flex items-center gap-1.5">
-                                    <FaBook className="w-3.5 h-3.5" />
+                                    <FaBook className="w-3 h-3" />
                                     <span className="font-medium">{course.course_name}</span>
                                 </div>
                                 <div className="flex items-center gap-1.5">
-                                    <FaLayerGroup className="w-3.5 h-3.5" />
+                                    <FaLayerGroup className="w-3 h-3" />
                                     <span className="font-medium">{quiz.module_name}</span>
                                 </div>
 
@@ -207,7 +207,7 @@ const QuizGradingPanel = ({ quiz, course, onBack }) => {
                             </div>
                         </div>
                     </div>
-                    <p className="text-xs sm:text-sm muted">Select a user and their attempt to view and grade submissions</p>
+                    <p className="text-sm muted">Select a user and their attempt to view and grade submissions</p>
                 </div>
 
                 {/* Filters Section */}
@@ -276,14 +276,14 @@ const QuizGradingPanel = ({ quiz, course, onBack }) => {
                     {/* Attempt Filter (only show when user is selected) */}
                     {selectedUser && userAttemptsData && (
                         <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3 sm:gap-4 my-6">
-                            <div className="flex bg-[var(--input-bg)] p-1.5 rounded-xl overflow-x-auto scrollbar-hide border-2 border-[var(--border-strong)]">
+                            <div className="flex bg-[var(--input-bg)] p-1.5 rounded-xl overflow-x-auto scrollbar-hide border-2 border-[var(--border-strong)] max-w-full lg:max-w-[50vw] xl:max-w-[75vw]">
                                 {[...userAttemptsData.attempts]
                                     .sort((a, b) => a.attempt_number - b.attempt_number)
                                     .map((attempt) => (
                                         <button
                                             key={attempt.id}
                                             onClick={() => setSelectedAttempt(attempt)}
-                                            className={`flex-1 sm:flex-initial px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 whitespace-nowrap ${selectedAttempt?.id === attempt.id
+                                            className={`flex-1 sm:flex-none flex-shrink-0 px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 whitespace-nowrap ${selectedAttempt?.id === attempt.id
                                                 ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg'
                                                 : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--card-bg)]'
                                                 }`}

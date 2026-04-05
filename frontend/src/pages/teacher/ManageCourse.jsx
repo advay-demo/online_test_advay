@@ -124,8 +124,8 @@ const ManageCourse = () => {
                     </div>
 
                     <div className="card-strong p-3 sm:p-6 min-h-[400px] sm:min-h-[600px] w-full max-w-full overflow-x-auto border-2 border-[var(--border-strong)] shadow-lg rounded-2xl">
-                        <div className="flex sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-4">
-                            <div className="flex items-start gap-4 mb-4">
+                        <div className="flex sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-4 border-b-2 border-[var(--border-subtle)]">
+                            <div className="flex items-start gap-4 mb-6">
                                 <Link
                                     to="/teacher/courses"
                                     className="w-10 h-10 rounded-xl bg-[var(--input-bg)] border-2 border-[var(--border-strong)] flex items-center justify-center hover:border-blue-500/40 hover:bg-blue-500/5 transition-all duration-300 flex-shrink-0 active:scale-95"

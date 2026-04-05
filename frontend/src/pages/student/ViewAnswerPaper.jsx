@@ -11,7 +11,7 @@ const ViewAnswerPaper = () => {
   const {
     fetchAnswerPaperData,
     quiz,
-    courseName, 
+    courseName,
     moduleName,
     user,
     selectedPaper,
@@ -115,25 +115,24 @@ const ViewAnswerPaper = () => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2">
                       <h2 className="text-xl sm:text-2xl font-bold line-clamp-2">{quiz?.description || 'Answer Paper'}</h2>
-                      <span className={`text-[10px] px-2.5 py-1 rounded-lg border-2 uppercase font-bold tracking-wider whitespace-nowrap ${
-                        quiz?.is_exercise
+                      <span className={`text-[10px] px-2.5 py-1 rounded-lg border-2 uppercase font-bold tracking-wider whitespace-nowrap ${quiz?.is_exercise
                           ? 'bg-purple-500/20 text-purple-400 border-purple-500/30'
                           : 'bg-blue-500/20 text-blue-400 border-blue-500/30'
-                      }`}>
+                        }`}>
                         {quiz?.is_exercise ? 'Exercise' : 'Quiz'}
                       </span>
-                      <span className= " hidden sm:inline text-[10px] px-2.5 py-1 rounded-lg border-2 uppercase font-bold tracking-wider whitespace-nowrap bg-red-orange/20 text-orange-400 border-orange-500/30">
-                         Answerpaper
+                      <span className=" hidden sm:inline text-[10px] px-2.5 py-1 rounded-lg border-2 uppercase font-bold tracking-wider whitespace-nowrap bg-red-orange/20 text-orange-400 border-orange-500/30">
+                        Answerpaper
                       </span>
-                      <span className= "sm:hidden text-[10px] px-2.5 py-1 rounded-lg border-2 uppercase font-bold tracking-wider whitespace-nowrap bg-red-orange/20 text-orange-400 border-orange-500/30">
-                         Paper
+                      <span className="sm:hidden text-[10px] px-2.5 py-1 rounded-lg border-2 uppercase font-bold tracking-wider whitespace-nowrap bg-red-orange/20 text-orange-400 border-orange-500/30">
+                        Paper
                       </span>
-                      
+
                     </div>
                     <div className="flex flex-wrap gap-4 text-xs muted">
-                      
-                      
-                      
+
+
+
                       {courseName && (
                         <div className="flex items-center gap-1.5">
                           <FaBook className="w-3.5 h-3.5" />
@@ -141,7 +140,7 @@ const ViewAnswerPaper = () => {
                         </div>
                       )}
 
-                      
+
                       {moduleName && (
                         <div className="flex items-center gap-1.5">
                           <FaLayerGroup className="w-3.5 h-3.5" />
@@ -153,14 +152,14 @@ const ViewAnswerPaper = () => {
                         <FaUser className="w-3.5 h-3.5" />
                         <span className="font-medium">{user?.first_name} {user?.last_name} ({user?.username})</span>
                       </div>
-{/*}
+                      {/*}
                       {selectedPaper.end_time && (
                         <div className="flex items-center gap-1.5">
                           <FaCalendar className="w-3 h-3" />
                           <span>{new Date(selectedPaper.end_time).toLocaleString()}</span>
                         </div>
                       )}
-*/}                       
+*/}
                     </div>
                   </div>
                 </div>
@@ -171,22 +170,21 @@ const ViewAnswerPaper = () => {
               {/* Attempt Tabs */}
               {availableAttempts.length > 0 && (
                 <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3 sm:gap-4 my-6">
-                  <div className="flex bg-[var(--input-bg)] p-1.5 rounded-xl overflow-x-auto scrollbar-hide border-2 border-[var(--border-strong)]">
+                  <div className="flex bg-[var(--input-bg)] p-1.5 rounded-xl overflow-x-auto scrollbar-hide border-2 border-[var(--border-strong)]  max-w-full lg:max-w-[50vw] xl:max-w-[75vw]">
                     {[...availableAttempts]
                       .sort((a, b) => a - b)
                       .map((attemptNum) => (
-                      <button
-                        key={attemptNum}
-                        onClick={() => selectAttempt(attemptNum)}
-                        className={`flex-1 sm:flex-initial px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 whitespace-nowrap ${
-                          attemptNum === selectedAttemptNumber
-                            ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg'
-                            : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--card-bg)]'
-                        }`}
-                      >
-                        Attempt {attemptNum}
-                      </button>
-                    ))}
+                        <button
+                          key={attemptNum}
+                          onClick={() => selectAttempt(attemptNum)}
+                          className={`flex-1 sm:flex-initial flex-shrink-0 px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 whitespace-nowrap ${attemptNum === selectedAttemptNumber
+                              ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg'
+                              : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--card-bg)]'
+                            }`}
+                        >
+                          Attempt {attemptNum}
+                        </button>
+                      ))}
                   </div>
                 </div>
               )}
@@ -194,24 +192,23 @@ const ViewAnswerPaper = () => {
               {/* Questions & Answers Section */}
               <div>
                 <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-base font-bold flex items-center gap-2">
-                        <FaCheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                        Questions & Answers
-                    </h3>
-                    
+                  <h3 className="text-base font-bold flex items-center gap-2">
+                    <FaCheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                    Questions & Answers
+                  </h3>
+
                 </div>
                 <div className="card-strong p-5 rounded-xl border-2 border-[var(--border-strong)]">
                   <div className="flex items-center justify-between mb-4 pb-4 border-b-2 border-[var(--border-subtle)]">
                     <div>
                       <h3 className="text-base font-bold flex items-center gap-2 mb-2">
-                        Attempt #{selectedAttemptNumber} 
+                        Attempt #{selectedAttemptNumber}
                       </h3>
                       <p className="text-sm text-[var(--text-muted)] font-medium">
-                        Status: <span className={`font-semibold capitalize ${
-                          selectedPaper.status === 'completed'
+                        Status: <span className={`font-semibold capitalize ${selectedPaper.status === 'completed'
                             ? 'text-green-600 dark:text-green-400'
                             : 'text-orange-600 dark:text-orange-400'
-                        }`}>{selectedPaper.status}</span>
+                          }`}>{selectedPaper.status}</span>
                       </p>
                     </div>
                     <div className="text-right">
@@ -251,17 +248,16 @@ const ViewAnswerPaper = () => {
                           <div className="ml-9 space-y-3 text-sm">
                             <div className="flex items-start gap-2">
                               <span className="font-bold text-[var(--text-muted)] min-w-[70px]">Answer:</span>
-                              <span className={`${
-                                isSkipped
+                              <span className={`${isSkipped
                                   ? 'text-yellow-600 dark:text-yellow-400 font-semibold italic'
                                   : qData.answer?.answer_content
-                                  ? 'text-[var(--text-primary)] font-medium'
-                                  : 'text-red-600 dark:text-red-400 font-semibold'
-                              }`}>
+                                    ? 'text-[var(--text-primary)] font-medium'
+                                    : 'text-red-600 dark:text-red-400 font-semibold'
+                                }`}>
                                 {isSkipped ? 'Question skipped' : (qData.answer?.answer_content || 'Not answered')}
                               </span>
                             </div>
-                            
+
                             <div className="flex items-center gap-2">
                               <span className="font-bold text-[var(--text-muted)] min-w-[70px]">Marks:</span>
                               <span>
@@ -289,7 +285,7 @@ const ViewAnswerPaper = () => {
                     })}
                   </div>
                 </div>
-              </div>  
+              </div>
             </div>
           </div>
         </div>

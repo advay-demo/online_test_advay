@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FaCheckCircle, FaBolt, FaChartLine, FaClock, FaArrowRight,
-    FaBook,
-    FaLayerGroup,
-    FaPuzzlePiece,
-    FaHistory,
-    FaStar
+import {
+  FaCheckCircle, FaBolt, FaChartLine, FaClock, FaArrowRight,
+  FaBook,
+  FaLayerGroup,
+  FaPuzzlePiece,
+  FaHistory,
+  FaStar
 } from 'react-icons/fa';
 
 import Sidebar from '../../components/layout/Sidebar';
@@ -86,7 +87,7 @@ const Dashboard = () => {
     },
   ];
 
-  
+
 
   if (loading) {
     return (
@@ -147,16 +148,16 @@ const Dashboard = () => {
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 lg:mb-8">
             {stat_s.map((stat, index) => (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 className="card p-4 sm:p-5 lg:p-6 rounded-2xl border-2 border-[var(--border-subtle)] hover:shadow-lg transition-all duration-300 group relative overflow-hidden"
               >
                 {/* Subtle background glow */}
-                <div 
+                <div
                   className="absolute top-0 right-0 w-24 h-24 rounded-full blur-3xl opacity-20 group-hover:opacity-40 transition-opacity duration-300"
                   style={{ background: stat.color }}
                 />
-                
+
                 <div className="relative flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                   <div className="flex-1 order-2 sm:order-1">
                     <p className="muted text-xs sm:text-sm mb-1.5 font-medium">{stat.label}</p>
@@ -193,20 +194,18 @@ const Dashboard = () => {
               </div>
               <div className="space-y-3 sm:space-y-4">
                 {upcomingQuizzes.length > 0 ? upcomingQuizzes.map((quiz, index) => (
-                  <div 
-                    key={index} 
-                    className={`card-strong p-4 sm:p-5 rounded-xl hover:shadow-md hover:bg-white/[0.03] transition-all duration-300 group ${
-                      quiz.is_exercise ? 'hover:border-purple-500' : 'hover:border-green-500'
-                    }`}
+                  <div
+                    key={index}
+                    className={`card-strong p-4 sm:p-5 rounded-xl hover:shadow-md hover:bg-white/[0.03] transition-all duration-300 group ${quiz.is_exercise ? 'hover:border-purple-500' : 'hover:border-green-500'
+                      }`}
                   >
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                       <div className="flex gap-3 sm:gap-4 flex-1">
                         <div
-                          className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300 border-2 ${
-                            quiz.is_exercise 
-                              ? 'bg-purple-500/15 border-purple-500/30' 
+                          className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300 border-2 ${quiz.is_exercise
+                              ? 'bg-purple-500/15 border-purple-500/30'
                               : 'bg-green-500/15 border-green-500/30'
-                          }`}
+                            }`}
                         >
                           {quiz.is_exercise ? (
                             <FaPuzzlePiece className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500 dark:text-purple-400" />
@@ -219,11 +218,10 @@ const Dashboard = () => {
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold text-base sm:text-lg mb-1 flex items-center gap-2">
                             <span className="truncate">{quiz.name}</span>
-                            <span className={`px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg border-2 text-[10px] sm:text-xs font-bold whitespace-nowrap flex-shrink-0 ${
-                              quiz.is_exercise
+                            <span className={`px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg border-2 text-[10px] sm:text-xs font-bold whitespace-nowrap flex-shrink-0 ${quiz.is_exercise
                                 ? 'bg-purple-500/10 text-purple-500 border-purple-500/20'
                                 : 'bg-green-500/10 text-green-500 border-green-500/20'
-                            } `}>
+                              } `}>
                               {quiz.is_exercise ? 'Exercise' : 'Quiz'}
                             </span>
                           </h3>
@@ -280,20 +278,19 @@ const Dashboard = () => {
               <div className="space-y-3">
                 {activities && activities.length > 0 ? (
                   activities.map((activity) => (
-                    <div 
-                      key={activity.id} 
+                    <div
+                      key={activity.id}
                       className="card-strong p-3.5 sm:p-4 rounded-xl flex items-center gap-3 sm:gap-4 group hover:bg-white/[0.03] hover:border-purple-500/30 transition-all duration-300 border border-transparent"
                     >
-                      <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg border flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300 ${
-                        activity.color === 'yellow' ? 'bg-amber-500/15 border-amber-500/30 text-amber-500 dark:text-amber-400' :
-                        activity.color === 'green' ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-500 dark:text-emerald-400' :
-                        activity.color === 'blue' ? 'bg-blue-500/15 border-blue-500/30 text-blue-500 dark:text-blue-400' :
-                        'bg-purple-500/15 border-purple-500/30 text-purple-500 dark:text-purple-400'
-                      }`}>
+                      <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg border flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300 ${activity.color === 'yellow' ? 'bg-amber-500/15 border-amber-500/30 text-amber-500 dark:text-amber-400' :
+                          activity.color === 'green' ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-500 dark:text-emerald-400' :
+                            activity.color === 'blue' ? 'bg-blue-500/15 border-blue-500/30 text-blue-500 dark:text-blue-400' :
+                              'bg-purple-500/15 border-purple-500/30 text-purple-500 dark:text-purple-400'
+                        }`}>
                         {activity.icon === 'check' ? <FaCheckCircle className="w-4 h-4 sm:w-5 sm:h-5" /> :
-                         activity.icon === 'clock' ? <FaClock className="w-4 h-4 sm:w-5 sm:h-5" /> :
-                         activity.icon === 'star' ? <FaStar className="w-4 h-4 sm:w-5 sm:h-5" /> :
-                         <FaBolt className="w-4 h-4 sm:w-5 sm:h-5" />}
+                          activity.icon === 'clock' ? <FaClock className="w-4 h-4 sm:w-5 sm:h-5" /> :
+                            activity.icon === 'star' ? <FaStar className="w-4 h-4 sm:w-5 sm:h-5" /> :
+                              <FaBolt className="w-4 h-4 sm:w-5 sm:h-5" />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-[var(--text-primary)] truncate">
@@ -316,13 +313,14 @@ const Dashboard = () => {
             </div>
 
           </div>
-  
+
           <section
             className="
               rounded-2xl
               border-2 border-[var(--border-strong)]
               card
-              shadow-lg
+              
+              hover:border-blue-500/70 dark:hover:border-blue-500/50 hover:shadow-lg
               p-5 sm:p-6 lg:p-8
             "
           >
@@ -330,7 +328,7 @@ const Dashboard = () => {
             <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-6 sm:mb-8 pb-4 border-b-2 border-[var(--border-subtle)]">
               <div className="flex items-center gap-2 sm:gap-3">
                 <div className="w-9 h-9 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-xl bg-blue-500/10 border-2 border-blue-500/30 flex items-center justify-center flex-shrink-0">
-                   <FaBook className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
+                  <FaBook className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-[var(--text-primary)] truncate">
@@ -381,11 +379,10 @@ const Dashboard = () => {
                         <span className="truncate">{course.course_content?.length ?? 0} modules</span>
                       </span>
                       <span
-                        className={`px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg border-2 text-[10px] sm:text-xs font-bold whitespace-nowrap flex-shrink-0 ${
-                          course.active
-                            ? 'border-emerald-500/50 text-emerald-400 bg-emerald-500/10'
-                            : 'border-orange-500/50 text-orange-400 bg-orange-500/10'
-                        }`}
+                        className={`text-[10px] px-2 py-0.5 rounded-md border-2 uppercase font-bold tracking-wider whitespace-nowrap flex-shrink-0 transition-all duration-200 shadow-md ${course.active
+                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 shadow-emerald-500/20'
+                          : 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30 shadow-orange-500/20'
+                          }`}
                       >
                         {course.active ? 'Active' : 'Inactive'}
                       </span>
