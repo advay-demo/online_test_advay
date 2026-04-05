@@ -48,3 +48,5 @@ yaksh_data/output/
 venv/
 .venv/
 .env
+
+staticfiles/
