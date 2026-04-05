@@ -276,14 +276,14 @@ const QuizGradingPanel = ({ quiz, course, onBack }) => {
                     {/* Attempt Filter (only show when user is selected) */}
                     {selectedUser && userAttemptsData && (
                         <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3 sm:gap-4 my-6">
-                            <div className="flex bg-[var(--input-bg)] p-1.5 rounded-xl overflow-x-auto scrollbar-hide border-2 border-[var(--border-strong)]">
+                            <div className="flex bg-[var(--input-bg)] p-1.5 rounded-xl overflow-x-auto scrollbar-hide border-2 border-[var(--border-strong)] max-w-full lg:max-w-[50vw] xl:max-w-[75vw]">
                                 {[...userAttemptsData.attempts]
                                     .sort((a, b) => a.attempt_number - b.attempt_number)
                                     .map((attempt) => (
                                         <button
                                             key={attempt.id}
                                             onClick={() => setSelectedAttempt(attempt)}
-                                            className={`flex-1 sm:flex-initial px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 whitespace-nowrap ${selectedAttempt?.id === attempt.id
+                                            className={`flex-1 sm:flex-none flex-shrink-0 px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 whitespace-nowrap ${selectedAttempt?.id === attempt.id
                                                 ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg'
                                                 : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--card-bg)]'
                                                 }`}

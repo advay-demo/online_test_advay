@@ -292,21 +292,22 @@ const QuizListContent = ({
                                                                                                 {quiz.name}
                                                                                             </h5>
                                                                                         </div>
-                                                                                        <div className={`
-                                                                                        px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider whitespace-nowrap flex-shrink-0 border-2
-                                                                                        ${quiz.active
-                                                                                                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                                                                                                : 'bg-gray-500/10 text-gray-400 border-gray-500/30'
-                                                                                            }
-                                                                                    `}>
+                                                                                        <span
+                                                                                            className={`text-[10px] px-2 py-0.5 rounded-md border-2 uppercase font-bold tracking-wider whitespace-nowrap flex-shrink-0 transition-all duration-200 shadow-md ${quiz.active
+                                                                                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 shadow-emerald-500/20'
+                                                                                                : 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30 shadow-orange-500/20'
+                                                                                                }`}
+                                                                                        >
                                                                                             {quiz.active ? 'Active' : 'Inactive'}
-                                                                                        </div>
+                                                                                        </span>
+
                                                                                     </div>
+
 
                                                                                     <div className="flex flex-wrap items-center gap-3 text-xs text-muted mb-3">
                                                                                         <span className="flex items-center gap-1.5">
                                                                                             <FaUsers className="w-3.5 h-3.5" />
-                                                                                            <span className="font-medium">{quiz.attempts || 0} attempts</span>
+                                                                                            <span className="font-medium">{quiz.attempts || 0} users</span>
                                                                                         </span>
                                                                                         <span className="flex items-center gap-1.5">
                                                                                             <FaCalendar className="w-3.5 h-3.5" />

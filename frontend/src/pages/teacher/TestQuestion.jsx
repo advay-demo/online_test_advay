@@ -1,6 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { FaClock, FaCheck, FaTimes, FaCode, FaPlay, FaDownload, FaArrowLeft, FaLightbulb, FaFileAlt, FaCheckCircle, FaExternalLinkAlt, FaChevronLeft } from 'react-icons/fa';
+import { FaClock, FaCheck, FaTimes, FaCode, FaPlay, FaDownload, FaArrowLeft, FaLightbulb, FaFileAlt, FaCheckCircle, FaExternalLinkAlt, FaChevronLeft, FaFileCode, FaUpload } from 'react-icons/fa';
+import { TbSum } from "react-icons/tb";
+import { FaPersonCircleQuestion } from "react-icons/fa6";
+import { CgArrangeFront } from "react-icons/cg";
+import { BiSolidSelectMultiple } from "react-icons/bi";
+import { MdOutlineFormatColorText } from "react-icons/md";
+import { TbCircleDashedNumber1 } from "react-icons/tb";
+import { TbDecimal } from "react-icons/tb";
 import { AiOutlineWarning } from 'react-icons/ai';
 import { BiSkipNext } from 'react-icons/bi';
 import { MdTimer } from 'react-icons/md';
@@ -325,32 +332,47 @@ const TestQuestion = () => {
         const questionType = currentQuestion.type?.toLowerCase();
         const options = getQuestionOptions();
 
+        const QuestionHeader = ({ icon, typeLabel, title, tag, colors }) => (
+            <div className={`flex items-center justify-between p-4 sm:p-5 rounded-xl border-2 transition-colors ${colors.bg}`}>
+                <div className="flex items-center gap-3 sm:gap-4">
+                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center border ${colors.iconBg}`}>
+                        {icon}
+                    </div>
+                    <div>
+
+                        <span className={`text-sm sm:text-base font-bold ${colors.text}`}>{title}</span>
+                        <span className="text-xs sm:text-sm text-[var(--text-muted)] block font-medium mb-0.5">{typeLabel}</span>
+                    </div>
+                </div>
+                {tag && (
+                    <span className={`text-xs px-3 py-1.5 rounded-lg border font-semibold tracking-wide ${colors.tag}`}>
+                        {tag}
+                    </span>
+                )}
+            </div>
+        );
+
         switch (questionType) {
             case 'integer':
                 return (
                     <div className="space-y-5">
-                        {/* Header */}
-                        <div className="flex items-center justify-between p-4 bg-yellow-500/5 border border-yellow-500/20 rounded-lg">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center">
-                                    <FaLightbulb className="w-5 h-5 text-yellow-400" />
-                                </div>
-                                <div>
-                                    <span className="text-xs text-gray-400 block">Input Type</span>
-                                    <span className="text-sm font-bold text-yellow-400">Whole Number (No Decimals)</span>
-                                </div>
-                            </div>
-                            <span className="text-xs px-3 py-1.5 rounded-md bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 font-mono">
-                                INTEGER
-                            </span>
-                        </div>
-
-                        {/* Input Field */}
-                        <div className="relative">
+                        <QuestionHeader
+                            icon={<TbCircleDashedNumber1 className="w-6 h-6 text-orange-600 dark:text-orange-400" />}
+                            typeLabel="Input Type"
+                            title="Whole Number (No Decimals)"
+                            tag="INTEGER"
+                            colors={{
+                                bg: 'bg-orange-500/5 border-orange-500/20',
+                                iconBg: 'bg-orange-500/10 border-orange-500/30',
+                                text: 'text-orange-700 dark:text-orange-400',
+                                tag: 'bg-orange-500/10 border-orange-500/20 text-orange-700 dark:text-orange-400'
+                            }}
+                        />
+                        <div className="relative group">
                             <input
                                 type="number"
                                 step="1"
-                                className="w-full px-5 py-4 rounded-lg text-base bg-[var(--input-bg)] border-2 border-[var(--border-color)] focus:border-yellow-500/50 focus:ring-4 focus:ring-yellow-500/10 transition-all placeholder:text-gray-500"
+                                className="w-full px-5 py-4 rounded-xl text-base bg-[var(--input-bg)] hover:bg-[var(--surface-2)] border-2 border-[var(--border-color)] focus:border-orange-500/50 focus:ring-4 focus:ring-orange-500/10 transition-all placeholder-[var(--text-muted)] text-[var(--text-primary)] font-medium"
                                 placeholder="e.g., 42"
                                 value={userAnswer}
                                 onChange={(e) => handleAnswerChange(e.target.value)}
@@ -362,28 +384,23 @@ const TestQuestion = () => {
             case 'float':
                 return (
                     <div className="space-y-5">
-                        {/* Header */}
-                        <div className="flex items-center justify-between p-4 bg-yellow-500/5 border border-yellow-500/20 rounded-lg">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center">
-                                    <FaLightbulb className="w-5 h-5 text-yellow-400" />
-                                </div>
-                                <div>
-                                    <span className="text-xs text-gray-400 block">Input Type</span>
-                                    <span className="text-sm font-bold text-yellow-400">Decimal Number (Floating Point)</span>
-                                </div>
-                            </div>
-                            <span className="text-xs px-3 py-1.5 rounded-md bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 font-mono">
-                                FLOAT
-                            </span>
-                        </div>
-
-                        {/* Input Field */}
-                        <div className="relative">
+                        <QuestionHeader
+                            icon={<TbDecimal className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />}
+                            typeLabel="Input Type"
+                            title="Decimal Number (Floating Point)"
+                            tag="FLOAT"
+                            colors={{
+                                bg: 'bg-yellow-500/5 border-yellow-500/20',
+                                iconBg: 'bg-yellow-500/10 border-yellow-500/30',
+                                text: 'text-yellow-700 dark:text-yellow-400',
+                                tag: 'bg-yellow-500/10 border-yellow-500/20 text-yellow-700 dark:text-yellow-400'
+                            }}
+                        />
+                        <div className="relative group">
                             <input
                                 type="number"
                                 step="any"
-                                className="w-full px-5 py-4 rounded-lg text-base bg-[var(--input-bg)] border-2 border-[var(--border-color)] focus:border-yellow-500/50 focus:ring-4 focus:ring-yellow-500/10 transition-all placeholder:text-gray-500"
+                                className="w-full px-5 py-4 rounded-xl text-base bg-[var(--input-bg)] hover:bg-[var(--surface-2)] border-2 border-[var(--border-color)] focus:border-yellow-500/50 focus:ring-4 focus:ring-yellow-500/10 transition-all placeholder-[var(--text-muted)] text-[var(--text-primary)] font-medium"
                                 placeholder="e.g., 3.14159"
                                 value={userAnswer}
                                 onChange={(e) => handleAnswerChange(e.target.value)}
@@ -395,28 +412,23 @@ const TestQuestion = () => {
             case 'string':
                 return (
                     <div className="space-y-5">
-                        {/* Header */}
-                        <div className="flex items-center justify-between p-4 bg-yellow-500/5 border border-yellow-500/20 rounded-lg">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center">
-                                    <FaLightbulb className="w-5 h-5 text-yellow-400" />
-                                </div>
-                                <div>
-                                    <span className="text-xs text-gray-400 block">Input Type</span>
-                                    <span className="text-sm font-bold text-yellow-400">Text Answer (Case Sensitive)</span>
-                                </div>
-                            </div>
-                            <span className="text-xs px-3 py-1.5 rounded-md bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 font-mono">
-                                STRING
-                            </span>
-                        </div>
-
-                        {/* Input Field */}
-                        <div className="relative">
+                        <QuestionHeader
+                            icon={<MdOutlineFormatColorText className="w-6 h-6 text-green-600 dark:text-green-400" />}
+                            typeLabel="Input Type"
+                            title="Text Answer (Case Sensitive)"
+                            tag="STRING"
+                            colors={{
+                                bg: 'bg-green-500/5 border-green-500/20',
+                                iconBg: 'bg-green-500/10 border-green-500/30',
+                                text: 'text-green-700 dark:text-green-400',
+                                tag: 'bg-green-500/10 border-green-500/20 text-green-700 dark:text-green-400'
+                            }}
+                        />
+                        <div className="relative group">
                             <input
                                 type="text"
-                                className="w-full px-5 py-4 rounded-lg text-base bg-[var(--input-bg)] border-2 border-[var(--border-color)] focus:border-yellow-500/50 focus:ring-4 focus:ring-yellow-500/10 transition-all placeholder:text-gray-500"
-                                placeholder="Type your answer here..."
+                                className="w-full px-5 py-4 rounded-xl text-base bg-[var(--input-bg)] hover:bg-[var(--surface-2)] border-2 border-[var(--border-color)] focus:border-green-500/50 focus:ring-4 focus:ring-green-500/10 transition-all placeholder-[var(--text-muted)] text-[var(--text-primary)] font-medium"
+                                placeholder="Type your precise answer here..."
                                 value={userAnswer}
                                 onChange={(e) => handleAnswerChange(e.target.value)}
                             />
@@ -428,36 +440,30 @@ const TestQuestion = () => {
             case 'mcq':
                 return (
                     <div className="space-y-5">
-                        {/* Header */}
-                        <div className="flex items-center justify-between p-4 bg-purple-500/5 border border-purple-500/20 rounded-lg">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-purple-500/10 border border-purple-500/30 flex items-center justify-center">
-                                    <FaCheckCircle className="w-5 h-5 text-purple-400" />
-                                </div>
-                                <div>
-                                    <span className="text-xs text-gray-400 block">Question Type</span>
-                                    <span className="text-sm font-bold text-purple-400">Single Correct Choice</span>
-                                </div>
-                            </div>
-                            <span className="text-xs px-3 py-1.5 rounded-md bg-purple-500/10 border border-purple-500/30 text-purple-400 font-semibold">
-                                {options.length} OPTIONS
-                            </span>
-                        </div>
-
-                        {/* Options */}
-                        <div className="space-y-3">
+                        <QuestionHeader
+                            icon={<FaCheckCircle className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />}
+                            typeLabel="Question Type"
+                            title="Single Correct Choice"
+                            tag={`${options.length} OPTIONS`}
+                            colors={{
+                                bg: 'bg-indigo-500/5 border-indigo-500/20',
+                                iconBg: 'bg-indigo-500/10 border-indigo-500/30',
+                                text: 'text-indigo-700 dark:text-indigo-400',
+                                tag: 'bg-indigo-500/10 border-indigo-500/20 text-indigo-700 dark:text-indigo-400'
+                            }}
+                        />
+                        <div className="grid grid-cols-1 gap-3">
                             {options.map((option, idx) => {
                                 const isSelected = userAnswer === option;
                                 return (
                                     <label
                                         key={idx}
-                                        className={`group flex items-start gap-4 p-4 rounded-lg cursor-pointer transition-all ${isSelected
-                                            ? 'bg-purple-500/10 border-2 border-purple-500/50'
-                                            : 'bg-black/20 border-2 border-white/5 hover:bg-black/30 hover:border-purple-500/30'
+                                        className={`group flex items-center gap-4 p-4 sm:p-5 rounded-xl cursor-pointer transition-all duration-300 ${isSelected
+                                            ? 'bg-indigo-500/10 border-2 border-indigo-500/50 shadow-sm shadow-indigo-500/10'
+                                            : 'bg-[var(--input-bg)] border-2 border-[var(--border-color)] hover:bg-[var(--surface-2)] hover:border-indigo-500/30'
                                             }`}
                                     >
-                                        {/* Radio Button */}
-                                        <div className="relative flex-shrink-0 mt-0.5">
+                                        <div className="relative flex-shrink-0">
                                             <input
                                                 type="radio"
                                                 name={`question-${currentQuestion.id}`}
@@ -466,27 +472,22 @@ const TestQuestion = () => {
                                                 onChange={(e) => handleAnswerChange(e.target.value)}
                                                 className="peer sr-only"
                                             />
-                                            <div className={`w-5 h-5 rounded-full border-2 transition-all ${isSelected
-                                                ? 'border-purple-500 bg-purple-500'
-                                                : 'border-gray-500 group-hover:border-purple-400'
+                                            <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 transition-all duration-300 ${isSelected
+                                                ? 'border-indigo-500 bg-indigo-500'
+                                                : 'border-[var(--text-muted)] group-hover:border-indigo-400'
                                                 }`}>
                                                 {isSelected && (
                                                     <div className="w-full h-full rounded-full flex items-center justify-center">
-                                                        <div className="w-2 h-2 bg-white rounded-full"></div>
+                                                        <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 bg-white rounded-full"></div>
                                                     </div>
                                                 )}
                                             </div>
                                         </div>
-
-                                        {/* Option Text */}
                                         <div className="flex-1 flex items-center justify-between gap-3 min-w-0">
-                                            <span className={`text-sm sm:text-base leading-relaxed ${isSelected ? 'text-white font-medium' : 'text-gray-300'
+                                            <span className={`text-sm sm:text-base leading-relaxed ${isSelected ? 'text-[var(--text-primary)] font-semibold' : 'text-[var(--text-secondary)] font-medium group-hover:text-[var(--text-primary)]'
                                                 }`}>
                                                 {option}
                                             </span>
-                                            {isSelected && (
-                                                <FaCheck className="w-4 h-4 text-purple-400 flex-shrink-0" />
-                                            )}
                                         </div>
                                     </label>
                                 );
@@ -496,39 +497,32 @@ const TestQuestion = () => {
                 );
 
             case 'mcc':
-
                 return (
                     <div className="space-y-5">
-                        {/* Header */}
-                        <div className="flex items-center justify-between p-4 bg-purple-500/5 border border-purple-500/20 rounded-lg">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-purple-500/10 border border-purple-500/30 flex items-center justify-center">
-                                    <FaCheckCircle className="w-5 h-5 text-purple-400" />
-                                </div>
-                                <div>
-                                    <span className="text-xs text-gray-400 block">Question Type</span>
-                                    <span className="text-sm font-bold text-purple-400">Multiple Correct Choices</span>
-                                </div>
-                            </div>
-                            <span className="text-xs px-3 py-1.5 rounded-md bg-purple-500/10 border border-purple-500/30 text-purple-400 font-semibold">
-                                {(Array.isArray(userAnswer) ? userAnswer : []).length}/{options.length} SELECTED
-                            </span>
-                        </div>
-
-                        {/* Options */}
-                        <div className="space-y-3">
+                        <QuestionHeader
+                            icon={<BiSolidSelectMultiple className="w-6 h-6 text-blue-600 dark:text-blue-400" />}
+                            typeLabel="Question Type"
+                            title="Multiple Correct Choices"
+                            tag={`${(Array.isArray(userAnswer) ? userAnswer : []).length}/${options.length} SELECTED`}
+                            colors={{
+                                bg: 'bg-blue-500/5 border-blue-500/20',
+                                iconBg: 'bg-blue-500/10 border-blue-500/30',
+                                text: 'text-blue-700 dark:text-blue-400',
+                                tag: 'bg-blue-500/10 border-blue-500/20 text-blue-700 dark:text-blue-400'
+                            }}
+                        />
+                        <div className="grid grid-cols-1 gap-3">
                             {options.map((option, idx) => {
                                 const isChecked = (Array.isArray(userAnswer) ? userAnswer : []).includes(option);
                                 return (
                                     <label
                                         key={idx}
-                                        className={`group flex items-start gap-4 p-4 rounded-lg cursor-pointer transition-all ${isChecked
-                                            ? 'bg-purple-500/10 border-2 border-purple-500/50'
-                                            : 'bg-black/20 border-2 border-white/5 hover:bg-black/30 hover:border-purple-500/30'
+                                        className={`group flex items-center gap-4 p-4 sm:p-5 rounded-xl cursor-pointer transition-all duration-300 ${isChecked
+                                            ? 'bg-blue-500/10 border-2 border-blue-500/50 shadow-sm shadow-blue-500/10'
+                                            : 'bg-[var(--input-bg)] border-2 border-[var(--border-color)] hover:bg-[var(--surface-2)] hover:border-blue-500/30'
                                             }`}
                                     >
-                                        {/* Checkbox */}
-                                        <div className="relative flex-shrink-0 mt-0.5">
+                                        <div className="relative flex-shrink-0">
                                             <input
                                                 type="checkbox"
                                                 checked={isChecked}
@@ -541,9 +535,9 @@ const TestQuestion = () => {
                                                 }}
                                                 className="peer sr-only"
                                             />
-                                            <div className={`w-5 h-5 rounded border-2 transition-all ${isChecked
-                                                ? 'border-purple-500 bg-purple-500'
-                                                : 'border-gray-500 group-hover:border-purple-400'
+                                            <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded border-2 transition-all duration-300 ${isChecked
+                                                ? 'border-blue-500 bg-blue-500'
+                                                : 'border-[var(--text-muted)] group-hover:border-blue-400'
                                                 }`}>
                                                 {isChecked && (
                                                     <svg className="w-full h-full text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -552,16 +546,11 @@ const TestQuestion = () => {
                                                 )}
                                             </div>
                                         </div>
-
-                                        {/* Option Text */}
                                         <div className="flex-1 flex items-center justify-between gap-3 min-w-0">
-                                            <span className={`text-sm sm:text-base leading-relaxed ${isChecked ? 'text-white font-medium' : 'text-gray-300'
+                                            <span className={`text-sm sm:text-base leading-relaxed ${isChecked ? 'text-[var(--text-primary)] font-semibold' : 'text-[var(--text-secondary)] font-medium group-hover:text-[var(--text-primary)]'
                                                 }`}>
                                                 {option}
                                             </span>
-                                            {isChecked && (
-                                                <FaCheck className="w-4 h-4 text-purple-400 flex-shrink-0" />
-                                            )}
                                         </div>
                                     </label>
                                 );
@@ -573,44 +562,34 @@ const TestQuestion = () => {
             case 'arrange':
                 return (
                     <div className="space-y-5">
-                        {/* Header */}
-                        <div className="flex items-center justify-between p-4 bg-cyan-500/5 border border-cyan-500/20 rounded-lg">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
-                                    <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <span className="text-xs text-gray-400 block">Question Type</span>
-                                    <span className="text-sm font-bold text-cyan-400">Arrange in Correct Order</span>
-                                </div>
-                            </div>
-                            <span className="text-xs px-3 py-1.5 rounded-md bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 font-semibold">
-                                {draggableOptions.length} ITEMS
-                            </span>
-                        </div>
-
-                        {/* Instructions */}
-                        <div className="flex items-start gap-3 p-4 bg-blue-500/5 border border-blue-500/20 rounded-lg">
-                            <FaLightbulb className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
-                            <p className="text-sm text-blue-300">
-                                Drag items to reorder them. The order will be saved as comma-separated numbers representing the original position of each item.
+                        <QuestionHeader
+                            icon={<CgArrangeFront className="w-6 h-6 text-red-600 dark:text-red-400" />}
+                            typeLabel="Question Type"
+                            title="Arrange in Correct Order"
+                            tag={`${draggableOptions.length} ITEMS`}
+                            colors={{
+                                bg: 'bg-red-500/5 border-red-500/20',
+                                iconBg: 'bg-red-500/10 border-red-500/30',
+                                text: 'text-red-700 dark:text-red-400',
+                                tag: 'bg-red-500/10 border-red-500/20 text-red-700 dark:text-red-400'
+                            }}
+                        />
+                        <div className="flex items-start gap-3 p-4 bg-blue-500/5 border border-blue-500/20 rounded-xl">
+                            <FaLightbulb className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                            <p className="text-sm text-[var(--text-secondary)]">
+                                Drag items to reorder them. The order will be automatically saved representing the original position of each item.
                             </p>
                         </div>
-
-                        {/* Draggable Items */}
-                        <div className="space-y-3">
+                        <div className="space-y-2.5">
                             {draggableOptions.map((option, idx) => {
-                                // Find the original index of this option
                                 const originalIndex = options.findIndex(opt => opt === option);
 
                                 return (
                                     <div
                                         key={`${originalIndex}-${idx}`}
-                                        className={`group flex items-center gap-4 p-4 rounded-lg bg-cyan-500/5 border-2 transition-all cursor-move ${draggedIndex === idx
-                                            ? 'border-cyan-400 opacity-50 scale-95'
-                                            : 'border-cyan-500/20 hover:border-cyan-500/40'
+                                        className={`group flex items-center gap-4 p-4 rounded-xl bg-[var(--surface-2)] border-2 transition-all cursor-move shadow-sm ${draggedIndex === idx
+                                            ? 'border-red-400 opacity-60 scale-[0.98]'
+                                            : 'border-[var(--border-color)] hover:border-red-500/40 hover:shadow-md'
                                             }`}
                                         draggable
                                         onDragStart={(e) => handleDragStart(e, idx)}
@@ -619,20 +598,20 @@ const TestQuestion = () => {
                                         onDragEnd={handleDragEnd}
                                     >
                                         <div className="flex items-center gap-3 flex-shrink-0">
-                                            <div className="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center">
-                                                <span className="text-sm font-bold text-cyan-400">{idx + 1}</span>
+                                            <div className="w-8 h-8 rounded-lg bg-[var(--surface)] border border-[var(--border-medium)] flex items-center justify-center shadow-sm">
+                                                <span className="text-sm font-bold text-[var(--text-primary)]">{idx + 1}</span>
                                             </div>
-                                            <div className="flex flex-col gap-0.5">
-                                                <div className="w-1 h-1 rounded-full bg-gray-500"></div>
-                                                <div className="w-1 h-1 rounded-full bg-gray-500"></div>
-                                                <div className="w-1 h-1 rounded-full bg-gray-500"></div>
+                                            <div className="flex flex-col gap-1 px-1 opacity-50 group-hover:opacity-100 transition-opacity">
+                                                <div className="w-1 h-1 rounded-full bg-[var(--text-muted)]"></div>
+                                                <div className="w-1 h-1 rounded-full bg-[var(--text-muted)]"></div>
+                                                <div className="w-1 h-1 rounded-full bg-[var(--text-muted)]"></div>
                                             </div>
                                         </div>
                                         <div className="flex-1">
-                                            <pre className="text-sm leading-relaxed text-gray-200 font-mono whitespace-pre-wrap break-all">
+                                            <pre className="text-sm md:text-base text-[var(--text-primary)] font-mono whitespace-pre-wrap break-all">
                                                 {option}
                                             </pre>
-                                            <span className="text-xs text-gray-500 mt-1 block">
+                                            <span className="text-xs text-[var(--text-muted)] mt-1.5 block font-medium">
                                                 Original position: {originalIndex + 1}
                                             </span>
                                         </div>
@@ -640,75 +619,61 @@ const TestQuestion = () => {
                                 );
                             })}
                         </div>
-
-                        {/* Current Order Display */}
-                        <div className="relative">
-                            <label className="text-xs text-gray-400 mb-2 block flex items-center gap-2">
-                                <span>Current Order (Original Positions)</span>
-                                <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-400">Read-only</span>
+                        <div className="relative pt-2">
+                            <label className="text-xs text-[var(--text-muted)] mb-2 flex items-center gap-2 font-semibold tracking-wide">
+                                <span>CURRENT ORDER SEQUENCE</span>
+                                <span className="text-[10px] px-2 py-0.5 rounded border border-[var(--border-strong)] bg-[var(--surface-2)] text-[var(--text-secondary)]">READ-ONLY</span>
                             </label>
                             <input
                                 type="text"
-                                className="w-full px-5 py-4 rounded-lg text-base font-mono bg-[var(--input-bg)] border-2 border-[var(--border-color)] text-gray-400 cursor-not-allowed"
+                                className="w-full px-5 py-4 rounded-xl text-base font-mono bg-[var(--input-bg)] border-2 border-[var(--border-color)] text-[var(--text-secondary)] opacity-80 cursor-not-allowed text-center tracking-[0.2em]"
                                 value={userAnswer}
                                 readOnly
                             />
-                            <p className="text-xs text-gray-500 mt-2">
-                                This shows the original position numbers in your current arrangement. Drag items above to change the order.
-                            </p>
                         </div>
                     </div>
                 );
 
+            case 'upload':
             case 'assignment_upload':
                 return (
                     <div className="space-y-5">
-                        {/* Header */}
-                        <div className="flex items-center justify-between p-4 bg-orange-500/5 border border-orange-500/20 rounded-lg">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-orange-500/10 border border-orange-500/30 flex items-center justify-center">
-                                    <FaDownload className="w-5 h-5 text-orange-400" />
-                                </div>
-                                <div>
-                                    <span className="text-xs text-gray-400 block">Question Type</span>
-                                    <span className="text-sm font-bold text-orange-400">Assignment Upload</span>
-                                </div>
-                            </div>
-                            <span className="text-xs px-3 py-1.5 rounded-md bg-orange-500/10 border border-orange-500/30 text-orange-400 font-semibold">
-                                FILE UPLOAD
-                            </span>
-                        </div>
-
-                        {/* Upload Area */}
+                        <QuestionHeader
+                            icon={<FaUpload className="w-5 h-5 text-pink-600 dark:text-pink-400" />}
+                            typeLabel="Question Type"
+                            title="File Upload Assignment"
+                            tag="FILE UPLOAD"
+                            colors={{
+                                bg: 'bg-pink-500/5 border-pink-500/20',
+                                iconBg: 'bg-pink-500/10 border-pink-500/30',
+                                text: 'text-pink-700 dark:text-pink-400',
+                                tag: 'bg-pink-500/10 border-pink-500/20 text-pink-700 dark:text-pink-400'
+                            }}
+                        />
                         {!userAnswer || (typeof userAnswer === 'object' && !userAnswer.name) ? (
-                            <div className="relative border-2 border-dashed border-gray-600 hover:border-orange-500/50 rounded-lg p-12 bg-black/20 hover:bg-black/30 transition-all group">
+                            <div className="relative border-2 border-dashed border-[var(--border-strong)] hover:border-pink-500/50 rounded-2xl p-10 sm:p-14 bg-[var(--input-bg)] hover:bg-[var(--surface-2)] transition-all group overflow-hidden">
                                 <input
                                     type="file"
                                     onChange={(e) => {
                                         const file = e.target.files[0];
-                                        if (file) {
-                                            handleAnswerChange(file);
-                                        }
+                                        if (file) handleAnswerChange(file);
                                     }}
-                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                     accept=".pdf,.doc,.docx,.zip,.txt,.py,.java,.cpp,.c"
                                 />
-                                <div className="text-center pointer-events-none">
-                                    <div className="w-16 h-16 rounded-lg bg-orange-500/10 border border-orange-500/30 flex items-center justify-center mx-auto mb-4 group-hover:bg-orange-500/20 group-hover:scale-105 transition-all">
-                                        <FaDownload className="w-7 h-7 text-orange-400" />
+                                <div className="text-center relative z-0">
+                                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-[var(--surface)] border-2 border-[var(--border-medium)] flex items-center justify-center mx-auto mb-5 group-hover:border-pink-500/30 group-hover:scale-105 shadow-sm transition-all duration-300 text-pink-500">
+                                        <FaDownload className="w-6 h-6 sm:w-8 sm:h-8" />
                                     </div>
-                                    <h3 className="text-base font-semibold text-gray-300 mb-2">
+                                    <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)] mb-2">
                                         Drop your file here or click to browse
                                     </h3>
-                                    <p className="text-sm text-gray-500 mb-5">
+                                    <p className="text-xs sm:text-sm text-[var(--text-secondary)] font-medium mb-6">
                                         Maximum file size: 10MB
                                     </p>
-
-                                    {/* Supported formats */}
-                                    <div className="inline-flex flex-wrap gap-2 justify-center max-w-md">
-                                        <span className="text-xs text-gray-500">Supported:</span>
-                                        {['.pdf', '.doc', '.docx', '.zip', '.txt', '.py', '.java', '.cpp', '.c'].map((ext) => (
-                                            <span key={ext} className="text-xs px-2 py-1 rounded bg-gray-700/50 border border-gray-600 text-gray-400 font-mono">
+                                    <div className="flex flex-wrap gap-2 justify-center max-w-md mx-auto">
+                                        {['.pdf', '.docx', '.zip', '.txt', '.py', '.java', '.cpp'].map((ext) => (
+                                            <span key={ext} className="text-xs px-2.5 py-1 rounded-md bg-[var(--surface)] border border-[var(--border-subtle)] text-[var(--text-secondary)] font-mono shadow-sm">
                                                 {ext}
                                             </span>
                                         ))}
@@ -716,160 +681,36 @@ const TestQuestion = () => {
                                 </div>
                             </div>
                         ) : (
-                            /* File Preview */
-                            <div className="border border-green-500/30 rounded-lg p-5 bg-green-500/5">
+                            <div className="border-2 border-emerald-500/30 rounded-xl p-5 bg-emerald-500/5 shadow-sm">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-4 flex-1 min-w-0">
-                                        <div className="w-12 h-12 rounded-lg bg-green-500/20 border border-green-500/40 flex items-center justify-center flex-shrink-0">
-                                            <FaFileAlt className="w-5 h-5 text-green-400" />
+                                        <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center flex-shrink-0">
+                                            <FaFileAlt className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-semibold text-green-300 truncate mb-1">
+                                            <p className="text-sm sm:text-base font-bold text-[var(--text-primary)] truncate mb-1">
                                                 {userAnswer.name}
                                             </p>
-                                            <div className="flex items-center gap-3 text-xs text-gray-400">
+                                            <div className="flex items-center gap-2 sm:gap-3 text-xs text-[var(--text-secondary)] font-medium">
                                                 <span>{(userAnswer.size / 1024).toFixed(2)} KB</span>
-                                                <span>•</span>
-                                                <span className="flex items-center gap-1">
-                                                    <FaCheckCircle className="w-3 h-3 text-green-400" />
+                                                <span className="opacity-50">•</span>
+                                                <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                                                    <FaCheckCircle className="w-3.5 h-3.5" />
                                                     Ready to submit
                                                 </span>
                                             </div>
                                         </div>
                                     </div>
                                     <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleAnswerChange('');
-                                        }}
-                                        className="w-9 h-9 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 hover:border-red-500/50 flex items-center justify-center transition-all flex-shrink-0 ml-3"
+                                        onClick={(e) => { e.stopPropagation(); handleAnswerChange(''); }}
+                                        className="w-10 h-10 rounded-xl bg-[var(--surface)] hover:bg-red-500/10 border border-[var(--border-medium)] hover:border-red-500/30 flex items-center justify-center transition-all flex-shrink-0 ml-4 group"
                                         title="Remove file"
                                     >
-                                        <FaTimes className="w-4 h-4 text-red-400" />
+                                        <FaTimes className="w-4 h-4 text-[var(--text-muted)] group-hover:text-red-500 transition-colors" />
                                     </button>
                                 </div>
                             </div>
                         )}
-
-                        {/* Instructions */}
-                        <div className="flex items-start gap-3 p-4 bg-blue-500/5 border border-blue-500/20 rounded-lg">
-                            <FaLightbulb className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
-                            <div className="text-sm text-blue-300/90">
-                                <p className="font-medium mb-1">Upload Guidelines:</p>
-                                <ul className="text-xs text-gray-400 space-y-1 list-disc list-inside">
-                                    <li>Make sure your file is properly named</li>
-                                    <li>Compress multiple files into a single .zip archive</li>
-                                    <li>Double-check your submission before uploading</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                );
-
-
-            case 'upload':
-                return (
-                    <div className="space-y-5">
-                        {/* Header */}
-                        <div className="flex items-center justify-between p-4 bg-orange-500/5 border border-orange-500/20 rounded-lg">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-orange-500/10 border border-orange-500/30 flex items-center justify-center">
-                                    <FaDownload className="w-5 h-5 text-orange-400" />
-                                </div>
-                                <div>
-                                    <span className="text-xs text-gray-400 block">Question Type</span>
-                                    <span className="text-sm font-bold text-orange-400">Assignment Upload</span>
-                                </div>
-                            </div>
-                            <span className="text-xs px-3 py-1.5 rounded-md bg-orange-500/10 border border-orange-500/30 text-orange-400 font-semibold">
-                                FILE UPLOAD
-                            </span>
-                        </div>
-
-                        {/* Upload Area */}
-                        {!userAnswer || (typeof userAnswer === 'object' && !userAnswer.name) ? (
-                            <div className="relative border-2 border-dashed border-gray-600 hover:border-orange-500/50 rounded-lg p-12 bg-black/20 hover:bg-black/30 transition-all group">
-                                <input
-                                    type="file"
-                                    onChange={(e) => {
-                                        const file = e.target.files[0];
-                                        if (file) {
-                                            handleAnswerChange(file);
-                                        }
-                                    }}
-                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                    accept=".pdf,.doc,.docx,.zip,.txt,.py,.java,.cpp,.c"
-                                />
-                                <div className="text-center pointer-events-none">
-                                    <div className="w-16 h-16 rounded-lg bg-orange-500/10 border border-orange-500/30 flex items-center justify-center mx-auto mb-4 group-hover:bg-orange-500/20 group-hover:scale-105 transition-all">
-                                        <FaDownload className="w-7 h-7 text-orange-400" />
-                                    </div>
-                                    <h3 className="text-base font-semibold text-gray-300 mb-2">
-                                        Drop your file here or click to browse
-                                    </h3>
-                                    <p className="text-sm text-gray-500 mb-5">
-                                        Maximum file size: 10MB
-                                    </p>
-
-                                    {/* Supported formats */}
-                                    <div className="inline-flex flex-wrap gap-2 justify-center max-w-md">
-                                        <span className="text-xs text-gray-500">Supported:</span>
-                                        {['.pdf', '.doc', '.docx', '.zip', '.txt', '.py', '.java', '.cpp', '.c'].map((ext) => (
-                                            <span key={ext} className="text-xs px-2 py-1 rounded bg-gray-700/50 border border-gray-600 text-gray-400 font-mono">
-                                                {ext}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        ) : (
-                            /* File Preview */
-                            <div className="border border-green-500/30 rounded-lg p-5 bg-green-500/5">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-4 flex-1 min-w-0">
-                                        <div className="w-12 h-12 rounded-lg bg-green-500/20 border border-green-500/40 flex items-center justify-center flex-shrink-0">
-                                            <FaFileAlt className="w-5 h-5 text-green-400" />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-semibold text-green-300 truncate mb-1">
-                                                {userAnswer.name}
-                                            </p>
-                                            <div className="flex items-center gap-3 text-xs text-gray-400">
-                                                <span>{(userAnswer.size / 1024).toFixed(2)} KB</span>
-                                                <span>•</span>
-                                                <span className="flex items-center gap-1">
-                                                    <FaCheckCircle className="w-3 h-3 text-green-400" />
-                                                    Ready to submit
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleAnswerChange('');
-                                        }}
-                                        className="w-9 h-9 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 hover:border-red-500/50 flex items-center justify-center transition-all flex-shrink-0 ml-3"
-                                        title="Remove file"
-                                    >
-                                        <FaTimes className="w-4 h-4 text-red-400" />
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Instructions */}
-                        <div className="flex items-start gap-3 p-4 bg-blue-500/5 border border-blue-500/20 rounded-lg">
-                            <FaLightbulb className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
-                            <div className="text-sm text-blue-300/90">
-                                <p className="font-medium mb-1">Upload Guidelines:</p>
-                                <ul className="text-xs text-gray-400 space-y-1 list-disc list-inside">
-                                    <li>Make sure your file is properly named</li>
-                                    <li>Compress multiple files into a single .zip archive</li>
-                                    <li>Double-check your submission before uploading</li>
-                                </ul>
-                            </div>
-                        </div>
                     </div>
                 );
 
@@ -877,59 +718,54 @@ const TestQuestion = () => {
             case 'code':
                 return (
                     <div className="space-y-5">
-                        {/* Language Header */}
-                        <div className="flex items-center justify-between p-4 bg-blue-500/5 border border-blue-500/20 rounded-lg">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-blue-500/10 border border-blue-500/30 flex items-center justify-center">
-                                    <FaCode className="w-5 h-5 text-blue-400" />
-                                </div>
-                                <div>
-                                    <span className="text-xs text-gray-400 block">Language</span>
-                                    <span className="text-sm font-bold text-blue-400 uppercase">{currentQuestion.language || 'Python'}</span>
-                                </div>
-                            </div>
-                            <span className="text-xs px-3 py-1.5 rounded-md bg-blue-500/10 border border-blue-500/30 text-blue-400 font-semibold">
-                                CODE EDITOR
-                            </span>
-                        </div>
+                        <QuestionHeader
+                            icon={<FaCode className="w-6 h-6 text-purple-600 dark:text-purple-400" />}
+                            typeLabel="Language"
+                            title={currentQuestion.language ? currentQuestion.language.toUpperCase() : 'PYTHON'}
+                            tag="CODE EDITOR"
+                            colors={{
+                                bg: 'bg-purple-500/5 border-purple-500/20',
+                                iconBg: 'bg-purple-500/10 border-purple-500/30',
+                                text: 'text-purple-700 dark:text-purple-400',
+                                tag: 'bg-purple-500/10 border-purple-500/20 text-purple-700 dark:text-purple-400'
+                            }}
+                        />
 
-                        {/* Two Column Layout: Test Cases + Code Editor */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                            {/* Test Cases Column */}
+                        <div className={`grid grid-cols-1 ${currentQuestion.test_cases && currentQuestion.test_cases.some(tc => !tc.hidden) ? 'lg:grid-cols-[1fr_1.5fr]' : ''} gap-5 sm:gap-6`}>
                             {currentQuestion.test_cases && currentQuestion.test_cases.some(tc => !tc.hidden) && (
-                                <div className="lg:max-h-[650px] lg:overflow-y-auto">
-                                    <div className="bg-green-500/5 border border-green-500/20 rounded-lg p-5 ">
-                                        <div className="flex items-center gap-2 mb-4">
-                                            <FaCheckCircle className="w-4 h-4 text-green-400" />
-                                            <h4 className="text-sm font-bold text-green-400">
-                                                Test Cases ({currentQuestion.test_cases.filter(tc => !tc.hidden).length})
+                                <div className="lg:max-h-[700px] lg:overflow-y-auto custom-scrollbar pr-1">
+                                    <div className="bg-[var(--surface)] border-2 border-[var(--border-strong)] rounded-2xl p-5 shadow-sm">
+                                        <div className="flex items-center gap-2.5 mb-5 pb-3 border-b border-[var(--border-subtle)]">
+                                            <FaCheckCircle className="w-5 h-5 text-emerald-500" />
+                                            <h4 className="text-base font-bold text-[var(--text-primary)]">
+                                                Test Data ({currentQuestion.test_cases.filter(tc => !tc.hidden).length})
                                             </h4>
                                         </div>
-                                        <div className="space-y-3">
+                                        <div className="space-y-4">
                                             {currentQuestion.test_cases.filter(tc => !tc.hidden).map((tc, idx) => (
-                                                <div key={tc.id} className="bg-black/20 border border-white/5 rounded-lg p-4 hover:border-green-500/30 transition-colors">
-                                                    <div className="text-xs font-semibold text-gray-400 mb-3">
+                                                <div key={tc.id} className="bg-[var(--input-bg)] border border-[var(--border-color)] rounded-xl p-4 hover:border-emerald-500/30 hover:shadow-sm transition-all duration-300">
+                                                    <div className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-3">
                                                         Test Case #{idx + 1}
                                                     </div>
                                                     <div className="space-y-3">
                                                         <div>
-                                                            <div className="text-xs text-gray-400 mb-2 flex items-center gap-2">
-                                                                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                                                            <div className="text-xs text-[var(--text-muted)] font-semibold mb-1.5 flex items-center gap-2">
+                                                                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400/80"></span>
                                                                 Input
                                                             </div>
-                                                            <div className="bg-black/40 border border-cyan-500/20 rounded p-3">
-                                                                <pre className="text-xs text-cyan-400 font-mono whitespace-pre-wrap break-all">
+                                                            <div className="bg-[var(--surface)] border border-[var(--border-subtle)] rounded-lg p-3">
+                                                                <pre className="text-xs sm:text-sm text-[var(--text-primary)] font-mono whitespace-pre-wrap break-all opacity-90">
                                                                     {tc.expected_input || 'None'}
                                                                 </pre>
                                                             </div>
                                                         </div>
                                                         <div>
-                                                            <div className="text-xs text-gray-400 mb-2 flex items-center gap-2">
-                                                                <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+                                                            <div className="text-xs text-[var(--text-muted)] font-semibold mb-1.5 flex items-center gap-2">
+                                                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400/80"></span>
                                                                 Expected Output
                                                             </div>
-                                                            <div className="bg-black/40 border border-blue-500/20 rounded p-3">
-                                                                <pre className="text-xs text-blue-400 font-mono whitespace-pre-wrap break-all">
+                                                            <div className="bg-[var(--surface)] border border-[var(--border-subtle)] rounded-lg p-3">
+                                                                <pre className="text-xs sm:text-sm text-[var(--text-primary)] font-mono whitespace-pre-wrap break-all opacity-90">
                                                                     {tc.expected_output}
                                                                 </pre>
                                                             </div>
@@ -944,42 +780,33 @@ const TestQuestion = () => {
 
                             {/* Code Editor Column */}
                             <div className={currentQuestion.test_cases && currentQuestion.test_cases.some(tc => !tc.hidden) ? '' : 'lg:col-span-2'}>
-                                <div className="border border-[var(--border-color)] rounded-lg overflow-hidden bg-[var(--input-bg)] h-full flex flex-col">
-                                    {/* Editor Header */}
-                                    <div className="flex items-center justify-between px-4 py-2.5 bg-black/20 border-b border-[var(--border-color)]">
-                                        <div className="flex items-center gap-2">
-                                            <div className="flex gap-1.5">
-                                                <div className="w-3 h-3 rounded-full bg-red-500/60"></div>
-                                                <div className="w-3 h-3 rounded-full bg-yellow-500/60"></div>
-                                                <div className="w-3 h-3 rounded-full bg-green-500/60"></div>
+                                <div className="border-2 border-[var(--border-strong)] rounded-2xl overflow-hidden bg-[var(--surface)] h-full flex flex-col shadow-sm">
+                                    <div className="flex items-center justify-between px-5 py-3.5 bg-[var(--input-bg)] border-b-2 border-[var(--border-strong)]">
+                                        <div className="flex items-center gap-4">
+                                            <div className="flex gap-2">
+                                                <div className="w-3.5 h-3.5 rounded-full border border-red-500/30 bg-red-400/80"></div>
+                                                <div className="w-3.5 h-3.5 rounded-full border border-yellow-500/30 bg-yellow-400/80"></div>
+                                                <div className="w-3.5 h-3.5 rounded-full border border-green-500/30 bg-green-400/80"></div>
                                             </div>
-                                            <span className="text-xs text-gray-500 ml-2">
+                                            <span className="text-xs sm:text-sm font-semibold text-[var(--text-secondary)] bg-[var(--surface-2)] px-2 py-0.5 rounded border border-[var(--border-color)]">
                                                 solution.{currentQuestion.language === 'python' ? 'py' : currentQuestion.language === 'java' ? 'java' : currentQuestion.language === 'cpp' ? 'cpp' : 'txt'}
                                             </span>
                                         </div>
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-xs text-gray-500 font-mono">
+                                        <div className="flex items-center gap-3 bg-[var(--surface)] px-3 py-1 rounded-lg border border-[var(--border-color)]">
+                                            <span className="text-xs font-mono font-medium text-[var(--text-muted)]">
                                                 {(userAnswer || '').split('\n').length} lines
-                                            </span>
-                                            <span className="text-xs text-gray-600">|</span>
-                                            <span className="text-xs text-gray-500 font-mono">
-                                                {(userAnswer || '').length} chars
                                             </span>
                                         </div>
                                     </div>
 
-                                    {/* Editor Content */}
-                                    <div className="relative flex-1">
+                                    <div className="relative flex-1 bg-[var(--surface-2)]/50">
                                         <textarea
-                                            className="w-full h-full px-4 py-4 text-sm font-mono min-h-[600px] resize-none bg-transparent border-0 focus:outline-none focus:ring-0"
+                                            className="w-full h-full px-5 py-5 text-sm sm:text-base font-mono min-h-[600px] resize-y bg-transparent border-0 focus:outline-none focus:ring-0 text-[var(--text-primary)]"
                                             placeholder="// Write your code here..."
                                             value={userAnswer}
                                             onChange={(e) => handleAnswerChange(e.target.value)}
                                             spellCheck={false}
-                                            style={{
-                                                lineHeight: '1.6',
-                                                tabSize: 4
-                                            }}
+                                            style={{ lineHeight: '1.7', tabSize: 4 }}
                                         />
                                     </div>
                                 </div>
@@ -988,31 +815,30 @@ const TestQuestion = () => {
                     </div>
                 );
 
-
             default:
                 return (
                     <div className="space-y-4">
-                        <div className="relative overflow-hidden bg-gradient-to-br from-gray-500/10 to-slate-500/5 rounded-xl p-4 border border-gray-500/30">
-                            <div className="absolute top-0 right-0 w-24 h-24 bg-gray-500/10 rounded-full blur-2xl"></div>
-                            <div className="relative flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-gray-500/20 flex items-center justify-center">
-                                    <FaLightbulb className="w-5 h-5 text-gray-400" />
-                                </div>
-                                <div className="flex-1">
-                                    <span className="text-xs text-gray-400/80 block font-medium">Input Type</span>
-                                    <span className="text-sm font-bold text-gray-300">Detailed Answer</span>
-                                </div>
-                            </div>
-                        </div>
+                        <QuestionHeader
+                            icon={<FaLightbulb className="w-6 h-6 text-gray-600 dark:text-gray-400" />}
+                            typeLabel="Input Type"
+                            title="Detailed Long-Form Answer"
+                            tag="TEXT"
+                            colors={{
+                                bg: 'bg-[var(--input-bg)] border-[var(--border-medium)]',
+                                iconBg: 'bg-[var(--surface)] border-[var(--border-strong)]',
+                                text: 'text-[var(--text-primary)]',
+                                tag: 'bg-[var(--surface-2)] border-[var(--border-strong)] text-[var(--text-secondary)]'
+                            }}
+                        />
                         <div className="relative group">
                             <textarea
-                                className="w-full px-5 py-4 rounded-xl text-base min-h-[250px] resize-y bg-[var(--input-bg)] border-2 border-[var(--border-color)] focus:border-gray-500/50 focus:ring-4 focus:ring-gray-500/10 transition-all placeholder:text-gray-500"
+                                className="w-full px-5 py-4 rounded-xl text-base sm:text-lg min-h-[250px] resize-y bg-[var(--input-bg)] hover:bg-[var(--surface-2)] border-2 border-[var(--border-color)] focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder-[var(--text-muted)] text-[var(--text-primary)] font-medium"
                                 placeholder="Type your detailed answer here..."
                                 value={userAnswer}
                                 onChange={(e) => handleAnswerChange(e.target.value)}
                                 style={{ lineHeight: '1.8' }}
                             />
-                            <div className="absolute bottom-4 right-4 text-xs text-gray-500 bg-black/70 px-3 py-1.5 rounded-lg backdrop-blur-sm border border-white/10">
+                            <div className="absolute bottom-4 right-4 text-xs font-semibold text-[var(--text-secondary)] bg-[var(--surface)] px-3 py-1.5 rounded-lg border border-[var(--border-strong)] shadow-sm">
                                 {(userAnswer || '').length} characters
                             </div>
                         </div>
@@ -1029,13 +855,11 @@ const TestQuestion = () => {
                 <main className="flex-1">
                     <Header isAuth />
                     <div className="flex items-center justify-center p-8" style={{ minHeight: 'calc(100vh - 80px)' }}>
-                        <div className="text-center">
-                            <div className="relative w-16 h-16 mx-auto mb-4">
-                                <div className="absolute inset-0 rounded-full border-4 border-purple-500/20"></div>
-                                <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-purple-500 animate-spin"></div>
-                            </div>
+                        <div className="flex items-center justify-center py-8 sm:py-12">
+                            <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-500"></div>
                             <p className="text-base muted">Initializing test mode...</p>
                         </div>
+
                     </div>
                 </main>
             </div>
@@ -1118,10 +942,10 @@ const TestQuestion = () => {
                             </div>
 
 
-                            <div className="flex items-center gap-3 flex-shrink-0">
+                            <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
                                 {timeLeft !== null && (
-                                    <div className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border ${timerStatus.bg} ${timerStatus.border}`}>
-                                        <MdTimer className={`w-4 h-4 ${timerStatus.text} ${timerStatus.animate ? 'animate-pulse' : ''}`} />
+                                    <div className={`flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border ${timerStatus.bg} ${timerStatus.border}`}>
+                                        <MdTimer className={`w-2 h-2 sm:w-4 sm:h-4 ${timerStatus.text} ${timerStatus.animate ? 'animate-pulse' : ''}`} />
                                         <span className={`text-base text-sm font-mono font-semibold ${timerStatus.text} ${timerStatus.animate ? 'animate-pulse' : ''}`}>
                                             {formatTime(timeLeft)}
                                         </span>
@@ -1129,55 +953,66 @@ const TestQuestion = () => {
                                 )}
                                 <button
                                     onClick={handleQuitTest}
-                                    className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold active:scale-95 transition-all text-sm whitespace-nowrap inline-flex items-center gap-2"
+                                    className="px-2 sm:px-4 py-2 sm:py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold active:scale-95 transition-all text-sm whitespace-nowrap inline-flex items-center gap-2"
                                 >
                                     <FaTimes className="w-4 h-4" />
                                     <span className="hidden sm:inline">Quit Test</span>
-                                    <span className="sm:hidden">Quit</span>
+
                                 </button>
                             </div>
                         </div>
 
                         {currentQuestion ? (
-                            <div className="p-4 sm:p-6 lg:p-8">
+                            <div className="space-y-3 sm:space-y-4">
                                 {/* Question header */}
                                 <div className="mb-6">
-                                    <div className="flex items-start justify-between gap-4 mb-4">
-                                        <h3 className="text-xl sm:text-2xl font-bold flex-1 leading-tight">
-                                            {currentQuestion.summary}
-                                        </h3>
-                                        <div className="px-4 py-2 bg-cyan-500/10 border border-cyan-500/30 rounded-lg flex-shrink-0">
-                                            <div className="text-xs text-cyan-300 font-semibold mb-0.5">MARKS</div>
-                                            <div className="text-2xl font-bold text-cyan-400">{currentQuestion.points || 1.0}</div>
-                                        </div>
-                                    </div>
+                                    <div className="flex items-center justify-between mb-4 px-1">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/15 to-blue-500/15 border-2 border-cyan-500/30 flex items-center justify-center">
+                                                <TbSum className="w-5 h-5 text-cyan-400" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)]">
+                                                    {currentQuestion.summary}
+                                                </h3>
 
-                                    <div className="flex flex-wrap gap-2 mb-4">
-                                        {currentQuestion.language && (
-                                            <span className="text-xs px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/30 inline-flex items-center gap-1.5">
-                                                <FaCode className="w-3 h-3 text-blue-400" />
-                                                <span className="font-semibold text-blue-400">{currentQuestion.language.toUpperCase()}</span>
-                                            </span>
-                                        )}
-                                        <span className="text-xs px-3 py-1.5 rounded-lg bg-purple-500/10 border border-purple-500/30">
-                                            <span className="font-semibold text-purple-400">Type: {currentQuestion.type?.toUpperCase()}</span>
+                                                <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm muted">
+                                                    {currentQuestion.language && (
+                                                        <div className="flex items-center gap-1.5">
+                                                            <FaFileCode className="w-3 h-3" />
+                                                            <span className="font-medium">{currentQuestion.language}</span>
+                                                        </div>
+                                                    )}
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className="font-medium">Type: {currentQuestion.type}</span>
+                                                    </div>
+                                                    {paper?.is_trial_mode && (
+                                                        <div className="flex items-center gap-1.5">
+                                                            <span>Trial Mode</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+
+                                        <span className="text-xs font-bold text-[var(--text-secondary)] bg-[var(--input-bg)] border-2 border-[var(--border-color)] px-3 py-1.5 rounded-xl shadow-md">
+                                            Points: <span className="text-cyan-600 dark:text-cyan-400">{currentQuestion.points}</span>
                                         </span>
-                                        <span className="text-xs px-3 py-1.5 rounded-lg bg-green-500/10 border border-green-500/30">
-                                            <span className="font-semibold text-green-400">{currentQuestion.points || 1} Points</span>
-                                        </span>
-                                        {paper?.is_trial_mode && (
-                                            <span className="text-xs px-3 py-1.5 rounded-lg bg-orange-500/10 border border-orange-500/30">
-                                                <span className="font-semibold text-orange-400">TRIAL MODE</span>
-                                            </span>
-                                        )}
+
                                     </div>
 
                                     {answerResult && (
-                                        <div className="mb-4 p-4 bg-orange-500/5 border-l-4 border-orange-500 rounded-r-lg flex items-start gap-3">
-                                            <AiOutlineWarning className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" />
-                                            <div>
-                                                <p className="text-sm font-bold text-orange-400 mb-1">Important Notice</p>
-                                                <p className="text-xs text-orange-300/90">Last submitted answer is considered for evaluation</p>
+                                        <div className="mb-4 p-4 bg-orange-500/10 border-2 border-orange-500/40 rounded-xl flex items-start gap-4">
+                                            <div className='flex items-start gap-3'>
+                                                <div className="w-10 h-10 rounded-xl bg-orange-500/20 border-2 border-orange-500/40 dark:border-orange-500/30 flex items-center justify-center flex-shrink-0">
+                                                    <AiOutlineWarning className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                                                </div>
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm text-orange-700 dark:text-orange-400 font-semibold mb-1">Important Notice</p>
+                                                <p className="text-xs text-orange-600 dark:text-orange-400/80">Last submitted answer is considered for evaluation</p>
                                             </div>
                                         </div>
                                     )}
@@ -1185,7 +1020,7 @@ const TestQuestion = () => {
 
                                 {/* Question description */}
                                 {currentQuestion.description && (
-                                    <div className="mb-6 p-5 bg-[var(--input-bg)] rounded-lg border border-[var(--border-subtle)]">
+                                    <div className="mb-6 p-5 bg-[var(--surface)] rounded-xl border-2 border-dashed border-[var(--border-color)]">
                                         <div
                                             className="prose prose-invert max-w-none text-sm sm:text-base"
                                             dangerouslySetInnerHTML={{ __html: currentQuestion.description }}
@@ -1195,17 +1030,17 @@ const TestQuestion = () => {
 
                                 {/* Available files */}
                                 {currentQuestion.files && currentQuestion.files.length > 0 && (
-                                    <div className="mb-6 bg-cyan-500/5 rounded-lg p-5 border border-cyan-500/20">
-                                        <div className="flex items-center gap-3 mb-4">
-                                            <div className="w-10 h-10 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
-                                                <FaExternalLinkAlt className="w-5 h-5 text-cyan-400" />
+                                    <div className="bg-blue-500/5 rounded-2xl p-5 sm:p-6 border-2 border-blue-500/20">
+                                        <div className="flex items-center gap-4 mb-5">
+                                            <div className="w-12 h-12 rounded-xl bg-blue-500/10 border-2 border-blue-500/20 flex items-center justify-center shadow-sm">
+                                                <FaExternalLinkAlt className="w-5 h-5 text-blue-500" />
                                             </div>
                                             <div>
-                                                <h3 className="text-base font-bold text-cyan-400">Attached Files</h3>
-                                                <p className="text-xs text-cyan-300/70">{currentQuestion.files.length} file{currentQuestion.files.length !== 1 ? 's' : ''} available</p>
+                                                <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)] mb-1">Attached Resources</h3>
+                                                <p className="text-sm text-[var(--text-secondary)]">{currentQuestion.files.length} file{currentQuestion.files.length !== 1 ? 's' : ''} available</p>
                                             </div>
                                         </div>
-                                        <div className="space-y-2">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                             {currentQuestion.files.map((file) => (
                                                 <a
                                                     key={file.id}
@@ -1215,15 +1050,17 @@ const TestQuestion = () => {
                                                     }
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="group flex items-center justify-between p-3 bg-black/20 hover:bg-black/30 border border-cyan-500/20 hover:border-cyan-500/40 rounded-lg transition-all"
+                                                    className="group flex items-center justify-between p-4 bg-[var(--input-bg)] border-2 border-[var(--border-color)] hover:border-blue-500/50 hover:bg-[var(--surface)] hover:shadow-md rounded-xl transition-all duration-300"
                                                 >
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-9 h-9 rounded-lg bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
-                                                            <FaFileAlt className="w-4 h-4 text-cyan-400" />
+                                                        <div className="w-10 h-10 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+                                                            <FaFileAlt className="w-4 h-4 text-blue-500" />
                                                         </div>
-                                                        <span className="text-sm font-medium text-cyan-300 group-hover:text-cyan-200">{file.name}</span>
+                                                        <span className="text-sm font-semibold text-[var(--text-primary)] group-hover:text-blue-500 transition-colors line-clamp-1">{file.name}</span>
                                                     </div>
-                                                    <FaExternalLinkAlt className="w-3.5 h-3.5 text-cyan-400 opacity-50 group-hover:opacity-100" />
+                                                    <div className="w-8 h-8 rounded-full bg-[var(--border-color)] group-hover:bg-blue-500/10 flex items-center justify-center transition-colors ml-2">
+                                                        <FaExternalLinkAlt className="w-3.5 h-3.5 text-[var(--text-secondary)] group-hover:text-blue-500" />
+                                                    </div>
                                                 </a>
                                             ))}
                                         </div>
@@ -1231,71 +1068,78 @@ const TestQuestion = () => {
                                 )}
 
                                 {/* Answer input */}
-                                <div className="mb-6">
-                                    <label className="block text-base sm:text-lg font-bold mb-4">
-                                        {currentQuestion.type === 'code' ? 'Write Your Program' :
-                                            currentQuestion.type === 'mcq' ? 'Select One Answer' :
-                                                currentQuestion.type === 'mcc' ? 'Select All Correct Answers' :
-                                                    currentQuestion.type === 'arrange' ? 'Arrange in Correct Order' :
-                                                        'Enter Your Answer'}
-                                    </label>
-                                    {renderQuestionInput()}
+                                <div className="mt-4 pt-6 sm:pt-8 gap-4 border-t-2 border-[var(--border-subtle)]">
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <label className="text-base sm:text-lg font-bold text-[var(--text-primary)]">
+                                            {currentQuestion.type === 'code' ? 'Write Your Program' :
+                                                currentQuestion.type === 'mcq' ? 'Select One Answer' :
+                                                    currentQuestion.type === 'mcc' ? 'Select All Correct Answers' :
+                                                        currentQuestion.type === 'arrange' ? 'Arrange in Correct Order' :
+                                                            'Enter Your Answer'}
+                                        </label>
+                                    </div>
+                                    <div className="bg-[var(--surface)] p-1 rounded-xl">
+                                        {renderQuestionInput()}
+                                    </div>
                                 </div>
 
                                 {/* Action buttons */}
-                                <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-[var(--border-color)]">
+                                <div className="flex justify-between sm:gap-3 sm:justify-end gap-3 pt-6 sm:pt-8 border-t-2 border-[var(--border-subtle)] mt-auto">
                                     <button
                                         onClick={handleSubmitAnswer}
                                         disabled={submitting || loading}
-                                        className="flex-1 sm:flex-initial px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+                                        className="px-5 sm:px-8 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-500 text-white font-semibold hover:shadow-xl hover:shadow-cyan-600/30 active:scale-95 transition-all duration-300 disabled:opacity-60 text-sm "
                                     >
                                         {submitting ? (
                                             <>
-                                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                                Checking...
+
+                                                <span>Checking...</span>
                                             </>
                                         ) : (
                                             <>
-                                                <FaCheck className="w-4 h-4" />
-                                                Check Answer
+
+                                                <span>Check Answer</span>
                                             </>
                                         )}
                                     </button>
 
                                     <button
                                         onClick={handleCompleteTest}
-                                        className="px-6 py-3 btn-grad text-white rounded-lg font-semibold active:scale-95 transition-all inline-flex items-center justify-center gap-2"
+                                        className="px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl border-2 border-[var(--border-strong)] bg-[var(--input-bg)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/5 font-semibold transition-all duration-300 text-sm"
                                     >
-                                        <FaPlay className="w-4 h-4" />
-                                        Complete Test
+
+                                        <span>Complete Test</span>
                                     </button>
                                 </div>
 
                                 {/* Result display */}
                                 {showResult && answerResult && (
-                                    <div className={`mt-6 rounded-lg p-6 border ${answerResult.success
-                                        ? 'bg-green-500/5 border-green-500/30'
-                                        : 'bg-red-500/5 border-red-500/30'
+                                    <div className={`mt-6 rounded-xl p-4 sm:p-5 border-2 transition-all duration-300 ${answerResult.success
+                                        ? 'bg-emerald-500/10 border-emerald-500/30'
+                                        : 'bg-red-500/10 border-red-500/30'
                                         }`}>
-                                        <div className="flex items-start gap-4">
-                                            <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${answerResult.success
-                                                ? 'bg-green-500/20 border border-green-500/40'
-                                                : 'bg-red-500/20 border border-red-500/40'
+                                        <div className="flex items-start gap-3 sm:gap-4">
+                                            <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0 border-2 ${answerResult.success
+                                                ? 'bg-emerald-500/15 border-emerald-500/30'
+                                                : 'bg-red-500/15 border-red-500/30'
                                                 }`}>
                                                 {answerResult.success ? (
-                                                    <FaCheckCircle className="w-6 h-6 text-green-400" />
+                                                    <FaCheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600 dark:text-emerald-400" />
                                                 ) : (
-                                                    <FaTimes className="w-6 h-6 text-red-400" />
+                                                    <FaTimes className="w-5 h-5 sm:w-6 sm:h-6 text-red-600 dark:text-red-400" />
                                                 )}
                                             </div>
-                                            <div className="flex-1">
-                                                <h3 className={`text-lg font-bold mb-2 ${answerResult.success ? 'text-green-400' : 'text-red-400'
+                                            <div className="flex-1 min-w-0">
+                                                <h3 className={`text-base sm:text-lg font-bold mb-1 ${answerResult.success ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400'
                                                     }`}>
                                                     {answerResult.success ? 'Correct Answer! 🎉' : 'Incorrect Answer'}
                                                 </h3>
+                                                <p className={`text-xs sm:text-sm mb-0 ${answerResult.success ? 'text-emerald-600/80 dark:text-emerald-300/70' : 'text-red-600/80 dark:text-red-300/70'}`}>
+                                                    {answerResult.success ? 'Great job! Your answer matches the expected output.' : 'Your answer did not match. Review and try again.'}
+                                                </p>
                                                 {answerResult.error_message && (
-                                                    <div className="p-3 bg-black/20 rounded-lg border border-white/10 mt-3">
-                                                        <p className="text-sm font-mono leading-relaxed whitespace-pre-wrap">{answerResult.error_message}</p>
+                                                    <div className="mt-3 p-3 sm:p-4 bg-[var(--input-bg)] rounded-lg border border-[var(--border-color)]">
+                                                        <p className="text-xs sm:text-sm font-mono leading-relaxed text-[var(--text-secondary)] whitespace-pre-wrap break-words">{answerResult.error_message}</p>
                                                     </div>
                                                 )}
                                             </div>
@@ -1304,20 +1148,21 @@ const TestQuestion = () => {
                                 )}
                             </div>
                         ) : (
-                            <div className="p-12 text-center">
-                                <div className="w-16 h-16 bg-white/5 rounded-lg border border-white/10 flex items-center justify-center mx-auto mb-4">
-                                    <AiOutlineWarning className="w-8 h-8 muted" />
+                            <div className="flex flex-col items-center justify-center py-12 sm:py-20 text-center px-4">
+                                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-[var(--input-bg)] rounded-xl border-2 border-[var(--border-strong)] flex items-center justify-center mx-auto mb-5">
+                                    <AiOutlineWarning className="w-8 h-8 sm:w-10 sm:h-10 text-[var(--text-muted)]" />
                                 </div>
-                                <p className="text-base muted mb-6">No question available</p>
+                                <h3 className="text-lg sm:text-xl font-bold text-[var(--text-primary)] mb-2">No Question Available</h3>
+                                <p className="text-sm text-[var(--text-muted)] mb-6 max-w-sm">There are no questions loaded. Go back to the question library to select one.</p>
                                 <button
                                     onClick={() => {
                                         resetQuiz();
                                         navigate('/teacher/questions');
                                     }}
-                                    className="btn-grad text-white px-6 py-3 rounded-lg font-semibold hover:scale-105 active:scale-95 transition-all inline-flex items-center gap-2"
+                                    className="px-6 py-2.5 sm:py-3 rounded-xl border-2 border-[var(--border-strong)] bg-[var(--input-bg)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-2)] hover:border-[var(--border-medium)] font-semibold active:scale-95 transition-all duration-300 inline-flex items-center gap-2 text-sm"
                                 >
                                     <FaArrowLeft className="w-4 h-4" />
-                                    Back to Questions
+                                    <span>Back to Questions</span>
                                 </button>
                             </div>
                         )}
