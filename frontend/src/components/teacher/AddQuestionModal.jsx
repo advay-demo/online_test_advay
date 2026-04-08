@@ -652,14 +652,16 @@ export default function AddQuestionModal({ onCancel, questionId = null, isEdit =
                                         <p className="text-xs muted">{testCases.length} test case{testCases.length !== 1 ? 's' : ''}</p>
                                     </div>
                                 </div>
-                                <button
-                                    type="button"
-                                    onClick={addTestCase}
-                                    className="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-xl text-sm font-semibold shadow-lg shadow-green-500/20 hover:shadow-green-500/40 active:scale-95 transition-all duration-200 flex items-center gap-2"
-                                >
-                                    <FaPlus className="w-3 h-3" />
-                                    Add Test Case
-                                </button>
+                                {!(['arrange', 'mcq', 'mcc'].includes(formData.type) && testCases.length >= 1) && (
+                                    <button
+                                        type="button"
+                                        onClick={addTestCase}
+                                        className="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-xl text-sm font-semibold shadow-lg shadow-green-500/20 hover:shadow-green-500/40 flex items-center gap-2"
+                                    >
+                                        <FaPlus className="w-3 h-3" />
+                                        Add Test Case
+                                    </button>
+                                )}
                             </div>
 
                             {testCases.length === 0 ? (
@@ -695,11 +697,11 @@ export default function AddQuestionModal({ onCancel, questionId = null, isEdit =
                                                 {(tc.type === 'mcqtestcase' || formData.type === 'mcq' || formData.type === 'mcc') && (
                                                     <div className="space-y-3">
                                                         <div>
-                                                            <label className="block text-xs font-semibold mb-2 text-[var(--text-muted)]">Options (one per line)</label>
+                                                            <label className="block text-xs font-semibold mb-2 text-[var(--text-muted)]">Options (one per line)(line change by ENTER button)</label>
                                                             <textarea
                                                                 value={Array.isArray(tc.options) ? tc.options.join('\n') : (tc.options || '')}
                                                                 onChange={(e) => {
-                                                                    const options = e.target.value.split('\n').filter(o => o.trim());
+                                                                    const options = e.target.value.split('\n');
                                                                     updateTestCase(index, 'options', options);
                                                                 }}
                                                                 rows="4"
@@ -707,33 +709,49 @@ export default function AddQuestionModal({ onCancel, questionId = null, isEdit =
                                                                 placeholder={"Option 1\nOption 2\nOption 3\nOption 4"}
                                                             />
                                                         </div>
-                                                        {formData.type === 'mcq' && (
-                                                            <div>
-                                                                <label className="block text-xs font-semibold mb-2 text-[var(--text-muted)]">Correct Option Index (0-based)</label>
-                                                                <input
-                                                                    type="number"
+                                                        
+                                                        <div>
+                                                            <label className="block text-xs font-semibold text-[var(--text-muted)] mb-2">
+                                                                Correct {formData.type === 'mcq' ? 'Option' : 'Options'}
+                                                            </label>
+                                                            {formData.type === 'mcq' ? (
+                                                                <select
                                                                     value={tc.correct || 0}
                                                                     onChange={(e) => updateTestCase(index, 'correct', parseInt(e.target.value))}
-                                                                    min="0"
                                                                     className={inputClass}
-                                                                />
-                                                            </div>
-                                                        )}
-                                                        {formData.type === 'mcc' && (
-                                                            <div>
-                                                                <label className="block text-xs font-semibold mb-2 text-[var(--text-muted)]">Correct Indices (comma-separated, 0-based)</label>
-                                                                <input
-                                                                    type="text"
-                                                                    value={Array.isArray(tc.correct) ? tc.correct.join(',') : (tc.correct || '')}
-                                                                    onChange={(e) => {
-                                                                        const correct = e.target.value.split(',').map(c => parseInt(c.trim())).filter(c => !isNaN(c));
-                                                                        updateTestCase(index, 'correct', correct);
-                                                                    }}
-                                                                    className={inputClass}
-                                                                    placeholder="0,2,3"
-                                                                />
-                                                            </div>
-                                                        )}
+                                                                >
+                                                                    {(Array.isArray(tc.options) ? tc.options : []).map((_, optIdx) => (
+                                                                        <option key={optIdx} value={optIdx}>Option {optIdx + 1}</option>
+                                                                    ))}
+                                                                </select>
+                                                            ) : (
+                                                                <div className="space-y-2 p-3 sm:p-4 rounded-xl bg-[var(--bg-primary)] border-2 border-[var(--border-subtle)]">
+                                                                    {(Array.isArray(tc.options) ? tc.options : []).map((opt, optIdx) => (
+                                                                        <label key={optIdx} className="flex items-center gap-3 text-sm cursor-pointer">
+                                                                            <div className="relative">
+                                                                                <input
+                                                                                    type="checkbox"
+                                                                                    checked={(Array.isArray(tc.correct) ? tc.correct : []).includes(optIdx)}
+                                                                                    onChange={(e) => {
+                                                                                        const current = Array.isArray(tc.correct) ? tc.correct : [];
+                                                                                        const newCorrect = e.target.checked
+                                                                                            ? [...current, optIdx]
+                                                                                            : current.filter(i => i !== optIdx);
+                                                                                        updateTestCase(index, 'correct', newCorrect);
+                                                                                    }}
+                                                                                    className="peer sr-only"
+                                                                                />
+                                                                                <div className="w-4 h-4 border-2 border-[var(--border-strong)] rounded peer-checked:bg-green-500 peer-checked:border-green-500 transition-all duration-200"></div>
+                                                                                <svg className="absolute top-0 left-0 w-4 h-4 text-white opacity-0 peer-checked:opacity-100 transition-opacity duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
+                                                                                </svg>
+                                                                            </div>
+                                                                            <span className="text-[var(--text-primary)]">Option {optIdx + 1} <span className="opacity-50 line-clamp-1 text-xs">({opt})</span></span>
+                                                                        </label>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 )}
 
@@ -885,11 +903,11 @@ export default function AddQuestionModal({ onCancel, questionId = null, isEdit =
                                                 {/* Arrange */}
                                                 {(tc.type === 'arrangetestcase' || (formData.type === 'arrange' && !tc.type?.includes('mcq'))) && (
                                                     <div>
-                                                        <label className="block text-xs font-semibold mb-2 text-[var(--text-muted)]">Options (one per line, in correct order)</label>
+                                                        <label className="block text-xs font-semibold mb-2 text-[var(--text-muted)]">Options (one per line, in correct order)(line change by ENTER button)</label>
                                                         <textarea
                                                             value={Array.isArray(tc.options) ? tc.options.join('\n') : (tc.options || '')}
                                                             onChange={(e) => {
-                                                                const options = e.target.value.split('\n').filter(o => o.trim());
+                                                                const options = e.target.value.split('\n');
                                                                 updateTestCase(index, 'options', options);
                                                             }}
                                                             rows="4"

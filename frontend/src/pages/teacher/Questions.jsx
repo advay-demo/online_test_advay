@@ -96,15 +96,15 @@ const Questions = () => {
         updateQuestion
     } = useQuestionsStore();
 
-    const { testQuestion } = useQuizStore(); // Add this
-    const navigate = useNavigate(); // Add this
+    const { testQuestion } = useQuizStore(); 
+    const navigate = useNavigate(); 
 
 
     const [actionMenuOpen, setActionMenuOpen] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
     const [editingQuestionId, setEditingQuestionId] = useState(null);
-    const [testingQuestionId, setTestingQuestionId] = useState(null); // Add this for loading state
+    const [testingQuestionId, setTestingQuestionId] = useState(null); 
 
 
 

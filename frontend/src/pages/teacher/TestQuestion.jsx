@@ -244,7 +244,7 @@ const TestQuestion = () => {
 
 
         if (questionType === 'arrange') {
-            return currentQuestion.test_cases.map(tc => tc.options);
+            return currentQuestion.test_cases.map(tc => tc.options).flat();
         }
 
         return [];
@@ -252,15 +252,24 @@ const TestQuestion = () => {
 
     const [draggableOptions, setDraggableOptions] = useState([]);
     const [draggedIndex, setDraggedIndex] = useState(null);
+     const [initialShuffledOptions, setInitialShuffledOptions] = useState([]);
 
     //  useEffect for arrange type initialization
     useEffect(() => {
         if (currentQuestion?.type === 'arrange') {
             const options = getQuestionOptions();
-            setDraggableOptions(options);
-            // Initialize userAnswer with sequential order (1,2,3,...)
+            
             if (!userAnswer || userAnswer === '') {
-                const initialOrder = options.map((_, idx) => idx + 1).join(',');
+                // SHUFFLE INITIALIZATION
+                const shuffledIndices = options.map((_, idx) => idx);
+                shuffledIndices.sort(() => Math.random() - 0.5); // Random sort
+                
+                const shuffledOptions = shuffledIndices.map(idx => options[idx]);
+                setDraggableOptions(shuffledOptions);
+                setInitialShuffledOptions(shuffledOptions); // <-- ADD THIS
+                
+                // Set the initial answer to the shuffled state's original indices + 1 (1-based)
+                const initialOrder = shuffledIndices.map(idx => idx + 1).join(',');
                 setUserAnswer(initialOrder);
             } else {
                 // If userAnswer exists, reconstruct draggableOptions from it
@@ -270,12 +279,12 @@ const TestQuestion = () => {
                     const reordered = indices.map(idx => options[idx]);
                     if (reordered.every(item => item !== undefined)) {
                         setDraggableOptions(reordered);
+                        setInitialShuffledOptions(reordered); // <-- ADD THIS
                     }
                 }
             }
         }
     }, [currentQuestion]);
-
 
     // Drag and drop handlers for arrange questions
     const handleDragStart = (e, index) => {
@@ -582,11 +591,12 @@ const TestQuestion = () => {
                         </div>
                         <div className="space-y-2.5">
                             {draggableOptions.map((option, idx) => {
-                                const originalIndex = options.findIndex(opt => opt === option);
+                                // Find where it was on the FRONTEND originally, ignoring the backend
+                                const originalFrontendIndex = initialShuffledOptions.findIndex(opt => opt === option);
 
                                 return (
                                     <div
-                                        key={`${originalIndex}-${idx}`}
+                                        key={`${originalFrontendIndex}-${idx}`}
                                         className={`group flex items-center gap-4 p-4 rounded-xl bg-[var(--surface-2)] border-2 transition-all cursor-move shadow-sm ${draggedIndex === idx
                                             ? 'border-red-400 opacity-60 scale-[0.98]'
                                             : 'border-[var(--border-color)] hover:border-red-500/40 hover:shadow-md'
@@ -612,13 +622,15 @@ const TestQuestion = () => {
                                                 {option}
                                             </pre>
                                             <span className="text-xs text-[var(--text-muted)] mt-1.5 block font-medium">
-                                                Original position: {originalIndex + 1}
+                                                Original position: {originalFrontendIndex + 1}
                                             </span>
                                         </div>
                                     </div>
                                 );
                             })}
                         </div>
+                        
+                        
                         <div className="relative pt-2">
                             <label className="text-xs text-[var(--text-muted)] mb-2 flex items-center gap-2 font-semibold tracking-wide">
                                 <span>CURRENT ORDER SEQUENCE</span>
@@ -627,7 +639,7 @@ const TestQuestion = () => {
                             <input
                                 type="text"
                                 className="w-full px-5 py-4 rounded-xl text-base font-mono bg-[var(--input-bg)] border-2 border-[var(--border-color)] text-[var(--text-secondary)] opacity-80 cursor-not-allowed text-center tracking-[0.2em]"
-                                value={userAnswer}
+                                value={draggableOptions.map(option => initialShuffledOptions.findIndex(opt => opt === option) + 1).join(', ')}
                                 readOnly
                             />
                         </div>
