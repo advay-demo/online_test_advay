@@ -18,8 +18,13 @@ const Logo = ({ size = 'md', showText = true }) => {
 
   return (
     <Link to="/" className="flex items-center gap-3">
-      <div className={`${sizes[size]} rounded-full logo-badge flex items-center justify-center text-white font-semibold`}>
-        <span className={textSizes[size]}>Y</span>
+      <div className={`${sizes[size]} flex items-center justify-center rounded-full overflow-hidden`}>
+        
+        <img 
+          src="/yaksh_circular_logo.png" 
+          alt="Yaksh Logo" 
+          className="w-full h-full object-contain"
+        />
       </div>
       {showText && (
         <span className={`${textSizes[size]} font-bold`}>Yaksh</span>

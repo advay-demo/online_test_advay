@@ -41,6 +41,10 @@ urlpatterns = [
     url(r'student/insights/badges/$', views.user_badges, name='user_badges'),
     url(r'student/insights/achievements/$', views.user_achievements, name='user_achievements'),
     
+
+
+
+    
     # Existing endpoints
     url(r'^questions/$', views.QuestionList.as_view(), name='questions'),
     url(r'questions/(?P<pk>[0-9]+)/$', views.QuestionDetail.as_view(),

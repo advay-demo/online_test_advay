@@ -4035,29 +4035,32 @@ def teacher_create_question(request):
                 model_class = get_model_class(tc_type)
                 
                 # Handle different test case types
-                if tc_type == 'mcqtestcase':
-                    options = tc_data.get('options', '')
-                    if isinstance(options, list):
-                        options = json.dumps(options)
-                    model_class.objects.create(
-                        question=question,
-                        options=options,
-                        correct=tc_data.get('correct', False),
-                        type=tc_type
-                    )
-                elif tc_type == 'mcc' or tc_type == 'mcqtestcase':
-                    # For MCC, we need multiple McqTestCase entries
+                if tc_type == 'mcc' or tc_type == 'mcqtestcase':
+                    # For MCQ and MCC, we need multiple McqTestCase entries (One for each option)
                     options = tc_data.get('options', [])
                     if isinstance(options, str):
-                        options = json.loads(options)
-                    correct_indices = tc_data.get('correct', [])
-                    for idx, option in enumerate(options):
+                        try:
+                            options = json.loads(options)
+                        except Exception:
+                            options = [options]
+                    
+                    correct_indices = tc_data.get('correct')
+                    # Standardize correct answer(s) into a list for iteration
+                    if not isinstance(correct_indices, list):
+                        correct_indices = [correct_indices] if correct_indices is not None else []
+                    
+                    # Filter empty options dynamically as they arrive from frontend
+                    cleaned_options = [opt for opt in options if str(opt).strip()]
+                    
+                    model_class = get_model_class('mcqtestcase')
+                    for idx, option in enumerate(cleaned_options):
                         model_class.objects.create(
                             question=question,
-                            options=json.dumps([option]),
-                            correct=(idx in correct_indices) if isinstance(correct_indices, list) else (idx == correct_indices),
-                            type=tc_type
+                            options=str(option).strip(),
+                            correct=(idx in correct_indices),
+                            type='mcqtestcase'
                         )
+
                 elif tc_type == 'stdiobasedtestcase':
                     model_class.objects.create(
                         question=question,
@@ -4105,14 +4108,29 @@ def teacher_create_question(request):
                         type=tc_type
                     )
                 elif tc_type == 'arrangetestcase':
-                    options = tc_data.get('options', '')
+                    options = tc_data.get('options', [])
+                    if isinstance(options, str):
+                        try:
+                            options = json.loads(options)
+                        except Exception:
+                            options = [options]
+                    
                     if isinstance(options, list):
-                        options = json.dumps(options)
-                    model_class.objects.create(
-                        question=question,
-                        options=options,
-                        type=tc_type
-                    )
+                        # Create a distinct DB row for each option sequentially
+                        for opt in options:
+                            if str(opt).strip():  # Ignore empty lines
+                                model_class.objects.create(
+                                    question=question,
+                                    options=str(opt).strip(),
+                                    type=tc_type
+                                )
+                    else:
+                        model_class.objects.create(
+                            question=question,
+                            options=str(options),
+                            type=tc_type
+                        )
+
             except Exception as e:
                 # Log error but continue with other test cases
                 print(f"Error creating test case: {e}")
@@ -4203,164 +4221,212 @@ def teacher_update_question(request, question_id):
                         continue
 
         
-                # Update test cases if provided
+        # Update test cases if provided
         if 'test_cases' in request.data:
             test_cases_data = request.data['test_cases']
             
-            # Get IDs of incoming test cases
-            incoming_tc_ids = set()
-            for tc_data in test_cases_data:
-                tc_id = tc_data.get('id')
-                if tc_id:
-                    incoming_tc_ids.add(int(tc_id))
-            
-            # Get existing test case IDs
-            existing_testcases = question.testcase_set.all()
-            existing_tc_ids = {tc.id for tc in existing_testcases}
-            
-            # Delete test cases that are no longer in the incoming data
-            testcases_to_delete = existing_tc_ids - incoming_tc_ids
-            if testcases_to_delete:
-                from yaksh.models import TestCase
-                TestCase.objects.filter(id__in=testcases_to_delete).delete()
-            
-            # Update or create test cases
-            for tc_data in test_cases_data:
-                tc_type = tc_data.get('type') or tc_data.get('test_case_type')
-                if not tc_type:
-                    continue
+            # Special case for arrange, mcq, and mcc: wipe old rows and securely recreate them 
+            if question.type in ['arrange', 'mcq', 'mcc']:
+                question.testcase_set.all().delete() # Drop old test case choices
                 
-                tc_id = tc_data.get('id')
+                for tc_data in test_cases_data:
+                    tc_type = tc_data.get('type') or tc_data.get('test_case_type')
+                    if tc_type == 'arrangetestcase':
+                        from yaksh.models import ArrangeTestCase
+                        options = tc_data.get('options', [])
+                        if isinstance(options, str):
+                            try:
+                                options = json.loads(options)
+                            except Exception:
+                                options = [options]
+                                
+                        if isinstance(options, list):
+                            for opt in options:
+                                if str(opt).strip():
+                                    ArrangeTestCase.objects.create(question=question, options=str(opt).strip(), type=tc_type)
+                        else:
+                            ArrangeTestCase.objects.create(question=question, options=str(options), type=tc_type)
+                            
+                    elif tc_type in ['mcqtestcase', 'mcc']:
+                        from yaksh.models import McqTestCase
+                        options = tc_data.get('options', [])
+                        if isinstance(options, str):
+                            try:
+                                options = json.loads(options)
+                            except Exception:
+                                options = [options]
+                                
+                        correct_indices = tc_data.get('correct')
+                        if not isinstance(correct_indices, list):
+                            correct_indices = [correct_indices] if correct_indices is not None else []
+                            
+                        cleaned_options = [opt for opt in options if str(opt).strip()]
+                        
+                        for idx, option in enumerate(cleaned_options):
+                            McqTestCase.objects.create(
+                                question=question,
+                                options=str(option).strip(),
+                                correct=(idx in correct_indices),
+                                type='mcqtestcase'
+                            )
+            
+            
+            else:
+                # --- Keep all the existing update logic here exactly as is ---
+                # Get IDs of incoming test cases
+                incoming_tc_ids = set()
+                for tc_data in test_cases_data:
+                    tc_id = tc_data.get('id')
+                    if tc_id:
+                        incoming_tc_ids.add(int(tc_id))
                 
-                try:
-                    model_class = get_model_class(tc_type)
+                # Get existing test case IDs
+                existing_testcases = question.testcase_set.all()
+                existing_tc_ids = {tc.id for tc in existing_testcases}
+                
+                # Delete test cases that are no longer in the incoming data
+                testcases_to_delete = existing_tc_ids - incoming_tc_ids
+                if testcases_to_delete:
+                    from yaksh.models import TestCase
+                    TestCase.objects.filter(id__in=testcases_to_delete).delete()
+                
+                # Update or create test cases
+                for tc_data in test_cases_data:
+                    tc_type = tc_data.get('type') or tc_data.get('test_case_type')
+                    if not tc_type:
+                        continue
                     
-                    # Check if we're updating or creating
-                    if tc_id and int(tc_id) in incoming_tc_ids:
-                        # UPDATE existing test case
-                        try:
-                            tc_instance = model_class.objects.get(id=tc_id, question=question)
+                    tc_id = tc_data.get('id')
+                    
+                    try:
+                        model_class = get_model_class(tc_type)
+                        
+                        # Check if we're updating or creating
+                        if tc_id and int(tc_id) in incoming_tc_ids:
+                            # UPDATE existing test case
+                            try:
+                                tc_instance = model_class.objects.get(id=tc_id, question=question)
+                                
+                                if tc_type == 'mcqtestcase':
+                                    options = tc_data.get('options', '')
+                                    if isinstance(options, list):
+                                        options = json.dumps(options)
+                                    tc_instance.options = options
+                                    
+                                    # Handle correct field
+                                    correct = tc_data.get('correct')
+                                    if correct is not None:
+                                        if isinstance(correct, list):
+                                            tc_instance.correct = json.dumps(correct)
+                                        else:
+                                            tc_instance.correct = correct
+                                
+                                elif tc_type == 'stdiobasedtestcase':
+                                    tc_instance.expected_input = tc_data.get('expected_input', '')
+                                    tc_instance.expected_output = tc_data.get('expected_output', '')
+                                    tc_instance.weight = float(tc_data.get('weight', 1.0))
+                                    tc_instance.hidden = tc_data.get('hidden', False)
+                                
+                                elif tc_type == 'standardtestcase':
+                                    tc_instance.test_case = tc_data.get('test_case', '')
+                                    tc_instance.weight = float(tc_data.get('weight', 1.0))
+                                    tc_instance.hidden = tc_data.get('hidden', False)
+                                    tc_instance.test_case_args = tc_data.get('test_case_args', '')
+                                
+                                elif tc_type == 'integertestcase':
+                                    tc_instance.correct = tc_data.get('correct')
+                                
+                                elif tc_type == 'stringtestcase':
+                                    tc_instance.correct = tc_data.get('correct', '')
+                                    tc_instance.string_check = tc_data.get('string_check', 'lower')
+                                
+                                elif tc_type == 'floattestcase':
+                                    tc_instance.correct = tc_data.get('correct')
+                                    tc_instance.error_margin = tc_data.get('error_margin', 0.0)
+                                
+                                elif tc_type == 'arrangetestcase':
+                                    options = tc_data.get('options', '')
+                                    if isinstance(options, list):
+                                        options = json.dumps(options)
+                                    tc_instance.options = options
+                                
+                                elif tc_type == 'uploadtestcase':
+                                    tc_instance.description = tc_data.get('description', '')
+                                    tc_instance.required = tc_data.get('required', True)
+                                
+                                tc_instance.save()
+                                
+                            except model_class.DoesNotExist:
+                                print(f"Test case with id {tc_id} not found, will create new one")
+                                tc_id = None  # Force creation
+                        
+                        # CREATE new test case if no ID or ID not found
+                        if not tc_id or int(tc_id) not in incoming_tc_ids:
+                            create_data = {'question': question, 'type': tc_type}
                             
                             if tc_type == 'mcqtestcase':
                                 options = tc_data.get('options', '')
                                 if isinstance(options, list):
                                     options = json.dumps(options)
-                                tc_instance.options = options
+                                create_data['options'] = options
                                 
-                                # Handle correct field
                                 correct = tc_data.get('correct')
                                 if correct is not None:
                                     if isinstance(correct, list):
-                                        tc_instance.correct = json.dumps(correct)
+                                        create_data['correct'] = json.dumps(correct)
                                     else:
-                                        tc_instance.correct = correct
+                                        create_data['correct'] = correct
                             
                             elif tc_type == 'stdiobasedtestcase':
-                                tc_instance.expected_input = tc_data.get('expected_input', '')
-                                tc_instance.expected_output = tc_data.get('expected_output', '')
-                                tc_instance.weight = float(tc_data.get('weight', 1.0))
-                                tc_instance.hidden = tc_data.get('hidden', False)
+                                create_data.update({
+                                    'expected_input': tc_data.get('expected_input', ''),
+                                    'expected_output': tc_data.get('expected_output', ''),
+                                    'weight': float(tc_data.get('weight', 1.0)),
+                                    'hidden': tc_data.get('hidden', False)
+                                })
                             
                             elif tc_type == 'standardtestcase':
-                                tc_instance.test_case = tc_data.get('test_case', '')
-                                tc_instance.weight = float(tc_data.get('weight', 1.0))
-                                tc_instance.hidden = tc_data.get('hidden', False)
-                                tc_instance.test_case_args = tc_data.get('test_case_args', '')
+                                create_data.update({
+                                    'test_case': tc_data.get('test_case', ''),
+                                    'weight': float(tc_data.get('weight', 1.0)),
+                                    'hidden': tc_data.get('hidden', False),
+                                    'test_case_args': tc_data.get('test_case_args', '')
+                                })
                             
                             elif tc_type == 'integertestcase':
-                                tc_instance.correct = tc_data.get('correct')
+                                create_data['correct'] = tc_data.get('correct')
                             
                             elif tc_type == 'stringtestcase':
-                                tc_instance.correct = tc_data.get('correct', '')
-                                tc_instance.string_check = tc_data.get('string_check', 'lower')
+                                create_data.update({
+                                    'correct': tc_data.get('correct', ''),
+                                    'string_check': tc_data.get('string_check', 'lower')
+                                })
                             
                             elif tc_type == 'floattestcase':
-                                tc_instance.correct = tc_data.get('correct')
-                                tc_instance.error_margin = tc_data.get('error_margin', 0.0)
+                                create_data.update({
+                                    'correct': tc_data.get('correct'),
+                                    'error_margin': tc_data.get('error_margin', 0.0)
+                                })
                             
                             elif tc_type == 'arrangetestcase':
                                 options = tc_data.get('options', '')
                                 if isinstance(options, list):
                                     options = json.dumps(options)
-                                tc_instance.options = options
+                                create_data['options'] = options
                             
                             elif tc_type == 'uploadtestcase':
-                                tc_instance.description = tc_data.get('description', '')
-                                tc_instance.required = tc_data.get('required', True)
+                                create_data.update({
+                                    'description': tc_data.get('description', ''),
+                                    'required': tc_data.get('required', True)
+                                })
                             
-                            tc_instance.save()
+                            model_class.objects.create(**create_data)
                             
-                        except model_class.DoesNotExist:
-                            print(f"Test case with id {tc_id} not found, will create new one")
-                            tc_id = None  # Force creation
-                    
-                    # CREATE new test case if no ID or ID not found
-                    if not tc_id or int(tc_id) not in incoming_tc_ids:
-                        create_data = {'question': question, 'type': tc_type}
-                        
-                        if tc_type == 'mcqtestcase':
-                            options = tc_data.get('options', '')
-                            if isinstance(options, list):
-                                options = json.dumps(options)
-                            create_data['options'] = options
-                            
-                            correct = tc_data.get('correct')
-                            if correct is not None:
-                                if isinstance(correct, list):
-                                    create_data['correct'] = json.dumps(correct)
-                                else:
-                                    create_data['correct'] = correct
-                        
-                        elif tc_type == 'stdiobasedtestcase':
-                            create_data.update({
-                                'expected_input': tc_data.get('expected_input', ''),
-                                'expected_output': tc_data.get('expected_output', ''),
-                                'weight': float(tc_data.get('weight', 1.0)),
-                                'hidden': tc_data.get('hidden', False)
-                            })
-                        
-                        elif tc_type == 'standardtestcase':
-                            create_data.update({
-                                'test_case': tc_data.get('test_case', ''),
-                                'weight': float(tc_data.get('weight', 1.0)),
-                                'hidden': tc_data.get('hidden', False),
-                                'test_case_args': tc_data.get('test_case_args', '')
-                            })
-                        
-                        elif tc_type == 'integertestcase':
-                            create_data['correct'] = tc_data.get('correct')
-                        
-                        elif tc_type == 'stringtestcase':
-                            create_data.update({
-                                'correct': tc_data.get('correct', ''),
-                                'string_check': tc_data.get('string_check', 'lower')
-                            })
-                        
-                        elif tc_type == 'floattestcase':
-                            create_data.update({
-                                'correct': tc_data.get('correct'),
-                                'error_margin': tc_data.get('error_margin', 0.0)
-                            })
-                        
-                        elif tc_type == 'arrangetestcase':
-                            options = tc_data.get('options', '')
-                            if isinstance(options, list):
-                                options = json.dumps(options)
-                            create_data['options'] = options
-                        
-                        elif tc_type == 'uploadtestcase':
-                            create_data.update({
-                                'description': tc_data.get('description', ''),
-                                'required': tc_data.get('required', True)
-                            })
-                        
-                        model_class.objects.create(**create_data)
-                        
-                except Exception as e:
-                    print(f"Error updating/creating test case: {e}")
-                    import traceback
-                    traceback.print_exc()
-                    continue
+                    except Exception as e:
+                        print(f"Error updating/creating test case: {e}")
+                        import traceback
+                        traceback.print_exc()
+                        continue
         
         # Reload question to get updated test cases
         question.refresh_from_db()
@@ -6639,8 +6705,39 @@ def api_check_answer(request, q_id, attempt_num, module_id, questionpaper_id, co
         
         # Parse answer based on question type
         try:
-            if current_question.type == 'mcq':
-                user_answer = request.data.get('answer')
+            if current_question.type in ['mcq', 'mcc']:
+                answer_input = request.data.get('answer')
+                
+                # Retrieve the multiple options from the DB by sorting them out to match UI order
+                test_cases = sorted(current_question.get_test_cases(), key=lambda x: x.id)
+                
+                if current_question.type == 'mcq':
+                    user_answer = None
+                    for tc in test_cases:
+                        try:
+                            # FOSSEE stores it strictly arrayified in JSON
+                            opt_val = json.loads(tc.options)
+                            opt_text = opt_val[0] if isinstance(opt_val, list) and opt_val else str(tc.options)
+                        except Exception:
+                            opt_text = str(tc.options)
+                            
+                        if opt_text == answer_input:
+                            user_answer = str(tc.id)
+                            break
+                            
+                elif current_question.type == 'mcc':
+                    answer_input = answer_input if isinstance(answer_input, list) else [answer_input]
+                    user_answer = []
+                    for tc in test_cases:
+                        try:
+                            opt_val = json.loads(tc.options)
+                            opt_text = opt_val[0] if isinstance(opt_val, list) and opt_val else str(tc.options)
+                        except Exception:
+                            opt_text = str(tc.options)
+                            
+                        if opt_text in answer_input:
+                            user_answer.append(str(tc.id))
+
             
             elif current_question.type == 'integer':
                 try:
@@ -6663,17 +6760,26 @@ def api_check_answer(request, q_id, attempt_num, module_id, questionpaper_id, co
             elif current_question.type == 'string':
                 user_answer = str(request.data.get('answer', ''))
             
-            elif current_question.type == 'mcc':
-                user_answer = request.data.get('answer', [])
-                if not isinstance(user_answer, list):
-                    user_answer = [user_answer]
-            
             elif current_question.type == 'arrange':
                 answer_str = request.data.get('answer', '')
+                user_indices = []
                 if isinstance(answer_str, str):
-                    user_answer = [int(ids) for ids in answer_str.split(',') if ids.strip()]
+                    user_indices = [int(ids) for ids in answer_str.split(',') if ids.strip()]
                 elif isinstance(answer_str, list):
-                    user_answer = [int(ids) for ids in answer_str]
+                    user_indices = [int(ids) for ids in answer_str]
+                
+                # Map 1-based frontend indices to actual ArrangeTestCase IDs
+                if user_indices:
+                    # FIX: Use Python's sorted() instead of Django's order_by()
+                    actual_test_cases = sorted(current_question.get_test_cases(), key=lambda x: x.id)
+                    
+                    user_answer = []
+                    for idx in user_indices:
+                        list_idx = idx - 1  # Convert 1-based to 0-based
+                        if 0 <= list_idx < len(actual_test_cases):
+                            user_answer.append(actual_test_cases[list_idx].id)
+                else:
+                    user_answer = []
             
             elif current_question.type == 'upload':
                 # Handle file upload

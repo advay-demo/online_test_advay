@@ -198,7 +198,7 @@ const ViewAnswerPaper = () => {
                   </h3>
 
                 </div>
-                <div className="card-strong p-5 rounded-xl border-2 border-[var(--border-strong)]">
+                <div className="card-strong p-5 rounded-xl border-2 border-[var(--border-strong)] bg-[var(--surface)]">
                   <div className="flex items-center justify-between mb-4 pb-4 border-b-2 border-[var(--border-subtle)]">
                     <div>
                       <h3 className="text-base font-bold flex items-center gap-2 mb-2">
@@ -232,7 +232,7 @@ const ViewAnswerPaper = () => {
                       const isSkipped = qData.answer.skipped;
 
                       return (
-                        <div key={index} className="card p-4 sm:p-5  border-2 border-[var(--border-medium)] hover:shadow-lg hover:border-blue-500/70 dark:hover:border-blue-500/50 transition-all duration-300 group bg-[var(--card-bg)] rounded-xl">
+                        <div key={index} className="card p-4 sm:p-5  border-2 border-[var(--border-medium)] hover:shadow-lg hover:border-blue-500/70 dark:hover:border-blue-500/50 bg-[var(--surface-2)]  transition-all duration-300 group hover:shadow-md hover:bg-white/[0.03] rounded-xl">
                           <div className="flex items-start justify-between mb-2">
                             <div className="flex-1">
                               <div className="font-semibold text-blue-600 dark:text-blue-400 mb-3 flex items-start gap-2">

@@ -224,7 +224,49 @@ class QuestionSerializer(serializers.ModelSerializer):
 
     def get_test_cases(self, obj):
         try:
-            return obj.get_test_cases_as_dict()
+            tc_list = obj.get_test_cases_as_dict()
+            
+            # Bundle multiple ArrangeTestCase options into a single array for React
+            if obj.type == 'arrange' and tc_list:
+                arrange_options = [tc.get('options') for tc in tc_list if tc.get('type') == 'arrangetestcase']
+                if arrange_options:
+                    # Keep the first testcase structure and replace options with the array
+                    first_tc = tc_list[0].copy()
+                    first_tc['options'] = arrange_options
+                    return [first_tc]
+
+            # Bundle MCQ/MCC into a single test case for React
+            if obj.type in ['mcq', 'mcc'] and tc_list:
+                mcq_tcs = [tc for tc in tc_list if tc.get('type') == 'mcqtestcase']
+                if mcq_tcs:
+                    first_tc = mcq_tcs[0].copy()
+                    options_array = []
+                    correct_data = [] if obj.type == 'mcc' else 0
+                    
+                    for idx, tc in enumerate(mcq_tcs):
+                        # FOSSEE stores options as JSON '["Option text"]'
+                        try:
+                            # Safely extract option string
+                            opt_val = tc.get('options', '[]')
+                            if isinstance(opt_val, str) and opt_val.startswith('['):
+                                opt_val = json.loads(opt_val)
+                            opt_text = opt_val[0] if isinstance(opt_val, list) and opt_val else str(opt_val)
+                        except Exception:
+                            opt_text = str(tc.get('options', ''))
+                            
+                        options_array.append(opt_text)
+                        
+                        if tc.get('correct') or tc.get('correct') == 'True':
+                            if obj.type == 'mcc':
+                                correct_data.append(idx)
+                            else:
+                                correct_data = idx
+                                
+                    first_tc['options'] = options_array
+                    first_tc['correct'] = correct_data
+                    return [first_tc]        
+                    
+            return tc_list
         except Exception:
             return []
 
