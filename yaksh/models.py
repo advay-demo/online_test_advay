@@ -1349,7 +1349,7 @@ class Profile(models.Model):
         return Course.objects.filter(teachers=self.user)
 
     def _toggle_moderator_group(self, group_name):
-        group = Group.objects.get(name=group_name)
+        group, created = Group.objects.get_or_create(name=group_name)
         if self.is_moderator:
             self.user.groups.add(group)
         else:
