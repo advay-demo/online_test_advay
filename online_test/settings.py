@@ -146,24 +146,19 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 # verification. Set the variables accordingly to avoid errors in production
 
 # This email id will be used as <from address> for sending emails.
-# For example no_reply@<your_organization>.in can be used.
-SENDER_EMAIL = 'your_email'
+SENDER_EMAIL = config('EMAIL_HOST_USER', default='')
 
-# Organisation/Indivudual Name.
-SENDER_NAME = 'your_name'
+# Organisation/Individual Name.
+SENDER_NAME = config('SENDER_NAME', default='Yaksh Online Test')
 
-# This email id will be used by users to send their queries
-# For example queries@<your_organization>.in can be used.
-REPLY_EMAIL = 'your_reply_email'
+# This email id will be used by users to send their queries.
+REPLY_EMAIL = config('REPLY_EMAIL', default=config('EMAIL_HOST_USER', default=''))
 
 # This url will be used in email verification to create activation link.
-# Add your hosted url to this variable.
-# For example https://127.0.0.1:8000 or 127.0.0.1:8000
-PRODUCTION_URL = 'your_project_url'
+PRODUCTION_URL = config('DOMAIN_HOST', default='http://127.0.0.1:8000')
 
-# Set this variable to <False> once the project is in production.
-# If this variable is kept <True> in production, email will not be verified.
-IS_DEVELOPMENT = True
+# Set to False in production to enforce email verification.
+IS_DEVELOPMENT = config('IS_DEVELOPMENT', default=True, cast=bool)
 
 # Video File upload size
 MAX_UPLOAD_SIZE = 524288000
@@ -383,13 +378,9 @@ if not DEBUG:
         }
     }
     
-    # Email Backend for Production (optional - configure later)
-    # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    # EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
-    # EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
-    # EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
-    # EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
-    # EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+    # Email is configured at the top of settings.py via .env variables.
+    # EMAIL_HOST, EMAIL_PORT, EMAIL_USE_TLS, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD
+    # and EMAIL_BACKEND are already active from the settings above.
     
     print(f"ALLOWED_HOSTS: {ALLOWED_HOSTS}")
     print(f"DATABASE: {DATABASES['default']['NAME']}")

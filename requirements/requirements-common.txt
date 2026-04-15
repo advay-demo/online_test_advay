@@ -11,11 +11,11 @@ ruamel.yaml==0.16.10
 PyYAML==5.3.1
 Markdown==2.6.9
 Pygments==2.2.0
-celery==4.4.2
+celery==5.3.6
 redis==3.4.1
 notifications-plugin==0.1.2
-django-celery-beat==2.0.0
-django-celery-results==1.2.1
+django-celery-beat==2.6.0
+django-celery-results==2.5.1
 djangorestframework==3.11.2
 django-cors-headers==3.1.0
 Pillow==11.3.0
