@@ -4,11 +4,7 @@ services:
     name: yaksh-backend
     env: python
     plan: free
-    buildCommand: |
-      pip install --upgrade pip
-      pip install -r requirements/requirements-production.txt
-      python manage.py collectstatic --no-input
-      python manage.py migrate
+    buildCommand: "pip install --upgrade pip && pip install -r requirements/requirements-production.txt && python manage.py collectstatic --no-input && python manage.py migrate"
     startCommand: gunicorn online_test.wsgi:application --bind 0.0.0.0:$PORT --workers 4
     envVars:
       - key: PYTHON_VERSION
@@ -53,9 +49,7 @@ services:
     name: yaksh-celery-worker
     env: python
     plan: free
-    buildCommand: |
-      pip install --upgrade pip
-      pip install -r requirements/requirements-production.txt
+    buildCommand: "pip install --upgrade pip && pip install -r requirements/requirements-production.txt"
     startCommand: celery -A online_test worker --loglevel=info --concurrency=2
     envVars:
       - key: PYTHON_VERSION
