@@ -230,6 +230,13 @@ AUTH_PASSWORD_VALIDATORS = [
 
 TAGGIT_CASE_INSENSITIVE = True
 
+# Override migration module location for third-party apps that store
+# migrations inside site-packages (not version-controlled).
+# This ensures consistent migrations across all environments.
+MIGRATION_MODULES = {
+    'notifications_plugin': 'notifications_plugin_migrations',
+}
+
 
 # Celery parameters
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers.DatabaseScheduler'
