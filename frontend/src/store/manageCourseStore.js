@@ -714,7 +714,19 @@ const useManageCourseStore = create((set, get) => ({
             set({ loading: false, error: err.message });
         }
     },
-    
+    handleDeleteQuiz: async (moduleId, quizId) => {
+    const { course } = get();
+    if (!course) return;
+    try {
+        set({ loading: true });
+        await deleteQuiz(course.id, moduleId, quizId);
+        set({ loading: false });
+        await get().loadCourseData(course.id);
+    } catch (err) {
+        console.error('Failed to delete quiz:', err);
+        set({ loading: false, error: err.message });
+    }
+},
 
 
     // DESIGN MODULE TAB ============================================================

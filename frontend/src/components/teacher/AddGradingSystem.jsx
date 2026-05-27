@@ -51,6 +51,28 @@ export default function AddGradingSystem({ onCancel, gradingSystem = null, isEdi
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // --- Validation ---
+    for (let i = 0; i < ranges.length; i++) {
+      const lower = parseFloat(ranges[i].lower_limit);
+      const upper = parseFloat(ranges[i].upper_limit);
+      if (isNaN(lower) || isNaN(upper)) continue;
+      if (lower < 0) {
+        useGradingSystemStore.setState({ error: `Row ${i + 1}: Lower limit cannot be negative.` });
+        return;
+      }
+      if (upper > 100) {
+        useGradingSystemStore.setState({ error: `Row ${i + 1}: Upper limit cannot be greater than 100.` });
+        return;
+      }
+      if (upper <= lower) {
+        useGradingSystemStore.setState({ error: `Row ${i + 1}: Upper limit must be greater than Lower limit.` });
+        return;
+      }
+    }
+    useGradingSystemStore.setState({ error: null });
+    // --- End Validation ---
+
     const data = { 
       ...form, 
       grade_ranges: ranges.map(range => ({

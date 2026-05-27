@@ -66,8 +66,28 @@ export default function AddCourseModal({ onCancel, courseId = null, isEdit = fal
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      setSaving(true);
+    setSaving(true);
       setError(null);
+
+      // --- Date Validation ---
+      const now = new Date();
+      if (formData.end_enroll_time) {
+        const endDate = new Date(formData.end_enroll_time);
+        if (endDate < now) {
+          setError('End Enrollment Date cannot be in the past.');
+          setSaving(false);
+          return;
+        }
+        if (formData.start_enroll_time) {
+          const startDate = new Date(formData.start_enroll_time);
+          if (endDate <= startDate) {
+            setError('End Enrollment Date must be after Start Enrollment Date.');
+            setSaving(false);
+            return;
+          }
+        }
+      }
+      // --- End Date Validation ---
 
       const submitData = {
         ...formData,

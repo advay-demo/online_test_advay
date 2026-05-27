@@ -161,7 +161,7 @@ const useQuizStore = create((set, get) => ({
         success: result.success,
         error_message: result.error_message || result.message,
       },
-      currentQuestion: nextQuestion,
+      currentQuestion: nextQuestion || get().currentQuestion,
       paper: {
         ...get().paper,
         time_left: result.time_left || result.paper?.time_left,

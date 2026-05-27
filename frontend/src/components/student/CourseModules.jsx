@@ -134,9 +134,9 @@ const CourseModules = () => {
                                             )}
                                         </div>
                                         {module.description && (
-                                            <p className="text-xs text-[var(--text-muted)] mt-1 line-clamp-1 max-w-md hidden sm:block">
-                                                {module.description}
-                                            </p>
+                                            <p className="text-xs text-[var(--text-muted)] mt-1 line-clamp-1 max-w-md hidden sm:block"
+                                               dangerouslySetInnerHTML={{ __html: module.description }}
+                                            />
                                         )}
                                     </div>
                                 </div>

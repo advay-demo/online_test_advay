@@ -36,6 +36,22 @@ const UploadQuestion = () => {
       fileInputRef.current.value = '';
     }
   };
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const file = e.dataTransfer.files[0];
+    if (file) {
+        const extension = file.name.split('.').pop().toLowerCase();
+        if (['zip', 'yaml', 'yml'].includes(extension)) {
+            setSelectedFile(file);
+            setUploadError(null);
+            setUploadSuccess(null);
+        } else {
+            setUploadError('Please select a valid file (.zip, .yaml, or .yml)');
+            setSelectedFile(null);
+        }
+    }
+};
 
   const handleUpload = async () => {
     if (!selectedFile) {
@@ -189,7 +205,12 @@ const UploadQuestion = () => {
 
               {/* File Input */}
               <div className="space-y-4">
-                <div className="border-2 border-dashed border-[var(--border-color)] rounded-xl p-6 sm:p-8 text-center hover:border-blue-500 transition-colors duration-200">
+                <div
+    className="border-2 border-dashed border-[var(--border-color)] rounded-xl p-6 sm:p-8 text-center hover:border-blue-500 transition-colors duration-200"
+    onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+    onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); }}
+    onDrop={handleDrop}
+>
                   <input
                     ref={fileInputRef}
                     type="file"

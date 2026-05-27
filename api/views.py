@@ -3465,6 +3465,8 @@ def design_questionpaper_api(request, course_id, quiz_id, questionpaper_id=None)
                 questions = _get_questions(user, question_type, marks)
             elif tags:
                 questions = _get_questions_from_tags(tags, user)
+            elif question_type:
+                questions = Question.objects.filter(active=True, user=user, type=question_type)
                 
             if questions is not None:
                 questions = _remove_already_present(question_paper.id, questions)
@@ -7823,7 +7825,7 @@ def upload_marks(request, course_id, questionpaper_id):
 
     # Prepare data for Celery task
     try:
-        csv_content = csv_file.read().decode('utf-8').splitlines()
+        csv_content = csv_file.read().decode('utf-8-sig').splitlines()
     except UnicodeDecodeError:
         return Response({'error': 'File encoding error. Please upload a UTF-8 encoded CSV.'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -7848,7 +7850,13 @@ def upload_marks(request, course_id, questionpaper_id):
         msg = f"{quiz.description} is submitted for marks update. You will receive a notification for the update status"
         return Response({'message': msg}, status=status.HTTP_200_OK)
     else:
-        return Response({'error': "Unable to submit for marks update. Please check with admin"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        # Celery not available — run synchronously for dev environments
+        try:
+            update_user_marks(data)
+            msg = f"{quiz.description} marks updated successfully."
+            return Response({'message': msg}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': f"Failed to update marks: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['GET'])
