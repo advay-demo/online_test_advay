@@ -57,6 +57,7 @@ const TestQuestion = () => {
 
             if (questionpaperId && moduleId && courseId) {
                 initializingRef.current = true;
+                resetQuiz();
                 clearError();
 
                 try {

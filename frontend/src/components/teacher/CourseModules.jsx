@@ -1195,7 +1195,7 @@ const CourseModules = () => {
                                     <label className="block text-xs sm:text-sm font-semibold mb-2">Description</label>
                                     <input
                                         className="w-full px-3 sm:px-4 py-2.5 bg-[var(--input-bg)] border-2 border-[var(--border-strong)] rounded-xl focus:outline-none focus:border-purple-500/50 text-sm transition-colors"
-                                        name="Enter description"
+                                        name="description"
                                         placeholder="e.g. NFT Marketplace"
                                         value={exerciseFormData.description}
                                         onChange={handleExerciseFormChange}
@@ -1970,7 +1970,7 @@ const CourseModules = () => {
                                             </div>
                                             {module.description && (
                                                 <p className="text-xs text-[var(--text-muted)] mt-1 line-clamp-1 max-w-md hidden sm:block">
-                                                    {module.description}
+                                                    <span dangerouslySetInnerHTML={{ __html: module.description }} />
                                                 </p>
                                             )}
                                             <div className="flex items-center gap-3 text-xs muted mt-2">

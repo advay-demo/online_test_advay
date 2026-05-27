@@ -1405,11 +1405,26 @@ export const getQuizStatistics = async (questionpaperId, courseId, attemptNumber
 
 
 export const downloadQuizCSV = async (courseId, quizId, attemptNumber) => {
-  const response = await api.post(
-    `/api/teacher/download_quiz_csv/${courseId}/${quizId}/`,
-    { attempt_number: attemptNumber },
-    { responseType: 'blob' }
-  );
+  let response;
+  try {
+    response = await api.post(
+      `/api/teacher/download_quiz_csv/${courseId}/${quizId}/`,
+      { attempt_number: attemptNumber },
+      { responseType: 'blob' }
+    );
+  } catch (error) {
+    // When responseType is 'blob', error responses are also blobs — parse them back to text
+    if (error.response?.data instanceof Blob) {
+      const text = await error.response.data.text();
+      try {
+        const json = JSON.parse(text);
+        throw new Error(json.error || json.detail || json.message || text);
+      } catch {
+        throw new Error(text || 'Failed to download CSV');
+      }
+    }
+    throw error;
+  }
 
   // Create a blob URL and trigger download
   const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -1428,6 +1443,7 @@ export const downloadQuizCSV = async (courseId, quizId, attemptNumber) => {
   }
 
   link.setAttribute('download', filename);
+  link.setAttribute('target', '_blank');
   document.body.appendChild(link);
   link.click();
   link.remove();
@@ -1435,6 +1451,7 @@ export const downloadQuizCSV = async (courseId, quizId, attemptNumber) => {
 
   return { success: true };
 };
+
 
 
 export const uploadMarksCSV = async (courseId, questionpaperId, csvFile) => {

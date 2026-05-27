@@ -1,7 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-
+import { useAuthStore } from '../../store/authStore';
 const Logo = ({ size = 'md', showText = true }) => {
+  const { user } = useAuthStore();
+  const homeRoute = user?.is_active_moderator ? '/teacher/dashboard' : user ? '/dashboard' : '/';
   const sizes = {
     sm: 'w-8 h-8',
     md: 'w-10 h-10',
@@ -17,7 +19,7 @@ const Logo = ({ size = 'md', showText = true }) => {
   };
 
   return (
-    <Link to="/" className="flex items-center gap-3">
+    <Link to={homeRoute} className="flex items-center gap-3">
       <div className={`${sizes[size]} flex items-center justify-center rounded-full overflow-hidden`}>
         
         <img 

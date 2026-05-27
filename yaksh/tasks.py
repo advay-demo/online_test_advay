@@ -178,14 +178,18 @@ def _read_marks_csv(
                 answer.save()
         answerpaper.update_marks(state='completed')
         answerpaper.save()
+        question_summary = question.summary if question else 'N/A'
         update_status.append(
             'Updated successfully for user: {0}, question: {1}'.format(
-            username, question.summary)
+            username, question_summary)
         )
-    url = reverse(
-        "yaksh:grade_user",
-        args=[question_paper.quiz_id, course_id]
-    )
+    try:
+        url = reverse(
+            "yaksh:grade_user",
+            args=[question_paper.quiz_id, course_id]
+        )
+    except Exception:
+        url = '/'
     message = dedent("""
         Quiz mark update is complete.
         Click <a href="{0}">here</a> to view

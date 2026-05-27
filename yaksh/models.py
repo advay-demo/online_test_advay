@@ -1200,12 +1200,14 @@ class Course(models.Model):
         return remaining_days
 
     def get_completion_percent(self, user):
-        course_status = CourseStatus.objects.filter(course=self, user=user)
-        if course_status.exists():
-            percentage = course_status.first().percent_completed
-        else:
-            percentage = 0
-        return percentage
+        modules = self.get_learning_modules()
+        percent = int(self.percent_completed(user, modules))
+        course_status = CourseStatus.objects.filter(course=self, user=user).first()
+        if course_status:
+            if course_status.percent_completed != percent:
+                course_status.percent_completed = percent
+                course_status.save(update_fields=['percent_completed'])
+        return percent
 
     def is_student(self, user):
         return self.students.filter(id=user.id).exists()
