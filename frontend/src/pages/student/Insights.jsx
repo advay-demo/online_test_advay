@@ -1,204 +1,407 @@
 import React, { useState, useEffect } from 'react';
-import { FaStar, FaCheckCircle, FaFire, FaBolt, FaLock, FaTrophy } from 'react-icons/fa';
+
+import {
+  FaCheckCircle,
+  FaFire,
+  FaLock,
+  FaTrophy,
+  FaBook,
+  FaClipboardCheck,
+  FaCertificate,
+  FaChartLine,
+  FaLinkedin
+} from 'react-icons/fa';
+
 import Sidebar from '../../components/layout/Sidebar';
 import Header from '../../components/layout/Header';
-import { fetchBadges } from '../../api/api';
+
+// Badge Images
+import birdBadge from '../../assets/badges/bird.png';
+import genieBadge from '../../assets/badges/genie.png';
+import senseiBadge from '../../assets/badges/sensei.png';
+import wizardBadge from '../../assets/badges/wizard1.png';
 
 const Insights = () => {
-  const [badges, setBadges] = useState({ unlocked: [], inProgress: [], locked: [] });
+
+  const [badges, setBadges] = useState({
+    unlocked: [],
+    inProgress: [],
+    locked: []
+  });
+
+  const [achievements] = useState({
+    total_courses: 12,
+    completed_lessons: 85,
+    pending_quizzes: 4,
+    certificates_earned: 6,
+    highest_score: 96
+  });
+
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const loadBadges = async () => {
+
+    const loadData = async () => {
+
       try {
-        setLoading(true);
-        const data = await fetchBadges();
+
+        const data = {
+
+          unlocked: [
+            {
+              id: 1,
+              earned_date: "Apr 2, 2026",
+              badge: {
+                name: "Wizard",
+                description: "Complete 250 quizzes",
+              }
+            },
+
+            {
+              id: 2,
+              earned_date: "Mar 31, 2026",
+              badge: {
+                name: "Genie",
+                description: "Score 100 quiz answers",
+              }
+            }
+          ],
+
+          inProgress: [
+            {
+              id: 3,
+
+              progress_percentage: 65,
+
+              steps: {
+                completed: 65,
+                total: 100
+              },
+
+              badge: {
+                name: "Sensei",
+                description: "Complete 100 courses",
+              }
+            }
+          ],
+
+          locked: [
+            {
+              id: 4,
+
+              badge: {
+                name: "Bird",
+                description: "Complete 500 quizzes",
+              }
+            }
+          ]
+        };
+
         setBadges(data);
-        setError(null);
+
       } catch (err) {
-        console.error('Failed to load badges:', err);
-        setError('Failed to load badges');
+
+        console.error(err);
+
       } finally {
+
         setLoading(false);
       }
     };
 
-    loadBadges();
+    loadData();
+
   }, []);
 
-  const badgeIcons = {
-    cyan: FaCheckCircle,
-    orange: FaFire,
-    purple: FaStar,
-    blue: FaBolt,
-    green: FaCheckCircle,
-    amber: FaStar,
-    yellow: FaStar
-  };
-
-  const badgeColors = {
-    cyan: { icon: 'text-cyan-400', border: 'border-cyan-400/40', bg: 'bg-cyan-400/10' },
-    orange: { icon: 'text-orange-400', border: 'border-orange-400/40', bg: 'bg-orange-400/10' },
-    purple: { icon: 'text-purple-400', border: 'border-purple-400/40', bg: 'bg-purple-400/10' },
-    blue: { icon: 'text-blue-400', border: 'border-blue-400/40', bg: 'bg-blue-400/10' },
-    green: { icon: 'text-green-400', border: 'border-green-400/40', bg: 'bg-green-400/10' },
-    amber: { icon: 'text-amber-400', border: 'border-amber-400/40', bg: 'bg-amber-400/10' },
-    yellow: { icon: 'text-yellow-400', border: 'border-yellow-400/40', bg: 'bg-yellow-400/10' },
-  };
-
-  const defaultColors = { icon: 'text-indigo-400', border: 'border-indigo-400/40', bg: 'bg-indigo-400/10' };
-
-  // Render an unlocked badge card
-  const renderUnlockedBadge = (userBadge) => {
-    const badge = userBadge.badge;
-    const BadgeIcon = badgeIcons[badge.color] || FaTrophy;
-    const colors = badgeColors[badge.color] || defaultColors;
-    return (
-      <div key={`unlocked-${userBadge.id}`} className={`card rounded-2xl p-6 text-center hover:scale-105 transition-all duration-300 border-l-4 border-2 border-[var(--border-color)] hover:border-${badge.color}-500/50 shadow-lg hover:shadow-xl hover:shadow-${badge.color}-500/20 ${colors.border}`}>
-        <div className={`w-16 h-16 mx-auto mb-4 ${colors.bg} rounded-full flex items-center justify-center border-2 border-${badge.color}-500/30 shadow-lg shadow-${badge.color}-500/20`}>
-          <BadgeIcon className={`w-8 h-8 ${colors.icon}`} />
-        </div>
-        <h3 className="font-bold text-lg mb-2 text-[var(--text-primary)]">{badge.name}</h3>
-        <p className="text-sm text-[var(--text-secondary)] mb-3 leading-relaxed">{badge.description}</p>
-        <div className="inline-block bg-gradient-to-r from-indigo-500/20 to-purple-500/20 border-2 border-indigo-500/30 text-indigo-600 dark:text-indigo-300 text-xs px-4 py-1.5 rounded-xl font-bold shadow-md">
-          {userBadge.earned_date}
-        </div>
-      </div>
-    );
-  };
-
-  // Render an in-progress badge card
-  const renderInProgressBadge = (badgeProgress) => {
-    const badge = badgeProgress.badge;
-    const BadgeIcon = badgeIcons[badge.color] || FaTrophy;
-    const colors = badgeColors[badge.color] || defaultColors;
-    return (
-      <div key={`progress-${badgeProgress.id}`} className="card rounded-2xl p-6 text-center hover:scale-105 transition-all duration-300 opacity-90 border-2 border-[var(--border-color)] hover:border-indigo-500/50 shadow-lg hover:shadow-xl hover:shadow-indigo-500/20">
-        <div className={`w-16 h-16 mx-auto mb-4 ${colors.bg} rounded-full flex items-center justify-center border-2 border-${badge.color}-500/20 shadow-lg relative`}>
-          <BadgeIcon className={`w-8 h-8 ${colors.icon} opacity-70`} />
-          <div className="absolute -top-1 -right-1 w-5 h-5 bg-amber-500 rounded-full flex items-center justify-center border-2 border-[var(--surface)] animate-pulse">
-            <FaFire className="w-2.5 h-2.5 text-white" />
-          </div>
-        </div>
-        <h3 className="font-bold text-lg mb-2 text-[var(--text-primary)]">{badge.name}</h3>
-        <p className="text-sm text-[var(--text-secondary)] mb-3 leading-relaxed">{badge.description}</p>
-        {/* Progress bar */}
-        <div className="mb-3">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-[10px] uppercase font-bold text-[var(--text-muted)]">Progress</span>
-            <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">{badgeProgress.progress_percentage}%</span>
-          </div>
-          <div className="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-full h-2.5 overflow-hidden">
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-500 h-full rounded-full transition-all duration-500" style={{ width: `${badgeProgress.progress_percentage}%` }}></div>
-          </div>
-        </div>
-        <p className="text-xs text-[var(--text-muted)] font-semibold bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg py-1.5 px-3">
-          {badgeProgress.steps.completed}/{badgeProgress.steps.total} completed
-        </p>
-      </div>
-    );
-  };
-
-  // Render a locked badge card
-  const renderLockedBadge = (badge) => {
-    const BadgeIcon = badgeIcons[badge.color] || FaTrophy;
-    return (
-      <div key={`locked-${badge.id}`} className="card rounded-2xl p-6 text-center transition-all duration-300 opacity-50 hover:opacity-60 grayscale hover:grayscale-0 border-2 border-[var(--border-color)] shadow-md hover:shadow-lg">
-        <div className="relative w-16 h-16 mx-auto mb-4">
-          <div className="w-16 h-16 bg-[var(--input-bg)] border-2 border-[var(--border-color)] rounded-full flex items-center justify-center shadow-inner">
-            <BadgeIcon className="w-8 h-8 text-gray-600 dark:text-gray-500" />
-          </div>
-          {/* Lock overlay */}
-          <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-gradient-to-br from-gray-700 to-gray-800 rounded-full flex items-center justify-center border-2 border-[var(--surface)] shadow-lg">
-            <FaLock className="w-3 h-3 text-gray-400" />
-          </div>
-        </div>
-        <h3 className="font-bold text-lg mb-2 text-gray-600 dark:text-gray-500">{badge.name}</h3>
-        <p className="text-sm text-gray-700 dark:text-gray-600 mb-3 leading-relaxed">{badge.description}</p>
-        <div className="inline-block bg-[var(--input-bg)] border border-[var(--border-color)] text-gray-600 dark:text-gray-500 text-xs px-4 py-1.5 rounded-xl font-bold">
-          Keep learning to unlock
-        </div>
-      </div>
-    );
+  const badgeImages = {
+    Bird: birdBadge,
+    Genie: genieBadge,
+    Sensei: senseiBadge,
+    Wizard: wizardBadge,
   };
 
   if (loading) {
+
     return (
-      <div className="flex min-h-screen relative grid-texture">
-        <Sidebar />
-        <main className="flex-1">
-          <Header isAuth />
-          <div className="p-8 flex items-center justify-center h-96">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mx-auto mb-4"></div>
-              <p className="text-gray-400">Loading insights...</p>
-            </div>
-          </div>
-        </main>
+      <div className="flex items-center justify-center h-screen dark:bg-[#121212] dark:text-white">
+        Loading...
       </div>
     );
   }
 
-  const totalBadges = (badges.unlocked?.length || 0) + (badges.inProgress?.length || 0) + (badges.locked?.length || 0);
-  const unlockedCount = badges.unlocked?.length || 0;
-
   return (
-    <div className="flex min-h-screen relative grid-texture">
+
+    <div className="flex min-h-screen bg-gray-50 dark:bg-[#121212] transition-all duration-300">
+
       <Sidebar />
 
-      <main className="flex-1">
+      <main className="flex-1 dark:bg-[#121212]">
+
         <Header isAuth />
 
         <div className="p-8">
-          {/* Heading */}
-          <div className="mb-8">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-500/15 to-orange-500/15 border-2 border-yellow-500/30 flex items-center justify-center shadow-lg shadow-yellow-500/20">
-                <FaTrophy className="w-6 h-6 text-yellow-400" />
+
+          {/* HEADER */}
+
+          <div className="mb-10">
+
+            <div className="flex items-center gap-4">
+
+              <div className="w-16 h-16 rounded-2xl bg-yellow-100 flex items-center justify-center">
+
+                <FaTrophy className="text-yellow-500 text-3xl" />
+
               </div>
+
               <div>
-                <h1 className="text-2xl sm:text-3xl font-bold">Insights</h1>
-                <p className="text-sm muted">
-                  Unlock badges and earn recognition for your learning
-                  {totalBadges > 0 && (
-                    <span className="ml-2 text-indigo-600 dark:text-indigo-400 font-semibold">— {unlockedCount}/{totalBadges} badges earned</span>
-                  )}
+
+                <h1 className="text-4xl font-bold text-gray-800 dark:text-white">
+                  Insights
+                </h1>
+
+                <p className="text-gray-500 dark:text-gray-300">
+                  Track your learning achievements
                 </p>
+
               </div>
+
             </div>
+
           </div>
 
-          {error && (
-            <div className="bg-red-500/10 border-2 border-red-500/30 rounded-xl p-4 text-red-700 dark:text-red-300 mb-6 shadow-lg">
-              <div className="flex items-center gap-2 font-semibold">
-                <span>⚠️</span> {error}
-              </div>
-            </div>
-          )}
+          {/* PERFORMANCE SUMMARY */}
 
-          {/* All Badges Grid */}
-          <section>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5 mb-12">
+
+            <div className="bg-white dark:bg-[#1e1e2f] text-black dark:text-white rounded-2xl p-5 shadow-md border border-gray-200 dark:border-gray-700">
+              <FaBook className="text-blue-500 text-2xl mb-3" />
+              <h3 className="text-2xl font-bold">
+                {achievements.total_courses}
+              </h3>
+              <p className="text-gray-500 dark:text-gray-300 text-sm">
+                Courses Enrolled
+              </p>
+            </div>
+
+            <div className="bg-white dark:bg-[#1e1e2f] text-black dark:text-white rounded-2xl p-5 shadow-md border border-gray-200 dark:border-gray-700">
+              <FaCheckCircle className="text-green-500 text-2xl mb-3" />
+              <h3 className="text-2xl font-bold">
+                {achievements.completed_lessons}
+              </h3>
+              <p className="text-gray-500 dark:text-gray-300 text-sm">
+                Lessons Completed
+              </p>
+            </div>
+
+            <div className="bg-white dark:bg-[#1e1e2f] text-black dark:text-white rounded-2xl p-5 shadow-md border border-gray-200 dark:border-gray-700">
+              <FaClipboardCheck className="text-orange-500 text-2xl mb-3" />
+              <h3 className="text-2xl font-bold">
+                {achievements.pending_quizzes}
+              </h3>
+              <p className="text-gray-500 dark:text-gray-300 text-sm">
+                Pending Quizzes
+              </p>
+            </div>
+
+            <div className="bg-white dark:bg-[#1e1e2f] text-black dark:text-white rounded-2xl p-5 shadow-md border border-gray-200 dark:border-gray-700">
+              <FaCertificate className="text-purple-500 text-2xl mb-3" />
+              <h3 className="text-2xl font-bold">
+                {achievements.certificates_earned}
+              </h3>
+              <p className="text-gray-500 dark:text-gray-300 text-sm">
+                Certificates Earned
+              </p>
+            </div>
+
+            <div className="bg-white dark:bg-[#1e1e2f] text-black dark:text-white rounded-2xl p-5 shadow-md border border-gray-200 dark:border-gray-700">
+              <FaChartLine className="text-pink-500 text-2xl mb-3" />
+              <h3 className="text-2xl font-bold">
+                {achievements.highest_score}%
+              </h3>
+              <p className="text-gray-500 dark:text-gray-300 text-sm">
+                Highest Quiz Score
+              </p>
+            </div>
+
+          </div>
+
+          {/* EARNED BADGES */}
+
+          <section className="mb-12">
+
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-yellow-500/15 border-2 border-yellow-500/30 flex items-center justify-center">
-                <FaTrophy className="w-5 h-5 text-yellow-400" />
-              </div>
-              <h2 className="text-2xl font-bold text-[var(--text-primary)]">All Badges</h2>
+
+              <FaCheckCircle className="text-green-500 text-2xl" />
+
+              <h2 className="text-2xl font-bold dark:text-white">
+                Recently Earned Badges
+              </h2>
+
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {/* Unlocked badges first */}
-              {badges.unlocked && badges.unlocked.map((userBadge) => renderUnlockedBadge(userBadge))}
 
-              {/* In-progress badges next */}
-              {badges.inProgress && badges.inProgress.map((badgeProgress) => renderInProgressBadge(badgeProgress))}
+              {badges.unlocked.map((userBadge) => (
 
-              {/* Locked badges last */}
-              {badges.locked && badges.locked.map((badge) => renderLockedBadge(badge))}
+                <div
+                  key={userBadge.id}
+                  className="bg-white dark:bg-[#1e1e2f] text-black dark:text-white rounded-3xl shadow-lg p-6 text-center hover:scale-105 transition border border-gray-200 dark:border-gray-700"
+                >
+
+                  <img
+                    src={badgeImages[userBadge.badge.name]}
+                    alt=""
+                    className="w-20 h-20 mx-auto mb-4"
+                  />
+
+                  <h3 className="text-xl font-bold mb-2">
+                    {userBadge.badge.name}
+                  </h3>
+
+                  <p className="text-gray-500 dark:text-gray-300 text-sm mb-3">
+                    {userBadge.badge.description}
+                  </p>
+
+                  <div className="text-xs bg-indigo-100 text-indigo-600 inline-block px-4 py-1 rounded-full mb-4">
+                    Awarded on {userBadge.earned_date}
+                  </div>
+
+                  <button
+                    onClick={() =>
+                      window.open(
+                        "https://www.linkedin.com/sharing/share-offsite/?url=https://yaksh.com",
+                        "_blank"
+                      )
+                    }
+                    className="flex items-center gap-2 mx-auto bg-[#0A66C2] text-white px-4 py-2 rounded-xl hover:scale-105 transition"
+                  >
+                    <FaLinkedin />
+                    Share Badge
+                  </button>
+
+                </div>
+              ))}
+
             </div>
+
           </section>
+
+          {/* IN PROGRESS */}
+
+          <section className="mb-12">
+
+            <div className="flex items-center gap-3 mb-6">
+
+              <FaFire className="text-orange-500 text-2xl" />
+
+              <h2 className="text-2xl font-bold dark:text-white">
+                Your Next Target
+              </h2>
+
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+              {badges.inProgress.map((item) => (
+
+                <div
+                  key={item.id}
+                  className="bg-white dark:bg-[#1e1e2f] text-black dark:text-white rounded-3xl shadow-lg p-6 border border-gray-200 dark:border-gray-700"
+                >
+
+                  <img
+                    src={badgeImages[item.badge.name]}
+                    alt=""
+                    className="w-20 h-20 mx-auto mb-4"
+                  />
+
+                  <h3 className="text-xl font-bold text-center mb-2">
+                    {item.badge.name}
+                  </h3>
+
+                  <p className="text-gray-500 dark:text-gray-300 text-sm text-center mb-5">
+                    {item.badge.description}
+                  </p>
+
+                  <div className="flex justify-between text-sm mb-2">
+                    <span>Progress</span>
+                    <span>{item.progress_percentage}%</span>
+                  </div>
+
+                  <div className="w-full h-3 bg-gray-200 rounded-full">
+
+                    <div
+                      className="h-3 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"
+                      style={{
+                        width: `${item.progress_percentage}%`
+                      }}
+                    />
+
+                  </div>
+
+                  <p className="text-center text-sm text-gray-500 dark:text-gray-300 mt-3">
+                    {item.steps.completed}/{item.steps.total} completed
+                  </p>
+
+                </div>
+              ))}
+
+            </div>
+
+          </section>
+
+          {/* LOCKED */}
+
+          <section>
+
+            <div className="flex items-center gap-3 mb-6">
+
+              <FaLock className="text-gray-500 text-2xl" />
+
+              <h2 className="text-2xl font-bold dark:text-white">
+                Locked Achievements
+              </h2>
+
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+              {badges.locked.map((item) => (
+
+                <div
+                  key={item.id}
+                  className="bg-gray-100 dark:bg-[#232336] text-black dark:text-white rounded-3xl p-6 text-center opacity-70 border border-gray-200 dark:border-gray-700"
+                >
+
+                  <img
+                    src={badgeImages[item.badge.name]}
+                    alt=""
+                    className="w-20 h-20 mx-auto mb-4 grayscale"
+                  />
+
+                  <h3 className="text-xl font-bold mb-2">
+                    {item.badge.name}
+                  </h3>
+
+                  <p className="text-gray-500 dark:text-gray-300 text-sm mb-4">
+                    {item.badge.description}
+                  </p>
+
+                  <div className="inline-block bg-gray-300 text-gray-700 text-xs px-4 py-1 rounded-full">
+                    Locked
+                  </div>
+
+                </div>
+              ))}
+
+            </div>
+
+          </section>
+
         </div>
+
       </main>
+
     </div>
   );
 };
