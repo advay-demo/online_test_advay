@@ -1,9 +1,146 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { FaClock, FaCheck, FaArrowRight, FaTimes } from 'react-icons/fa';
 import { AiOutlineWarning } from 'react-icons/ai';
 import QuizSidebar from '../components/layout/QuizSidebar';
 import { startQuiz, submitAnswer, getAnswerResult, quitQuiz } from '../api/api';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+import CodeMirror from '@uiw/react-codemirror';
+import { oneDark } from '@codemirror/theme-one-dark';
+import { python } from '@codemirror/lang-python';
+import { cpp } from '@codemirror/lang-cpp';
+import { java } from '@codemirror/lang-java';
+import { javascript } from '@codemirror/lang-javascript';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+// Helper: get CodeMirror language extension from question language field
+const getLanguageExtension = (lang) => {
+  if (!lang) return [];
+  const l = lang.toLowerCase();
+  if (l.includes('python')) return [python()];
+  if (l.includes('c++') || l.includes('cpp')) return [cpp()];
+  if (l.includes('java')) return [java()];
+  if (l.includes('javascript') || l.includes('js')) return [javascript()];
+  if (l.includes('c') && !l.includes('c++')) return [cpp()];
+  return [];
+};
+
+// Pre-process LaTeX in text — converts $$...$$ and $...$ to KaTeX HTML
+const renderLatex = (text) => {
+  if (!text) return '';
+  return text
+    .replace(/\$\$([\s\S]+?)\$\$/g, (match, tex) => {
+      try { return katex.renderToString(tex.trim(), { displayMode: true, throwOnError: false }); }
+      catch { return match; }
+    })
+    .replace(/\\\[([\s\S]+?)\\\]/g, (match, tex) => {
+      try { return katex.renderToString(tex.trim(), { displayMode: true, throwOnError: false }); }
+      catch { return match; }
+    })
+    .replace(/\\\(([\s\S]+?)\\\)/g, (match, tex) => {
+      try { return katex.renderToString(tex.trim(), { displayMode: false, throwOnError: false }); }
+      catch { return match; }
+    })
+    .replace(/\$([^$\n]+?)\$/g, (match, tex) => {
+      try { return katex.renderToString(tex.trim(), { displayMode: false, throwOnError: false }); }
+      catch { return match; }
+    });
+};
+
+// Drag-and-drop sortable item for Arrange questions
+const SortableItem = ({ id, text, index }) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-3 p-3 rounded-lg border cursor-grab select-none ${
+        isDragging
+          ? 'bg-indigo-500/20 border-indigo-500/50 shadow-lg'
+          : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
+      } transition-colors`}
+      {...attributes}
+      {...listeners}
+    >
+      <div className="flex-shrink-0 w-7 h-7 rounded-md bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-sm font-bold text-indigo-400">
+        {index + 1}
+      </div>
+      <div className="flex-shrink-0 text-gray-500">
+        <svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor">
+          <circle cx="4" cy="3" r="1.5"/><circle cx="8" cy="3" r="1.5"/>
+          <circle cx="4" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/>
+          <circle cx="4" cy="13" r="1.5"/><circle cx="8" cy="13" r="1.5"/>
+        </svg>
+      </div>
+      <pre className="flex-1 text-sm font-mono text-gray-200 whitespace-pre-wrap break-all">{text}</pre>
+    </div>
+  );
+};
+
+// Arrange question input — must be its own component so hooks work correctly
+const ArrangeInput = ({ options, value, onChange }) => {
+  const initialItems = Array.isArray(value) && value.length === options.length
+    ? value
+    : options.map((_, i) => i);
+  const [items, setItems] = useState(initialItems);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    if (active.id !== over?.id) {
+      const oldIdx = items.indexOf(active.id);
+      const newIdx = items.indexOf(over.id);
+      const newOrder = arrayMove(items, oldIdx, newIdx);
+      setItems(newOrder);
+      onChange(newOrder);
+    }
+  };
+
+  return (
+    <div>
+      <p className="text-sm text-gray-400 mb-3">🖱️ Drag to reorder the code lines into the correct sequence:</p>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={items} strategy={verticalListSortingStrategy}>
+          <div className="space-y-2">
+            {items.map((origIdx, displayIdx) => (
+              <SortableItem
+                key={origIdx}
+                id={origIdx}
+                text={options[origIdx]}
+                index={displayIdx}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
+    </div>
+  );
+};
 
 const Quiz = () => {
   const { courseId, quizId } = useParams();
@@ -349,14 +486,12 @@ const Quiz = () => {
     }
 
     // Validate answer based on question type
-    if (currentQuestion.type === 'mcc') {
-      // For multiple choice, check if at least one option is selected
+    if (currentQuestion.type === 'mcc' || currentQuestion.type === 'arrange') {
       if (!answer || (Array.isArray(answer) && answer.length === 0)) {
-        alert('Please select at least one answer');
+        alert(currentQuestion.type === 'arrange' ? 'Please arrange the code lines' : 'Please select at least one answer');
         return;
       }
     } else {
-      // For other types, check if answer is not empty
       if (!answer || (typeof answer === 'string' && answer.trim() === '')) {
         alert('Please enter an answer');
         return;
@@ -372,6 +507,9 @@ const Quiz = () => {
         formattedAnswer = Array.isArray(answer) ? answer : [answer];
       } else if (currentQuestion.type === 'mcq') {
         formattedAnswer = answer;
+      } else if (currentQuestion.type === 'arrange') {
+        // Convert 0-based indices to 1-based as the backend expects
+        formattedAnswer = Array.isArray(answer) ? answer.map(i => i + 1) : [];
       } else {
         formattedAnswer = [answer];
       }
@@ -403,6 +541,7 @@ const Quiz = () => {
       setSubmitting(false);
     }
   };
+
 
   const handleQuit = () => {
     setShowQuitConfirm(true);
@@ -475,6 +614,9 @@ const Quiz = () => {
   const renderQuestionInput = () => {
     if (!currentQuestion) return null;
 
+    // Extract options from test_cases (where mcq/mcc/arrange data lives)
+    const testCaseOptions = currentQuestion.test_cases?.[0]?.options || [];
+
     switch (currentQuestion.type) {
       case 'integer':
       case 'float':
@@ -492,15 +634,25 @@ const Quiz = () => {
       case 'mcq':
         return (
           <div className="space-y-3">
-            {currentQuestion.options && currentQuestion.options.map((option, idx) => (
-              <label key={idx} className="flex items-center gap-3 p-4 bg-white/5 rounded-lg cursor-pointer hover:bg-white/10 transition">
+            {testCaseOptions.length === 0 && (
+              <p className="text-gray-400 text-sm">No options available.</p>
+            )}
+            {testCaseOptions.map((option, idx) => (
+              <label
+                key={idx}
+                className={`flex items-center gap-3 p-4 rounded-lg cursor-pointer transition border ${
+                  answers[currentQuestion.id] === option
+                    ? 'bg-indigo-500/15 border-indigo-500/50'
+                    : 'bg-white/5 border-white/10 hover:bg-white/10'
+                }`}
+              >
                 <input
                   type="radio"
                   name={`question-${currentQuestion.id}`}
                   value={option}
                   checked={answers[currentQuestion.id] === option}
                   onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
-                  className="w-4 h-4"
+                  className="w-4 h-4 accent-indigo-500"
                 />
                 <span>{option}</span>
               </label>
@@ -511,8 +663,18 @@ const Quiz = () => {
       case 'mcc':
         return (
           <div className="space-y-3">
-            {currentQuestion.options && currentQuestion.options.map((option, idx) => (
-              <label key={idx} className="flex items-center gap-3 p-4 bg-white/5 rounded-lg cursor-pointer hover:bg-white/10 transition">
+            {testCaseOptions.length === 0 && (
+              <p className="text-gray-400 text-sm">No options available.</p>
+            )}
+            {testCaseOptions.map((option, idx) => (
+              <label
+                key={idx}
+                className={`flex items-center gap-3 p-4 rounded-lg cursor-pointer transition border ${
+                  (answers[currentQuestion.id] || []).includes(option)
+                    ? 'bg-indigo-500/15 border-indigo-500/50'
+                    : 'bg-white/5 border-white/10 hover:bg-white/10'
+                }`}
+              >
                 <input
                   type="checkbox"
                   checked={(answers[currentQuestion.id] || []).includes(option)}
@@ -523,7 +685,7 @@ const Quiz = () => {
                       : current.filter((o) => o !== option);
                     handleAnswerChange(currentQuestion.id, updated);
                   }}
-                  className="w-4 h-4"
+                  className="w-4 h-4 accent-indigo-500"
                 />
                 <span>{option}</span>
               </label>
@@ -531,14 +693,41 @@ const Quiz = () => {
           </div>
         );
 
+      case 'arrange':
+        return (
+          <ArrangeInput
+            key={currentQuestion.id}
+            options={testCaseOptions}
+            value={answers[currentQuestion.id]}
+            onChange={(newOrder) => handleAnswerChange(currentQuestion.id, newOrder)}
+          />
+        );
+
       case 'code':
         return (
-          <textarea
-            className="w-full px-4 py-3 text-lg font-mono bg-white/5 border border-white/10 rounded-lg min-h-[300px]"
-            placeholder="Write your code here..."
-            value={answers[currentQuestion.id] || ''}
-            onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
-          />
+          <div className="rounded-lg overflow-hidden border border-white/10">
+            <div className="flex items-center justify-between px-4 py-2 bg-white/5 border-b border-white/10">
+              <span className="text-xs text-gray-400 font-mono">
+                {currentQuestion.language?.toUpperCase() || 'CODE'}
+              </span>
+              <span className="text-xs text-gray-500">CodeMirror Editor</span>
+            </div>
+            <CodeMirror
+              value={answers[currentQuestion.id] || ''}
+              height="320px"
+              theme={oneDark}
+              extensions={getLanguageExtension(currentQuestion.language)}
+              onChange={(val) => handleAnswerChange(currentQuestion.id, val)}
+              basicSetup={{
+                lineNumbers: true,
+                foldGutter: true,
+                dropCursor: false,
+                allowMultipleSelections: false,
+                indentOnInput: true,
+                tabSize: 4,
+              }}
+            />
+          </div>
         );
 
       default:
@@ -636,7 +825,7 @@ const Quiz = () => {
                   <div className="mb-4">
                     <div
                       className="prose prose-invert max-w-none text-gray-300"
-                      dangerouslySetInnerHTML={{ __html: currentQuestion.description || currentQuestion.summary }}
+                      dangerouslySetInnerHTML={{ __html: renderLatex(currentQuestion.description || currentQuestion.summary) }}
                     />
                   </div>
 

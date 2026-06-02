@@ -2,6 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { useQuizGradingStore } from '../../store/quizGradeStore';
 import useRegradingStore from '../../store/quizRegradeStore';
 import { FaArrowLeft, FaUser, FaListOl, FaCheckCircle, FaCalendar, FaChevronLeft, FaEllipsisV, FaBook, FaLayerGroup } from 'react-icons/fa';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+
+const renderLatex = (text) => {
+  if (!text) return '';
+  return text
+    .replace(/\$\$([\s\S]+?)\$\$/g, (m, tex) => { try { return katex.renderToString(tex.trim(), { displayMode: true, throwOnError: false }); } catch { return m; } })
+    .replace(/\\\[([\s\S]+?)\\\]/g, (m, tex) => { try { return katex.renderToString(tex.trim(), { displayMode: true, throwOnError: false }); } catch { return m; } })
+    .replace(/\\\(([\s\S]+?)\\\)/g, (m, tex) => { try { return katex.renderToString(tex.trim(), { displayMode: false, throwOnError: false }); } catch { return m; } })
+    .replace(/\$([^$\n]+?)\$/g, (m, tex) => { try { return katex.renderToString(tex.trim(), { displayMode: false, throwOnError: false }); } catch { return m; } });
+};
 
 
 const QuizGradingPanel = ({ quiz, course, onBack }) => {
@@ -462,7 +473,7 @@ const QuizGradingPanel = ({ quiz, course, onBack }) => {
                                                                     <span className="flex-shrink-0 w-7 h-7 rounded-lg bg-blue-500/20 border-2 border-blue-500/30 flex items-center justify-center text-sm font-bold text-blue-600 dark:text-blue-400">
                                                                         {idx + 1}
                                                                     </span>
-                                                                    <span dangerouslySetInnerHTML={{ __html: question.summary }} />
+                                                                    <span dangerouslySetInnerHTML={{ __html: renderLatex(question.summary) }} />
                                                                 </div>
                                                             </div>
                                                             {/* Three dot menu button */}
@@ -486,7 +497,7 @@ const QuizGradingPanel = ({ quiz, course, onBack }) => {
                                                                 )}
                                                             </div>
                                                         </div>
-                                                        <div className="text-sm text-[var(--text-secondary)] mb-3 ml-8" dangerouslySetInnerHTML={{ __html: question.description }} />
+                                                        <div className="text-sm text-[var(--text-secondary)] mb-3 ml-8" dangerouslySetInnerHTML={{ __html: renderLatex(question.description) }} />
 
                                                         <div className="ml-9 space-y-3 text-sm">
                                                             <div className="flex items-start gap-2">
