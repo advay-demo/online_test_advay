@@ -4,6 +4,17 @@ import useAnswerPaperStore from '../../store/student/answerPaperStore';
 import Sidebar from '../../components/layout/Sidebar';
 import Header from '../../components/layout/Header';
 import { FaChevronLeft, FaUser, FaCalendar, FaCheckCircle, FaTimesCircle, FaClock, FaTrophy, FaPercent, FaClipboardList, FaBook, FaLayerGroup } from 'react-icons/fa';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+
+const renderLatex = (text) => {
+  if (!text) return '';
+  return text
+    .replace(/\$\$([\s\S]+?)\$\$/g, (m, tex) => { try { return katex.renderToString(tex.trim(), { displayMode: true, throwOnError: false }); } catch { return m; } })
+    .replace(/\\\[([\s\S]+?)\\\]/g, (m, tex) => { try { return katex.renderToString(tex.trim(), { displayMode: true, throwOnError: false }); } catch { return m; } })
+    .replace(/\\\(([\s\S]+?)\\\)/g, (m, tex) => { try { return katex.renderToString(tex.trim(), { displayMode: false, throwOnError: false }); } catch { return m; } })
+    .replace(/\$([^$\n]+?)\$/g, (m, tex) => { try { return katex.renderToString(tex.trim(), { displayMode: false, throwOnError: false }); } catch { return m; } });
+};
 const ViewAnswerPaper = () => {
   const { questionPaperId, courseId } = useParams();
   const navigate = useNavigate();
@@ -239,11 +250,11 @@ const ViewAnswerPaper = () => {
                                 <span className="flex-shrink-0 w-7 h-7 rounded-lg bg-blue-500/20 border-2 border-blue-500/30 flex items-center justify-center text-sm font-bold text-blue-600 dark:text-blue-400">
                                   {index + 1}
                                 </span>
-                                <span dangerouslySetInnerHTML={{ __html: qData.question.summary || qData.question.description }} />
+                                <span dangerouslySetInnerHTML={{ __html: renderLatex(qData.question.summary || qData.question.description) }} />
                               </div>
                             </div>
                           </div>
-                          <div className="text-sm text-[var(--text-secondary)] mb-3 ml-8" dangerouslySetInnerHTML={{ __html: qData.question.description }} />
+                          <div className="text-sm text-[var(--text-secondary)] mb-3 ml-8" dangerouslySetInnerHTML={{ __html: renderLatex(qData.question.description) }} />
 
                           <div className="ml-9 space-y-3 text-sm">
                             <div className="flex items-start gap-2">
