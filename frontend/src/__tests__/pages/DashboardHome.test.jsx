@@ -6,12 +6,10 @@ import DashboardHome from '../../pages/DashboardHome';
 import * as authStore from '../../store/authStore';
 import * as api from '../../api/api';
 
-// Mock components to prevent deep rendering
 vi.mock('../../pages/student/Dashboard', () => ({
   default: () => <div data-testid="student-dashboard">Student Dashboard</div>,
 }));
 
-// Mock react-router-dom Navigate
 vi.mock('react-router-dom', async (importOriginal) => {
   const actual = await importOriginal();
   return {
@@ -20,7 +18,6 @@ vi.mock('react-router-dom', async (importOriginal) => {
   };
 });
 
-// Mock api
 vi.mock('../../api/api', () => ({
   getModeratorStatus: vi.fn(),
 }));
@@ -45,7 +42,6 @@ describe('DashboardHome Component', () => {
 
     renderComponent();
 
-    // Since is_moderator is false, getModeratorStatus is not called
     expect(api.getModeratorStatus).not.toHaveBeenCalled();
     
     await waitFor(() => {
@@ -77,7 +73,6 @@ describe('DashboardHome Component', () => {
 
     api.getModeratorStatus.mockResolvedValueOnce({ is_moderator_active: false });
 
-    // Mock window location
     delete window.location;
     window.location = { pathname: '/dashboard', href: '' };
 
