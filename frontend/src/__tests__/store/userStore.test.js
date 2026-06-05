@@ -71,4 +71,123 @@ describe('useUserStore', () => {
     expect(state.user).toBeNull();
     expect(localStorage.getItem('user')).toBeNull();
   });
+  it('should update user profile successfully', async () => {
+  useUserStore.setState({
+    user: {
+      username: 'testuser'
+    }
+  });
+
+  api.post.mockResolvedValueOnce({
+    data: {
+      user: {
+        email: 'updated@test.com'
+      }
+    }
+  });
+
+  const result =
+    await useUserStore
+      .getState()
+      .updateUserProfile(
+        'testuser',
+        { email: 'updated@test.com' }
+      );
+
+  expect(result.success).toBe(true);
+
+  expect(
+    useUserStore.getState().user.email
+  ).toBe('updated@test.com');
+});
+
+it('should handle update profile failure', async () => {
+  api.post.mockRejectedValueOnce({
+    response: {
+      data: {
+        error: 'Update failed'
+      }
+    }
+  });
+
+  const result =
+    await useUserStore
+      .getState()
+      .updateUserProfile(
+        'testuser',
+        {}
+      );
+
+  expect(result.success).toBe(false);
+
+  expect(
+    useUserStore.getState().error
+  ).toBe('Update failed');
+});
+
+it('should update local user', () => {
+  useUserStore.setState({
+    user: {
+      username: 'testuser'
+    }
+  });
+
+  useUserStore
+    .getState()
+    .updateLocalUser({
+      email: 'local@test.com'
+    });
+
+  expect(
+    useUserStore.getState().user.email
+  ).toBe('local@test.com');
+});
+
+it('should initialize user from localStorage', () => {
+  const user = {
+    username: 'saveduser'
+  };
+
+  localStorage.setItem(
+    'user',
+    JSON.stringify(user)
+  );
+
+  useUserStore
+    .getState()
+    .initializeUser();
+
+  expect(
+    useUserStore.getState().user
+  ).toEqual(user);
+});
+
+it('should clear error', () => {
+  useUserStore.setState({
+    error: 'Some Error'
+  });
+
+  useUserStore
+    .getState()
+    .clearError();
+
+  expect(
+    useUserStore.getState().error
+  ).toBeNull();
+});
+
+it('should handle invalid localStorage data', () => {
+  localStorage.setItem(
+    'user',
+    'invalid-json'
+  );
+
+  useUserStore
+    .getState()
+    .initializeUser();
+
+  expect(
+    localStorage.getItem('user')
+  ).toBeNull();
+});
 });
