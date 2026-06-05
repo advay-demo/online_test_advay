@@ -1900,6 +1900,8 @@ def lesson_detail(request, lesson_id):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def complete_lesson(request, lesson_id):
+    print("COMPLETE LESSON API HIT")
+ 
     """Mark a lesson as completed"""
     user = request.user
     
@@ -1937,7 +1939,18 @@ def complete_lesson(request, lesson_id):
     # Mark unit as completed
     if not course_status.completed_units.filter(id=learning_unit.id).exists():
         course_status.completed_units.add(learning_unit)
-        
+        # Calculate progress
+
+    total_units = course.get_learning_units().count()
+    completed_units = course_status.completed_units.count()
+    if total_units > 0:
+        percent = (completed_units / total_units) * 100
+        print("TOTAL =", total_units)
+        print("COMPLETED =", completed_units)
+        print("PERCENT =", percent)
+        course_status.percent_completed = percent
+        course_status.percentage = percent
+        course_status.save()
         # Update current unit to next unit
         module = learning_unit.learning_unit.first()
         if module:
@@ -2294,6 +2307,7 @@ def teacher_dashboard(request):
             'user__first_name', 
             'user__last_name', 
             'user__username'
+
         ).annotate(
             avg_score=Avg('marks_obtained'),
             total_score=Sum('marks_obtained'),
