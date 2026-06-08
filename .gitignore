@@ -45,11 +45,26 @@ _build/
 
 yaksh_data/yaksh
 yaksh_data/output/
+
+# Virtual environments
 venv/
 .venv/
-.env
+yakshenv/
+env/
+*/intern-env/
+online_test/intern-env/
 
+# Environment variables
+.env
+.env.*
+
+# Frontend build & coverage
+frontend/coverage/
+frontend/dist/
+frontend/node_modules/
+node_modules/
+
+# Static files
 staticfiles/
 
-course_*/venv_linux/ 
-yaksh_data/ 
+course_*/
