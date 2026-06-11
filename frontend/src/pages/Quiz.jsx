@@ -631,6 +631,7 @@ const Quiz = () => {
 
     // Extract options from test_cases (where mcq/mcc/arrange data lives)
     const testCaseOptions = currentQuestion.test_cases?.[0]?.options || [];
+    console.log("Question Type:", currentQuestion?.type);
 
     switch (currentQuestion.type) {
       case 'integer':
@@ -717,6 +718,33 @@ const Quiz = () => {
             onChange={(newOrder) => handleAnswerChange(currentQuestion.id, newOrder)}
           />
         );
+        case 'upload':
+  return (
+    <div className="space-y-3">
+      <input
+        type="file"
+        accept=".txt"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+
+          if (!file) return;
+
+          if (!file.name.toLowerCase().endsWith('.txt')) {
+            alert('Only .txt files are allowed');
+            e.target.value = '';
+            return;
+          }
+
+          handleAnswerChange(currentQuestion.id, file);
+        }}
+        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg"
+      />
+
+      <p className="text-sm text-gray-400">
+        Only TXT files are allowed
+      </p>
+    </div>
+  );
 
       case 'code':
         return (
@@ -906,13 +934,15 @@ const Quiz = () => {
                 {/* Question Body */}
                 <div className="card p-8 mb-6">
                   <label className="block text-sm font-semibold mb-4 soft">
-                    {currentQuestion.type === 'integer' ? 'Enter Integer:' :
-                      currentQuestion.type === 'float' ? 'Enter Float:' :
-                        currentQuestion.type === 'string' ? 'Enter String:' :
-                          currentQuestion.type === 'code' ? 'Write Your Code:' :
-                            currentQuestion.type === 'mcq' ? 'Select One Answer:' :
-                              currentQuestion.type === 'mcc' ? 'Select All Correct Answers:' :
-                                'Enter Your Answer:'}
+                   {currentQuestion.type === 'integer' ? 'Enter Integer:' : 
+                   currentQuestion.type === 'float' ? 'Enter Float:' :
+                   currentQuestion.type === 'string' ? 'Enter String:' :
+                   currentQuestion.type === 'code' ? 'Write Your Code:' :
+                   currentQuestion.type === 'mcq' ? 'Select One Answer:' :
+                   currentQuestion.type === 'mcc' ? 'Select All Correct Answers:' :
+                   currentQuestion.type === 'upload' ? 'Upload TXT File:' :
+                   'Enter Your Answer:'}
+                               
                   </label>
                   {renderQuestionInput()}
                 </div>
