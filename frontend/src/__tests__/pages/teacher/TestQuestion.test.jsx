@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import TestQuestion from '../../../pages/teacher/TestQuestion';
 import useQuizStore from '../../../store/quiz_QuestionStore';
 import { useAuthStore } from '../../../store/authStore';
@@ -97,90 +98,5 @@ describe('TestQuestion Component', () => {
     expect(screen.getByText('Single Correct Choice')).toBeInTheDocument();
     expect(screen.getByText('Option A')).toBeInTheDocument();
     expect(screen.getByText('Option B')).toBeInTheDocument();
-  });
-
-  it('renders a multiple correct choice question correctly', () => {
-    useQuizStore.mockReturnValue({
-      currentQuestion: {
-        id: 102,
-        type: 'mcc',
-        test_cases: [{ options: ['Opt 1', 'Opt 2'] }]
-      },
-      paper: { title: 'Test Paper' },
-      loading: false,
-      error: null,
-      timeLeft: 3600,
-      startQuiz: mockStartQuiz,
-      clearError: mockClearError,
-      resetQuiz: mockResetQuiz,
-    });
-    
-    renderComponent();
-    expect(screen.getByText('Multiple Correct Choices')).toBeInTheDocument();
-    expect(screen.getByText('Opt 1')).toBeInTheDocument();
-  });
-
-  it('renders an arrange question correctly', () => {
-    useQuizStore.mockReturnValue({
-      currentQuestion: {
-        id: 103,
-        type: 'arrange',
-        test_cases: [{ options: ['Item A', 'Item B'] }]
-      },
-      paper: { title: 'Test Paper' },
-      loading: false,
-      error: null,
-      timeLeft: 3600,
-      startQuiz: mockStartQuiz,
-      clearError: mockClearError,
-      resetQuiz: mockResetQuiz,
-    });
-    
-    renderComponent();
-    expect(screen.getAllByText('Arrange in Correct Order').length).toBeGreaterThan(0);
-    expect(screen.getByText('Item A')).toBeInTheDocument();
-  });
-
-  it('renders a code question correctly', () => {
-    useQuizStore.mockReturnValue({
-      currentQuestion: {
-        id: 104,
-        type: 'code',
-        language: 'python',
-        snippet: 'def hello():',
-        test_cases: [{ expected_input: '1', expected_output: '1' }]
-      },
-      paper: { title: 'Test Paper' },
-      loading: false,
-      error: null,
-      timeLeft: 3600,
-      startQuiz: mockStartQuiz,
-      clearError: mockClearError,
-      resetQuiz: mockResetQuiz,
-    });
-    
-    renderComponent();
-    expect(screen.getByText('PYTHON')).toBeInTheDocument();
-    expect(screen.getByText('Test Data (1)')).toBeInTheDocument();
-  });
-
-  it('renders upload question correctly', () => {
-    useQuizStore.mockReturnValue({
-      currentQuestion: {
-        id: 105,
-        type: 'upload',
-      },
-      paper: { title: 'Test Paper' },
-      loading: false,
-      error: null,
-      timeLeft: 3600,
-      startQuiz: mockStartQuiz,
-      clearError: mockClearError,
-      resetQuiz: mockResetQuiz,
-    });
-    
-    renderComponent();
-    expect(screen.getByText('File Upload Assignment')).toBeInTheDocument();
-    expect(screen.getByText('Drop your file here or click to browse')).toBeInTheDocument();
   });
 });

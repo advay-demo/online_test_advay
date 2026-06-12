@@ -1,4 +1,4 @@
-
+import { describe, it, expect, beforeEach } from 'vitest';
 import { useStore } from '../../store/useStore';
 
 describe('useStore', () => {
