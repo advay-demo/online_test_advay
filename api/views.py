@@ -3708,6 +3708,8 @@ def api_quiz_handler(request, course_id, module_id, quiz_id=None):
                 'view_answerpaper': quiz.view_answerpaper,
                 'is_exercise': quiz.is_exercise,
                 'active': quiz.active,
+                'start_date_time': quiz.start_date_time,
+                'end_date_time': quiz.end_date_time,
                 'order': unit.order
             })
 
@@ -3734,6 +3736,9 @@ def api_quiz_handler(request, course_id, module_id, quiz_id=None):
                     view_answerpaper=request.data.get('view_answerpaper', True),
                     is_exercise=request.data.get('is_exercise', False),
                     active=request.data.get('active', True),
+
+                    start_date_time=request.data.get('start_date_time'),
+end_date_time=request.data.get('end_date_time'),
                     creator=user
                 )
 
@@ -3791,6 +3796,16 @@ def api_quiz_handler(request, course_id, module_id, quiz_id=None):
             if 'order' in request.data:
                 unit.order = request.data['order']
                 unit.save()
+
+            quiz.start_date_time = request.data.get( 
+                'start_date_time',
+                quiz.start_date_time
+                )
+            quiz.end_date_time = request.data.get(
+                'end_date_time',
+                quiz.end_date_time
+                )
+                
             
             quiz.save()
             return Response({'message': 'Quiz updated', 'id': quiz.id})

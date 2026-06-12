@@ -2614,7 +2614,7 @@ class AnswerPaper(models.Model):
                     result['success'] = True
                     result['error'] = ['Correct answer']
 
-            elif question.type == 'code' or question.type == "upload":
+            elif question.type == 'code':
                 user_dir = self.user.profile.get_user_dir()
                 url = '{0}:{1}'.format(SERVER_HOST_NAME, server_port)
                 submit(url, uid, json_data, user_dir)
@@ -2644,8 +2644,9 @@ class AnswerPaper(models.Model):
                 return (False, f'{msg} {question.type} answer submission error')
         else:
             answer = user_answer.answer
-        json_data = question.consolidate_answer_data(answer, self.user, True) \
-            if question.type == 'code' else None
+        json_data = question.consolidate_answer_data(
+    answer, self.user, True
+) if question.type in ['code', 'upload'] else None
         result = self.validate_answer(answer, question,
                                       json_data, user_answer.id,
                                       server_port=server_port
