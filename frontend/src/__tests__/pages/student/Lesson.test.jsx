@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+
 import Lesson from '../../../pages/student/Lesson';
 import useManageCourseStore from '../../../store/student/manageCourseStore';
 import { fetchLessonDetail, markLessonComplete } from '../../../api/api';

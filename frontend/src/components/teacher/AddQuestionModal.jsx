@@ -755,30 +755,86 @@ export default function AddQuestionModal({ onCancel, questionId = null, isEdit =
                                                     </div>
                                                 )}
 
-                                                {/* Code/StdIO */}
-                                                {(tc.type === 'stdiobasedtestcase' || (formData.type === 'code' && !tc.type?.includes('mcq'))) && (
-                                                    <div className="space-y-3">
+                                                {/* Code/StdIO Test Case */}
+                                                {formData.type === 'code' && (
+                                                    <div className="space-y-4">
                                                         <div>
-                                                            <label className="block text-xs font-semibold mb-2 text-[var(--text-muted)]">Expected Input (Optional)</label>
-                                                            <textarea
-                                                                value={tc.expected_input || ''}
-                                                                onChange={(e) => updateTestCase(index, 'expected_input', e.target.value)}
-                                                                rows="3"
-                                                                className={`${inputClass} resize-none font-mono`}
-                                                                placeholder="Input for the program"
-                                                            />
+                                                            <label className="block text-xs font-semibold mb-2 text-[var(--text-muted)]">Test Case Type</label>
+                                                            <select
+                                                                value={tc.type || 'stdiobasedtestcase'}
+                                                                onChange={(e) => updateTestCase(index, 'type', e.target.value)}
+                                                                className={inputClass}
+                                                            >
+                                                                <option value="stdiobasedtestcase">Standard IO (Python/C/C++/Java/Bash)</option>
+                                                                <option value="standardtestcase">Assertion based</option>
+                                                                <option value="hooktestcase">Hook based (custom grader)</option>
+                                                            </select>
                                                         </div>
-                                                        <div>
-                                                            <label className="block text-xs font-semibold mb-2 text-[var(--text-muted)]">Expected Output *</label>
-                                                            <textarea
-                                                                value={tc.expected_output || ''}
-                                                                onChange={(e) => updateTestCase(index, 'expected_output', e.target.value)}
-                                                                required
-                                                                rows="3"
-                                                                className={`${inputClass} resize-none font-mono`}
-                                                                placeholder="Expected output"
-                                                            />
-                                                        </div>
+
+                                                        {(tc.type === 'stdiobasedtestcase' || !tc.type) && (
+                                                            <>
+                                                                <div>
+                                                                    <label className="block text-xs font-semibold mb-2 text-[var(--text-muted)]">Expected Input (Optional)</label>
+                                                                    <textarea
+                                                                        value={tc.expected_input || ''}
+                                                                        onChange={(e) => updateTestCase(index, 'expected_input', e.target.value)}
+                                                                        rows="3"
+                                                                        className={`${inputClass} resize-none font-mono`}
+                                                                        placeholder="Input for the program"
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <label className="block text-xs font-semibold mb-2 text-[var(--text-muted)]">Expected Output *</label>
+                                                                    <textarea
+                                                                        value={tc.expected_output || ''}
+                                                                        onChange={(e) => updateTestCase(index, 'expected_output', e.target.value)}
+                                                                        required
+                                                                        rows="3"
+                                                                        className={`${inputClass} resize-none font-mono`}
+                                                                        placeholder="Expected output"
+                                                                    />
+                                                                </div>
+                                                            </>
+                                                        )}
+
+                                                        {tc.type === 'standardtestcase' && (
+                                                            <>
+                                                                <div>
+                                                                    <label className="block text-xs font-semibold mb-2 text-[var(--text-muted)]">Test Case (Assertion)</label>
+                                                                    <textarea
+                                                                        value={tc.test_case || ''}
+                                                                        onChange={(e) => updateTestCase(index, 'test_case', e.target.value)}
+                                                                        className={`${inputClass} resize-none font-mono`}
+                                                                        rows="3"
+                                                                        placeholder="e.g. assert my_function(2) == 4"
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <label className="block text-xs font-semibold mb-2 text-[var(--text-muted)]">Test Case Args (Optional)</label>
+                                                                    <input
+                                                                        type="text"
+                                                                        value={tc.test_case_args || ''}
+                                                                        onChange={(e) => updateTestCase(index, 'test_case_args', e.target.value)}
+                                                                        className={`${inputClass} font-mono`}
+                                                                        placeholder="e.g. 2, 4"
+                                                                    />
+                                                                </div>
+                                                            </>
+                                                        )}
+
+                                                        {tc.type === 'hooktestcase' && (
+                                                            <div>
+                                                                <label className="block text-xs font-semibold mb-2 text-[var(--text-muted)]">Hook Code</label>
+                                                                <textarea
+                                                                    value={tc.hook_code || ''}
+                                                                    onChange={(e) => updateTestCase(index, 'hook_code', e.target.value)}
+                                                                    className={`${inputClass} resize-none font-mono`}
+                                                                    rows="5"
+                                                                    placeholder="Enter the grader hook code..."
+                                                                />
+                                                            </div>
+                                                        )}
+
                                                         <div className="grid grid-cols-2 gap-3">
                                                             <div>
                                                                 <label className="block text-xs font-semibold mb-2 text-[var(--text-muted)]">Weight</label>
@@ -786,7 +842,7 @@ export default function AddQuestionModal({ onCancel, questionId = null, isEdit =
                                                                     type="number"
                                                                     step="0.1"
                                                                     min="0"
-                                                                    value={tc.weight || 1.0}
+                                                                    value={tc.weight !== undefined ? tc.weight : 1.0}
                                                                     onChange={(e) => updateTestCase(index, 'weight', parseFloat(e.target.value))}
                                                                     className={inputClass}
                                                                 />

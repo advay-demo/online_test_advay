@@ -1,7 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
 import UploadQuestion from '../../../pages/teacher/UploadQuestion';
 import useQuestionsStore from '../../../store/questionsStore';
 

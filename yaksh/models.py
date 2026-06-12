@@ -1578,7 +1578,7 @@ class Question(models.Model):
             )
             for tc in test_case:
                 tc_list.append(model_to_dict(tc))
-            return tc_list
+        return tc_list
 
     def get_test_case(self, **kwargs):
         for tc in self.testcase_set.all():

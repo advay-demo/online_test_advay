@@ -1,4 +1,3 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // We need to mock react-dom/client
 vi.mock('react-dom/client', () => ({

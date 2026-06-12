@@ -1,4 +1,3 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // We must mock axios before importing api
 vi.mock('axios', () => {

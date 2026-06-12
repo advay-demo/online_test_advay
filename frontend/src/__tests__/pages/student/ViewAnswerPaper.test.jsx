@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+
 import ViewAnswerPaper from '../../../pages/student/ViewAnswerPaper';
 import useAnswerPaperStore from '../../../store/student/answerPaperStore';
 

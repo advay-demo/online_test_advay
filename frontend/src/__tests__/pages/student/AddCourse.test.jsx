@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+
 import AddNewCourseStudent from '../../../pages/student/AddCourse';
 import useCourseStore from '../../../store/student/courseStore';
 

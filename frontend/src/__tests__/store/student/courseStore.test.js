@@ -1,4 +1,3 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import useCourseStore from '../../../store/student/courseStore';
 import * as api from '../../../api/api';
 

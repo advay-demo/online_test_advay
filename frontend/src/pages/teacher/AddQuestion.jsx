@@ -687,34 +687,90 @@ const AddQuestion = () => {
 
                                                                 {/* Code/StdIO Test Case */}
                                                                 {formData.type === 'code' && (
-                                                                    <div className="space-y-3">
+                                                                    <div className="space-y-4">
                                                                         <div>
-                                                                            <label className="block text-xs font-semibold text-gray-400 mb-2">Input</label>
-                                                                            <textarea
-                                                                                value={tc.expected_input || ''}
-                                                                                onChange={(e) => updateTestCase(index, 'expected_input', e.target.value)}
-                                                                                className="w-full px-3 py-2 rounded-lg text-sm font-mono"
-                                                                                rows="3"
-                                                                                placeholder="Expected input"
-                                                                            />
+                                                                            <label className="block text-xs font-semibold text-gray-400 mb-2">Test Case Type</label>
+                                                                            <select
+                                                                                value={tc.type || 'stdiobasedtestcase'}
+                                                                                onChange={(e) => updateTestCase(index, 'type', e.target.value)}
+                                                                                className="w-full px-3 py-2 rounded-lg text-sm bg-black/20 border border-white/10"
+                                                                            >
+                                                                                <option value="stdiobasedtestcase">Standard IO (Python/C/C++/Java/Bash)</option>
+                                                                                <option value="standardtestcase">Assertion based</option>
+                                                                                <option value="hooktestcase">Hook based (custom grader)</option>
+                                                                            </select>
                                                                         </div>
-                                                                        <div>
-                                                                            <label className="block text-xs font-semibold text-gray-400 mb-2">Expected Output</label>
-                                                                            <textarea
-                                                                                value={tc.expected_output || ''}
-                                                                                onChange={(e) => updateTestCase(index, 'expected_output', e.target.value)}
-                                                                                className="w-full px-3 py-2 rounded-lg text-sm font-mono"
-                                                                                rows="3"
-                                                                                placeholder="Expected output"
-                                                                            />
-                                                                        </div>
+
+                                                                        {tc.type === 'stdiobasedtestcase' && (
+                                                                            <>
+                                                                                <div>
+                                                                                    <label className="block text-xs font-semibold text-gray-400 mb-2">Input</label>
+                                                                                    <textarea
+                                                                                        value={tc.expected_input || ''}
+                                                                                        onChange={(e) => updateTestCase(index, 'expected_input', e.target.value)}
+                                                                                        className="w-full px-3 py-2 rounded-lg text-sm font-mono"
+                                                                                        rows="3"
+                                                                                        placeholder="Expected input"
+                                                                                    />
+                                                                                </div>
+                                                                                <div>
+                                                                                    <label className="block text-xs font-semibold text-gray-400 mb-2">Expected Output</label>
+                                                                                    <textarea
+                                                                                        value={tc.expected_output || ''}
+                                                                                        onChange={(e) => updateTestCase(index, 'expected_output', e.target.value)}
+                                                                                        className="w-full px-3 py-2 rounded-lg text-sm font-mono"
+                                                                                        rows="3"
+                                                                                        placeholder="Expected output"
+                                                                                    />
+                                                                                </div>
+                                                                            </>
+                                                                        )}
+
+                                                                        {tc.type === 'standardtestcase' && (
+                                                                            <>
+                                                                                <div>
+                                                                                    <label className="block text-xs font-semibold text-gray-400 mb-2">Test Case (Assertion)</label>
+                                                                                    <textarea
+                                                                                        value={tc.test_case || ''}
+                                                                                        onChange={(e) => updateTestCase(index, 'test_case', e.target.value)}
+                                                                                        className="w-full px-3 py-2 rounded-lg text-sm font-mono"
+                                                                                        rows="3"
+                                                                                        placeholder="e.g. assert my_function(2) == 4"
+                                                                                    />
+                                                                                </div>
+                                                                                <div>
+                                                                                    <label className="block text-xs font-semibold text-gray-400 mb-2">Test Case Args (Optional)</label>
+                                                                                    <input
+                                                                                        type="text"
+                                                                                        value={tc.test_case_args || ''}
+                                                                                        onChange={(e) => updateTestCase(index, 'test_case_args', e.target.value)}
+                                                                                        className="w-full px-3 py-2 rounded-lg text-sm font-mono"
+                                                                                        placeholder="e.g. 2, 4"
+                                                                                    />
+                                                                                </div>
+                                                                            </>
+                                                                        )}
+
+                                                                        {tc.type === 'hooktestcase' && (
+                                                                            <div>
+                                                                                <label className="block text-xs font-semibold text-gray-400 mb-2">Hook Code</label>
+                                                                                <textarea
+                                                                                    value={tc.hook_code || ''}
+                                                                                    onChange={(e) => updateTestCase(index, 'hook_code', e.target.value)}
+                                                                                    className="w-full px-3 py-2 rounded-lg text-sm font-mono"
+                                                                                    rows="5"
+                                                                                    placeholder="Enter the grader hook code..."
+                                                                                />
+                                                                            </div>
+                                                                        )}
+
                                                                         <div className="grid grid-cols-2 gap-3">
                                                                             <div>
                                                                                 <label className="block text-xs font-semibold text-gray-400 mb-2">Weight</label>
                                                                                 <input
                                                                                     type="number"
                                                                                     step="0.1"
-                                                                                    value={tc.weight || 1.0}
+                                                                                    value={tc.weight !== undefined ? tc.weight : 1.0}
                                                                                     onChange={(e) => updateTestCase(index, 'weight', parseFloat(e.target.value))}
                                                                                     className="w-full px-3 py-2 rounded-lg text-sm"
                                                                                 />

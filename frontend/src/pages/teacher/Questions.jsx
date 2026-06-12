@@ -322,7 +322,8 @@ const Questions = () => {
                                     questions.map((question) => (
                                         <div
                                             key={question.id}
-                                            className="card-strong p-4 sm:p-5 border-2 border-[var(--border-medium)] hover:shadow-lg hover:border-blue-500/70 dark:hover:border-blue-500/50 transition-all duration-300 group bg-[var(--surface)] hover:shadow-md rounded-xl"
+                                            onClick={() => handleEdit(question)}
+                                            className="cursor-pointer card-strong p-4 sm:p-5 border-2 border-[var(--border-medium)] hover:shadow-lg hover:border-blue-500/70 dark:hover:border-blue-500/50 transition-all duration-300 group bg-[var(--surface)] hover:shadow-md rounded-xl"
                                         >
                                             <div className="flex flex-row flex-wrap items-center gap-3 sm:gap-4">
                                                 {/* Icon */}
@@ -380,7 +381,7 @@ const Questions = () => {
                                                     {/* Test Button */}
                                                     <button
                                                         className="flex-1 sm:flex-none px-4 sm:px-5 py-2 sm:py-2.5 bg-gradient-to-r from-purple-600 to-purple-500 text-white rounded-lg hover:shadow-lg hover:shadow-purple-500/30 active:scale-95 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-semibold whitespace-nowrap"
-                                                        onClick={() => handleTestQuestion(question.id)}
+                                                        onClick={(e) => { e.stopPropagation(); handleTestQuestion(question.id); }}
                                                         disabled={testingQuestionId === question.id}
                                                     >
                                                         {testingQuestionId === question.id ? (
@@ -403,7 +404,7 @@ const Questions = () => {
                                                     <div className="relative gs-action-menu">
                                                         <button
                                                             className="p-2 sm:p-2.5 border-2 border-[var(--border-strong)] rounded-lg hover:bg-[var(--input-bg)] hover:border-blue-500/30 active:scale-95 transition-all duration-300 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-                                                            onClick={() => setActionMenuOpen(actionMenuOpen === question.id ? null : question.id)}
+                                                            onClick={(e) => { e.stopPropagation(); setActionMenuOpen(actionMenuOpen === question.id ? null : question.id); }}
                                                             aria-label="Actions"
                                                             tabIndex={0}
                                                         >
@@ -413,7 +414,8 @@ const Questions = () => {
                                                             <div className="absolute right-0 mt-2 z-50 w-32 sm:w-36 bg-[var(--card-strong-bg)] border-2 border-[var(--border-strong)] rounded-xl shadow-2xl py-1.5 flex flex-col text-sm animate-fade-in">
                                                                 <button
                                                                     className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-blue-500/10 text-blue-400 transition-colors duration-200 font-medium"
-                                                                    onClick={() => {
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
                                                                         setActionMenuOpen(null);
                                                                         handleEdit(question);
                                                                     }}
@@ -422,7 +424,8 @@ const Questions = () => {
                                                                 </button>
                                                                 <button
                                                                     className="flex items-center gap-2.5 px-4 py-2.5 text-red-500 hover:bg-red-500/10 transition-colors duration-200 font-medium"
-                                                                    onClick={() => {
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
                                                                         setActionMenuOpen(null);
                                                                         handleDelete(question.id);
                                                                     }}

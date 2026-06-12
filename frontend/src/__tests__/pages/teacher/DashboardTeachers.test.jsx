@@ -1,7 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
 import DashboardTeachers from '../../../pages/teacher/DashboardTeachers';
 import { useTeacherDashboardStore } from '../../../store/teacherDashboardStore';
 import { toggleModeratorRole } from '../../../api/api';

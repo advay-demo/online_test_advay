@@ -221,7 +221,8 @@ const Courses = () => {
                                     courses.map((course) => (
                                         <div
                                             key={course.id}
-                                            className="card-strong p-4 sm:p-5 border-2 border-[var(--border-medium)] hover:shadow-lg hover:border-blue-500/70 dark:hover:border-blue-500/50 transition-all duration-300 group bg-[var(--surface)] hover:shadow-md rounded-xl"
+                                            onClick={() => handleEditClick(course.id)}
+                                            className="cursor-pointer card-strong p-4 sm:p-5 border-2 border-[var(--border-medium)] hover:shadow-lg hover:border-blue-500/70 dark:hover:border-blue-500/50 transition-all duration-300 group bg-[var(--surface)] hover:shadow-md rounded-xl"
                                         >
                                             <div className="flex flex-row flex-wrap items-center gap-3 sm:gap-4">
                                                 {/* Icon */}
@@ -276,13 +277,14 @@ const Courses = () => {
                                                 <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto sm:self-start">
                                                     <Link
                                                         to={`/teacher/courses/${course.id}/manage`}
+                                                        onClick={(e) => e.stopPropagation()}
                                                         className="flex-1 sm:flex-none px-4 sm:px-5 py-2.5 border-2 border-blue-500/30 bg-blue-500/10 rounded-lg text-xs sm:text-sm font-semibold text-blue-400 hover:border-blue-500/50 hover:bg-blue-500/20 hover:shadow-lg hover:shadow-blue-500/20 active:scale-95 transition-all duration-300 text-center whitespace-nowrap"
                                                     >
                                                         Manage
                                                     </Link>
                                                     <div className="relative" ref={openDropdownId === course.id ? dropdownRef : null}>
                                                         <button
-                                                            onClick={() => toggleDropdown(course.id)}
+                                                            onClick={(e) => { e.stopPropagation(); toggleDropdown(course.id); }}
                                                             className="p-2.5 border-2 border-[var(--border-strong)] rounded-lg hover:bg-[var(--input-bg)] hover:border-blue-500/30 active:scale-95 transition-all duration-300 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                                                         >
                                                             <FaEllipsisV className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -294,7 +296,7 @@ const Courses = () => {
                                                             <div className="absolute right-0 mt-2 z-50 w-36 bg-[var(--card-strong-bg)] border-2 border-[var(--border-strong)] rounded-xl shadow-2xl py-1.5 flex flex-col text-sm animate-fade-in">
                                                                 <button
                                                                     className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-blue-500/10 text-emrald-400 hover:text-emrald-300 transition-colors duration-200"
-                                                                    onClick={() => handleEditClick(course.id)}
+                                                                    onClick={(e) => { e.stopPropagation(); handleEditClick(course.id); }}
                                                                 >
                                                                     <FaEdit className="w-4 h-4" /> Edit
                                                                 </button>

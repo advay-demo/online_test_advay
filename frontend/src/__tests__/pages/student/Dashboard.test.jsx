@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+
 import Dashboard from '../../../pages/student/Dashboard';
 import { useAuthStore } from '../../../store/authStore';
 import { fetchStudentDashboardCourses } from '../../../api/api';

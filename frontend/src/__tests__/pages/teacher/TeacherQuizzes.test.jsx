@@ -1,7 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
 import TeacherQuizzes from '../../../pages/teacher/TeacherQuizzes';
 import { useQuizGradingStore } from '../../../store/quizGradeStore';
 

@@ -710,7 +710,6 @@ const Quiz = () => {
               <span className="text-xs text-gray-400 font-mono">
                 {currentQuestion.language?.toUpperCase() || 'CODE'}
               </span>
-              <span className="text-xs text-gray-500">CodeMirror Editor</span>
             </div>
             <CodeMirror
               value={answers[currentQuestion.id] || ''}
