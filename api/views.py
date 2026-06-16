@@ -4076,6 +4076,8 @@ def teacher_create_question(request):
                             options = [options]
                     
                     correct_indices = tc_data.get('correct')
+                    print("OPTIONS =", options)
+                    print("CORRECT INDICES =", correct_indices)
                     # Standardize correct answer(s) into a list for iteration
                     if not isinstance(correct_indices, list):
                         correct_indices = [correct_indices] if correct_indices is not None else []
@@ -4255,6 +4257,8 @@ def teacher_update_question(request, question_id):
         # Update test cases if provided
         if 'test_cases' in request.data:
             test_cases_data = request.data['test_cases']
+            print("QUESTION TYPE =", question.type)
+            print("TEST CASES RECEIVED =", test_cases_data)     
             
             # Special case for arrange, mcq, and mcc: wipe old rows and securely recreate them 
             if question.type in ['arrange', 'mcq', 'mcc']:
@@ -4292,8 +4296,13 @@ def teacher_update_question(request, question_id):
                             correct_indices = [correct_indices] if correct_indices is not None else []
                             
                         cleaned_options = [opt for opt in options if str(opt).strip()]
+                        print("OPTIONS =", options)
+                        print("CORRECT INDICES =", correct_indices)
                         
                         for idx, option in enumerate(cleaned_options):
+                            print("CREATING:", option, idx, idx in correct_indices)
+                            
+
                             McqTestCase.objects.create(
                                 question=question,
                                 options=str(option).strip(),
@@ -4324,6 +4333,7 @@ def teacher_update_question(request, question_id):
                 # Update or create test cases
                 for tc_data in test_cases_data:
                     tc_type = tc_data.get('type') or tc_data.get('test_case_type')
+                    print("PROCESSING TC TYPE =", tc_type)
                     if not tc_type:
                         continue
                     
@@ -4450,8 +4460,10 @@ def teacher_update_question(request, question_id):
                                     'description': tc_data.get('description', ''),
                                     'required': tc_data.get('required', True)
                                 })
+                                print("CREATING UPLOAD TESTCASE:", create_data)
                             
-                            model_class.objects.create(**create_data)
+                            obj = model_class.objects.create(**create_data)
+                            print("CREATED OBJECT:", obj.id)
                             
                     except Exception as e:
                         print(f"Error updating/creating test case: {e}")

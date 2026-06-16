@@ -2863,6 +2863,22 @@ class ArrangeTestCase(TestCase):
 
     def __str__(self):
         return u'Arrange Testcase | Option: {0}'.format(self.options)
+ 
+class UploadTestCase(TestCase):
+    description = models.TextField(blank=True)
+    required = models.BooleanField(default=True)
+
+    def get_field_value(self):
+        return {
+            "test_case_type": "uploadtestcase",
+            "description": self.description,
+            "required": self.required
+        }
+
+    def __str__(self):
+        return u'Upload Testcase | Description: {0}'.format(
+            self.description
+        )
 
 
 ##############################################################################

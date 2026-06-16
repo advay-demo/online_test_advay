@@ -77,8 +77,13 @@ export default function AddQuestionModal({ onCancel, questionId = null, isEdit =
         if (isEdit && questionId) {
             loadQuestion();
         }
+
         // eslint-disable-next-line
     }, [isEdit, questionId]);
+    useEffect(() => {
+    console.log("CURRENT TESTCASES:", testCases);
+    console.log("CURRENT LENGTH:", testCases.length);
+}, [testCases]);
 
     const loadQuestion = async () => {
         try {
@@ -101,7 +106,26 @@ export default function AddQuestionModal({ onCancel, questionId = null, isEdit =
                     min_time: q.min_time || 0,
                     files: q.files || [],
                 });
-                setTestCases(q.test_cases || []);
+                console.log("Loaded Question:", q);
+                console.log("Loaded Test Cases:", q.test_cases);
+                console.log("Loaded Length:", q.test_cases?.length);
+                if (q.type === "mcc" && q.test_cases?.length > 0) {
+    const options = q.test_cases.map(tc => tc.options);
+
+    const correct = q.test_cases
+        .map((tc, idx) => tc.correct ? idx : null)
+        .filter(idx => idx !== null);
+
+    setTestCases([
+        {
+            type: "mcqtestcase",
+            options,
+            correct
+        }
+    ]);
+} else {
+    setTestCases(q.test_cases || []);
+}
             } else {
                 setError('Failed to load question');
             }
@@ -162,12 +186,15 @@ export default function AddQuestionModal({ onCancel, questionId = null, isEdit =
         setSaving(true);
         setError(null);
         try {
-            if (isEdit && questionId) {
-                await updateQuestion(questionId, {
-                    ...formData,
-                    test_cases: testCases,
-                    files: formData.files,
-                });
+           if (isEdit && questionId) { 
+            console.log("Question Type:", formData.type);
+            console.log("Test Cases:", testCases);
+
+    await updateQuestion(questionId, {
+        ...formData,
+        test_cases: testCases,
+        files: formData.files,
+    });
                 // Upload any new pending files for edit mode
                 if (pendingFiles.length > 0) {
                     for (const fileObj of pendingFiles) {
@@ -179,10 +206,13 @@ export default function AddQuestionModal({ onCancel, questionId = null, isEdit =
                     }
                 }
             } else {
-                const result = await createQuestion({
-                    ...formData,
-                    test_cases: testCases,
-                });
+    console.log("Question Type:", formData.type);
+    console.log("Test Cases:", testCases);
+
+    const result = await createQuestion({
+        ...formData,
+        test_cases: testCases,
+    });
                 if (pendingFiles.length > 0 && result.id) {
                     for (const fileObj of pendingFiles) {
                         try {
@@ -305,15 +335,20 @@ export default function AddQuestionModal({ onCancel, questionId = null, isEdit =
                                         Type <span className="text-red-400">*</span>
                                     </label>
                                     <select
-                                        name="type"
-                                        value={formData.type}
-                                        onChange={(e) => {
-                                            handleChange(e);
-                                            setTestCases([]);
-                                        }}
-                                        required
-                                        className={inputClass}
-                                    >
+    name="type"
+    value={formData.type}
+    onChange={(e) => {
+        console.log("TYPE CHANGED:", e.target.value);
+
+        if (e.target.value !== formData.type) {
+            setTestCases([]);
+        }
+
+        handleChange(e);
+    }}
+    required
+    className={inputClass}
+>
                                         {questionTypes.map(t => (
                                             <option key={t.value} value={t.value}>{t.label}</option>
                                         ))}
@@ -674,6 +709,7 @@ export default function AddQuestionModal({ onCancel, questionId = null, isEdit =
                                 </div>
                             ) : (
                                 <div className="space-y-4">
+                                    
                                     {testCases.map((tc, index) => (
                                         <div key={index} className="group rounded-xl p-4 bg-[var(--bg-primary)] border-2 border-[var(--border-subtle)] hover:border-green-500/30 transition-all">
                                             <div className="flex items-center justify-between mb-3">
