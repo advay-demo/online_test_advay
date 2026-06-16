@@ -226,7 +226,11 @@ const CourseModules = () => {
                                                             const isInProgress = unit.status === 'inprogress';
 
                                                             return (
-                                                                <tr key={unit.id} className="hover:bg-white/[0.02] transition-colors group">
+                                                                <tr 
+                                                                    key={unit.id} 
+                                                                    className="hover:bg-white/[0.02] transition-colors group cursor-pointer"
+                                                                    onClick={() => handleUnitClick(module, unit)}
+                                                                >
                                                                     <td className="pl-8 pr-4 py-4 whitespace-nowrap align-middle">
                                                                         {isLocked ? (
                                                                             <div className="flex items-center gap-2 text-gray-400 bg-gray-800/40 px-2.5 py-1 rounded-md border border-gray-700/50 w-fit">
@@ -311,7 +315,11 @@ const CourseModules = () => {
                                                     const isInProgress = unit.status === 'inprogress';
 
                                                     return (
-                                                        <div key={unit.id} className="bg-[var(--input-bg)] rounded-lg p-4 border-2 border-[var(--border-color)] relative overflow-hidden shadow-md">
+                                                        <div 
+                                                            key={unit.id} 
+                                                            className="bg-[var(--input-bg)] rounded-lg p-4 border-2 border-[var(--border-color)] relative overflow-hidden shadow-md cursor-pointer hover:border-blue-500/50 transition-colors"
+                                                            onClick={() => handleUnitClick(module, unit)}
+                                                        >
 
                                                             <div className="flex justify-between items-start gap-3 mb-3">
                                                                 <div className="flex-1">

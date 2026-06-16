@@ -52,9 +52,10 @@ const getDefaultTestCase = (questionType) => {
             };
         case 'assignment_upload':
             return {
-                type: 'uploadtestcase',
-                description: '',
-                required: true
+                type: 'hooktestcase',
+                hook_code: '',
+                weight: 1.0,
+                hidden: false
             };
         case 'integer':
             return {

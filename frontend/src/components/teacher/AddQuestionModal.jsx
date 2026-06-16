@@ -27,7 +27,7 @@ const getDefaultTestCase = (questionType) => {
         case 'code':
             return { type: 'stdiobasedtestcase', expected_input: '', expected_output: '', weight: 1.0, hidden: false };
         case 'assignment_upload':
-            return { type: 'uploadtestcase', description: '', required: true };
+            return { type: 'hooktestcase', hook_code: '', weight: 1.0, hidden: false };
         case 'integer':
             return { type: 'integertestcase', correct: 0 };
         case 'float':
@@ -114,10 +114,17 @@ export default function AddQuestionModal({ onCancel, questionId = null, isEdit =
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
+        const newValue = type === 'checkbox' ? checked : (type === 'number' ? parseFloat(value) : value);
+        
         setFormData(prev => ({
             ...prev,
-            [name]: type === 'checkbox' ? checked : (type === 'number' ? parseFloat(value) : value)
+            [name]: newValue
         }));
+
+        if (name === 'type') {
+            const newTestCase = getDefaultTestCase(newValue);
+            setTestCases([newTestCase]);
+        }
     };
 
     const addTestCase = () => {
@@ -652,7 +659,7 @@ export default function AddQuestionModal({ onCancel, questionId = null, isEdit =
                                         <p className="text-xs muted">{testCases.length} test case{testCases.length !== 1 ? 's' : ''}</p>
                                     </div>
                                 </div>
-                                {!(['arrange', 'mcq', 'mcc'].includes(formData.type) && testCases.length >= 1) && (
+                                {(formData.type === 'code' || testCases.length === 0) && (
                                     <button
                                         type="button"
                                         onClick={addTestCase}
@@ -697,17 +704,73 @@ export default function AddQuestionModal({ onCancel, questionId = null, isEdit =
                                                 {(tc.type === 'mcqtestcase' || formData.type === 'mcq' || formData.type === 'mcc') && (
                                                     <div className="space-y-3">
                                                         <div>
-                                                            <label className="block text-xs font-semibold mb-2 text-[var(--text-muted)]">Options (one per line)(line change by ENTER button)</label>
-                                                            <textarea
-                                                                value={Array.isArray(tc.options) ? tc.options.join('\n') : (tc.options || '')}
-                                                                onChange={(e) => {
-                                                                    const options = e.target.value.split('\n');
-                                                                    updateTestCase(index, 'options', options);
-                                                                }}
-                                                                rows="4"
-                                                                className={`${inputClass} resize-none`}
-                                                                placeholder={"Option 1\nOption 2\nOption 3\nOption 4"}
-                                                            />
+                                                            {formData.type === 'mcq' ? (
+                                                                <>
+                                                                    <label className="block text-xs font-semibold mb-2 text-[var(--text-muted)]">Options</label>
+                                                                    <div className="space-y-2">
+                                                                        {(Array.isArray(tc.options) ? tc.options : []).map((opt, optIdx) => (
+                                                                            <div key={optIdx} className="flex items-center gap-2">
+                                                                                <input
+                                                                                    type="text"
+                                                                                    value={opt}
+                                                                                    onChange={(e) => {
+                                                                                        const newOptions = [...(Array.isArray(tc.options) ? tc.options : [])];
+                                                                                        newOptions[optIdx] = e.target.value;
+                                                                                        updateTestCase(index, 'options', newOptions);
+                                                                                    }}
+                                                                                    className={inputClass}
+                                                                                    placeholder={`Option ${optIdx + 1}`}
+                                                                                />
+                                                                                {(Array.isArray(tc.options) ? tc.options.length : 0) > 1 && (
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        onClick={() => {
+                                                                                            const newOptions = tc.options.filter((_, i) => i !== optIdx);
+                                                                                            const updatedTc = { ...tc, options: newOptions };
+                                                                                            if (tc.correct === optIdx) {
+                                                                                                updatedTc.correct = 0;
+                                                                                            } else if (tc.correct > optIdx) {
+                                                                                                updatedTc.correct = tc.correct - 1;
+                                                                                            }
+                                                                                            
+                                                                                            const updated = [...testCases];
+                                                                                            updated[index] = updatedTc;
+                                                                                            setTestCases(updated);
+                                                                                        }}
+                                                                                        className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-all flex-shrink-0"
+                                                                                    >
+                                                                                        <FaTrash className="w-4 h-4" />
+                                                                                    </button>
+                                                                                )}
+                                                                            </div>
+                                                                        ))}
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                const newOptions = [...(Array.isArray(tc.options) ? tc.options : []), `Option ${(tc.options?.length || 0) + 1}`];
+                                                                                updateTestCase(index, 'options', newOptions);
+                                                                            }}
+                                                                            className="mt-2 text-sm text-blue-500 hover:text-blue-400 font-semibold flex items-center gap-1 px-2 py-1 rounded hover:bg-blue-500/10 transition-colors"
+                                                                        >
+                                                                            <FaPlus className="w-3 h-3" /> Add Option
+                                                                        </button>
+                                                                    </div>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <label className="block text-xs font-semibold mb-2 text-[var(--text-muted)]">Options (one per line)(line change by ENTER button)</label>
+                                                                    <textarea
+                                                                        value={Array.isArray(tc.options) ? tc.options.join('\n') : (tc.options || '')}
+                                                                        onChange={(e) => {
+                                                                            const options = e.target.value.split('\n');
+                                                                            updateTestCase(index, 'options', options);
+                                                                        }}
+                                                                        rows="4"
+                                                                        className={`${inputClass} resize-none`}
+                                                                        placeholder={"Option 1\nOption 2\nOption 3\nOption 4"}
+                                                                    />
+                                                                </>
+                                                            )}
                                                         </div>
                                                         
                                                         <div>
@@ -862,28 +925,40 @@ export default function AddQuestionModal({ onCancel, questionId = null, isEdit =
                                                     </div>
                                                 )}
 
-                                                {/* Upload */}
-                                                {(tc.type === 'uploadtestcase' || formData.type === 'assignment_upload') && (
+                                                {/* Upload / Hook */}
+                                                {((tc.type === 'hooktestcase' && formData.type === 'assignment_upload') || (tc.type === 'uploadtestcase')) && (
                                                     <div className="space-y-3">
                                                         <div>
-                                                            <label className="block text-xs font-semibold mb-2 text-[var(--text-muted)]">Description</label>
-                                                            <input
-                                                                type="text"
-                                                                value={tc.description || ''}
-                                                                onChange={(e) => updateTestCase(index, 'description', e.target.value)}
-                                                                className={inputClass}
-                                                                placeholder="Describe what needs to be uploaded"
+                                                            <label className="block text-xs font-semibold mb-2 text-[var(--text-muted)]">Hook Code / Description</label>
+                                                            <textarea
+                                                                value={tc.hook_code || tc.description || ''}
+                                                                onChange={(e) => updateTestCase(index, 'hook_code', e.target.value)}
+                                                                className={`${inputClass} resize-none font-mono`}
+                                                                rows="5"
+                                                                placeholder="Hook code for evaluating the upload (leave empty for manual grading)"
                                                             />
                                                         </div>
-                                                        <label className="flex items-center gap-2 cursor-pointer select-none px-3 py-2 rounded-lg hover:bg-[var(--surface-2)] transition">
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={tc.required !== undefined ? tc.required : true}
-                                                                onChange={(e) => updateTestCase(index, 'required', e.target.checked)}
-                                                                className="w-4 h-4 rounded border-2 border-[var(--border-strong)] bg-[var(--input-bg)] accent-red-500"
-                                                            />
-                                                            <span className="text-sm text-[var(--text-secondary)]">Required</span>
-                                                        </label>
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="flex-1">
+                                                                <label className="block text-xs font-semibold mb-2 text-[var(--text-muted)]">Weight</label>
+                                                                <input
+                                                                    type="number"
+                                                                    step="0.1"
+                                                                    value={tc.weight || 1.0}
+                                                                    onChange={(e) => updateTestCase(index, 'weight', parseFloat(e.target.value))}
+                                                                    className={inputClass}
+                                                                />
+                                                            </div>
+                                                            <label className="flex items-center gap-2 cursor-pointer select-none px-3 py-2 rounded-lg hover:bg-[var(--surface-2)] transition mt-5">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={tc.hidden || false}
+                                                                    onChange={(e) => updateTestCase(index, 'hidden', e.target.checked)}
+                                                                    className="w-4 h-4 rounded border-2 border-[var(--border-strong)] bg-[var(--input-bg)] accent-orange-500"
+                                                                />
+                                                                <span className="text-sm text-[var(--text-secondary)]">Hidden</span>
+                                                            </label>
+                                                        </div>
                                                     </div>
                                                 )}
 

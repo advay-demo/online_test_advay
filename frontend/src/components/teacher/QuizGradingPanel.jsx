@@ -382,21 +382,40 @@ const QuizGradingPanel = ({ quiz, course, onBack }) => {
                                                 let correctDisplay = <span className="text-[var(--text-muted)]">N/A</span>;
 
                                                 if (type === "mcq" || type === "mcc") {
-                                                    // MCQ: show correct options
-                                                    const correctOptions = (question.test_cases || [])
-                                                        .filter(tc => tc.correct)
-                                                        .map(tc => tc.options)
-                                                        .filter(Boolean);
-                                                    if (correctOptions.length > 0) {
+                                                    const tc = (question.test_cases || [])[0];
+                                                    if (tc && Array.isArray(tc.options)) {
+                                                        const correctIndices = Array.isArray(tc.correct) ? tc.correct : (typeof tc.correct === 'number' ? [tc.correct] : []);
                                                         correctDisplay = (
-                                                            <ul className="list-disc ml-4">
-                                                                {correctOptions.map((opt, i) => (
-                                                                    <li key={i} className="text-emerald-600 dark:text-emerald-400 font-medium">{opt}</li>
-                                                                ))}
-                                                            </ul>
+                                                            <div className="space-y-1">
+                                                                <div className="text-xs font-semibold text-[var(--text-muted)] mb-1">Options:</div>
+                                                                {tc.options.map((opt, i) => {
+                                                                    const isCorrect = correctIndices.includes(i) || (typeof tc.correct === 'boolean' && tc.correct);
+                                                                    return (
+                                                                        <div key={i} className={`flex items-center gap-2 text-sm ${isCorrect ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-[var(--text-secondary)]'}`}>
+                                                                            <span className="flex-shrink-0">{isCorrect ? '☑' : '☐'}</span>
+                                                                            <span>Option {i + 1}: {opt}</span>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
                                                         );
-                                                    } else if (!question.test_cases || question.test_cases.length === 0) {
-                                                        correctDisplay = <span className="text-[var(--text-muted)]">No choices provided</span>;
+                                                    } else {
+                                                        // Fallback for unbundled format
+                                                        const correctOptions = (question.test_cases || [])
+                                                            .filter(tc => tc.correct)
+                                                            .map(tc => tc.options)
+                                                            .filter(Boolean);
+                                                        if (correctOptions.length > 0) {
+                                                            correctDisplay = (
+                                                                <ul className="list-disc ml-4">
+                                                                    {correctOptions.map((opt, i) => (
+                                                                        <li key={i} className="text-emerald-600 dark:text-emerald-400 font-medium">{opt}</li>
+                                                                    ))}
+                                                                </ul>
+                                                            );
+                                                        } else if (!question.test_cases || question.test_cases.length === 0) {
+                                                            correctDisplay = <span className="text-[var(--text-muted)]">No choices provided</span>;
+                                                        }
                                                     }
                                                 } else if (type === "arrange" || type === "arrangetestcase") {
                                                     // Arrange: show correct order

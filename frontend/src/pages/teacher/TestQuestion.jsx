@@ -761,28 +761,44 @@ const TestQuestion = () => {
                                                         Test Case #{idx + 1}
                                                     </div>
                                                     <div className="space-y-3">
-                                                        <div>
-                                                            <div className="text-xs text-[var(--text-muted)] font-semibold mb-1.5 flex items-center gap-2">
-                                                                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400/80"></span>
-                                                                Input
+                                                        {tc.test_case || tc.test_case_type === 'standardtestcase' ? (
+                                                            <div>
+                                                                <div className="text-xs text-[var(--text-muted)] font-semibold mb-1.5 flex items-center gap-2">
+                                                                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400/80"></span>
+                                                                    Assertion Test Case
+                                                                </div>
+                                                                <div className="bg-[var(--surface)] border border-[var(--border-subtle)] rounded-lg p-3">
+                                                                    <pre className="text-xs sm:text-sm text-[var(--text-primary)] font-mono whitespace-pre-wrap break-all opacity-90">
+                                                                        {tc.test_case}
+                                                                    </pre>
+                                                                </div>
                                                             </div>
-                                                            <div className="bg-[var(--surface)] border border-[var(--border-subtle)] rounded-lg p-3">
-                                                                <pre className="text-xs sm:text-sm text-[var(--text-primary)] font-mono whitespace-pre-wrap break-all opacity-90">
-                                                                    {tc.expected_input || 'None'}
-                                                                </pre>
-                                                            </div>
-                                                        </div>
-                                                        <div>
-                                                            <div className="text-xs text-[var(--text-muted)] font-semibold mb-1.5 flex items-center gap-2">
-                                                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400/80"></span>
-                                                                Expected Output
-                                                            </div>
-                                                            <div className="bg-[var(--surface)] border border-[var(--border-subtle)] rounded-lg p-3">
-                                                                <pre className="text-xs sm:text-sm text-[var(--text-primary)] font-mono whitespace-pre-wrap break-all opacity-90">
-                                                                    {tc.expected_output}
-                                                                </pre>
-                                                            </div>
-                                                        </div>
+                                                        ) : (
+                                                            <>
+                                                                <div>
+                                                                    <div className="text-xs text-[var(--text-muted)] font-semibold mb-1.5 flex items-center gap-2">
+                                                                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-400/80"></span>
+                                                                        Input
+                                                                    </div>
+                                                                    <div className="bg-[var(--surface)] border border-[var(--border-subtle)] rounded-lg p-3">
+                                                                        <pre className="text-xs sm:text-sm text-[var(--text-primary)] font-mono whitespace-pre-wrap break-all opacity-90">
+                                                                            {tc.expected_input || 'None'}
+                                                                        </pre>
+                                                                    </div>
+                                                                </div>
+                                                                <div>
+                                                                    <div className="text-xs text-[var(--text-muted)] font-semibold mb-1.5 flex items-center gap-2">
+                                                                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-400/80"></span>
+                                                                        Expected Output
+                                                                    </div>
+                                                                    <div className="bg-[var(--surface)] border border-[var(--border-subtle)] rounded-lg p-3">
+                                                                        <pre className="text-xs sm:text-sm text-[var(--text-primary)] font-mono whitespace-pre-wrap break-all opacity-90">
+                                                                            {tc.expected_output}
+                                                                        </pre>
+                                                                    </div>
+                                                                </div>
+                                                            </>
+                                                        )}
                                                     </div>
                                                 </div>
                                             ))}

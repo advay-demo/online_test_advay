@@ -441,6 +441,11 @@ export const quitQuiz = async (answerpaperId) => {
   return response.data;
 };
 
+export const completeQuizAttempt = async (answerpaperId) => {
+  const response = await api.get(`/api/complete/${answerpaperId}/`);
+  return response.data;
+};
+
 export const getQuizSubmissionStatus = async (answerpaperId) => {
   const response = await api.get(`/api/student/answerpapers/${answerpaperId}/submission/`);
   return response.data;

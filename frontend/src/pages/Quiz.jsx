@@ -3,7 +3,7 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import { FaClock, FaCheck, FaArrowRight, FaTimes } from 'react-icons/fa';
 import { AiOutlineWarning } from 'react-icons/ai';
 import QuizSidebar from '../components/layout/QuizSidebar';
-import { startQuiz, submitAnswer, getAnswerResult, quitQuiz } from '../api/api';
+import { startQuiz, submitAnswer, getAnswerResult, quitQuiz, completeQuizAttempt } from '../api/api';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import CodeMirror from '@uiw/react-codemirror';
@@ -158,6 +158,7 @@ const Quiz = () => {
   const [incorrectAnswers, setIncorrectAnswers] = useState(new Set());
   const [questionResults, setQuestionResults] = useState({});
   const [showQuitConfirm, setShowQuitConfirm] = useState(false);
+  const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
   const timerIntervalRef = useRef(null);
 
   useEffect(() => {
@@ -216,7 +217,7 @@ const Quiz = () => {
   const handleAutoSubmit = async () => {
     // Auto-submit when time expires
     if (answerPaper) {
-      await handleQuit();
+      await confirmComplete();
     }
   };
 
@@ -557,6 +558,20 @@ const Quiz = () => {
     }
   };
 
+  const handleComplete = () => {
+    setShowCompleteConfirm(true);
+  };
+
+  const confirmComplete = async () => {
+    try {
+      await completeQuizAttempt(answerPaper.id);
+      navigate(`/answerpapers/${answerPaper.id}/submission`);
+    } catch (err) {
+      console.error('Failed to complete quiz:', err);
+      navigate(`/answerpapers/${answerPaper.id}/submission`);
+    }
+  };
+
   const handleQuestionClick = (index) => {
     setCurrentQuestionIndex(index);
   };
@@ -785,6 +800,37 @@ const Quiz = () => {
           </div>
         )}
 
+        {/* Complete Confirmation Overlay */}
+        {showCompleteConfirm && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-gray-900 border border-white/10 rounded-2xl p-8 max-w-md w-full shadow-2xl">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-green-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <FaCheck className="w-8 h-8 text-green-500" />
+                </div>
+                <p className="text-lg text-gray-300 mb-2">You are about to submit your exam.</p>
+                <h3 className="text-xl font-bold mb-2">Are you sure you want to finish?</h3>
+                <p className="text-sm text-gray-400 mb-8">Once submitted, you will not be able to change your answers.</p>
+                <div className="flex justify-center gap-4">
+                  <button
+                    onClick={confirmComplete}
+                    className="bg-green-600 text-white px-8 py-3 rounded-xl font-semibold hover:bg-green-700 transition flex items-center gap-2"
+                  >
+                    <FaCheck className="w-4 h-4" />
+                    Yes, Submit
+                  </button>
+                  <button
+                    onClick={() => setShowCompleteConfirm(false)}
+                    className="bg-white/10 text-white px-8 py-3 rounded-xl font-semibold hover:bg-white/20 transition flex items-center gap-2"
+                  >
+                    No, Continue
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Top Bar */}
         <header className="px-8 py-4 flex justify-end items-center border-b border-white/6 bg-gradient-to-b from-white/[0.01] to-transparent">
           <div className="flex items-center gap-4">
@@ -792,6 +838,12 @@ const Quiz = () => {
               <FaClock className="w-5 h-5 text-indigo-400" />
               <span className="text-md font-mono font-bold">{formatTime(timeLeft)}</span>
             </div>
+            <button
+              onClick={handleComplete}
+              className="bg-green-600 text-white text-md px-6 py-2 rounded-lg font-semibold hover:bg-green-700 transition inline-flex items-center"
+            >
+              Submit Exam
+            </button>
             <button
               onClick={handleQuit}
               className="bg-red-600 text-white text-md px-6 py-2 rounded-lg font-semibold hover:bg-red-700 transition inline-flex items-center"

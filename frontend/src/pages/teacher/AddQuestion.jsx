@@ -45,9 +45,10 @@ const getDefaultTestCase = (questionType) => {
             };
         case 'assignment_upload':
             return {
-                type: 'uploadtestcase',
-                description: '',
-                required: true
+                type: 'hooktestcase',
+                hook_code: '',
+                weight: 1.0,
+                hidden: false
             };
         case 'integer':
             return {
@@ -116,10 +117,17 @@ const AddQuestion = () => {
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
+        const newValue = type === 'checkbox' ? checked : (type === 'number' ? parseFloat(value) : value);
+        
         setFormData(prev => ({
             ...prev,
-            [name]: type === 'checkbox' ? checked : (type === 'number' ? parseFloat(value) : value)
+            [name]: newValue
         }));
+
+        if (name === 'type') {
+            const newTestCase = getDefaultTestCase(newValue);
+            setTestCases([newTestCase]);
+        }
     };
 
     const addTestCase = () => {
@@ -581,14 +589,16 @@ const AddQuestion = () => {
                                                             <p className="text-xs text-gray-400">{testCases.length} test case{testCases.length !== 1 ? 's' : ''}</p>
                                                         </div>
                                                     </div>
-                                                    <button
-                                                        type="button"
-                                                        onClick={addTestCase}
-                                                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 hover:scale-105"
-                                                    >
-                                                        <FaPlus className="w-3 h-3" />
-                                                        Add Test Case
-                                                    </button>
+                                                    {(formData.type === 'code' || testCases.length === 0) && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={addTestCase}
+                                                            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 hover:scale-105"
+                                                        >
+                                                            <FaPlus className="w-3 h-3" />
+                                                            Add Test Case
+                                                        </button>
+                                                    )}
                                                 </div>
 
                                                 {testCases.length === 0 ? (
@@ -623,22 +633,73 @@ const AddQuestion = () => {
                                                                 {(formData.type === 'mcq' || formData.type === 'mcc') && (
                                                                     <div className="space-y-3">
                                                                         <div>
-                                                                            <label className="block text-xs font-semibold text-gray-400 mb-2">Options</label>
-                                                                            {tc.options && tc.options.map((opt, optIdx) => (
-                                                                                <div key={optIdx} className="mb-2">
-                                                                                    <input
-                                                                                        type="text"
-                                                                                        value={opt}
+                                                                            {formData.type === 'mcq' ? (
+                                                                                <>
+                                                                                    <label className="block text-xs font-semibold text-gray-400 mb-2">Options</label>
+                                                                                    <div className="space-y-2">
+                                                                                        {(Array.isArray(tc.options) ? tc.options : []).map((opt, optIdx) => (
+                                                                                            <div key={optIdx} className="flex items-center gap-2">
+                                                                                                <input
+                                                                                                    type="text"
+                                                                                                    value={opt}
+                                                                                                    onChange={(e) => {
+                                                                                                        const newOptions = [...tc.options];
+                                                                                                        newOptions[optIdx] = e.target.value;
+                                                                                                        updateTestCase(index, 'options', newOptions);
+                                                                                                    }}
+                                                                                                    className="w-full px-3 py-2 rounded-lg text-sm bg-black/20 border border-white/10"
+                                                                                                    placeholder={`Option ${optIdx + 1}`}
+                                                                                                />
+                                                                                                {(Array.isArray(tc.options) ? tc.options.length : 0) > 1 && (
+                                                                                                    <button
+                                                                                                        type="button"
+                                                                                                        onClick={() => {
+                                                                                                            const newOptions = tc.options.filter((_, i) => i !== optIdx);
+                                                                                                            const updatedTc = { ...tc, options: newOptions };
+                                                                                                            if (tc.correct === optIdx) {
+                                                                                                                updatedTc.correct = 0;
+                                                                                                            } else if (tc.correct > optIdx) {
+                                                                                                                updatedTc.correct = tc.correct - 1;
+                                                                                                            }
+                                                                                                            
+                                                                                                            const updated = [...testCases];
+                                                                                                            updated[index] = updatedTc;
+                                                                                                            setTestCases(updated);
+                                                                                                        }}
+                                                                                                        className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-all flex-shrink-0"
+                                                                                                    >
+                                                                                                        <FaTrash className="w-4 h-4" />
+                                                                                                    </button>
+                                                                                                )}
+                                                                                            </div>
+                                                                                        ))}
+                                                                                        <button
+                                                                                            type="button"
+                                                                                            onClick={() => {
+                                                                                                const newOptions = [...(Array.isArray(tc.options) ? tc.options : []), `Option ${(tc.options?.length || 0) + 1}`];
+                                                                                                updateTestCase(index, 'options', newOptions);
+                                                                                            }}
+                                                                                            className="mt-2 text-sm text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1 px-2 py-1 rounded hover:bg-blue-500/10 transition-colors"
+                                                                                        >
+                                                                                            <FaPlus className="w-3 h-3" /> Add Option
+                                                                                        </button>
+                                                                                    </div>
+                                                                                </>
+                                                                            ) : (
+                                                                                <>
+                                                                                    <label className="block text-xs font-semibold text-gray-400 mb-2">Options (one per line)</label>
+                                                                                    <textarea
+                                                                                        value={Array.isArray(tc.options) ? tc.options.join('\n') : (tc.options || '')}
                                                                                         onChange={(e) => {
-                                                                                            const newOptions = [...tc.options];
-                                                                                            newOptions[optIdx] = e.target.value;
-                                                                                            updateTestCase(index, 'options', newOptions);
+                                                                                            const options = e.target.value.split('\n');
+                                                                                            updateTestCase(index, 'options', options);
                                                                                         }}
-                                                                                        className="w-full px-3 py-2 rounded-lg text-sm"
-                                                                                        placeholder={`Option ${optIdx + 1}`}
+                                                                                        rows="4"
+                                                                                        className="w-full px-3 py-2 rounded-lg text-sm bg-black/20 border border-white/10 resize-none"
+                                                                                        placeholder={"Option 1\nOption 2\nOption 3\nOption 4"}
                                                                                     />
-                                                                                </div>
-                                                                            ))}
+                                                                                </>
+                                                                            )}
                                                                         </div>
                                                                         <div>
                                                                             <label className="block text-xs font-semibold text-gray-400 mb-2">
@@ -796,34 +857,46 @@ const AddQuestion = () => {
                                                                     </div>
                                                                 )}
 
-                                                                {/* Upload Test Case */}
+                                                                {/* Upload / Hook Test Case */}
                                                                 {formData.type === 'assignment_upload' && (
                                                                     <div className="space-y-3">
                                                                         <div>
-                                                                            <label className="block text-xs font-semibold text-gray-400 mb-2">Description</label>
+                                                                            <label className="block text-xs font-semibold text-gray-400 mb-2">Hook Code / Description</label>
                                                                             <textarea
-                                                                                value={tc.description || ''}
-                                                                                onChange={(e) => updateTestCase(index, 'description', e.target.value)}
-                                                                                className="w-full px-3 py-2 rounded-lg text-sm"
-                                                                                rows="3"
-                                                                                placeholder="Describe what needs to be uploaded"
+                                                                                value={tc.hook_code || ''}
+                                                                                onChange={(e) => updateTestCase(index, 'hook_code', e.target.value)}
+                                                                                className="w-full px-3 py-2 rounded-lg text-sm font-mono"
+                                                                                rows="5"
+                                                                                placeholder="Hook code for evaluating the upload (leave empty for manual grading)"
                                                                             />
                                                                         </div>
-                                                                        <label className="flex items-center gap-2 cursor-pointer select-none">
-                                                                            <div className="relative">
+                                                                        <div className="flex items-center gap-4">
+                                                                            <div className="flex-1">
+                                                                                <label className="block text-xs font-semibold text-gray-400 mb-2">Weight</label>
                                                                                 <input
-                                                                                    type="checkbox"
-                                                                                    checked={tc.required !== undefined ? tc.required : true}
-                                                                                    onChange={(e) => updateTestCase(index, 'required', e.target.checked)}
-                                                                                    className="peer sr-only"
+                                                                                    type="number"
+                                                                                    step="0.1"
+                                                                                    value={tc.weight || 1.0}
+                                                                                    onChange={(e) => updateTestCase(index, 'weight', parseFloat(e.target.value))}
+                                                                                    className="w-full px-3 py-2 rounded-lg text-sm"
                                                                                 />
-                                                                                <div className="w-4 h-4 border-2 border-gray-500 rounded peer-checked:bg-green-500 peer-checked:border-green-500 transition-all duration-200"></div>
-                                                                                <svg className="absolute top-0 left-0 w-4 h-4 text-white opacity-0 peer-checked:opacity-100 transition-opacity duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
-                                                                                </svg>
                                                                             </div>
-                                                                            <span className="text-xs text-gray-300">Required</span>
-                                                                        </label>
+                                                                            <label className="flex items-center gap-2 cursor-pointer select-none mt-5">
+                                                                                <div className="relative">
+                                                                                    <input
+                                                                                        type="checkbox"
+                                                                                        checked={tc.hidden || false}
+                                                                                        onChange={(e) => updateTestCase(index, 'hidden', e.target.checked)}
+                                                                                        className="peer sr-only"
+                                                                                    />
+                                                                                    <div className="w-4 h-4 border-2 border-gray-500 rounded peer-checked:bg-orange-500 peer-checked:border-orange-500 transition-all duration-200"></div>
+                                                                                    <svg className="absolute top-0 left-0 w-4 h-4 text-white opacity-0 peer-checked:opacity-100 transition-opacity duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
+                                                                                    </svg>
+                                                                                </div>
+                                                                                <span className="text-xs text-gray-300">Hidden</span>
+                                                                            </label>
+                                                                        </div>
                                                                     </div>
                                                                 )}
 
