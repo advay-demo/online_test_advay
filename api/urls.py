@@ -121,6 +121,7 @@ urlpatterns = [
    # Quiz Participation
     url(r'start_quiz/(?P<course_id>[0-9]+)/(?P<quiz_id>[0-9]+)/$', views.StartQuiz.as_view(), name='start_quiz'),
     url(r'validate/(?P<answerpaper_id>[0-9]+)/(?P<question_id>[0-9]+)/$', views.AnswerValidator.as_view(), name='validators'),
+    url(r'complete/(?P<answerpaper_id>\d+)/$', views.CompleteQuiz.as_view(), name="complete_quiz"),
     url(r'quit/(?P<answerpaper_id>\d+)/$', views.QuitQuiz.as_view(), name="quit_quiz"),
     url(r'validate/(?P<uid>[0-9]+)/$', views.AnswerValidator.as_view(), name='validator'),
     url(r'student/answerpapers/(?P<answerpaper_id>[0-9]+)/submission/$', views.quiz_submission_status, name='quiz_submission_status'),

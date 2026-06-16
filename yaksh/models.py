@@ -1577,7 +1577,9 @@ class Question(models.Model):
                 **kwargs
             )
             for tc in test_case:
-                tc_list.append(model_to_dict(tc))
+                tc_dict = model_to_dict(tc)
+                tc_dict['type'] = tc.type
+                tc_list.append(tc_dict)
         return tc_list
 
     def get_test_case(self, **kwargs):

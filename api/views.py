@@ -1221,6 +1221,25 @@ class GetCourse(APIView):
         return Response(serializer.data)
 
 
+class CompleteQuiz(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, answerpaper_id, format=None):
+        try:
+            answerpaper = AnswerPaper.objects.get(id=answerpaper_id, user=request.user)
+        except AnswerPaper.DoesNotExist:
+            return Response({'error': 'AnswerPaper not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        if answerpaper.status == 'inprogress':
+            answerpaper.update_marks()
+            answerpaper.status = 'completed'
+            answerpaper.save()
+            answerpaper.set_end_time(timezone.now())
+            
+        serializer = AnswerPaperSerializer(answerpaper)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 class QuitQuiz(APIView):
     permission_classes = [IsAuthenticated] # FIX 1: Secure the view
 
@@ -3856,7 +3875,7 @@ def teacher_questions_list(request):
             'points': question.points,
             'active': question.active,
             'topic': question.topic,
-            'test_cases_count': len(test_cases),
+            'test_cases_count': 1 if (question.type in ['mcq', 'mcc', 'arrange'] and len(test_cases) > 0) else len(test_cases),
             'created': question.id  # Using ID as proxy for creation order
         })
     
@@ -3910,40 +3929,9 @@ def teacher_get_question(request, question_id):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        # Get test cases
-        test_cases = question.get_test_cases_as_dict()
-
-        # Get files
-        from yaksh.models import FileUpload
-        files = []
-        for f in FileUpload.objects.filter(question=question):
-            # Build absolute URL for the file
-            file_url = request.build_absolute_uri(f.file.url) if hasattr(f.file, "url") else ""
-            files.append({
-                "id": f.id,
-                "name": os.path.basename(f.file.name),
-                "url": file_url,  # Full URL with domain
-                "extract": f.extract,
-                "hide": f.hide,
-            })
-
-        return Response({
-            'id': question.id,
-            'summary': question.summary,
-            'description': question.description,
-            'type': question.type,
-            'language': question.language,
-            'points': question.points,
-            'active': question.active,
-            'topic': question.topic,
-            'snippet': question.snippet,
-            'solution': question.solution,
-            'partial_grading': question.partial_grading,
-            'grade_assignment_upload': question.grade_assignment_upload,
-            'min_time': question.min_time,
-            'test_cases': test_cases,
-            'files': files  
-        }, status=status.HTTP_200_OK)
+        # Use the serializer which handles test case bundling properly
+        serializer = QuestionSerializer(question, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     except Question.DoesNotExist:
         return Response(
@@ -4366,9 +4354,10 @@ def teacher_update_question(request, question_id):
                                         options = json.dumps(options)
                                     tc_instance.options = options
                                 
-                                elif tc_type == 'uploadtestcase':
-                                    tc_instance.description = tc_data.get('description', '')
-                                    tc_instance.required = tc_data.get('required', True)
+                                elif tc_type == 'hooktestcase':
+                                    tc_instance.hook_code = tc_data.get('hook_code', '')
+                                    tc_instance.weight = float(tc_data.get('weight', 1.0))
+                                    tc_instance.hidden = tc_data.get('hidden', False)
                                 
                                 tc_instance.save()
                                 
@@ -4430,10 +4419,11 @@ def teacher_update_question(request, question_id):
                                     options = json.dumps(options)
                                 create_data['options'] = options
                             
-                            elif tc_type == 'uploadtestcase':
+                            elif tc_type == 'hooktestcase':
                                 create_data.update({
-                                    'description': tc_data.get('description', ''),
-                                    'required': tc_data.get('required', True)
+                                    'hook_code': tc_data.get('hook_code', ''),
+                                    'weight': float(tc_data.get('weight', 1.0)),
+                                    'hidden': tc_data.get('hidden', False)
                                 })
                             
                             model_class.objects.create(**create_data)
