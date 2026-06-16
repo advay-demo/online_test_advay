@@ -1,19 +1,19 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import CourseDiscussion from '../../../components/student/CourseDiscussion';
-import useStudentForumStore from '../../../store/student/forumStore';
-import useManageCourseStore from '../../../store/student/manageCourseStore';
+import CourseDiscussionsTab from '../../../components/teacher/CourseDiscussion';
+import useForumStore from '../../../store/forumStore';
+import useManageCourseStore from '../../../store/manageCourseStore';
 
-vi.mock('../../../store/student/forumStore', () => ({
+vi.mock('../../../store/forumStore', () => ({
     default: vi.fn(),
 }));
 
-vi.mock('../../../store/student/manageCourseStore', () => ({
+vi.mock('../../../store/manageCourseStore', () => ({
     default: vi.fn(),
 }));
 
-describe('CourseDiscussion Component', () => {
+describe('CourseDiscussionsTab Component', () => {
     const mockLoadCoursePosts = vi.fn();
     const mockLoadLessonPosts = vi.fn();
     const mockLoadCourseComments = vi.fn();
@@ -29,7 +29,7 @@ describe('CourseDiscussion Component', () => {
     const mockSetActiveForumTab = vi.fn();
 
     const mockCoursePosts = [
-        { id: 1, title: 'Course Post 1', description: 'Desc 1', author: 'Student 1', created_at: '2023-01-01T00:00:00Z', is_me: true },
+        { id: 1, title: 'Course Post 1', description: 'Desc 1', author: 'Teacher 1', created_at: '2023-01-01T00:00:00Z', is_me: true },
         { id: 2, title: 'Course Post 2', description: 'Desc 2', author: 'Student 2', created_at: '2023-01-02T00:00:00Z' },
     ];
 
@@ -45,7 +45,7 @@ describe('CourseDiscussion Component', () => {
     beforeEach(() => {
         vi.clearAllMocks();
 
-        useStudentForumStore.mockReturnValue({
+        useForumStore.mockReturnValue({
             coursePosts: mockCoursePosts,
             lessonPosts: mockLessonPosts,
             comments: [],
@@ -70,7 +70,7 @@ describe('CourseDiscussion Component', () => {
 
     const renderComponent = (props = {}) => {
         return render(
-            <CourseDiscussion 
+            <CourseDiscussionsTab 
                 courseId={1} 
                 showAddPostModal={false} 
                 setShowAddPostModal={vi.fn()} 
@@ -133,10 +133,8 @@ describe('CourseDiscussion Component', () => {
     it('deletes a post', async () => {
         window.confirm = vi.fn().mockReturnValue(true);
         renderComponent();
-        
-        // Open action menu for first post
         const actionBtns = screen.getAllByRole('button', { name: 'Actions' });
-        fireEvent.click(actionBtns[0]); // open menu for Post 1
+        fireEvent.click(actionBtns[0]);
 
         const deleteBtn = screen.getByRole('button', { name: /Delete/i });
         fireEvent.click(deleteBtn);
@@ -156,18 +154,15 @@ describe('CourseDiscussion Component', () => {
     });
 
     it('shows add comment modal and adds comment', async () => {
-        useStudentForumStore.mockReturnValue({
-            ...useStudentForumStore(),
+        useForumStore.mockReturnValue({
+            ...useForumStore(),
             comments: mockComments,
         });
 
-        const { container } = renderComponent();
+        renderComponent();
         
-        // Open comments for first post
         const commentsBtns = screen.getAllByRole('button', { name: 'Comments' });
         fireEvent.click(commentsBtns[0]);
-
-        // Mock the selected post ID to be 1 by the click above
         const addCommentBtn = screen.getByRole('button', { name: /Add Comment/i });
         fireEvent.click(addCommentBtn);
 
@@ -175,8 +170,6 @@ describe('CourseDiscussion Component', () => {
 
         const commentInput = screen.getByPlaceholderText('Write your comment...');
         fireEvent.change(commentInput, { target: { value: 'Nice post!' } });
-
-        // Select the form directly to trigger submit if button role is tricky
         const submitBtn = screen.getAllByRole('button', { name: 'Submit' })[0];
         fireEvent.click(submitBtn);
 
@@ -187,23 +180,20 @@ describe('CourseDiscussion Component', () => {
 
     it('deletes a comment', async () => {
         window.confirm = vi.fn().mockReturnValue(true);
-        useStudentForumStore.mockReturnValue({
-            ...useStudentForumStore(),
+        useForumStore.mockReturnValue({
+            ...useForumStore(),
             comments: mockComments,
         });
 
         renderComponent();
         
-        // Open comments for first post
         const commentsBtns = screen.getAllByRole('button', { name: 'Comments' });
         fireEvent.click(commentsBtns[0]);
-
-        // Find delete button for my comment
         const deleteCommentBtns = screen.getAllByRole('button', { name: 'Delete Comment' });
         fireEvent.click(deleteCommentBtns[0]);
 
         await waitFor(() => {
-            expect(mockDeleteCourseComment).toHaveBeenCalledWith(1, 1, 102);
+            expect(mockDeleteCourseComment).toHaveBeenCalledWith(1, 1, 101);
         });
     });
 });

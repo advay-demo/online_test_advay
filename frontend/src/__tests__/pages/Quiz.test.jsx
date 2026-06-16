@@ -1,6 +1,6 @@
 import React from 'react';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-
+import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { BrowserRouter } from 'react-router-dom';
 import Quiz from '../../pages/Quiz';
 import * as api from '../../api/api';
@@ -24,11 +24,16 @@ vi.mock('react-router-dom', async (importOriginal) => {
 
 describe('Quiz Component', () => {
   beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
     vi.clearAllMocks();
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   const renderComponent = () => {
-    render(
+    return render(
       <BrowserRouter>
         <Quiz />
       </BrowserRouter>
@@ -48,116 +53,106 @@ describe('Quiz Component', () => {
     await waitFor(() => {
       expect(screen.getByText('Quiz not ready')).toBeInTheDocument();
     });
+    
+    // Test back to modules button
+    fireEvent.click(screen.getByText('Back to Modules'));
+    expect(mockNavigate).toHaveBeenCalledWith('/courses/1/modules');
   });
 
-  it('renders quiz questions on success', async () => {
+  it('renders integer question and submits', async () => {
     api.startQuiz.mockResolvedValueOnce({
       time_left: 600,
       answerpaper: {
         id: 11,
-        questions: [
-          {
-            id: 101,
-            description: '<p>What is 2+2?</p>',
-            type: 'integer',
-            points: 5,
-          }
-        ]
+        questions: [{ id: 101, description: 'What is 2+2?', type: 'integer', points: 5 }]
       }
     });
+
+    api.submitAnswer.mockResolvedValueOnce({ success: true, points: 5 });
 
     renderComponent();
+    await waitFor(() => expect(screen.getByText('Question 1 of 1')).toBeInTheDocument());
 
+    const input = screen.getByPlaceholderText('Enter integer...');
+    fireEvent.change(input, { target: { value: '4' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /Submit Answer/i }));
+    
     await waitFor(() => {
-      expect(screen.getByText('Question 1 of 1')).toBeInTheDocument();
+      expect(api.submitAnswer).toHaveBeenCalledWith(11, 101, ['4']);
     });
-
-    expect(screen.getByText('10:00')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Enter integer...')).toBeInTheDocument();
   });
 
-  it('submits answer correctly', async () => {
+  it('renders mcq question and submits', async () => {
     api.startQuiz.mockResolvedValueOnce({
       time_left: 600,
       answerpaper: {
         id: 11,
-        questions: [
-          {
-            id: 101,
-            description: 'Test Question',
-            type: 'string',
-            points: 10,
-          }
-        ]
+        questions: [{ 
+          id: 102, type: 'mcq', description: 'MCQ Test', 
+          test_cases: [{ options: ['A', 'B', 'C'] }] 
+        }]
       }
     });
 
-    api.submitAnswer.mockResolvedValueOnce({ success: true });
-
+    api.submitAnswer.mockResolvedValueOnce({ success: true, points: 5 });
     renderComponent();
+    await waitFor(() => expect(screen.getByText('MCQ Test')).toBeInTheDocument());
+
+    const optionB = screen.getByLabelText('B');
+    fireEvent.click(optionB);
+
+    fireEvent.click(screen.getByRole('button', { name: /Submit Answer/i }));
     
     await waitFor(() => {
-      expect(screen.getByPlaceholderText('Enter string...')).toBeInTheDocument();
-    });
-
-    const input = screen.getByPlaceholderText('Enter string...');
-    fireEvent.change(input, { target: { value: 'Test answer' } });
-
-    const submitBtn = screen.getByRole('button', { name: /Submit Answer/i });
-    expect(submitBtn).not.toBeDisabled();
-    
-    fireEvent.click(submitBtn);
-
-    await waitFor(() => {
-      expect(api.submitAnswer).toHaveBeenCalledWith(11, 101, ['Test answer']);
+      expect(api.submitAnswer).toHaveBeenCalledWith(11, 102, 'B');
     });
   });
-  it('opens confirmation modal when Quit Exam is clicked', async () => {
+
+  it('renders mcc question and submits multiple options', async () => {
     api.startQuiz.mockResolvedValueOnce({
       time_left: 600,
       answerpaper: {
         id: 11,
-        questions: [
-          { id: 101, description: 'Test', type: 'string', points: 10 }
-        ]
+        questions: [{ 
+          id: 103, type: 'mcc', description: 'MCC Test', 
+          test_cases: [{ options: ['A', 'B', 'C'] }] 
+        }]
       }
     });
 
+    api.submitAnswer.mockResolvedValueOnce({ success: false, points: 0 }); // Wrong answer test
     renderComponent();
+    await waitFor(() => expect(screen.getByText('MCC Test')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByLabelText('A'));
+    fireEvent.click(screen.getByLabelText('C'));
+    // Uncheck A
+    fireEvent.click(screen.getByLabelText('A'));
+
+    fireEvent.click(screen.getByRole('button', { name: /Submit Answer/i }));
     
     await waitFor(() => {
-      expect(screen.getByText('Question 1 of 1')).toBeInTheDocument();
+      expect(api.submitAnswer).toHaveBeenCalledWith(11, 103, ['C']);
     });
-
-    const finishBtn = screen.getByRole('button', { name: /Quit Exam/i });
-    fireEvent.click(finishBtn);
-
-    expect(screen.getByText('Are you sure you want to quit?')).toBeInTheDocument();
   });
 
-  it('quits the exam and navigates to submission page when confirmed', async () => {
+
+  it('quits quiz when confirmed', async () => {
     api.startQuiz.mockResolvedValueOnce({
       time_left: 600,
-      answerpaper: {
-        id: 11,
-        questions: [
-          { id: 101, description: 'Test', type: 'string', points: 10 }
-        ]
-      }
+      answerpaper: { id: 11, questions: [{ id: 101, type: 'string' }] }
     });
-    
     api.quitQuiz.mockResolvedValueOnce({ success: true });
 
     renderComponent();
-    
-    await waitFor(() => {
-      expect(screen.getByText('Question 1 of 1')).toBeInTheDocument();
-    });
-    fireEvent.click(screen.getByRole('button', { name: /Quit Exam/i }));
-    
-    const confirmBtn = screen.getByRole('button', { name: /Yes, Quit/i });
-    fireEvent.click(confirmBtn);
+    await waitFor(() => expect(screen.getByRole('button', { name: /Quit Exam/i })).toBeInTheDocument());
 
+    fireEvent.click(screen.getByRole('button', { name: /Quit Exam/i }));
+    expect(screen.getByText('Are you sure you want to quit?')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Yes, Quit'));
+    
     await waitFor(() => {
       expect(api.quitQuiz).toHaveBeenCalledWith(11);
       expect(mockNavigate).toHaveBeenCalledWith('/answerpapers/11/submission');

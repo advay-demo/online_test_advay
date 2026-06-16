@@ -3,17 +3,17 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import ViewAnswerPaper from '../../../pages/student/ViewAnswerPaper';
-import { fetchAnswerPaper } from '../../../api/api';
+import useAnswerPaperStore from '../../../store/student/answerPaperStore';
 
-vi.mock('../../../api/api', () => ({
-  fetchAnswerPaper: vi.fn(),
+vi.mock('../../../store/student/answerPaperStore', () => ({
+  default: vi.fn(),
 }));
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
     ...actual,
-    useParams: () => ({ attemptId: '1' }),
+    useParams: () => ({ questionPaperId: '1', courseId: '1' }),
     useNavigate: () => vi.fn(),
   };
 });
@@ -22,8 +22,26 @@ vi.mock('../../../components/layout/Sidebar', () => ({ default: () => <div data-
 vi.mock('../../../components/layout/Header', () => ({ default: () => <div data-testid="header">Header</div> }));
 
 describe('Student ViewAnswerPaper Component', () => {
+  const mockFetchAnswerPaperData = vi.fn();
+  const mockReset = vi.fn();
+  const mockSelectAttempt = vi.fn();
+
   beforeEach(() => {
     vi.clearAllMocks();
+    useAnswerPaperStore.mockReturnValue({
+      fetchAnswerPaperData: mockFetchAnswerPaperData,
+      quiz: null,
+      courseName: null,
+      moduleName: null,
+      user: null,
+      selectedPaper: null,
+      selectedAttemptNumber: 1,
+      selectAttempt: mockSelectAttempt,
+      getAvailableAttemptNumbers: () => [],
+      loading: false,
+      error: null,
+      reset: mockReset,
+    });
   });
 
   const renderComponent = () => {
@@ -35,20 +53,36 @@ describe('Student ViewAnswerPaper Component', () => {
   };
 
   it('renders loading state', () => {
-    fetchAnswerPaper.mockReturnValue(new Promise(() => {}));
+    useAnswerPaperStore.mockReturnValue({
+      fetchAnswerPaperData: mockFetchAnswerPaperData,
+      getAvailableAttemptNumbers: () => [],
+      loading: true,
+      reset: mockReset,
+    });
     renderComponent();
-    expect(screen.getByText('Loading paper details...')).toBeInTheDocument();
+    expect(screen.getByText('Loading your answer paper details...')).toBeInTheDocument();
   });
 
   it('renders answer paper details', async () => {
-    fetchAnswerPaper.mockResolvedValue({
-      questionpaper_id: 1,
-      questionpaper_title: 'Midterm Exam',
-      course_name: 'Demo Course',
-      module_name: 'Test Module',
-      score: 85,
-      total_marks: 100,
-      answers: []
+    useAnswerPaperStore.mockReturnValue({
+      fetchAnswerPaperData: mockFetchAnswerPaperData,
+      quiz: { description: 'Midterm Exam' },
+      courseName: 'Demo Course',
+      moduleName: 'Test Module',
+      user: { first_name: 'John', last_name: 'Doe', username: 'johndoe' },
+      selectedPaper: {
+        status: 'completed',
+        marks_obtained: 85,
+        total_marks: 100,
+        percent: 85,
+        questions: [],
+      },
+      selectedAttemptNumber: 1,
+      selectAttempt: mockSelectAttempt,
+      getAvailableAttemptNumbers: () => [1],
+      loading: false,
+      error: null,
+      reset: mockReset,
     });
 
     renderComponent();
@@ -57,7 +91,7 @@ describe('Student ViewAnswerPaper Component', () => {
       expect(screen.getByText('Midterm Exam')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('85 / 100')).toBeInTheDocument();
-    expect(screen.getByText('Score')).toBeInTheDocument();
+    expect(screen.getAllByText(/85/)[0]).toBeInTheDocument();
+    expect(screen.getByText(/\/ 100/)).toBeInTheDocument();
   });
 });

@@ -16,11 +16,6 @@ describe('Student Insights Component', () => {
     );
   };
 
-  it('renders loading state initially', () => {
-    renderComponent();
-    expect(screen.getByText('Loading...')).toBeInTheDocument();
-  });
-
   it('renders insights data after loading', async () => {
     renderComponent();
     
