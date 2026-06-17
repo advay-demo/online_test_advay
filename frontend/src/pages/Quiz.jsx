@@ -704,6 +704,7 @@ const Quiz = () => {
           />
         );
         case 'upload':
+        case 'assignment_upload':
   return (
     <div className="space-y-3">
       <input
@@ -889,10 +890,11 @@ const Quiz = () => {
                    currentQuestion.type === 'code' ? 'Write Your Code:' :
                    currentQuestion.type === 'mcq' ? 'Select One Answer:' :
                    currentQuestion.type === 'mcc' ? 'Select All Correct Answers:' :
-                   currentQuestion.type === 'upload' ? 'Upload TXT File:' :
+                   currentQuestion.type === 'assignment_upload' ? 'Upload File:' :
                    'Enter Your Answer:'}
                                
                   </label>
+                  
                   {renderQuestionInput()}
                 </div>
 
