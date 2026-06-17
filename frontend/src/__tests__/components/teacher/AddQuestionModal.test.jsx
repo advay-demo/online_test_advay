@@ -115,7 +115,7 @@ fireEvent.change(selects[0], {
     fireEvent.click(screen.getByText("Add Test Case"));
 
     expect(
-      screen.getByText("Test Case 1")
+      screen.getByText("Test Case 2")
     ).toBeInTheDocument();
   });
 
@@ -143,7 +143,7 @@ fireEvent.change(selects[0], {
     const selects = screen.getAllByRole("combobox");
 
 fireEvent.change(selects[0], {
-  target: { value: "code" },
+  target: { value: "integer" },
 });
     fireEvent.click(
       screen.getByText("Create Question")
@@ -183,7 +183,7 @@ fireEvent.change(selects[0], {
     const selects = screen.getAllByRole("combobox");
 
 fireEvent.change(selects[0], {
-  target: { value: "code" },
+  target: { value: "integer" },
 });
 
 
@@ -283,8 +283,6 @@ fireEvent.change(selects[0], {
     target: { value: "mcq" },
   });
 
-  fireEvent.click(screen.getByRole("button", { name: /Add Test Case/i }));
-
   expect(screen.getByText(/Correct Option/i)).toBeInTheDocument();
 });
 
@@ -294,12 +292,6 @@ it("renders MCC test case options", async () => {
   fireEvent.change(screen.getAllByRole("combobox")[0], {
     target: { value: "mcc" },
   });
-
-  fireEvent.click(
-  screen.getByRole("button", {
-    name: /Add Test Case/i,
-  })
-);
 
   expect(screen.getByText(/Correct Options/i)).toBeInTheDocument();
 });
@@ -311,12 +303,6 @@ it("renders integer question fields", async () => {
     target: { value: "integer" },
   });
 
-  fireEvent.click(
-  screen.getByRole("button", {
-    name: /Add Test Case/i,
-  })
-);
-
   expect(screen.getByText(/Correct Answer/i)).toBeInTheDocument();
 });
 
@@ -326,12 +312,6 @@ it("renders float question fields", async () => {
   fireEvent.change(screen.getAllByRole("combobox")[0], {
     target: { value: "float" },
   });
-
-  fireEvent.click(
-  screen.getByRole("button", {
-    name: /Add Test Case/i,
-  })
-);
 
   expect(screen.getByText(/Error Margin/i)).toBeInTheDocument();
 });
@@ -343,12 +323,6 @@ it("renders string question fields", async () => {
     target: { value: "string" },
   });
 
-  fireEvent.click(
-  screen.getByRole("button", {
-    name: /Add Test Case/i,
-  })
-);
-
   expect(screen.getByText(/String Check Type/i)).toBeInTheDocument();
 });
 
@@ -358,12 +332,6 @@ it("renders arrange question fields", async () => {
   fireEvent.change(screen.getAllByRole("combobox")[0], {
     target: { value: "arrange" },
   });
-
- fireEvent.click(
-  screen.getByRole("button", {
-    name: /Add Test Case/i,
-  })
-);
 
   expect(
     screen.getByText(/Options \(one per line/i)
@@ -377,13 +345,7 @@ it("renders assignment upload fields", async () => {
     target: { value: "assignment_upload" },
   });
 
-  fireEvent.click(
-  screen.getByRole("button", {
-    name: /Add Test Case/i,
-  })
-);
-
-  expect(screen.getByText(/Required/i)).toBeInTheDocument();
+  expect(screen.getByText(/Hook Code \/ Description/i)).toBeInTheDocument();
 });
 
 it("toggles active switch", async () => {
@@ -410,10 +372,10 @@ it("adds and removes multiple test cases", async () => {
   });
 
   fireEvent.click(
-  screen.getByRole("button", {
-    name: /Add Test Case/i,
-  })
-);
+    screen.getByRole("button", {
+      name: /Add Test Case/i,
+    })
+  );
 
   expect(screen.getAllByText(/Test Case/i).length).toBeGreaterThan(1);
 
@@ -433,12 +395,6 @@ it("updates code testcase fields", async () => {
   fireEvent.change(screen.getAllByRole("combobox")[0], {
     target: { value: "code" },
   });
-
-  fireEvent.click(
-  screen.getByRole("button", {
-    name: /Add Test Case/i,
-  })
-);
 
   const outputField = screen.getByPlaceholderText(/Expected output/i);
 
