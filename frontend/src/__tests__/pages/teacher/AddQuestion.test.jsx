@@ -68,11 +68,7 @@ describe('AddQuestion Component', () => {
         const typeSelect = container.querySelector('select[name="type"]');
         fireEvent.change(typeSelect, { target: { value: 'integer' } });
 
-        // Click Add Test Case
-        const addBtn = screen.getByRole('button', { name: /Add Test Case/i });
-        fireEvent.click(addBtn);
-
-        // Verify test case was added
+        // Verify test case was added automatically
         await waitFor(() => {
             expect(screen.getByText('Test Case 1')).toBeInTheDocument();
         });
