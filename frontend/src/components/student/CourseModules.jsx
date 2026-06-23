@@ -24,14 +24,30 @@ const CourseModules = () => {
 
     // State to track expanded module
     const [expandedModuleId, setExpandedModuleId] = useState(null);
+    const [showExamModal, setShowExamModal] = useState(false);
+    const [selectedQuizId, setSelectedQuizId] = useState(null);
+
+    const openExamModal = (quizId) => {
+    setSelectedQuizId(quizId);
+    setShowExamModal(true);
+};
+
+const startQuizExamMode = (quizId) => {
+    window.open(
+        `/courses/${courseId}/quizzes/${quizId}`,
+        "_blank"
+    );
+
+    setShowExamModal(false);
+};
 
     const handleUnitClick = (module, unit) => {
-        if (unit.type === 'quiz') {
-            navigate(`/courses/${courseId}/quizzes/${unit.quiz?.id}`);
-        } else if (unit.type === 'lesson') {
-            navigate(`/lessons/${unit.lesson?.id}`);
-        }
-    };
+    if (unit.type === 'quiz') {
+        openExamModal(unit.quiz?.id);
+    } else if (unit.type === 'lesson') {
+        navigate(`/lessons/${unit.lesson?.id}`);
+    }
+};
 
     const handleViewAnswerPaper = (unit) => {
         if (unit.type === 'quiz' && unit.quiz?.questionpaper_id) {
@@ -64,8 +80,10 @@ const CourseModules = () => {
         );
     }
 
-    return (
-        <div className="space-y-6">
+
+        return (
+            <>
+    <div className="space-y-6">
             {/* Header Section */}
             <div className="flex items-center justify-between mb-4 px-1">
                 <div className="flex items-center gap-3">
@@ -376,8 +394,45 @@ const CourseModules = () => {
                 })}
             </div>
         </div>
+        {showExamModal && (
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+        <div className="bg-white rounded-xl p-6 w-[500px] shadow-xl">
+            <h2 className="text-2xl font-bold mb-4">
+                Exam Instructions
+            </h2>
+
+            <ul className="space-y-2 mb-6">
+                <li>✓ Camera Required</li>
+                <li>✓ Microphone Required</li>
+                <li>✓ Quiz will open in a new tab</li>
+                <li>✓ Fullscreen mode required</li>
+                <li>✓ Tab switching is not allowed</li>
+            </ul>
+
+            <div className="flex gap-3">
+                <button
+                    onClick={() => setShowExamModal(false)}
+                    className="px-4 py-2 bg-gray-500 text-white rounded"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    onClick={() => startQuizExamMode(selectedQuizId)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded"
+                >
+                    Start Exam
+                </button>
+            </div>
+        </div>
+    </div>
+)}
+    </>
     );
 };
+
+
+
 
 // Helper Component for consistent buttons across Mobile/Desktop
 const DesktopActionButtons = ({ unit, module, isLocked, isUnitCompleted, isInProgress, isUnitQuitted, handleUnitClick, handleViewAnswerPaper, isMobile }) => {
