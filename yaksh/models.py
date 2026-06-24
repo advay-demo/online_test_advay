@@ -962,6 +962,11 @@ class Course(models.Model):
     students = models.ManyToManyField(User, related_name='students')
     requests = models.ManyToManyField(User, related_name='requests')
     rejected = models.ManyToManyField(User, related_name='rejected')
+    removed_students = models.ManyToManyField(
+    User,
+    related_name='removed_students',
+    blank=True
+)
     created_on = models.DateTimeField(auto_now_add=True)
     teachers = models.ManyToManyField(User, related_name='teachers')
     is_trial = models.BooleanField(default=False)
