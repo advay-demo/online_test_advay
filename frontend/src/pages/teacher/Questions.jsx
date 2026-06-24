@@ -97,7 +97,7 @@ const Questions = () => {
         updateQuestion
     } = useQuestionsStore();
 
-    const { testQuestion } = useQuizStore(); 
+    const { testQuestion, testMultipleQuestions } = useQuizStore(); 
     const navigate = useNavigate(); 
 
 
@@ -106,6 +106,8 @@ const Questions = () => {
     const [isEditMode, setIsEditMode] = useState(false);
     const [editingQuestionId, setEditingQuestionId] = useState(null);
     const [testingQuestionId, setTestingQuestionId] = useState(null); 
+    const [selectedQuestions, setSelectedQuestions] = useState(new Set());
+    const [isTestingMultiple, setIsTestingMultiple] = useState(false);
 
 
 
@@ -155,6 +157,73 @@ const Questions = () => {
         } finally {
             setTestingQuestionId(null);
         }
+    };
+
+    const handleSelectQuestion = (questionId) => {
+        setSelectedQuestions(prev => {
+            const next = new Set(prev);
+            if (next.has(questionId)) {
+                next.delete(questionId);
+            } else {
+                next.add(questionId);
+            }
+            return next;
+        });
+    };
+
+    const handleSelectAll = () => {
+        if (selectedQuestions.size === questions.length) {
+            setSelectedQuestions(new Set());
+        } else {
+            setSelectedQuestions(new Set(questions.map(q => q.id)));
+        }
+    };
+
+    const handleTestSelected = async () => {
+        if (selectedQuestions.size === 0) return;
+        setIsTestingMultiple(true);
+        try {
+            const result = await testMultipleQuestions(Array.from(selectedQuestions));
+            navigate(`/teacher/test-question/${result.questionpaper_id}/${result.module_id}/${result.course_id}`);
+        } catch (error) {
+            console.error('Error testing questions:', error);
+            alert(error.message || 'Failed to create test quiz');
+        } finally {
+            setIsTestingMultiple(false);
+        }
+    };
+
+    const exportQuestions = () => {
+        if (!questions || questions.length === 0) {
+            alert('No questions to export');
+            return;
+        }
+
+        // CSV Header
+        const headers = ['ID', 'Type', 'Summary', 'Marks', 'Active', 'Language'];
+        const csvRows = [headers.join(',')];
+
+        // CSV Rows
+        for (const q of questions) {
+            const row = [
+                q.id,
+                q.type,
+                `"${(q.summary || '').replace(/"/g, '""')}"`,
+                q.marks || 0,
+                q.active ? 'Yes' : 'No',
+                q.language || ''
+            ];
+            csvRows.push(row.join(','));
+        }
+
+        const csvContent = "data:text/csv;charset=utf-8," + csvRows.join('\n');
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement('a');
+        link.setAttribute('href', encodedUri);
+        link.setAttribute('download', 'questions_export.csv');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     const getQuestionTypeIcon = (type) => {
@@ -286,7 +355,14 @@ const Questions = () => {
                                         <option value="false">Inactive</option>
                                     </select>
                                 </div>
-                                <div className="flex justify-end">
+                                <div className="flex justify-end gap-2 sm:gap-3">
+                                    <button
+                                        className="px-3 sm:px-5 py-2.5 border-2 border-[var(--border-strong)] bg-[var(--card-bg)] rounded-xl text-xs sm:text-sm font-semibold hover:border-blue-500/40 hover:bg-blue-500/5 hover:shadow-md transition-all duration-300 flex items-center justify-center gap-2"
+                                        onClick={exportQuestions}
+                                    >
+                                        <FaDownload className="w-4 h-4 text-blue-400" />
+                                        <span className="hidden sm:inline">Export CSV</span>
+                                    </button>
                                     <button
                                         className="px-3 sm:px-5 py-2.5 border-2 border-transparent bg-gradient-to-r from-blue-600 to-blue-500 rounded-xl text-xs sm:text-sm font-semibold hover:shadow-xl hover:shadow-blue-600/30 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2 whitespace-nowrap"
                                         onClick={handleAddClick}
@@ -319,6 +395,36 @@ const Questions = () => {
                         {/* Questions List */}
                         {!loading && !error && (
                             <div className="space-y-3 sm:space-y-4">
+                                {/* Bulk Actions */}
+                                {selectedQuestions.size > 0 && (
+                                    <div className="bg-blue-500/10 border-2 border-blue-500/30 p-3 sm:p-4 rounded-xl flex items-center justify-between shadow-lg">
+                                        <div className="flex items-center gap-3">
+                                            <span className="font-bold text-blue-400">
+                                                {selectedQuestions.size} {selectedQuestions.size === 1 ? 'question' : 'questions'} selected
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <button
+                                                onClick={handleTestSelected}
+                                                disabled={isTestingMultiple}
+                                                className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-2"
+                                            >
+                                                {isTestingMultiple ? (
+                                                    <span className="animate-spin h-4 w-4 border-2 border-white/20 border-t-white rounded-full"></span>
+                                                ) : (
+                                                    <FaPlay className="w-3 h-3" />
+                                                )}
+                                                Test Selected
+                                            </button>
+                                            <button
+                                                onClick={() => setSelectedQuestions(new Set())}
+                                                className="text-gray-400 hover:text-white transition-colors text-sm font-semibold"
+                                            >
+                                                Clear
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                                 {questions.length > 0 ? (
                                     questions.map((question) => (
                                         <div
@@ -327,6 +433,16 @@ const Questions = () => {
                                             className="cursor-pointer card-strong p-4 sm:p-5 border-2 border-[var(--border-medium)] hover:shadow-lg hover:border-blue-500/70 dark:hover:border-blue-500/50 transition-all duration-300 group bg-[var(--surface)] hover:shadow-md rounded-xl"
                                         >
                                             <div className="flex flex-row flex-wrap items-center gap-3 sm:gap-4">
+                                                {/* Checkbox */}
+                                                <div className="flex items-center justify-center pl-2" onClick={(e) => e.stopPropagation()}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedQuestions.has(question.id)}
+                                                        onChange={() => handleSelectQuestion(question.id)}
+                                                        className="w-5 h-5 rounded border-2 border-gray-600 text-blue-500 focus:ring-blue-500/50 bg-gray-800 transition-colors cursor-pointer"
+                                                    />
+                                                </div>
+
                                                 {/* Icon */}
                                                 <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center flex-shrink-0 border-2 group-hover:scale-110 transition-all duration-300 ${getQuestionTypeColor(question.type)} shadow-sm bg-opacity-10 dark:bg-opacity-20`}>
                                                     <div className="text-xl sm:text-2xl">

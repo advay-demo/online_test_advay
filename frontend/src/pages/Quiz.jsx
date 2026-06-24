@@ -870,6 +870,29 @@ const Quiz = () => {
                   <FaCheck className="w-8 h-8 text-green-500" />
                 </div>
                 <p className="text-lg text-gray-300 mb-2">You are about to submit your exam.</p>
+                
+                <div className="bg-white/5 border border-white/10 rounded-xl p-4 my-6">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-gray-400">Total Questions:</span>
+                    <span className="font-bold">{totalQuestions}</span>
+                  </div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-green-400">Attempted:</span>
+                    <span className="font-bold text-green-400">{attemptedQuestions.size}</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t border-white/10">
+                    <span className="text-yellow-400">Unattempted:</span>
+                    <span className="font-bold text-yellow-400">{totalQuestions - attemptedQuestions.size}</span>
+                  </div>
+                </div>
+
+                {totalQuestions - attemptedQuestions.size > 0 && (
+                  <div className="text-yellow-400 bg-yellow-400/10 border border-yellow-400/20 p-3 rounded-lg mb-6 text-sm flex items-center justify-center gap-2">
+                    <AiOutlineWarning className="w-5 h-5" />
+                    You still have {totalQuestions - attemptedQuestions.size} unattempted questions!
+                  </div>
+                )}
+
                 <h3 className="text-xl font-bold mb-2">Are you sure you want to finish?</h3>
                 <p className="text-sm text-gray-400 mb-8">Once submitted, you will not be able to change your answers.</p>
                 <div className="flex justify-center gap-4">

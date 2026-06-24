@@ -2452,7 +2452,10 @@ def teacher_courses_list(request):
     
     # Apply search filter
     if search_query:
-        courses = courses.filter(name__icontains=search_query)
+        courses = courses.filter(
+            Q(name__icontains=search_query) | 
+            Q(code__icontains=search_query)
+        )
     
     # Apply status filter
     if status_filter == 'active':
@@ -3782,8 +3785,8 @@ def api_quiz_handler(request, course_id, module_id, quiz_id=None):
                     time_between_attempts=request.data.get('time_between_attempts', 0.0),
                     pass_criteria=request.data.get('pass_criteria', 40.0),
                     weightage=request.data.get('weightage', 100.0),
-                    allow_skip=request.data.get('allow_skip', True),
-                    view_answerpaper=request.data.get('view_answerpaper', True),
+                    allow_skip=str(request.data.get('allow_skip', 'true')).lower() == 'true',
+                    view_answerpaper=str(request.data.get('view_answerpaper', 'true')).lower() == 'true',
                     is_exercise=str(request.data.get('is_exercise', 'false')).lower() == 'true',
                     active=str(request.data.get('active', 'true')).lower() == 'true',
                     is_seb_required=str(request.data.get('is_seb_required', 'false')).lower() == 'true',
@@ -3978,6 +3981,36 @@ def teacher_test_question(request, question_id):
         'module_id': trial_module.id,
         'course_id': trial_course.id,
     }, status=201)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def teacher_test_multiple_questions(request):
+    """Create trial quiz for teacher to test multiple selected questions"""
+    user = request.user
+    from yaksh.views import test_mode, is_moderator
+    
+    if not is_moderator(user):
+        return Response({'error': 'Only teachers can test questions'}, status=403)
+        
+    question_ids = request.data.get('question_ids', [])
+    if not question_ids:
+        return Response({'error': 'No questions selected'}, status=400)
+        
+    try:
+        # We don't check for existence of all strictly, just pass them to test_mode
+        # test_mode will handle retrieving them
+        trial_paper, trial_course, trial_module = test_mode(user, False, [str(q_id) for q_id in question_ids], None)
+        trial_paper.update_total_marks()
+        trial_paper.save()
+        
+        return Response({
+            'questionpaper_id': trial_paper.id,
+            'module_id': trial_module.id,
+            'course_id': trial_course.id,
+        }, status=201)
+    except Exception as e:
+        return Response({'error': str(e)}, status=400)
+
 
 
 @api_view(['GET'])

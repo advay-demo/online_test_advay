@@ -6,6 +6,7 @@ import {
   apiCheckAnswer,
   apiSkipQuestion,
   testQuestion as apiTestQuestion,
+  testMultipleQuestions as apiTestMultipleQuestions,
 } from '../api/api';
 
 const useQuizStore = create((set, get) => ({
@@ -360,6 +361,25 @@ const useQuizStore = create((set, get) => ({
       throw new Error(errorMsg);
     }
   },
+
+  /**
+   * Test multiple questions (teacher only)
+   * Creates a test quiz with all selected questions and returns quiz context
+   */
+  testMultipleQuestions: async (questionIds) => {
+    set({ loading: true, error: null });
+    try {
+      const result = await apiTestMultipleQuestions(questionIds);
+      set({ loading: false });
+      return result;
+    } catch (err) {
+      const errorMsg = err.response?.data?.error || err.message || 'Failed to test questions';
+      set({ error: errorMsg, loading: false });
+      throw new Error(errorMsg);
+    }
+  },
+
+  resetQuestionError: () => set({ error: null }),
 
   /**
    * Clear error

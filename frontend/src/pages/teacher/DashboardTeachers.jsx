@@ -434,8 +434,8 @@ const DashboardTeachers = () => {
                     </div>
                   </div>
                   <div className="flex justify-between text-[10px] sm:text-[11px] text-[var(--text-muted)] mb-4 sm:mb-5 gap-2">
-                    <span className="truncate">{new Date(course.start_date).toLocaleDateString()}</span>
-                    <span className="truncate">{new Date(course.end_date).toLocaleDateString()}</span>
+                    <span className="truncate">{new Date(course.start_date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                    <span className="truncate">{new Date(course.end_date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}</span>
                   </div>
 
                 </Link>

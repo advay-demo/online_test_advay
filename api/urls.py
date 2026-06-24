@@ -206,6 +206,7 @@ urlpatterns = [
     url(r'teacher/questions/(?P<question_id>[0-9]+)/delete/$', views.teacher_delete_question, name='teacher_delete_question'), #ok
     url(r'teacher/questions/create/$', views.teacher_create_question, name='teacher_create_question'), #ok
     url(r'teacher/questions/(?P<question_id>[0-9]+)/test/$', views.teacher_test_question, name='teacher_test_question'),#ok
+    url(r'teacher/questions/test-multiple/$', views.teacher_test_multiple_questions, name='teacher_test_multiple_questions'),
     url(r'teacher/questions/bulk-upload/$', views.bulk_upload_questions, name='bulk_upload_questions'),#ok
     url(r'teacher/questions/template/$', views.download_question_template, name='download_question_template'),#ok
 

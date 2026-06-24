@@ -1249,6 +1249,12 @@ export const testQuestion = async (questionId) => {
   return response.data;
 };
 
+// Test multiple questions - creates a trial quiz for testing multiple selected questions
+export const testMultipleQuestions = async (questionIds) => {
+  const response = await api.post('/api/teacher/questions/test-multiple/', { question_ids: questionIds });
+  return response.data;
+};
+
 // ===========================================
 // QUESTION Upload APIs 
 // ===========================================

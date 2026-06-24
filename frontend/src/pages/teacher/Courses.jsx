@@ -265,9 +265,9 @@ const Courses = () => {
                                                         </div>
                                                         {course.created_on && (
 
-                                                            <div className="flex items-center gap-1.5 text-blue-300">
-                                                                <FaCalendar className="w-2 h-2 sm:w-2.5 sm:h-2.5 flex-shrink-0" />
-                                                                <span>{new Date(course.created_on).toLocaleDateString()}</span>
+                                                            <div className="flex items-center gap-1.5 sm:gap-2 truncate">
+                                                                <FaCalendar className="w-3 h-3 text-emerald-400 flex-shrink-0" />
+                                                                <span>{new Date(course.created_on).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}</span>
                                                             </div>
 
                                                         )}
