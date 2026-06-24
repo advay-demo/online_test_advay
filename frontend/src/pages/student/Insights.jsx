@@ -14,6 +14,7 @@ import {
 
 import Sidebar from '../../components/layout/Sidebar';
 import Header from '../../components/layout/Header';
+import { fetchStudentDashboardCourses } from '../../api/api';
 
 // Badge Images
 import birdBadge from '../../assets/badges/bird.png';
@@ -29,13 +30,13 @@ const Insights = () => {
     locked: []
   });
 
-  const [achievements] = useState({
-    total_courses: 12,
-    completed_lessons: 85,
-    pending_quizzes: 4,
-    certificates_earned: 6,
-    highest_score: 96
-  });
+  const [achievements, setAchievements] = useState({
+  total_courses: 0,
+  completed_lessons: 0,
+  pending_quizzes: 0,
+  certificates_earned: 0,
+  highest_score: 0
+});
 
   const [loading, setLoading] = useState(true);
 
@@ -44,58 +45,108 @@ const Insights = () => {
     const loadData = async () => {
 
       try {
+        const dashboardData = await fetchStudentDashboardCourses();
+        setAchievements({
+          total_courses: dashboardData.dashboard?.total_enrolled || 0,
+          completed_lessons: dashboardData.dashboard?.completed_lessons || 0,
+          pending_quizzes: dashboardData.dashboard?.upcoming_quizzes?.length || 0,
+          certificates_earned: dashboardData.stats?.certificates || 0,
+          highest_score: dashboardData.stats?.highest_score || 0
+        });
 
-        const data = {
+        const totalCourses = dashboardData.dashboard?.total_enrolled || 0;
+const completedLessons = dashboardData.dashboard?.completed_lessons || 0;
 
-          unlocked: [
-            {
-              id: 1,
-              earned_date: "Apr 2, 2026",
-              badge: {
-                name: "Wizard",
-                description: "Complete 250 quizzes",
-              }
-            },
+const data = {
+  unlocked: [],
+  inProgress: [],
+  locked: []
+};
 
-            {
-              id: 2,
-              earned_date: "Mar 31, 2026",
-              badge: {
-                name: "Genie",
-                description: "Score 100 quiz answers",
-              }
-            }
-          ],
+// Sensei Badge - 100 Courses
+if (totalCourses >= 100) {
+  data.unlocked.push({
+    id: 1,
+    earned_date: new Date().toLocaleDateString(),
+    badge: {
+      name: "Sensei",
+      description: "Complete 100 courses",
+    }
+  });
+} else {
+  data.inProgress.push({
+    id: 1,
+    progress_percentage: Math.round((totalCourses / 100) * 100),
+    steps: {
+      completed: totalCourses,
+      total: 100
+    },
+    badge: {
+      name: "Sensei",
+      description: "Complete 100 courses",
+    }
+  });
+}
 
-          inProgress: [
-            {
-              id: 3,
+// Genie Badge - 100 Lessons
+if (completedLessons >= 100) {
+  data.unlocked.push({
+    id: 2,
+    earned_date: new Date().toLocaleDateString(),
+    badge: {
+      name: "Genie",
+      description: "Complete 100 lessons",
+    }
+  });
+} else {
+  data.locked.push({
+    id: 2,
+    badge: {
+      name: "Genie",
+      description: "Complete 100 lessons",
+    }
+  });
+}
 
-              progress_percentage: 65,
+// Wizard Badge - 250 Lessons
+if (completedLessons >= 250) {
+  data.unlocked.push({
+    id: 3,
+    earned_date: new Date().toLocaleDateString(),
+    badge: {
+      name: "Wizard",
+      description: "Complete 250 lessons",
+    }
+  });
+} else {
+  data.locked.push({
+    id: 3,
+    badge: {
+      name: "Wizard",
+      description: "Complete 250 lessons",
+    }
+  });
+}
 
-              steps: {
-                completed: 65,
-                total: 100
-              },
-
-              badge: {
-                name: "Sensei",
-                description: "Complete 100 courses",
-              }
-            }
-          ],
-
-          locked: [
-            {
-              id: 4,
-
-              badge: {
-                name: "Bird",
-                description: "Complete 500 quizzes",
-              }
-            }
-          ]
-        };
+// Bird Badge - 500 Lessons
+if (completedLessons >= 500) {
+  data.unlocked.push({
+    id: 4,
+    earned_date: new Date().toLocaleDateString(),
+    badge: {
+      name: "Bird",
+      description: "Complete 500 lessons",
+    }
+  });
+} else {
+  data.locked.push({
+    id: 4,
+    badge: {
+      name: "Bird",
+      description: "Complete 500 lessons",
+    }
+  });
+}
 
         setBadges(data);
 
