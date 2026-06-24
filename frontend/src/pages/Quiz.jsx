@@ -1,14 +1,153 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { FaClock, FaCheck, FaArrowRight, FaTimes } from 'react-icons/fa';
 import { AiOutlineWarning } from 'react-icons/ai';
 import QuizSidebar from '../components/layout/QuizSidebar';
 import { startQuiz, submitAnswer, getAnswerResult, quitQuiz } from '../api/api';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+import CodeMirror from '@uiw/react-codemirror';
+import { oneDark } from '@codemirror/theme-one-dark';
+import { python } from '@codemirror/lang-python';
+import { cpp } from '@codemirror/lang-cpp';
+import { java } from '@codemirror/lang-java';
+import { javascript } from '@codemirror/lang-javascript';
+import * as faceapi from "face-api.js";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+// Helper: get CodeMirror language extension from question language field
+const getLanguageExtension = (lang) => {
+  if (!lang) return [];
+  const l = lang.toLowerCase();
+  if (l.includes('python')) return [python()];
+  if (l.includes('c++') || l.includes('cpp')) return [cpp()];
+  if (l.includes('java')) return [java()];
+  if (l.includes('javascript') || l.includes('js')) return [javascript()];
+  if (l.includes('c') && !l.includes('c++')) return [cpp()];
+  return [];
+};
+
+// Pre-process LaTeX in text — converts $$...$$ and $...$ to KaTeX HTML
+const renderLatex = (text) => {
+  if (!text) return '';
+  return text
+    .replace(/\$\$([\s\S]+?)\$\$/g, (match, tex) => {
+      try { return katex.renderToString(tex.trim(), { displayMode: true, throwOnError: false }); }
+      catch { return match; }
+    })
+    .replace(/\\\[([\s\S]+?)\\\]/g, (match, tex) => {
+      try { return katex.renderToString(tex.trim(), { displayMode: true, throwOnError: false }); }
+      catch { return match; }
+    })
+    .replace(/\\\(([\s\S]+?)\\\)/g, (match, tex) => {
+      try { return katex.renderToString(tex.trim(), { displayMode: false, throwOnError: false }); }
+      catch { return match; }
+    })
+    .replace(/\$([^$\n]+?)\$/g, (match, tex) => {
+      try { return katex.renderToString(tex.trim(), { displayMode: false, throwOnError: false }); }
+      catch { return match; }
+    });
+};
+
+// Drag-and-drop sortable item for Arrange questions
+const SortableItem = ({ id, text, index }) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-3 p-3 rounded-lg border cursor-grab select-none ${
+        isDragging
+          ? 'bg-indigo-500/20 border-indigo-500/50 shadow-lg'
+          : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
+      } transition-colors`}
+      {...attributes}
+      {...listeners}
+    >
+      <div className="flex-shrink-0 w-7 h-7 rounded-md bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-sm font-bold text-indigo-400">
+        {index + 1}
+      </div>
+      <div className="flex-shrink-0 text-gray-500">
+        <svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor">
+          <circle cx="4" cy="3" r="1.5"/><circle cx="8" cy="3" r="1.5"/>
+          <circle cx="4" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/>
+          <circle cx="4" cy="13" r="1.5"/><circle cx="8" cy="13" r="1.5"/>
+        </svg>
+      </div>
+      <pre className="flex-1 text-sm font-mono text-gray-200 whitespace-pre-wrap break-all">{text}</pre>
+    </div>
+  );
+};
+
+// Arrange question input — must be its own component so hooks work correctly
+const ArrangeInput = ({ options, value, onChange }) => {
+  const initialItems = Array.isArray(value) && value.length === options.length
+    ? value
+    : options.map((_, i) => i);
+  const [items, setItems] = useState(initialItems);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    if (active.id !== over?.id) {
+      const oldIdx = items.indexOf(active.id);
+      const newIdx = items.indexOf(over.id);
+      const newOrder = arrayMove(items, oldIdx, newIdx);
+      setItems(newOrder);
+      onChange(newOrder);
+    }
+  };
+
+  return (
+    <div>
+      <p className="text-sm text-gray-400 mb-3">🖱️ Drag to reorder the code lines into the correct sequence:</p>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={items} strategy={verticalListSortingStrategy}>
+          <div className="space-y-2">
+            {items.map((origIdx, displayIdx) => (
+              <SortableItem
+                key={origIdx}
+                id={origIdx}
+                text={options[origIdx]}
+                index={displayIdx}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
+    </div>
+  );
+};
 
 const Quiz = () => {
   const { courseId, quizId } = useParams();
   const navigate = useNavigate();
   const [answerPaper, setAnswerPaper] = useState(null);
+  const [quizName, setQuizName] = useState("");
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [timeLeft, setTimeLeft] = useState(0);
@@ -21,7 +160,24 @@ const Quiz = () => {
   const [incorrectAnswers, setIncorrectAnswers] = useState(new Set());
   const [questionResults, setQuestionResults] = useState({});
   const [showQuitConfirm, setShowQuitConfirm] = useState(false);
+  const [violations, setViolations] = useState(0);
+  const [faceMissingCount, setFaceMissingCount] = useState(0);
   const timerIntervalRef = useRef(null);
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+  const enterFullscreen = async () => {
+    try {
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen();
+      }
+    } catch (err) {
+      console.error("Fullscreen failed:", err);
+    }
+  };
+
+  enterFullscreen();
+}, []);
 
   useEffect(() => {
     if (courseId && quizId) {
@@ -33,6 +189,296 @@ const Quiz = () => {
       }
     };
   }, [courseId, quizId]);
+ useEffect(() => {
+  let stream;
+
+  const startCamera = async () => {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
+
+      if (videoRef.current) {
+  videoRef.current.srcObject = stream;
+  stream.getVideoTracks().forEach((track) => {
+  track.onended = () => {
+    alert(
+      "Camera disconnected. Exam will be terminated."
+    );
+
+    confirmQuit();
+  };
+});
+
+  videoRef.current.onloadedmetadata = () => {
+    videoRef.current?.play();
+  };
+}
+    } catch (err) {
+      console.error("Camera access denied", err);
+    }
+  };
+
+  startCamera();
+
+  return () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+    }
+  };
+}, [quizId]);
+
+useEffect(() => {
+  let interval;
+
+  const loadModels = async () => {
+  try {
+    console.log("Loading face model...");
+
+    await faceapi.nets.tinyFaceDetector.loadFromUri("/models");
+
+    console.log("Face model loaded successfully");
+
+    interval = setInterval(async () => {
+      if (!videoRef.current) {
+        console.log("videoRef not ready");
+        return;
+      }
+
+      const detections = await faceapi.detectAllFaces(
+        videoRef.current,
+        new faceapi.TinyFaceDetectorOptions()
+      );
+
+      console.log("Faces detected:", detections.length);
+
+      if (detections.length === 0) {
+        setFaceMissingCount((prev) => {
+          const count = prev + 1;
+
+          console.log("No face count:", count);
+
+          if (count >= 5) {
+            addViolation();
+            return 0;
+          }
+
+          return count;
+        });
+      } else {
+        setFaceMissingCount(0);
+      }
+
+      if (detections.length > 1) {
+        console.log("Multiple faces detected");
+        addViolation();
+      }
+    }, 2000);
+  } catch (err) {
+    console.error("FACE MODEL ERROR:", err);
+  }
+};
+  
+      
+  loadModels();
+
+  return () => {
+    if (interval) clearInterval(interval);
+  };
+}, []);
+useEffect(() => {
+  const handleVisibilityChange = () => {
+   if (document.hidden) {
+  addViolation();
+}
+  };
+
+  document.addEventListener(
+    "visibilitychange",
+    handleVisibilityChange
+  );
+
+  return () => {
+    document.removeEventListener(
+      "visibilitychange",
+      handleVisibilityChange
+    );
+  };
+}, []);
+
+useEffect(() => {
+  const handleFullscreenChange = () => {
+   if (!document.fullscreenElement) {
+  addViolation();
+}
+  };
+
+  document.addEventListener(
+    "fullscreenchange",
+    handleFullscreenChange
+  );
+
+  return () => {
+    document.removeEventListener(
+      "fullscreenchange",
+      handleFullscreenChange
+    );
+  };
+}, []);
+
+useEffect(() => {
+  const examKey = `quiz_${quizId}_active`;
+
+  
+
+  localStorage.setItem(examKey, "true");
+
+  return () => {
+    localStorage.removeItem(examKey);
+  };
+}, [quizId]);
+
+useEffect(() => {
+  const disableRightClick = (e) => {
+    e.preventDefault();
+    addViolation();
+  };
+
+  document.addEventListener(
+    "contextmenu",
+    disableRightClick
+  );
+
+  return () => {
+    document.removeEventListener(
+      "contextmenu",
+      disableRightClick
+    );
+  };
+}, []);
+
+useEffect(() => {
+  const disableCopyPaste = (e) => {
+   e.preventDefault();
+addViolation();
+  };
+
+  document.addEventListener("copy", disableCopyPaste);
+  document.addEventListener("cut", disableCopyPaste);
+  document.addEventListener("paste", disableCopyPaste);
+
+  return () => {
+    document.removeEventListener("copy", disableCopyPaste);
+    document.removeEventListener("cut", disableCopyPaste);
+    document.removeEventListener("paste", disableCopyPaste);
+  };
+}, []);
+
+useEffect(() => {
+  document.body.style.userSelect = "none";
+
+  return () => {
+    document.body.style.userSelect = "auto";
+  };
+}, []);
+
+useEffect(() => {
+  const handleKeyDown = (e) => {
+
+    if (e.key === "F12") {
+      e.preventDefault();
+      alert("Developer tools are not allowed.");
+      return;
+    }
+
+    if (
+      e.ctrlKey &&
+      e.shiftKey &&
+      (e.key === "I" ||
+       e.key === "J" ||
+       e.key === "C")
+    ) {
+      e.preventDefault();
+      alert("Developer tools are not allowed.");
+      return;
+    }
+
+    if (
+      e.ctrlKey &&
+      e.key.toLowerCase() === "u"
+    ) {
+      e.preventDefault();
+      alert("View source is not allowed.");
+    }
+  };
+
+  document.addEventListener(
+    "keydown",
+    handleKeyDown
+  );
+
+  return () => {
+    document.removeEventListener(
+      "keydown",
+      handleKeyDown
+    );
+  };
+}, []);
+
+useEffect(() => {
+  const handleOffline = () => {
+    alert(
+      "Internet connection lost. Exam terminated."
+    );
+
+    confirmQuit();
+  };
+
+  window.addEventListener(
+    "offline",
+    handleOffline
+  );
+
+  return () => {
+    window.removeEventListener(
+      "offline",
+      handleOffline
+    );
+  };
+}, []);
+useEffect(() => {
+  const handlePrintScreen = () => {
+    addViolation();
+    alert("Screenshot detected. Violation recorded.");
+  };
+
+  document.addEventListener("keyup", (e) => {
+    if (e.key === "PrintScreen") {
+      handlePrintScreen();
+    }
+  });
+
+  return () => {
+    document.removeEventListener("keyup", handlePrintScreen);
+  };
+}, []);
+useEffect(() => {
+  const handleKeyDown = (e) => {
+    if (
+      e.key === "PrintScreen" ||
+      (e.ctrlKey && e.shiftKey && e.key === "S")
+    ) {
+      addViolation();
+    }
+  };
+
+  window.addEventListener("keydown", handleKeyDown);
+
+  return () => {
+    window.removeEventListener("keydown", handleKeyDown);
+  };
+}, []);
 
   useEffect(() => {
     if (timeLeft > 0) {
@@ -57,8 +503,20 @@ const Quiz = () => {
     try {
       setLoading(true);
       const data = await startQuiz(courseId, quizId);
-      setAnswerPaper(data.answerpaper);
-      setTimeLeft(data.time_left || 0);
+if (
+  !data.answerpaper ||
+  !data.answerpaper.questions ||
+  data.answerpaper.questions.length === 0
+) {
+  setError(
+    "This quiz has no questions. You cannot start, submit, or end this quiz."
+  );
+  return;
+}
+setAnswerPaper(data.answerpaper);
+setQuizName(data.quiz_name || "Quiz");
+setTimeLeft(data.time_left || 0);
+     
 
       // Initialize answers object
       const initialAnswers = {};
@@ -349,14 +807,12 @@ const Quiz = () => {
     }
 
     // Validate answer based on question type
-    if (currentQuestion.type === 'mcc') {
-      // For multiple choice, check if at least one option is selected
+    if (currentQuestion.type === 'mcc' || currentQuestion.type === 'arrange') {
       if (!answer || (Array.isArray(answer) && answer.length === 0)) {
-        alert('Please select at least one answer');
+        alert(currentQuestion.type === 'arrange' ? 'Please arrange the code lines' : 'Please select at least one answer');
         return;
       }
     } else {
-      // For other types, check if answer is not empty
       if (!answer || (typeof answer === 'string' && answer.trim() === '')) {
         alert('Please enter an answer');
         return;
@@ -372,6 +828,9 @@ const Quiz = () => {
         formattedAnswer = Array.isArray(answer) ? answer : [answer];
       } else if (currentQuestion.type === 'mcq') {
         formattedAnswer = answer;
+      } else if (currentQuestion.type === 'arrange') {
+        // Convert 0-based indices to 1-based as the backend expects
+        formattedAnswer = Array.isArray(answer) ? answer.map(i => i + 1) : [];
       } else {
         formattedAnswer = [answer];
       }
@@ -404,19 +863,59 @@ const Quiz = () => {
     }
   };
 
+
   const handleQuit = () => {
     setShowQuitConfirm(true);
   };
 
   const confirmQuit = async () => {
-    try {
-      await quitQuiz(answerPaper.id);
-      navigate(`/answerpapers/${answerPaper.id}/submission`);
-    } catch (err) {
-      console.error('Failed to quit quiz:', err);
-      navigate(`/answerpapers/${answerPaper.id}/submission`);
+  console.log("CONFIRM QUIT CALLED");
+
+  try {
+    await quitQuiz(answerPaper.id);
+
+    console.log("QUIZ QUIT SUCCESS");
+
+    navigate(`/answerpapers/${answerPaper.id}/submission`);
+  } catch (err) {
+    console.error("QUIT ERROR", err);
+
+    navigate(`/answerpapers/${answerPaper.id}/submission`);
+  }
+};
+
+  const addViolation = () => {
+  setViolations((prev) => {
+    const count = prev + 1;
+
+  if (count >= 3) {
+  console.log("AUTO TERMINATING");
+  console.log("ANSWER PAPER:", answerPaper);
+  console.log("AnswerPaper ID:", answerPaper?.id);
+
+  quitQuiz(answerPaper.id)
+    .then((res) => {
+      console.log("QUIT SUCCESS", res);
+      navigate(`/courses/${courseId}/manage`);
+    })
+    .catch((err) => {
+      console.error("QUIT FAILED", err);
+      navigate(`/courses/${courseId}/manage`);
+    });
+
+  return count;
+
+ 
+
+    } else {
+      alert(
+        `Warning! Violation ${count}/3`
+      );
     }
-  };
+
+    return count;
+  });
+};
 
   const handleQuestionClick = (index) => {
     setCurrentQuestionIndex(index);
@@ -475,6 +974,10 @@ const Quiz = () => {
   const renderQuestionInput = () => {
     if (!currentQuestion) return null;
 
+    // Extract options from test_cases (where mcq/mcc/arrange data lives)
+    const testCaseOptions = currentQuestion.test_cases?.[0]?.options || [];
+    console.log("Question Type:", currentQuestion?.type);
+
     switch (currentQuestion.type) {
       case 'integer':
       case 'float':
@@ -492,15 +995,25 @@ const Quiz = () => {
       case 'mcq':
         return (
           <div className="space-y-3">
-            {currentQuestion.options && currentQuestion.options.map((option, idx) => (
-              <label key={idx} className="flex items-center gap-3 p-4 bg-white/5 rounded-lg cursor-pointer hover:bg-white/10 transition">
+            {testCaseOptions.length === 0 && (
+              <p className="text-gray-400 text-sm">No options available.</p>
+            )}
+            {testCaseOptions.map((option, idx) => (
+              <label
+                key={idx}
+                className={`flex items-center gap-3 p-4 rounded-lg cursor-pointer transition border ${
+                  answers[currentQuestion.id] === option
+                    ? 'bg-indigo-500/15 border-indigo-500/50'
+                    : 'bg-white/5 border-white/10 hover:bg-white/10'
+                }`}
+              >
                 <input
                   type="radio"
                   name={`question-${currentQuestion.id}`}
                   value={option}
                   checked={answers[currentQuestion.id] === option}
                   onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
-                  className="w-4 h-4"
+                  className="w-4 h-4 accent-indigo-500"
                 />
                 <span>{option}</span>
               </label>
@@ -511,8 +1024,18 @@ const Quiz = () => {
       case 'mcc':
         return (
           <div className="space-y-3">
-            {currentQuestion.options && currentQuestion.options.map((option, idx) => (
-              <label key={idx} className="flex items-center gap-3 p-4 bg-white/5 rounded-lg cursor-pointer hover:bg-white/10 transition">
+            {testCaseOptions.length === 0 && (
+              <p className="text-gray-400 text-sm">No options available.</p>
+            )}
+            {testCaseOptions.map((option, idx) => (
+              <label
+                key={idx}
+                className={`flex items-center gap-3 p-4 rounded-lg cursor-pointer transition border ${
+                  (answers[currentQuestion.id] || []).includes(option)
+                    ? 'bg-indigo-500/15 border-indigo-500/50'
+                    : 'bg-white/5 border-white/10 hover:bg-white/10'
+                }`}
+              >
                 <input
                   type="checkbox"
                   checked={(answers[currentQuestion.id] || []).includes(option)}
@@ -523,7 +1046,7 @@ const Quiz = () => {
                       : current.filter((o) => o !== option);
                     handleAnswerChange(currentQuestion.id, updated);
                   }}
-                  className="w-4 h-4"
+                  className="w-4 h-4 accent-indigo-500"
                 />
                 <span>{option}</span>
               </label>
@@ -531,14 +1054,69 @@ const Quiz = () => {
           </div>
         );
 
+      case 'arrange':
+        return (
+          <ArrangeInput
+            key={currentQuestion.id}
+            options={testCaseOptions}
+            value={answers[currentQuestion.id]}
+            onChange={(newOrder) => handleAnswerChange(currentQuestion.id, newOrder)}
+          />
+        );
+        case 'upload':
+        case 'assignment_upload':
+  return (
+    <div className="space-y-3">
+      <input
+        type="file"
+        accept=".txt"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+
+          if (!file) return;
+
+          if (!file.name.toLowerCase().endsWith('.txt')) {
+            alert('Only .txt files are allowed');
+            e.target.value = '';
+            return;
+          }
+
+          handleAnswerChange(currentQuestion.id, file);
+        }}
+        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg"
+      />
+
+      <p className="text-sm text-gray-400">
+        Only TXT files are allowed
+      </p>
+    </div>
+  );
+
       case 'code':
         return (
-          <textarea
-            className="w-full px-4 py-3 text-lg font-mono bg-white/5 border border-white/10 rounded-lg min-h-[300px]"
-            placeholder="Write your code here..."
-            value={answers[currentQuestion.id] || ''}
-            onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
-          />
+          <div className="rounded-lg overflow-hidden border border-white/10">
+            <div className="flex items-center justify-between px-4 py-2 bg-white/5 border-b border-white/10">
+              <span className="text-xs text-gray-400 font-mono">
+                {currentQuestion.language?.toUpperCase() || 'CODE'}
+              </span>
+              <span className="text-xs text-gray-500">CodeMirror Editor</span>
+            </div>
+            <CodeMirror
+              value={answers[currentQuestion.id] || ''}
+              height="320px"
+              theme={oneDark}
+              extensions={getLanguageExtension(currentQuestion.language)}
+              onChange={(val) => handleAnswerChange(currentQuestion.id, val)}
+              basicSetup={{
+                lineNumbers: true,
+                foldGutter: true,
+                dropCursor: false,
+                allowMultipleSelections: false,
+                indentOnInput: true,
+                tabSize: 4,
+              }}
+            />
+          </div>
         );
 
       default:
@@ -604,6 +1182,11 @@ const Quiz = () => {
               <FaClock className="w-5 h-5 text-indigo-400" />
               <span className="text-md font-mono font-bold">{formatTime(timeLeft)}</span>
             </div>
+            <div className="bg-red-500/10 border border-red-500/30 px-4 py-2 rounded-lg">
+  <span className="text-red-400 font-semibold">
+    Violations: {violations}/3
+  </span>
+</div>
             <button
               onClick={handleQuit}
               className="bg-red-600 text-white text-md px-6 py-2 rounded-lg font-semibold hover:bg-red-700 transition inline-flex items-center"
@@ -618,7 +1201,7 @@ const Quiz = () => {
           <div className="max-w-4xl">
             {/* Breadcrumb Navigation */}
             <div className="mb-8">
-              <h1 className="text-3xl font-bold">Quiz</h1>
+              <h1 className="text-3xl font-bold">{quizName}</h1>
               <p className="text-gray-400 text-sm mt-1">
                 <Link to="/courses" className="hover:text-white transition">Courses</Link> /
                 <Link to={`/courses/${courseId}/modules`} className="hover:text-white transition"> Course</Link> /
@@ -636,7 +1219,7 @@ const Quiz = () => {
                   <div className="mb-4">
                     <div
                       className="prose prose-invert max-w-none text-gray-300"
-                      dangerouslySetInnerHTML={{ __html: currentQuestion.description || currentQuestion.summary }}
+                      dangerouslySetInnerHTML={{ __html: renderLatex(currentQuestion.description || currentQuestion.summary) }}
                     />
                   </div>
 
@@ -666,14 +1249,17 @@ const Quiz = () => {
                 {/* Question Body */}
                 <div className="card p-8 mb-6">
                   <label className="block text-sm font-semibold mb-4 soft">
-                    {currentQuestion.type === 'integer' ? 'Enter Integer:' :
-                      currentQuestion.type === 'float' ? 'Enter Float:' :
-                        currentQuestion.type === 'string' ? 'Enter String:' :
-                          currentQuestion.type === 'code' ? 'Write Your Code:' :
-                            currentQuestion.type === 'mcq' ? 'Select One Answer:' :
-                              currentQuestion.type === 'mcc' ? 'Select All Correct Answers:' :
-                                'Enter Your Answer:'}
+                   {currentQuestion.type === 'integer' ? 'Enter Integer:' : 
+                   currentQuestion.type === 'float' ? 'Enter Float:' :
+                   currentQuestion.type === 'string' ? 'Enter String:' :
+                   currentQuestion.type === 'code' ? 'Write Your Code:' :
+                   currentQuestion.type === 'mcq' ? 'Select One Answer:' :
+                   currentQuestion.type === 'mcc' ? 'Select All Correct Answers:' :
+                   currentQuestion.type === 'assignment_upload' ? 'Upload File:' :
+                   'Enter Your Answer:'}
+                               
                   </label>
+                  
                   {renderQuestionInput()}
                 </div>
 
@@ -763,8 +1349,20 @@ const Quiz = () => {
                 </div>
               </>
             )}
-          </div>
+                    </div>
         </div>
+
+        {/* Webcam Preview */}
+        <div className="fixed top-24 right-6 z-50">
+          <video
+            ref={videoRef}
+            autoPlay
+            muted
+            playsInline
+            className="w-48 h-36 rounded-lg border-2 border-blue-500 shadow-lg bg-black"
+          />
+        </div>
+
       </main>
     </div>
   );

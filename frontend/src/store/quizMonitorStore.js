@@ -11,6 +11,18 @@ import {
   revokeSpecialAttempt,
 } from "../api/api";
 
+// Always returns a plain string so React can render it safely
+const getErrorMessage = (error) => {
+  const data = error?.response?.data;
+  if (!data) return error?.message || "An unexpected error occurred.";
+  if (typeof data === "string") return data;
+  // Django / DRF typically returns {error: "..."} or {detail: "..."}
+  if (data.error) return data.error;
+  if (data.detail) return data.detail;
+  if (data.message) return data.message;
+  return JSON.stringify(data);
+};
+
 const useMonitorStore = create((set) => ({
   loading: false,
   error: null,
@@ -23,7 +35,7 @@ const useMonitorStore = create((set) => ({
       const data = await monitorQuizProgress(quizId, courseId, attemptNumber);
       set({ result: data, loading: false });
     } catch (error) {
-      set({ error: error?.response?.data || error.message, loading: false });
+      set({ error: getErrorMessage(error), loading: false });
     }
   },
 
@@ -34,29 +46,27 @@ const useMonitorStore = create((set) => ({
       const data = await getQuizStatistics(questionpaperId, courseId, attemptNumber);
       set({ result: data, loading: false });
     } catch (error) {
-      set({ error: error?.response?.data || error.message, loading: false });
+      set({ error: getErrorMessage(error), loading: false });
     }
   },
 
   // Download quiz CSV
   downloadCSV: async (courseId, quizId, attemptNumber) => {
-    set({ loading: true, error: null, result: null });
+    set({ error: null }); // don't wipe result - keeps monitor panel visible
     try {
-      const data = await downloadQuizCSV(courseId, quizId, attemptNumber);
-      set({ result: data, loading: false });
+      await downloadQuizCSV(courseId, quizId, attemptNumber);
     } catch (error) {
-      set({ error: error?.response?.data || error.message, loading: false });
+      set({ error: getErrorMessage(error) });
     }
   },
 
   // Upload marks CSV
   uploadCSV: async (courseId, questionpaperId, csvFile) => {
-    set({ loading: true, error: null, result: null });
+    set({ error: null }); // don't wipe result - keeps monitor panel visible
     try {
-      const data = await uploadMarksCSV(courseId, questionpaperId, csvFile);
-      set({ result: data, loading: false });
+      await uploadMarksCSV(courseId, questionpaperId, csvFile);
     } catch (error) {
-      set({ error: error?.response?.data || error.message, loading: false });
+      set({ error: getErrorMessage(error) });
     }
   },
 
@@ -67,7 +77,7 @@ const useMonitorStore = create((set) => ({
       const data = await getUserData(userId, questionpaperId, courseId);
       set({ result: data, loading: false });
     } catch (error) {
-      set({ error: error?.response?.data || error.message, loading: false });
+      set({ error: getErrorMessage(error), loading: false });
     }
   },
 
@@ -78,7 +88,7 @@ const useMonitorStore = create((set) => ({
       const data = await extendAnswerPaperTime(paperId, extraTime);
       set({ result: data, loading: false });
     } catch (error) {
-      set({ error: error?.response?.data || error.message, loading: false });
+      set({ error: getErrorMessage(error), loading: false });
     }
   },
 
@@ -89,7 +99,7 @@ const useMonitorStore = create((set) => ({
       const data = await allowSpecialAttempt(userId, courseId, quizId);
       set({ result: data, loading: false });
     } catch (error) {
-      set({ error: error?.response?.data || error.message, loading: false });
+      set({ error: getErrorMessage(error), loading: false });
     }
   },
 
@@ -100,7 +110,7 @@ const useMonitorStore = create((set) => ({
       const data = await startSpecialAttempt(micromanagerId);
       set({ result: data, loading: false });
     } catch (error) {
-      set({ error: error?.response?.data || error.message, loading: false });
+      set({ error: getErrorMessage(error), loading: false });
     }
   },
 
@@ -111,7 +121,7 @@ const useMonitorStore = create((set) => ({
       const data = await revokeSpecialAttempt(micromanagerId);
       set({ result: data, loading: false });
     } catch (error) {
-      set({ error: error?.response?.data || error.message, loading: false });
+      set({ error: getErrorMessage(error), loading: false });
     }
   },
 

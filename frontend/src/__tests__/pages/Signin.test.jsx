@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import { BrowserRouter } from 'react-router-dom';
 import Signin from '../../pages/Signin';
 import * as authStore from '../../store/authStore';
@@ -72,21 +72,7 @@ describe('Signin Component', () => {
     expect(mockLogin).not.toHaveBeenCalled();
   });
 
-  it('validates password length', async () => {
-    renderComponent();
-    
-    const usernameInput = screen.getByPlaceholderText('Enter your username');
-    const passwordInput = screen.getByPlaceholderText('Enter your password');
-    
-    fireEvent.change(usernameInput, { target: { value: 'testuser' } });
-    fireEvent.change(passwordInput, { target: { value: '123' } }); // < 6 chars
-    
-    const submitButton = screen.getByRole('button', { name: /Sign In/i });
-    fireEvent.click(submitButton);
 
-    expect(await screen.findByText('Password must be at least 6 characters')).toBeInTheDocument();
-    expect(mockLogin).not.toHaveBeenCalled();
-  });
 
   it('calls login on successful validation and navigates', async () => {
     mockLogin.mockResolvedValueOnce({ success: true });

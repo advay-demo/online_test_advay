@@ -21,7 +21,7 @@ from .models import (
     Course, QuestionPaper, Quiz, AnswerPaper, CourseStatus, User, Question,
     Answer
 )
-from notifications_plugin.models import NotificationMessage, Notification
+#from notifications_plugin.models import NotificationMessage, Notification
 
 
 @shared_task
@@ -84,15 +84,8 @@ def regrade_papers(data):
             Unable to regrade please try again.
             Click <a href="{0}">here</a> to view""".format(url)
             )
-        notification_type = "warning"
-    nm = NotificationMessage.objects.add_single_message(
-        user_id, "{0} re-evaluation status".format(quiz_name),
-        message, notification_type
-    )
-    notification = Notification.objects.add_single_notification(
-        user_id, nm.id
-    )
-
+    # Notifications disabled
+pass
 
 @shared_task
 def update_user_marks(data):
@@ -125,15 +118,8 @@ def update_user_marks(data):
             Click <a href="{0}">here</a> to view
             """.format(url)
         )
-        nm = NotificationMessage.objects.add_single_message(
-            request_user, "{0} marks update status".format(
-                question_paper.quiz.description
-            ), message, "warning"
-        )
-        notification = Notification.objects.add_single_notification(
-            request_user, nm.id
-        )
-
+      # Notifications disabled
+pass
 
 def _read_marks_csv(
         reader, request_user, course_id, question_paper, question_ids):
@@ -178,14 +164,18 @@ def _read_marks_csv(
                 answer.save()
         answerpaper.update_marks(state='completed')
         answerpaper.save()
+        question_summary = question.summary if question else 'N/A'
         update_status.append(
             'Updated successfully for user: {0}, question: {1}'.format(
-            username, question.summary)
+            username, question_summary)
         )
-    url = reverse(
-        "yaksh:grade_user",
-        args=[question_paper.quiz_id, course_id]
-    )
+    try:
+        url = reverse(
+            "yaksh:grade_user",
+            args=[question_paper.quiz_id, course_id]
+        )
+    except Exception:
+        url = '/'
     message = dedent("""
         Quiz mark update is complete.
         Click <a href="{0}">here</a> to view
@@ -195,9 +185,5 @@ def _read_marks_csv(
     summary = "{0} marks update status".format(
         question_paper.quiz.description
     )
-    nm = NotificationMessage.objects.add_single_message(
-        request_user, summary, message, "info"
-    )
-    notification = Notification.objects.add_single_notification(
-        request_user, nm.id
-    )
+   # Notifications disabled
+pass

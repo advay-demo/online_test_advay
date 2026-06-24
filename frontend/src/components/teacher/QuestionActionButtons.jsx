@@ -31,7 +31,7 @@ const QuestionActionButtons = ({ activeButton = null, onAddClick }) => {
           
           // Style classes (keep your existing classes)
           const btnClasses = `group relative px-4 sm:px-6 py-3 rounded-xl font-semibold transition-all duration-300 text-sm flex items-center gap-2.5 whitespace-nowrap flex-shrink-0 border-2 ${isActive
-                ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-xl shadow-blue-600/30 hover:shadow-2xl hover:shadow-blue-600/40 border-transparent scale-101'
+                ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white border-transparent scale-101'
                 : 'card-strong border-[var(--border-strong)] text-[var(--text-secondary)] hover:border-blue-500/40 hover:bg-blue-500/5 hover:text-blue-400 hover:shadow-md'
                 }`;
 

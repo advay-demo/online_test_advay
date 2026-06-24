@@ -731,6 +731,7 @@ class LessonDetailSerializer(serializers.ModelSerializer):
     course_name = serializers.SerializerMethodField()
     module_id = serializers.SerializerMethodField()
     module_name = serializers.SerializerMethodField()
+    next_unit = serializers.SerializerMethodField()
     
     def get_video_url(self, obj):
         if obj.video_path:
@@ -840,13 +841,40 @@ class LessonDetailSerializer(serializers.ModelSerializer):
             pass
         
         return False
+    def get_next_unit(self, obj):
+        from yaksh.models import LearningUnit, LearningModule
+        current_unit = LearningUnit.objects.filter(lesson=obj).first()
+        if not current_unit:
+            return None
+        module = LearningModule.objects.filter(
+            learning_unit=current_unit
+            ).first()
+        if not module:
+            return None
+        units = list(module.learning_unit.order_by("order"))
+        try:
+            current_index = units.index(current_unit)
+        except ValueError:
+            return None
+
+        if current_index + 1 >= len(units):
+            return None
+       
+        next_unit = units[current_index + 1]
+        return {
+        "type": next_unit.type,
+        "lesson_id": next_unit.lesson.id if next_unit.lesson else None,
+        "quiz_id": next_unit.quiz.id if next_unit.quiz else None,
+        "order": next_unit.order
+    }
     
     class Meta:
         model = Lesson
-        fields = ['id', 'name', 'description', 'html_data', 'video_url', 
-                 'video_file', 'files', 'is_completed', 'active', 
-                 'course_id', 'course_name', 'module_id', 'module_name']
-
+        fields = ['id', 'name', 'description', 'html_data', 'video_url',
+          'video_file', 'files', 'is_completed', 'active',
+          'course_id', 'course_name', 'module_id', 'module_name',
+          'next_unit']
+        
 class LearningUnitDetailSerializer(serializers.ModelSerializer):
     """Detailed learning unit with quiz or lesson data"""
     lesson = LessonDetailSerializer(read_only=True)

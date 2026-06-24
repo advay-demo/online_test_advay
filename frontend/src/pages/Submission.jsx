@@ -193,9 +193,8 @@ const Submission = () => {
               <p className="text-xl font-semibold text-white mb-2">Quiz Submitted Successfully</p>
               <p className="text-base muted mb-6">Your answers have been recorded for evaluation.</p>
 
-              {submission.percent !== undefined && (
-                <p className="text-2xl font-bold mb-6">Score: {submission.percent}%</p>
-              )}
+              {/* Score hidden from students */}
+
 
               <Link
                 to={(isTeacher && isModeratorActive) ? "/teacher/courses" : "/courses"}

@@ -941,6 +941,11 @@ class Course(models.Model):
     students = models.ManyToManyField(User, related_name='students')
     requests = models.ManyToManyField(User, related_name='requests')
     rejected = models.ManyToManyField(User, related_name='rejected')
+    removed_students = models.ManyToManyField(
+    User,
+    related_name='removed_students',
+    blank=True
+)
     created_on = models.DateTimeField(auto_now_add=True)
     teachers = models.ManyToManyField(User, related_name='teachers')
     is_trial = models.BooleanField(default=False)
@@ -1200,12 +1205,14 @@ class Course(models.Model):
         return remaining_days
 
     def get_completion_percent(self, user):
-        course_status = CourseStatus.objects.filter(course=self, user=user)
-        if course_status.exists():
-            percentage = course_status.first().percent_completed
-        else:
-            percentage = 0
-        return percentage
+        modules = self.get_learning_modules()
+        percent = int(self.percent_completed(user, modules))
+        course_status = CourseStatus.objects.filter(course=self, user=user).first()
+        if course_status:
+            if course_status.percent_completed != percent:
+                course_status.percent_completed = percent
+                course_status.save(update_fields=['percent_completed'])
+        return percent
 
     def is_student(self, user):
         return self.students.filter(id=user.id).exists()
@@ -2610,7 +2617,7 @@ class AnswerPaper(models.Model):
                     result['success'] = True
                     result['error'] = ['Correct answer']
 
-            elif question.type == 'code' or question.type == "upload":
+            elif question.type == 'code':
                 user_dir = self.user.profile.get_user_dir()
                 url = '{0}:{1}'.format(SERVER_HOST_NAME, server_port)
                 submit(url, uid, json_data, user_dir)
@@ -2640,8 +2647,9 @@ class AnswerPaper(models.Model):
                 return (False, f'{msg} {question.type} answer submission error')
         else:
             answer = user_answer.answer
-        json_data = question.consolidate_answer_data(answer, self.user, True) \
-            if question.type == 'code' else None
+        json_data = question.consolidate_answer_data(
+    answer, self.user, True
+) if question.type in ['code', 'upload'] else None
         result = self.validate_answer(answer, question,
                                       json_data, user_answer.id,
                                       server_port=server_port
@@ -2860,6 +2868,22 @@ class ArrangeTestCase(TestCase):
 
     def __str__(self):
         return u'Arrange Testcase | Option: {0}'.format(self.options)
+ 
+class UploadTestCase(TestCase):
+    description = models.TextField(blank=True)
+    required = models.BooleanField(default=True)
+
+    def get_field_value(self):
+        return {
+            "test_case_type": "uploadtestcase",
+            "description": self.description,
+            "required": self.required
+        }
+
+    def __str__(self):
+        return u'Upload Testcase | Description: {0}'.format(
+            self.description
+        )
 
 
 ##############################################################################

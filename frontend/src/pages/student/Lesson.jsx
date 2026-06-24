@@ -365,13 +365,30 @@ const Lesson = () => {
                       <p className="text-sm font-bold text-emerald-400 mb-1">Lesson Completed!</p>
                       <p className="text-xs muted">Great job! You've completed this lesson.</p>
                     </div>
-                    <Link
-                      to={lesson.course_id ? `/courses/${lesson.course_id}/manage` : "/courses"}
-                      className="px-4 py-2 rounded-lg font-semibold text-sm transition-all bg-emerald-500/20 text-emerald-400 border-2 border-emerald-500/30 hover:bg-emerald-500/30 hover:scale-105"
-                    >
-                      Continue
-                      <FaArrowRight className="inline ml-2 w-3 h-3" />
-                    </Link>
+                  <button
+  onClick={() => {
+    if (!lesson?.next_unit) {
+      navigate(
+        lesson.course_id
+          ? `/courses/${lesson.course_id}/manage`
+          : "/courses"
+      );
+      return;
+    }
+
+    if (lesson.next_unit.type === "lesson") {
+      navigate(`/lessons/${lesson.next_unit.lesson_id}`);
+    } else {
+      navigate(
+        `/courses/${lesson.course_id}/quizzes/${lesson.next_unit.quiz_id}`
+      );
+    }
+  }}
+  className="px-4 py-2 rounded-lg font-semibold text-sm transition-all bg-emerald-500/20 text-emerald-400 border-2 border-emerald-500/30 hover:bg-emerald-500/30 hover:scale-105"
+>
+  Continue
+  <FaArrowRight className="inline ml-2 w-3 h-3" />
+</button>
                   </div>
                 </div>
               )}

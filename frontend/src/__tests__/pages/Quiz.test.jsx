@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+
 import { BrowserRouter } from 'react-router-dom';
 import Quiz from '../../pages/Quiz';
 import * as api from '../../api/api';
@@ -36,7 +36,7 @@ describe('Quiz Component', () => {
   };
 
   it('renders loading state initially', () => {
-    api.startQuiz.mockImplementationOnce(() => new Promise(() => {})); // Never resolves
+    api.startQuiz.mockImplementationOnce(() => new Promise(() => {}));
     renderComponent();
     expect(screen.getByText('Loading quiz...')).toBeInTheDocument();
   });
@@ -72,9 +72,7 @@ describe('Quiz Component', () => {
       expect(screen.getByText('Question 1 of 1')).toBeInTheDocument();
     });
 
-    // Validates time formatting
     expect(screen.getByText('10:00')).toBeInTheDocument();
-    // Validates input exists
     expect(screen.getByPlaceholderText('Enter integer...')).toBeInTheDocument();
   });
 
@@ -112,6 +110,57 @@ describe('Quiz Component', () => {
 
     await waitFor(() => {
       expect(api.submitAnswer).toHaveBeenCalledWith(11, 101, ['Test answer']);
+    });
+  });
+  it('opens confirmation modal when Quit Exam is clicked', async () => {
+    api.startQuiz.mockResolvedValueOnce({
+      time_left: 600,
+      answerpaper: {
+        id: 11,
+        questions: [
+          { id: 101, description: 'Test', type: 'string', points: 10 }
+        ]
+      }
+    });
+
+    renderComponent();
+    
+    await waitFor(() => {
+      expect(screen.getByText('Question 1 of 1')).toBeInTheDocument();
+    });
+
+    const finishBtn = screen.getByRole('button', { name: /Quit Exam/i });
+    fireEvent.click(finishBtn);
+
+    expect(screen.getByText('Are you sure you want to quit?')).toBeInTheDocument();
+  });
+
+  it('quits the exam and navigates to submission page when confirmed', async () => {
+    api.startQuiz.mockResolvedValueOnce({
+      time_left: 600,
+      answerpaper: {
+        id: 11,
+        questions: [
+          { id: 101, description: 'Test', type: 'string', points: 10 }
+        ]
+      }
+    });
+    
+    api.quitQuiz.mockResolvedValueOnce({ success: true });
+
+    renderComponent();
+    
+    await waitFor(() => {
+      expect(screen.getByText('Question 1 of 1')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Quit Exam/i }));
+    
+    const confirmBtn = screen.getByRole('button', { name: /Yes, Quit/i });
+    fireEvent.click(confirmBtn);
+
+    await waitFor(() => {
+      expect(api.quitQuiz).toHaveBeenCalledWith(11);
+      expect(mockNavigate).toHaveBeenCalledWith('/answerpapers/11/submission');
     });
   });
 });

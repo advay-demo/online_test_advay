@@ -903,6 +903,7 @@ class StartQuiz(APIView):
                 # Time is still valid, let them resume
                 serializer = AnswerPaperSerializer(last_attempt)
                 context["time_left"] = last_attempt.time_left()
+                context["quiz_name"] = quiz.description
                 context["answerpaper"] = serializer.data
                 return Response(context)
 
@@ -925,6 +926,7 @@ class StartQuiz(APIView):
         serializer = AnswerPaperSerializer(answerpaper)
         context["time_left"] = answerpaper.time_left()
         context["answerpaper"] = serializer.data
+        context["quiz_name"] = quiz.description
         return Response(context, status=status.HTTP_201_CREATED)
 
 
@@ -1900,6 +1902,8 @@ def lesson_detail(request, lesson_id):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def complete_lesson(request, lesson_id):
+    print("COMPLETE LESSON API HIT")
+ 
     """Mark a lesson as completed"""
     user = request.user
     
@@ -1937,7 +1941,18 @@ def complete_lesson(request, lesson_id):
     # Mark unit as completed
     if not course_status.completed_units.filter(id=learning_unit.id).exists():
         course_status.completed_units.add(learning_unit)
-        
+        # Calculate progress
+
+    total_units = course.get_learning_units().count()
+    completed_units = course_status.completed_units.count()
+    if total_units > 0:
+        percent = (completed_units / total_units) * 100
+        print("TOTAL =", total_units)
+        print("COMPLETED =", completed_units)
+        print("PERCENT =", percent)
+        course_status.percent_completed = percent
+        course_status.percentage = percent
+        course_status.save()
         # Update current unit to next unit
         module = learning_unit.learning_unit.first()
         if module:
@@ -2294,6 +2309,7 @@ def teacher_dashboard(request):
             'user__first_name', 
             'user__last_name', 
             'user__username'
+
         ).annotate(
             avg_score=Avg('marks_obtained'),
             total_score=Sum('marks_obtained'),
@@ -3465,6 +3481,8 @@ def design_questionpaper_api(request, course_id, quiz_id, questionpaper_id=None)
                 questions = _get_questions(user, question_type, marks)
             elif tags:
                 questions = _get_questions_from_tags(tags, user)
+            elif question_type:
+                questions = Question.objects.filter(active=True, user=user, type=question_type)
                 
             if questions is not None:
                 questions = _remove_already_present(question_paper.id, questions)
@@ -3673,6 +3691,8 @@ def api_quiz_handler(request, course_id, module_id, quiz_id=None):
                 'view_answerpaper': quiz.view_answerpaper,
                 'is_exercise': quiz.is_exercise,
                 'active': quiz.active,
+                'start_date_time': quiz.start_date_time,
+                'end_date_time': quiz.end_date_time,
                 'order': unit.order
             })
 
@@ -3699,6 +3719,9 @@ def api_quiz_handler(request, course_id, module_id, quiz_id=None):
                     view_answerpaper=request.data.get('view_answerpaper', True),
                     is_exercise=request.data.get('is_exercise', False),
                     active=request.data.get('active', True),
+
+                    start_date_time=request.data.get('start_date_time'),
+end_date_time=request.data.get('end_date_time'),
                     creator=user
                 )
 
@@ -3756,6 +3779,16 @@ def api_quiz_handler(request, course_id, module_id, quiz_id=None):
             if 'order' in request.data:
                 unit.order = request.data['order']
                 unit.save()
+
+            quiz.start_date_time = request.data.get( 
+                'start_date_time',
+                quiz.start_date_time
+                )
+            quiz.end_date_time = request.data.get(
+                'end_date_time',
+                quiz.end_date_time
+                )
+                
             
             quiz.save()
             return Response({'message': 'Quiz updated', 'id': quiz.id})
@@ -4045,6 +4078,8 @@ def teacher_create_question(request):
                             options = [options]
                     
                     correct_indices = tc_data.get('correct')
+                    print("OPTIONS =", options)
+                    print("CORRECT INDICES =", correct_indices)
                     # Standardize correct answer(s) into a list for iteration
                     if not isinstance(correct_indices, list):
                         correct_indices = [correct_indices] if correct_indices is not None else []
@@ -4224,6 +4259,8 @@ def teacher_update_question(request, question_id):
         # Update test cases if provided
         if 'test_cases' in request.data:
             test_cases_data = request.data['test_cases']
+            print("QUESTION TYPE =", question.type)
+            print("TEST CASES RECEIVED =", test_cases_data)     
             
             # Special case for arrange, mcq, and mcc: wipe old rows and securely recreate them 
             if question.type in ['arrange', 'mcq', 'mcc']:
@@ -4261,8 +4298,13 @@ def teacher_update_question(request, question_id):
                             correct_indices = [correct_indices] if correct_indices is not None else []
                             
                         cleaned_options = [opt for opt in options if str(opt).strip()]
+                        print("OPTIONS =", options)
+                        print("CORRECT INDICES =", correct_indices)
                         
                         for idx, option in enumerate(cleaned_options):
+                            print("CREATING:", option, idx, idx in correct_indices)
+                            
+
                             McqTestCase.objects.create(
                                 question=question,
                                 options=str(option).strip(),
@@ -4293,6 +4335,7 @@ def teacher_update_question(request, question_id):
                 # Update or create test cases
                 for tc_data in test_cases_data:
                     tc_type = tc_data.get('type') or tc_data.get('test_case_type')
+                    print("PROCESSING TC TYPE =", tc_type)
                     if not tc_type:
                         continue
                     
@@ -4419,8 +4462,10 @@ def teacher_update_question(request, question_id):
                                     'description': tc_data.get('description', ''),
                                     'required': tc_data.get('required', True)
                                 })
+                                print("CREATING UPLOAD TESTCASE:", create_data)
                             
-                            model_class.objects.create(**create_data)
+                            obj = model_class.objects.create(**create_data)
+                            print("CREATED OBJECT:", obj.id)
                             
                     except Exception as e:
                         print(f"Error updating/creating test case: {e}")
@@ -7823,7 +7868,7 @@ def upload_marks(request, course_id, questionpaper_id):
 
     # Prepare data for Celery task
     try:
-        csv_content = csv_file.read().decode('utf-8').splitlines()
+        csv_content = csv_file.read().decode('utf-8-sig').splitlines()
     except UnicodeDecodeError:
         return Response({'error': 'File encoding error. Please upload a UTF-8 encoded CSV.'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -7848,7 +7893,13 @@ def upload_marks(request, course_id, questionpaper_id):
         msg = f"{quiz.description} is submitted for marks update. You will receive a notification for the update status"
         return Response({'message': msg}, status=status.HTTP_200_OK)
     else:
-        return Response({'error': "Unable to submit for marks update. Please check with admin"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        # Celery not available — run synchronously for dev environments
+        try:
+            update_user_marks(data)
+            msg = f"{quiz.description} marks updated successfully."
+            return Response({'message': msg}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': f"Failed to update marks: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['GET'])
