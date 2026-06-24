@@ -503,9 +503,20 @@ useEffect(() => {
     try {
       setLoading(true);
       const data = await startQuiz(courseId, quizId);
-      setAnswerPaper(data.answerpaper);
-      setQuizName(data.quiz_name || "Quiz");
-      setTimeLeft(data.time_left || 0);
+if (
+  !data.answerpaper ||
+  !data.answerpaper.questions ||
+  data.answerpaper.questions.length === 0
+) {
+  setError(
+    "This quiz has no questions. You cannot start, submit, or end this quiz."
+  );
+  return;
+}
+setAnswerPaper(data.answerpaper);
+setQuizName(data.quiz_name || "Quiz");
+setTimeLeft(data.time_left || 0);
+     
 
       // Initialize answers object
       const initialAnswers = {};
