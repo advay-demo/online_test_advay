@@ -273,7 +273,7 @@ const startQuizExamMode = (quizId) => {
                                                                     <td className="px-4 py-4 align-middle">
                                                                         <div className="flex flex-col">
                                                                             <span className="text-[var(--text-primary)] font-medium group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors">{unitName}</span>
-                                                                            <span className="text-[11px] text-[var(--text-muted)] font-mono mt-0.5">ORDER #{unit.order}</span>
+                                                                            
                                                                         </div>
                                                                     </td>
 
@@ -367,7 +367,7 @@ const startQuizExamMode = (quizId) => {
 
                                                             <div className="flex items-center justify-between pt-3 border-t border-[var(--border-subtle)]">
                                                                 <div className="text-[10px] text-[var(--text-muted)]">
-                                                                    Unit Order: {unit.order}
+                                                                  
                                                                 </div>
                                                                 <DesktopActionButtons
                                                                     unit={unit}

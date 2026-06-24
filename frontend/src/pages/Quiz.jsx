@@ -12,6 +12,7 @@ import { python } from '@codemirror/lang-python';
 import { cpp } from '@codemirror/lang-cpp';
 import { java } from '@codemirror/lang-java';
 import { javascript } from '@codemirror/lang-javascript';
+import * as faceapi from "face-api.js";
 import {
   DndContext,
   closestCenter,
@@ -146,6 +147,7 @@ const Quiz = () => {
   const { courseId, quizId } = useParams();
   const navigate = useNavigate();
   const [answerPaper, setAnswerPaper] = useState(null);
+  const [quizName, setQuizName] = useState("");
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [timeLeft, setTimeLeft] = useState(0);
@@ -158,7 +160,24 @@ const Quiz = () => {
   const [incorrectAnswers, setIncorrectAnswers] = useState(new Set());
   const [questionResults, setQuestionResults] = useState({});
   const [showQuitConfirm, setShowQuitConfirm] = useState(false);
+  const [violations, setViolations] = useState(0);
+  const [faceMissingCount, setFaceMissingCount] = useState(0);
   const timerIntervalRef = useRef(null);
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+  const enterFullscreen = async () => {
+    try {
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen();
+      }
+    } catch (err) {
+      console.error("Fullscreen failed:", err);
+    }
+  };
+
+  enterFullscreen();
+}, []);
 
   useEffect(() => {
     if (courseId && quizId) {
@@ -170,6 +189,296 @@ const Quiz = () => {
       }
     };
   }, [courseId, quizId]);
+ useEffect(() => {
+  let stream;
+
+  const startCamera = async () => {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
+
+      if (videoRef.current) {
+  videoRef.current.srcObject = stream;
+  stream.getVideoTracks().forEach((track) => {
+  track.onended = () => {
+    alert(
+      "Camera disconnected. Exam will be terminated."
+    );
+
+    confirmQuit();
+  };
+});
+
+  videoRef.current.onloadedmetadata = () => {
+    videoRef.current?.play();
+  };
+}
+    } catch (err) {
+      console.error("Camera access denied", err);
+    }
+  };
+
+  startCamera();
+
+  return () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+    }
+  };
+}, [quizId]);
+
+useEffect(() => {
+  let interval;
+
+  const loadModels = async () => {
+  try {
+    console.log("Loading face model...");
+
+    await faceapi.nets.tinyFaceDetector.loadFromUri("/models");
+
+    console.log("Face model loaded successfully");
+
+    interval = setInterval(async () => {
+      if (!videoRef.current) {
+        console.log("videoRef not ready");
+        return;
+      }
+
+      const detections = await faceapi.detectAllFaces(
+        videoRef.current,
+        new faceapi.TinyFaceDetectorOptions()
+      );
+
+      console.log("Faces detected:", detections.length);
+
+      if (detections.length === 0) {
+        setFaceMissingCount((prev) => {
+          const count = prev + 1;
+
+          console.log("No face count:", count);
+
+          if (count >= 5) {
+            addViolation();
+            return 0;
+          }
+
+          return count;
+        });
+      } else {
+        setFaceMissingCount(0);
+      }
+
+      if (detections.length > 1) {
+        console.log("Multiple faces detected");
+        addViolation();
+      }
+    }, 2000);
+  } catch (err) {
+    console.error("FACE MODEL ERROR:", err);
+  }
+};
+  
+      
+  loadModels();
+
+  return () => {
+    if (interval) clearInterval(interval);
+  };
+}, []);
+useEffect(() => {
+  const handleVisibilityChange = () => {
+   if (document.hidden) {
+  addViolation();
+}
+  };
+
+  document.addEventListener(
+    "visibilitychange",
+    handleVisibilityChange
+  );
+
+  return () => {
+    document.removeEventListener(
+      "visibilitychange",
+      handleVisibilityChange
+    );
+  };
+}, []);
+
+useEffect(() => {
+  const handleFullscreenChange = () => {
+   if (!document.fullscreenElement) {
+  addViolation();
+}
+  };
+
+  document.addEventListener(
+    "fullscreenchange",
+    handleFullscreenChange
+  );
+
+  return () => {
+    document.removeEventListener(
+      "fullscreenchange",
+      handleFullscreenChange
+    );
+  };
+}, []);
+
+useEffect(() => {
+  const examKey = `quiz_${quizId}_active`;
+
+  
+
+  localStorage.setItem(examKey, "true");
+
+  return () => {
+    localStorage.removeItem(examKey);
+  };
+}, [quizId]);
+
+useEffect(() => {
+  const disableRightClick = (e) => {
+    e.preventDefault();
+    addViolation();
+  };
+
+  document.addEventListener(
+    "contextmenu",
+    disableRightClick
+  );
+
+  return () => {
+    document.removeEventListener(
+      "contextmenu",
+      disableRightClick
+    );
+  };
+}, []);
+
+useEffect(() => {
+  const disableCopyPaste = (e) => {
+   e.preventDefault();
+addViolation();
+  };
+
+  document.addEventListener("copy", disableCopyPaste);
+  document.addEventListener("cut", disableCopyPaste);
+  document.addEventListener("paste", disableCopyPaste);
+
+  return () => {
+    document.removeEventListener("copy", disableCopyPaste);
+    document.removeEventListener("cut", disableCopyPaste);
+    document.removeEventListener("paste", disableCopyPaste);
+  };
+}, []);
+
+useEffect(() => {
+  document.body.style.userSelect = "none";
+
+  return () => {
+    document.body.style.userSelect = "auto";
+  };
+}, []);
+
+useEffect(() => {
+  const handleKeyDown = (e) => {
+
+    if (e.key === "F12") {
+      e.preventDefault();
+      alert("Developer tools are not allowed.");
+      return;
+    }
+
+    if (
+      e.ctrlKey &&
+      e.shiftKey &&
+      (e.key === "I" ||
+       e.key === "J" ||
+       e.key === "C")
+    ) {
+      e.preventDefault();
+      alert("Developer tools are not allowed.");
+      return;
+    }
+
+    if (
+      e.ctrlKey &&
+      e.key.toLowerCase() === "u"
+    ) {
+      e.preventDefault();
+      alert("View source is not allowed.");
+    }
+  };
+
+  document.addEventListener(
+    "keydown",
+    handleKeyDown
+  );
+
+  return () => {
+    document.removeEventListener(
+      "keydown",
+      handleKeyDown
+    );
+  };
+}, []);
+
+useEffect(() => {
+  const handleOffline = () => {
+    alert(
+      "Internet connection lost. Exam terminated."
+    );
+
+    confirmQuit();
+  };
+
+  window.addEventListener(
+    "offline",
+    handleOffline
+  );
+
+  return () => {
+    window.removeEventListener(
+      "offline",
+      handleOffline
+    );
+  };
+}, []);
+useEffect(() => {
+  const handlePrintScreen = () => {
+    addViolation();
+    alert("Screenshot detected. Violation recorded.");
+  };
+
+  document.addEventListener("keyup", (e) => {
+    if (e.key === "PrintScreen") {
+      handlePrintScreen();
+    }
+  });
+
+  return () => {
+    document.removeEventListener("keyup", handlePrintScreen);
+  };
+}, []);
+useEffect(() => {
+  const handleKeyDown = (e) => {
+    if (
+      e.key === "PrintScreen" ||
+      (e.ctrlKey && e.shiftKey && e.key === "S")
+    ) {
+      addViolation();
+    }
+  };
+
+  window.addEventListener("keydown", handleKeyDown);
+
+  return () => {
+    window.removeEventListener("keydown", handleKeyDown);
+  };
+}, []);
 
   useEffect(() => {
     if (timeLeft > 0) {
@@ -195,6 +504,7 @@ const Quiz = () => {
       setLoading(true);
       const data = await startQuiz(courseId, quizId);
       setAnswerPaper(data.answerpaper);
+      setQuizName(data.quiz_name || "Quiz");
       setTimeLeft(data.time_left || 0);
 
       // Initialize answers object
@@ -548,14 +858,53 @@ const Quiz = () => {
   };
 
   const confirmQuit = async () => {
-    try {
-      await quitQuiz(answerPaper.id);
-      navigate(`/answerpapers/${answerPaper.id}/submission`);
-    } catch (err) {
-      console.error('Failed to quit quiz:', err);
-      navigate(`/answerpapers/${answerPaper.id}/submission`);
+  console.log("CONFIRM QUIT CALLED");
+
+  try {
+    await quitQuiz(answerPaper.id);
+
+    console.log("QUIZ QUIT SUCCESS");
+
+    navigate(`/answerpapers/${answerPaper.id}/submission`);
+  } catch (err) {
+    console.error("QUIT ERROR", err);
+
+    navigate(`/answerpapers/${answerPaper.id}/submission`);
+  }
+};
+
+  const addViolation = () => {
+  setViolations((prev) => {
+    const count = prev + 1;
+
+  if (count >= 3) {
+  console.log("AUTO TERMINATING");
+  console.log("ANSWER PAPER:", answerPaper);
+  console.log("AnswerPaper ID:", answerPaper?.id);
+
+  quitQuiz(answerPaper.id)
+    .then((res) => {
+      console.log("QUIT SUCCESS", res);
+      navigate(`/courses/${courseId}/manage`);
+    })
+    .catch((err) => {
+      console.error("QUIT FAILED", err);
+      navigate(`/courses/${courseId}/manage`);
+    });
+
+  return count;
+
+ 
+
+    } else {
+      alert(
+        `Warning! Violation ${count}/3`
+      );
     }
-  };
+
+    return count;
+  });
+};
 
   const handleQuestionClick = (index) => {
     setCurrentQuestionIndex(index);
@@ -822,6 +1171,11 @@ const Quiz = () => {
               <FaClock className="w-5 h-5 text-indigo-400" />
               <span className="text-md font-mono font-bold">{formatTime(timeLeft)}</span>
             </div>
+            <div className="bg-red-500/10 border border-red-500/30 px-4 py-2 rounded-lg">
+  <span className="text-red-400 font-semibold">
+    Violations: {violations}/3
+  </span>
+</div>
             <button
               onClick={handleQuit}
               className="bg-red-600 text-white text-md px-6 py-2 rounded-lg font-semibold hover:bg-red-700 transition inline-flex items-center"
@@ -836,7 +1190,7 @@ const Quiz = () => {
           <div className="max-w-4xl">
             {/* Breadcrumb Navigation */}
             <div className="mb-8">
-              <h1 className="text-3xl font-bold">Quiz</h1>
+              <h1 className="text-3xl font-bold">{quizName}</h1>
               <p className="text-gray-400 text-sm mt-1">
                 <Link to="/courses" className="hover:text-white transition">Courses</Link> /
                 <Link to={`/courses/${courseId}/modules`} className="hover:text-white transition"> Course</Link> /
@@ -984,8 +1338,20 @@ const Quiz = () => {
                 </div>
               </>
             )}
-          </div>
+                    </div>
         </div>
+
+        {/* Webcam Preview */}
+        <div className="fixed top-24 right-6 z-50">
+          <video
+            ref={videoRef}
+            autoPlay
+            muted
+            playsInline
+            className="w-48 h-36 rounded-lg border-2 border-blue-500 shadow-lg bg-black"
+          />
+        </div>
+
       </main>
     </div>
   );

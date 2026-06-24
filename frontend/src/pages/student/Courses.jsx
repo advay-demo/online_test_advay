@@ -208,7 +208,7 @@ const CourseStudent = () => {
                               to={`/courses/${course.id}/manage`}
                               className="flex-1 sm:flex-none px-4 sm:px-5 py-2.5 border-2 border-blue-500/30 bg-blue-500/10 rounded-lg text-xs sm:text-sm font-semibold text-blue-400 hover:border-blue-500/50 hover:bg-blue-500/20 hover:shadow-lg hover:shadow-blue-500/20 active:scale-95 transition-all duration-300 text-center whitespace-nowrap"
                             >
-                              Manage
+                              Start 
                             </Link>
 
                           </div>

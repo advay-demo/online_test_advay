@@ -903,6 +903,7 @@ class StartQuiz(APIView):
                 # Time is still valid, let them resume
                 serializer = AnswerPaperSerializer(last_attempt)
                 context["time_left"] = last_attempt.time_left()
+                context["quiz_name"] = quiz.description
                 context["answerpaper"] = serializer.data
                 return Response(context)
 
@@ -925,6 +926,7 @@ class StartQuiz(APIView):
         serializer = AnswerPaperSerializer(answerpaper)
         context["time_left"] = answerpaper.time_left()
         context["answerpaper"] = serializer.data
+        context["quiz_name"] = quiz.description
         return Response(context, status=status.HTTP_201_CREATED)
 
 

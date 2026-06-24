@@ -242,11 +242,11 @@ const Dashboard = () => {
                           to={`/courses/${quiz.course_id}/manage`}
                           className="w-full sm:w-auto border border-[var(--border-color)] px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold hover:bg-[var(--input-bg)] transition whitespace-nowrap text-center"
                         >
-                          Manage
+                          Start 
                         </Link>
                       ) : (
                         <span className="w-full sm:w-auto border border-[var(--border-color)] px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold text-muted opacity-50 cursor-not-allowed whitespace-nowrap text-center">
-                          Manage
+                          Start 
                         </span>
                       )}
                     </div>
