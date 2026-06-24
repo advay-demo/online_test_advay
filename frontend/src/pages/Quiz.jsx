@@ -147,10 +147,13 @@ const Quiz = () => {
   const navigate = useNavigate();
   const [answerPaper, setAnswerPaper] = useState(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [quizName, setQuizName] = useState('Quiz');
   const [answers, setAnswers] = useState({});
   const [timeLeft, setTimeLeft] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [requiresSeb, setRequiresSeb] = useState(false);
+  const [sebFileUrl, setSebFileUrl] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [attemptedQuestions, setAttemptedQuestions] = useState(new Set());
   const [evaluatingQuestions, setEvaluatingQuestions] = useState(new Set());
@@ -197,6 +200,7 @@ const Quiz = () => {
       const data = await startQuiz(courseId, quizId);
       setAnswerPaper(data.answerpaper);
       setTimeLeft(data.time_left || 0);
+      setQuizName(data.quiz_name || 'Quiz');
 
       // Initialize answers object
       const initialAnswers = {};
@@ -208,7 +212,13 @@ const Quiz = () => {
       setError(null);
     } catch (err) {
       console.error('Failed to start quiz:', err);
-      setError(err.response?.data?.message || 'Failed to start quiz');
+      if (err.response?.data?.requires_seb) {
+        setRequiresSeb(true);
+        setSebFileUrl(err.response?.data?.seb_file_url || null);
+        setError("This quiz requires Safe Exam Browser.");
+      } else {
+        setError(err.response?.data?.message || err.response?.data?.error || 'Failed to start quiz');
+      }
     } finally {
       setLoading(false);
     }
@@ -605,13 +615,36 @@ const Quiz = () => {
               <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
                 <AiOutlineWarning className="w-8 h-8 text-red-500" />
               </div>
-              <h3 className="text-2xl font-bold mb-2">Unavailable</h3>
+              <h3 className="text-2xl font-bold mb-2">{requiresSeb ? 'Safe Exam Browser Required' : 'Unavailable'}</h3>
               <p className="text-gray-400 mb-8">
-                {error || 'This quiz is currently unavailable.'}
+                {requiresSeb 
+                  ? 'This quiz is highly secure and requires Safe Exam Browser to attempt.'
+                  : (error || 'This quiz is currently unavailable.')}
               </p>
+
+              {requiresSeb && sebFileUrl && (
+                <a
+                  href={`sebs://${new URL(sebFileUrl).host}${new URL(sebFileUrl).pathname}`}
+                  className="block w-full bg-red-600 text-white py-3 rounded-xl font-bold hover:bg-red-700 transition mb-3"
+                >
+                  Launch Safe Exam Browser
+                </a>
+              )}
+
+              {requiresSeb && (
+                <a 
+                  href="https://safeexambrowser.org/download_en.html" 
+                  target="_blank" 
+                  rel="noreferrer"
+                  className="block text-sm text-blue-400 hover:text-blue-300 underline mb-6"
+                >
+                  Download Safe Exam Browser
+                </a>
+              )}
+
               <button
                 onClick={handleErrorModalClose}
-                className="w-full bg-white text-black py-3 rounded-xl font-bold hover:bg-gray-200 transition"
+                className={`w-full ${requiresSeb ? 'bg-white/10 text-white' : 'bg-white text-black'} py-3 rounded-xl font-bold hover:bg-gray-200 hover:text-black transition`}
               >
                 Back to Modules
               </button>
@@ -886,16 +919,30 @@ const Quiz = () => {
           <div className="max-w-4xl">
             {/* Breadcrumb Navigation */}
             <div className="mb-8">
-              <h1 className="text-3xl font-bold">Quiz</h1>
+              <h1 className="text-3xl font-bold">{quizName}</h1>
               <p className="text-gray-400 text-sm mt-1">
                 <Link to="/courses" className="hover:text-white transition">Courses</Link> /
                 <Link to={`/courses/${courseId}/modules`} className="hover:text-white transition"> Course</Link> /
-                <span className="text-white"> Quiz</span>
+                <span className="text-white"> {quizName}</span>
               </p>
             </div>
 
             {/* Question Header */}
-            {currentQuestion && (
+            {answerPaper?.questions?.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center bg-gray-800/20 rounded-xl border border-gray-700/50 mt-8">
+                <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mb-4 border border-gray-700 shadow-lg">
+                  <span className="text-2xl opacity-50">📝</span>
+                </div>
+                <h2 className="text-xl font-bold text-gray-300 mb-2">No questions available</h2>
+                <p className="text-gray-500 mb-6 max-w-sm">This quiz currently has no questions assigned to it. Please check back later or contact your instructor.</p>
+                <button 
+                  onClick={() => navigate(`/courses/${courseId}/modules`)}
+                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition shadow-lg shadow-blue-500/20 active:scale-95"
+                >
+                  Go Back to Course
+                </button>
+              </div>
+            ) : currentQuestion && (
               <>
                 <div className="mb-6">
                   <h2 className="text-3xl font-bold mb-4">

@@ -888,6 +888,26 @@ class StartQuiz(APIView):
         quiz = self.get_quiz(quiz_id, user)
         questionpaper = quiz.questionpaper_set.first()
 
+        # Safe Exam Browser Check
+        if quiz.is_seb_required and quiz.seb_config_key:
+            seb_hash_header = request.META.get('HTTP_X_SAFEEXAMBROWSER_CONFIGKEYHASH')
+            if not seb_hash_header:
+                return Response({
+                    'message': 'This quiz requires Safe Exam Browser. Please launch the quiz using the provided .seb configuration file.',
+                    'requires_seb': True,
+                    'seb_file_url': request.build_absolute_uri(quiz.seb_config_file.url) if quiz.seb_config_file else None
+                }, status=status.HTTP_403_FORBIDDEN)
+            
+            import hashlib
+            requested_url = request.build_absolute_uri()
+            expected_hash = hashlib.sha256((requested_url + quiz.seb_config_key).encode('utf-8')).hexdigest()
+            
+            if seb_hash_header.lower() != expected_hash.lower():
+                return Response({
+                    'message': 'Safe Exam Browser configuration mismatch. Please use the exact .seb file provided by your instructor.',
+                    'requires_seb': True
+                }, status=status.HTTP_403_FORBIDDEN)
+
         last_attempt = AnswerPaper.objects.get_user_last_attempt(
             questionpaper, user, course_id)
 
@@ -904,6 +924,7 @@ class StartQuiz(APIView):
                 serializer = AnswerPaperSerializer(last_attempt)
                 context["time_left"] = last_attempt.time_left()
                 context["answerpaper"] = serializer.data
+                context["quiz_name"] = quiz.description
                 return Response(context)
 
         can_attempt, msg = questionpaper.can_attempt_now(user, course_id)
@@ -925,6 +946,7 @@ class StartQuiz(APIView):
         serializer = AnswerPaperSerializer(answerpaper)
         context["time_left"] = answerpaper.time_left()
         context["answerpaper"] = serializer.data
+        context["quiz_name"] = quiz.description
         return Response(context, status=status.HTTP_201_CREATED)
 
 
@@ -3428,13 +3450,26 @@ def design_questionpaper_api(request, course_id, quiz_id, questionpaper_id=None)
                 question_ids = [qid for qid in question_ids.split(',') if qid]
                 
             if question_ids:
+                question_ids = [int(qid) for qid in question_ids]
+                existing_in_fixed = set(question_paper.fixed_questions.filter(id__in=question_ids).values_list('id', flat=True))
+                existing_in_random = set()
+                for r_set in question_paper.random_questions.all():
+                    existing_in_random.update(r_set.questions.filter(id__in=question_ids).values_list('id', flat=True))
+                
+                if existing_in_random:
+                    return Response({'detail': 'One or more selected questions are already present in a random set.'}, status=status.HTTP_400_BAD_REQUEST)
+                
+                valid_question_ids = [q for q in question_ids if q not in existing_in_fixed]
+                if not valid_question_ids:
+                    return Response({'detail': 'All selected questions are already in the fixed set.'}, status=status.HTTP_400_BAD_REQUEST)
+                
                 if question_paper.fixed_question_order:
-                    ques_order = question_paper.fixed_question_order.split(",") + [str(q) for q in question_ids]
+                    ques_order = question_paper.fixed_question_order.split(",") + [str(q) for q in valid_question_ids]
                     questions_order = ",".join(ques_order)
                 else:
-                    questions_order = ",".join([str(q) for q in question_ids])
+                    questions_order = ",".join([str(q) for q in valid_question_ids])
                     
-                questions = Question.objects.filter(id__in=question_ids)
+                questions = Question.objects.filter(id__in=valid_question_ids)
                 question_paper.fixed_question_order = questions_order
                 question_paper.save()
                 question_paper.fixed_questions.add(*questions)
@@ -3463,6 +3498,18 @@ def design_questionpaper_api(request, course_id, quiz_id, questionpaper_id=None)
             marks = request.data.get('marks')
             
             if question_ids and marks:
+                if isinstance(question_ids, str):
+                    question_ids = [qid for qid in question_ids.split(',') if qid]
+                question_ids = [int(qid) for qid in question_ids]
+                
+                existing_in_fixed = set(question_paper.fixed_questions.filter(id__in=question_ids).values_list('id', flat=True))
+                existing_in_random = set()
+                for r_set in question_paper.random_questions.all():
+                    existing_in_random.update(r_set.questions.filter(id__in=question_ids).values_list('id', flat=True))
+                
+                if existing_in_fixed or existing_in_random:
+                    return Response({'detail': 'One or more selected questions are already present in the question paper.'}, status=status.HTTP_400_BAD_REQUEST)
+                    
                 with transaction.atomic():
                     random_set = QuestionSet.objects.create(marks=marks, num_questions=num_of_questions)
                     random_ques = Question.objects.filter(id__in=question_ids)
@@ -3708,6 +3755,9 @@ def api_quiz_handler(request, course_id, module_id, quiz_id=None):
                 'view_answerpaper': quiz.view_answerpaper,
                 'is_exercise': quiz.is_exercise,
                 'active': quiz.active,
+                'is_seb_required': quiz.is_seb_required,
+                'seb_config_key': quiz.seb_config_key,
+                'seb_config_file_url': request.build_absolute_uri(quiz.seb_config_file.url) if quiz.seb_config_file else None,
                 'start_date_time': quiz.start_date_time,
                 'end_date_time': quiz.end_date_time,
                 'order': unit.order
@@ -3734,11 +3784,14 @@ def api_quiz_handler(request, course_id, module_id, quiz_id=None):
                     weightage=request.data.get('weightage', 100.0),
                     allow_skip=request.data.get('allow_skip', True),
                     view_answerpaper=request.data.get('view_answerpaper', True),
-                    is_exercise=request.data.get('is_exercise', False),
-                    active=request.data.get('active', True),
+                    is_exercise=str(request.data.get('is_exercise', 'false')).lower() == 'true',
+                    active=str(request.data.get('active', 'true')).lower() == 'true',
+                    is_seb_required=str(request.data.get('is_seb_required', 'false')).lower() == 'true',
+                    seb_config_key=request.data.get('seb_config_key', ''),
+                    seb_config_file=request.FILES.get('seb_config_file') if request.FILES.get('seb_config_file') else (None if request.data.get('seb_config_file') in ['', 'null'] else request.data.get('seb_config_file')),
 
-                    start_date_time=request.data.get('start_date_time'),
-end_date_time=request.data.get('end_date_time'),
+                    start_date_time=request.data.get('start_date_time') if request.data.get('start_date_time') else None,
+                    end_date_time=request.data.get('end_date_time') if request.data.get('end_date_time') else None,
                     creator=user
                 )
 
@@ -3766,6 +3819,10 @@ end_date_time=request.data.get('end_date_time'),
                     'unit_id': unit.id,
                 }, status=status.HTTP_201_CREATED)
             except Exception as e:
+                import traceback
+                with open('debug.txt', 'a') as f:
+                    f.write(traceback.format_exc() + '\n')
+                traceback.print_exc()
                 return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         # PUT: Update existing quiz
         if request.method == "PUT":
@@ -3788,23 +3845,24 @@ end_date_time=request.data.get('end_date_time'),
             if 'time_between_attempts' in request.data: quiz.time_between_attempts = request.data['time_between_attempts']
             if 'pass_criteria' in request.data: quiz.pass_criteria = request.data['pass_criteria']
             if 'weightage' in request.data: quiz.weightage = request.data['weightage']
-            if 'allow_skip' in request.data: quiz.allow_skip = request.data['allow_skip']
-            if 'view_answerpaper' in request.data: quiz.view_answerpaper = request.data['view_answerpaper']
-            if 'is_exercise' in request.data: quiz.is_exercise = request.data['is_exercise']
-            if 'active' in request.data: quiz.active = request.data['active']
+            if 'allow_skip' in request.data: quiz.allow_skip = str(request.data['allow_skip']).lower() == 'true'
+            if 'view_answerpaper' in request.data: quiz.view_answerpaper = str(request.data['view_answerpaper']).lower() == 'true'
+            if 'is_exercise' in request.data: quiz.is_exercise = str(request.data['is_exercise']).lower() == 'true'
+            if 'active' in request.data: quiz.active = str(request.data['active']).lower() == 'true'
+            if 'is_seb_required' in request.data: quiz.is_seb_required = str(request.data['is_seb_required']).lower() == 'true'
+            if 'seb_config_key' in request.data: quiz.seb_config_key = request.data['seb_config_key']
+            
+            if 'seb_config_file' in request.FILES:
+                quiz.seb_config_file = request.FILES['seb_config_file']
+            elif 'seb_config_file' in request.data and (request.data['seb_config_file'] == 'null' or request.data['seb_config_file'] == ''):
+                quiz.seb_config_file = None
             
             if 'order' in request.data:
                 unit.order = request.data['order']
                 unit.save()
 
-            quiz.start_date_time = request.data.get( 
-                'start_date_time',
-                quiz.start_date_time
-                )
-            quiz.end_date_time = request.data.get(
-                'end_date_time',
-                quiz.end_date_time
-                )
+            quiz.start_date_time = request.data.get('start_date_time') if request.data.get('start_date_time') else None
+            quiz.end_date_time = request.data.get('end_date_time') if request.data.get('end_date_time') else None
                 
             
             quiz.save()
@@ -5055,6 +5113,7 @@ def teacher_remove_enrollment(request, course_id):
     removed_users = []
     for student in users:
         course.students.remove(student)
+        course.rejected.add(student)
         removed_users.append(SimpleUserSerializer(student).data)
     return Response({'success': True, 'removed': removed_users}, status=status.HTTP_200_OK)
 
@@ -6197,6 +6256,26 @@ def api_start_quiz(request, questionpaper_id, module_id, course_id, attempt_num=
     
     # Validation checks (skip for trial mode)
     if not is_trial_mode:
+        # Safe Exam Browser Check
+        if quest_paper.quiz.is_seb_required and quest_paper.quiz.seb_config_key:
+            seb_hash_header = request.META.get('HTTP_X_SAFEEXAMBROWSER_CONFIGKEYHASH')
+            if not seb_hash_header:
+                return Response({
+                    'error': 'This quiz requires Safe Exam Browser. Please launch the quiz using the provided .seb configuration file.',
+                    'requires_seb': True,
+                    'seb_file_url': request.build_absolute_uri(quest_paper.quiz.seb_config_file.url) if quest_paper.quiz.seb_config_file else None
+                }, status=status.HTTP_403_FORBIDDEN)
+            
+            import hashlib
+            requested_url = request.build_absolute_uri()
+            expected_hash = hashlib.sha256((requested_url + quest_paper.quiz.seb_config_key).encode('utf-8')).hexdigest()
+            
+            if seb_hash_header.lower() != expected_hash.lower():
+                return Response({
+                    'error': 'Safe Exam Browser configuration mismatch. Please use the exact .seb file provided by your instructor.',
+                    'requires_seb': True
+                }, status=status.HTTP_403_FORBIDDEN)
+
         # Unit module active status
         if not learning_module.active:
             return Response({

@@ -43,6 +43,9 @@ const initialQuizForm = {
     active: true,
     start_date_time: '', // Added
     end_date_time: '',   // Added
+    is_seb_required: false, // Added
+    seb_config_key: '',     // Added
+    seb_config_file: null,  // Added
     order: 1,
 };
 
@@ -655,6 +658,9 @@ const useManageCourseStore = create((set, get) => ({
                     active: quizData.active !== undefined ? quizData.active : true,
                     start_date_time: formatDateForInput(quizData.start_date_time), // Added
                     end_date_time: formatDateForInput(quizData.end_date_time),     // Added
+                    is_seb_required: quizData.is_seb_required !== undefined ? quizData.is_seb_required : false,
+                    seb_config_key: quizData.seb_config_key || '',
+                    seb_config_file: quizData.seb_config_file_url || null,
                     order: quizData.order || unit.order,
                 },
                 showQuizForm: true
@@ -685,7 +691,21 @@ const useManageCourseStore = create((set, get) => ({
             if (payload.start_date_time) payload.start_date_time = new Date(payload.start_date_time).toISOString();
             if (payload.end_date_time) payload.end_date_time = new Date(payload.end_date_time).toISOString();
 
-            await createQuiz(course.id, selectedModule.id, payload);
+            let finalPayload = payload;
+            if (payload.seb_config_file instanceof File || payload.seb_config_file === null) {
+                finalPayload = new FormData();
+                Object.keys(payload).forEach(key => {
+                    if (payload[key] !== undefined) {
+                        if (payload[key] === null) {
+                            finalPayload.append(key, '');
+                        } else {
+                            finalPayload.append(key, payload[key]);
+                        }
+                    }
+                });
+            }
+
+            await createQuiz(course.id, selectedModule.id, finalPayload);
             set({ showQuizForm: false, selectedModule: null, quizFormData: { ...initialQuizForm }, loading: false });
             await get().loadCourseData(course.id);
         } catch (err) {
@@ -706,7 +726,21 @@ const useManageCourseStore = create((set, get) => ({
             if (payload.start_date_time) payload.start_date_time = new Date(payload.start_date_time).toISOString();
             if (payload.end_date_time) payload.end_date_time = new Date(payload.end_date_time).toISOString();
 
-            await updateQuiz(course.id, selectedModule.id, editingQuiz.quiz_id, payload);
+            let finalPayload = payload;
+            if (payload.seb_config_file instanceof File || payload.seb_config_file === null) {
+                finalPayload = new FormData();
+                Object.keys(payload).forEach(key => {
+                    if (payload[key] !== undefined) {
+                        if (payload[key] === null) {
+                            finalPayload.append(key, 'null'); // Backend handles 'null' string to remove file
+                        } else {
+                            finalPayload.append(key, payload[key]);
+                        }
+                    }
+                });
+            }
+
+            await updateQuiz(course.id, selectedModule.id, editingQuiz.quiz_id, finalPayload);
             set({ showQuizForm: false, selectedModule: null, editingQuiz: null, quizFormData: { ...initialQuizForm }, loading: false });
             await get().loadCourseData(course.id);
         } catch (err) {

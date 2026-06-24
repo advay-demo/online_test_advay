@@ -5,61 +5,48 @@ Yaksh
 
 To get an overview of the Yaksh interface please refer to the user documentation at `Yaksh Docs <http://yaksh.readthedocs.io>`_
 
-
-This is a Quickstart guide to help users setup a trial instance. If you wish to deploy Yaksh in a production environment here is a `Production Deployment Guide <https://github.com/FOSSEE/online\_test/blob/master/README\_production.rst>`_
+This is a Quickstart guide to help users setup a trial instance. If you wish to deploy Yaksh in a production environment here is a `Production Deployment Guide <https://github.com/Mohitranag18/online_test/blob/master/COMPLETE_DEPLOYMENT_GUIDE.md>`_
 
 Introduction
 ============
 
-This project provides an "exam" app that lets users take an online
-programming quiz.
+This project provides an "exam" app that lets users take an online programming quiz. It has been modernized with a React (Vite) frontend and a Django REST Framework backend.
 
 Features
 ========
 
--  Define fairly complicated programming problems and have users solve
-   the problem.
+-  Define fairly complicated programming problems and have users solve the problem.
 -  Immediate verification of code solution.
--  Supports pretty much arbitrary coding questions in Python, C, C++, Java, R, Scilab and
-   Bash.
+-  Supports pretty much arbitrary coding questions in Python, C, C++, Java, R, Scilab and Bash.
 -  Supports Multiple choice, Fill in the blanks, Arrange options and File upload based questions.
--  Since it runs on Python, you could technically test any Python
-   based library.
+-  Since it runs on Python, you could technically test any Python based library.
 -  Create course with lessons and quiz for online learning.
 -  Almost real-time monitoring for quiz.
 -  Supports automatic and manual grading, regrading of quiz.
 -  Add grading system to the course.
 -  Scales to over 500+ simultaneous users.
 -  Distributed under the BSD license.
-
-To get a glimpse of all the available features check our demo website https://yaksh-demo.fossee.in. It has 50 teacher and student login.
-
-**Sample teacher login**
-
-Username:- teacher1
-Password:- teacher1
-
-**Sample student login**
-
-Username:- student1
-Password:- student1
+-  Modern UI with responsive Dashboard using React and Vite.
 
 Requirements
 ============
 
-Python 3.6, 3.7, 3.8
+Backend:
+- Python 3.9+
+- Django 4.x
+- Celery 4.4.2+
+- Redis Server (for Celery background tasks)
 
-Django 3.0.3
-
-Celery 4.4.2
+Frontend:
+- Node.js 18+
+- npm or yarn
 
 Installation
 ============
 
-**Note**: Currently, only Linux and MacOS is supported for the project.
+**Note**: Currently, only Linux and MacOS are supported for the project. For Windows, we recommend using WSL (Windows Subsystem for Linux).
 
-If Python 3.6 and above is not available in the system, then we recommend using
-miniconda. Download miniconda with Python 3.6 and above.
+If Python 3.9+ is not available in the system, then we recommend using miniconda.
 
 **Installing Miniconda**
 
@@ -69,7 +56,7 @@ miniconda. Download miniconda with Python 3.6 and above.
 
 3. Restart the Terminal.
 
-**Pre-Requisite**
+**Pre-Requisites**
 
 * **Install redis server**
 
@@ -93,13 +80,9 @@ miniconda. Download miniconda with Python 3.6 and above.
 
       systemctl status redis
 
-* **Run celery worker**
-  
-  ::
+* **Install Node.js**
 
-      celery -A online_test worker -B
-
-* Ensure  `pip <https://pip.pypa.io/en/latest/installing.html>`_ is installed
+  Please install Node.js (v18 or above) from `https://nodejs.org <https://nodejs.org>`_.
 
 **Installing Yaksh**
 
@@ -107,7 +90,7 @@ miniconda. Download miniconda with Python 3.6 and above.
 
   ::
 
-      git clone https://github.com/FOSSEE/online_test.git
+      git clone https://github.com/Mohitranag18/online_test.git
 
 * **Go to the online_test directory**
 
@@ -115,36 +98,34 @@ miniconda. Download miniconda with Python 3.6 and above.
 
       cd online_test
 
-* **Install the dependencies**:
+* **Set up the Backend**
 
-  * Install Django and dependencies
+  ::
 
-    ::
+      python3 -m venv venv
+      source venv/bin/activate
+      pip install -r requirements/requirements-common.txt
+      python manage.py migrate
 
-        pip3 install -r requirements/requirements-common.txt
+* **Set up the Frontend**
 
-  * Install Code Server dependencies
+  ::
 
-    ::
-
-        sudo pip3 install -r requirements/requirements-codeserver.txt
-
+      cd frontend
+      npm install
 
 Quick Start
 ^^^^^^^^^^^
 
-1. Start up the code server that executes the user code safely:
+1. Start up the code server that executes the user code safely (optional for standard testing):
 
-   -  To run the code server in a sandboxed docker environment, run the
-      command:
+   -  To run the code server in a sandboxed docker environment, run the command:
 
       ::
 
           $ invoke start
 
-   -  Make sure that you have Docker installed on your system
-      beforehand. `Docker
-      Installation <https://docs.docker.com/engine/installation/#desktop>`__
+   -  Make sure that you have Docker installed on your system beforehand.
 
    -  To run the code server without docker, locally use:
 
@@ -152,29 +133,36 @@ Quick Start
 
           $ invoke start --unsafe
 
-   -  Note this command will run the yaksh code server locally on your
-      machine and is susceptible to malicious code. You will have to
-      install the code server requirements in sudo mode.
-
-2. On another terminal, run the application using the following command:
+2. Run the Django backend application (in a new terminal):
 
    ::
 
-       $ invoke serve
+       $ source venv/bin/activate
+       $ python manage.py runserver
 
-   -  *Note:* The serve command will run the django application server
-      on the 8000 port and hence this port will be unavailable to other
-      processes.
+3. Run the React frontend development server (in another terminal):
 
-3. Open your browser and open the URL ``http://localhost:8000/exam``
+   ::
 
-4. Login as a teacher to edit the quiz or as a student to take the quiz
-   Credentials:
+       $ cd frontend
+       $ npm run dev
+
+4. Run the celery worker for evaluating code submissions (in another terminal):
+  
+   ::
+       
+       $ source venv/bin/activate
+       $ celery -A online_test worker -B
+
+5. Open your browser and open the Frontend URL ``http://localhost:5173/``
+
+6. Login as a teacher to edit the quiz or as a student to take the quiz.
+   Default Credentials:
 
    -  Student - Username: student \| Password: student
    -  Teacher - Username: teacher \| Password: teacher
 
-5. User can also login to the Default Django admin using;
+7. User can also login to the Default Django admin at ``http://localhost:8000/admin`` using:
 
    -  Admin - Username: admin \| Password: admin
 
@@ -194,8 +182,7 @@ the initial cut of what is now 'Yaksh'. The idea being that anyone can
 use this to test students programming skills and not have to worry about
 grading their answers manually and instead do so on their machines.
 
-The application has since been refactored and maintained by FOSSEE
-Developers.
+The application has since been refactored and maintained by FOSSEE Developers, and recently modernized with a beautiful React front-end.
 
 Contact
 =======

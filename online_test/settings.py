@@ -264,6 +264,12 @@ REST_FRAMEWORK = {
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
 
+from corsheaders.defaults import default_headers
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'x-safeexambrowser-configkeyhash',
+    'x-safeexambrowser-requestkeyhash',
+]
+
 
 # AWS Credentials
 USE_AWS = False
@@ -343,6 +349,10 @@ if not DEBUG:
     # CORS Configuration - Temporarily allow all origins for debugging
     CORS_ORIGIN_ALLOW_ALL = True
     CORS_ALLOW_CREDENTIALS = True
+    CORS_ALLOW_HEADERS = list(default_headers) + [
+        'x-safeexambrowser-configkeyhash',
+        'x-safeexambrowser-requestkeyhash',
+    ]
     
     # Trust X-Forwarded-Proto headers from Render's load balancer
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

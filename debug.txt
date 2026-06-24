@@ -1,0 +1,39 @@
+Traceback (most recent call last):
+  File "E:\github\online_test_advay\api\views.py", line 3750, in api_quiz_handler
+    quiz = Quiz.objects.create(
+  File "E:\github\online_test_advay\venv\lib\site-packages\django\db\models\manager.py", line 85, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "E:\github\online_test_advay\venv\lib\site-packages\django\db\models\query.py", line 453, in create
+    obj.save(force_insert=True, using=self.db)
+  File "E:\github\online_test_advay\venv\lib\site-packages\django\db\models\base.py", line 739, in save
+    self.save_base(using=using, force_insert=force_insert,
+  File "E:\github\online_test_advay\venv\lib\site-packages\django\db\models\base.py", line 776, in save_base
+    updated = self._save_table(
+  File "E:\github\online_test_advay\venv\lib\site-packages\django\db\models\base.py", line 881, in _save_table
+    results = self._do_insert(cls._base_manager, using, fields, returning_fields, raw)
+  File "E:\github\online_test_advay\venv\lib\site-packages\django\db\models\base.py", line 919, in _do_insert
+    return manager._insert(
+  File "E:\github\online_test_advay\venv\lib\site-packages\django\db\models\manager.py", line 85, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "E:\github\online_test_advay\venv\lib\site-packages\django\db\models\query.py", line 1270, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+  File "E:\github\online_test_advay\venv\lib\site-packages\django\db\models\sql\compiler.py", line 1415, in execute_sql
+    for sql, params in self.as_sql():
+  File "E:\github\online_test_advay\venv\lib\site-packages\django\db\models\sql\compiler.py", line 1358, in as_sql
+    value_rows = [
+  File "E:\github\online_test_advay\venv\lib\site-packages\django\db\models\sql\compiler.py", line 1359, in <listcomp>
+    [self.prepare_value(field, self.pre_save_val(field, obj)) for field in fields]
+  File "E:\github\online_test_advay\venv\lib\site-packages\django\db\models\sql\compiler.py", line 1359, in <listcomp>
+    [self.prepare_value(field, self.pre_save_val(field, obj)) for field in fields]
+  File "E:\github\online_test_advay\venv\lib\site-packages\django\db\models\sql\compiler.py", line 1300, in prepare_value
+    value = field.get_db_prep_save(value, connection=self.connection)
+  File "E:\github\online_test_advay\venv\lib\site-packages\django\db\models\fields\__init__.py", line 842, in get_db_prep_save
+    return self.get_db_prep_value(value, connection=connection, prepared=False)
+  File "E:\github\online_test_advay\venv\lib\site-packages\django\db\models\fields\__init__.py", line 837, in get_db_prep_value
+    value = self.get_prep_value(value)
+  File "E:\github\online_test_advay\venv\lib\site-packages\django\db\models\fields\__init__.py", line 986, in get_prep_value
+    return self.to_python(value)
+  File "E:\github\online_test_advay\venv\lib\site-packages\django\db\models\fields\__init__.py", line 976, in to_python
+    raise exceptions.ValidationError(
+django.core.exceptions.ValidationError: ['“true” value must be either True or False.']
+

@@ -40,8 +40,8 @@ const useQuizStore = create((set, get) => ({
   /**
    * Get quiz intro (first step before starting)
    */
-  getQuizIntro: async (questionpaperId, moduleId, courseId, attemptNum = null) => {
-    set({ loading: true, error: null });
+    getQuizIntro: async (questionpaperId, moduleId, courseId, attemptNum = null) => {
+    set({ loading: true, error: null, requiresSeb: false });
     try {
       const intro = await apiStartQuiz(questionpaperId, moduleId, courseId, attemptNum, null);
       set({ 
@@ -54,14 +54,16 @@ const useQuizStore = create((set, get) => ({
       });
       return intro;
     } catch (err) {
-      const errorMsg = err.response?.data?.error || 'Failed to load quiz intro';
-      set({ error: errorMsg, loading: false });
+      const errorMsg = err.response?.data?.error || err.response?.data?.message || 'Failed to load quiz intro';
+      const requiresSeb = err.response?.data?.requires_seb || false;
+      const sebFileUrl = err.response?.data?.seb_file_url || null;
+      set({ error: errorMsg, loading: false, requiresSeb, sebFileUrl });
       throw new Error(errorMsg);
     }
   },
 
   startQuiz: async (questionpaperId, moduleId, courseId, attemptNum = null) => {
-  set({ loading: true, error: null });
+  set({ loading: true, error: null, requiresSeb: false });
   try {
     const quizData = await apiStartQuiz(questionpaperId, moduleId, courseId, attemptNum, {});
     
@@ -95,8 +97,10 @@ const useQuizStore = create((set, get) => ({
       isResume,
     };
   } catch (err) {
-    const errorMsg = err.response?.data?.error || 'Failed to start quiz';
-    set({ error: errorMsg, loading: false });
+    const errorMsg = err.response?.data?.error || err.response?.data?.message || 'Failed to start quiz';
+    const requiresSeb = err.response?.data?.requires_seb || false;
+    const sebFileUrl = err.response?.data?.seb_file_url || null;
+    set({ error: errorMsg, loading: false, requiresSeb, sebFileUrl });
     throw new Error(errorMsg);
   }
 },

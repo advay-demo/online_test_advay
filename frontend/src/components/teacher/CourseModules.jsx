@@ -89,6 +89,37 @@ const CourseModules = () => {
     const navigate = useNavigate();
     const { isGenerating, generateTestSandbox } = useSandboxStore();
 
+    // Global ESC key listener to close modals
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                if (showDesignQuestionPaperModal) {
+                    closeDesignQuestionPaper();
+                } else if (showDesignModuleModal) {
+                    closeDesignModule();
+                } else if (showLessonForm) {
+                    setShowLessonForm(false);
+                } else if (showQuizForm) {
+                    setShowQuizForm(false);
+                } else if (showExerciseForm) {
+                    setShowExerciseForm(false);
+                } else if (showModuleForm) {
+                    setShowModuleForm(false);
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [
+        showDesignQuestionPaperModal, closeDesignQuestionPaper,
+        showDesignModuleModal, closeDesignModule,
+        showLessonForm, setShowLessonForm,
+        showQuizForm, setShowQuizForm,
+        showExerciseForm, setShowExerciseForm,
+        showModuleForm, setShowModuleForm
+    ]);
+
 
     // Dropdown state management
     const [openDropdownId, setOpenDropdownId] = useState(null);
@@ -490,6 +521,15 @@ const CourseModules = () => {
                                         onChange={handleModuleFormChange}
                                         rows={4}
                                     />
+                                    {moduleFormData.description && (
+                                        <div className="mt-2 p-3 bg-black/20 border border-white/10 rounded-lg text-sm text-gray-300">
+                                            <p className="text-xs text-gray-500 mb-2 font-semibold uppercase tracking-wider">Preview</p>
+                                            <div 
+                                                dangerouslySetInnerHTML={{ __html: moduleFormData.description }} 
+                                                className="prose prose-invert max-w-none text-sm break-words" 
+                                            />
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             <div>
@@ -609,6 +649,15 @@ const CourseModules = () => {
                                         onChange={handleLessonFormChange}
                                         rows={4}
                                     />
+                                    {lessonFormData.description && (
+                                        <div className="mt-2 p-3 bg-black/20 border border-white/10 rounded-lg text-sm text-gray-300">
+                                            <p className="text-xs text-gray-500 mb-2 font-semibold uppercase tracking-wider">Preview</p>
+                                            <div 
+                                                dangerouslySetInnerHTML={{ __html: lessonFormData.description }} 
+                                                className="prose prose-invert max-w-none text-sm break-words" 
+                                            />
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -908,6 +957,15 @@ const CourseModules = () => {
                                         className="w-full px-3 sm:px-4 py-2.5 bg-[var(--input-bg)] border-2 border-[var(--border-strong)] rounded-xl focus:outline-none focus:border-green-500/50 text-sm transition-colors"
                                         placeholder="Enter quiz Name/Title *"
                                     />
+                                    {quizFormData.description && (
+                                        <div className="mt-2 p-3 bg-black/20 border border-white/10 rounded-lg text-sm text-gray-300">
+                                            <p className="text-xs text-gray-500 mb-2 font-semibold uppercase tracking-wider">Preview</p>
+                                            <div 
+                                                dangerouslySetInnerHTML={{ __html: quizFormData.description }} 
+                                                className="prose prose-invert max-w-none text-sm break-words" 
+                                            />
+                                        </div>
+                                    )}
                                 </div>
                                 <div>
                                     <label className="block text-xs sm:text-sm font-semibold mb-2">Instructions</label>
@@ -1030,18 +1088,6 @@ const CourseModules = () => {
                                         className="w-full px-3 py-2 bg-[var(--input-bg)] border-2 border-[var(--border-strong)] rounded-xl focus:outline-none focus:border-green-500/50 text-sm"
                                     />
                                 </div>
-                                <div>
-                                    <label className="block text-xs sm:text-sm font-semibold mb-2">
-                                        Order
-                                    </label>
-                                    <input
-                                        type="number"
-                                        name="order"
-                                        value={quizFormData.order}
-                                        onChange={handleQuizFormChange}
-                                        className="w-full px-3 py-2 bg-[var(--input-bg)] border-2 border-[var(--border-strong)] rounded-xl focus:outline-none focus:border-green-500/50 text-sm"
-                                    />
-                                </div>
 
                             </div>
 
@@ -1093,6 +1139,82 @@ const CourseModules = () => {
                                     >
                                         <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${quizFormData.active ? 'translate-x-6' : 'translate-x-1'}`} />
                                     </button>
+                                </div>
+
+                                {/* SEB Requirement */}
+                                <div className="flex flex-col gap-3 p-3 sm:p-4 rounded-xl bg-[var(--input-bg)] border-2 border-[var(--border-strong)]">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex-1">
+                                            <span className="text-sm sm:text-base font-semibold text-[var(--text-primary)]">Require Safe Exam Browser</span>
+                                            <p className="text-xs muted mt-0.5">Force students to use Safe Exam Browser</p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleQuizFormChange({ target: { name: 'is_seb_required', type: 'checkbox', checked: !quizFormData.is_seb_required } })}
+                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-[var(--bg-primary)] ${quizFormData.is_seb_required ? 'bg-red-600' : 'bg-gray-600'
+                                                }`}
+                                        >
+                                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${quizFormData.is_seb_required ? 'translate-x-6' : 'translate-x-1'}`} />
+                                        </button>
+                                    </div>
+                                    
+                                    {quizFormData.is_seb_required && (
+                                        <div className="pt-2 border-t border-[var(--border-subtle)] space-y-4">
+                                            <div>
+                                                <label className="block text-xs sm:text-sm font-semibold mb-2">
+                                                    SEB Config Key Hash
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    name="seb_config_key"
+                                                    value={quizFormData.seb_config_key || ''}
+                                                    onChange={handleQuizFormChange}
+                                                    placeholder="Paste the Config Key Hash here..."
+                                                    className="w-full px-3 py-2 bg-[var(--bg-primary)] border-2 border-[var(--border-strong)] rounded-xl focus:outline-none focus:border-red-500/50 text-sm"
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-xs sm:text-sm font-semibold mb-2 flex items-center justify-between">
+                                                    <span>SEB Config File (.seb)</span>
+                                                    {quizFormData.seb_config_file && !(quizFormData.seb_config_file instanceof File) && (
+                                                        <span className="text-emerald-500 text-xs flex items-center gap-1">
+                                                            <span>File active</span>
+                                                            <FaCheckCircle className="w-3 h-3" />
+                                                        </span>
+                                                    )}
+                                                </label>
+                                                <div className="relative">
+                                                    <input
+                                                        type="file"
+                                                        accept=".seb"
+                                                        onChange={(e) => {
+                                                            const file = e.target.files[0];
+                                                            if (file) {
+                                                                handleQuizFormChange({ target: { name: 'seb_config_file', value: file } });
+                                                            }
+                                                        }}
+                                                        className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-red-500/10 file:text-red-500 hover:file:bg-red-500/20 bg-[var(--bg-primary)] border-2 border-[var(--border-strong)] rounded-xl py-2 px-3"
+                                                    />
+                                                    {quizFormData.seb_config_file && (
+                                                        <button 
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                handleQuizFormChange({ target: { name: 'seb_config_file', value: null } });
+                                                                const fileInput = e.currentTarget.previousElementSibling;
+                                                                if (fileInput) fileInput.value = '';
+                                                            }}
+                                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-400 p-1 bg-[var(--bg-primary)]"
+                                                            title="Remove file"
+                                                        >
+                                                            <FaTimes />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                <p className="text-xs text-gray-400 mt-1">Upload the .seb file to let students click to launch automatically.</p>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -1201,6 +1323,15 @@ const CourseModules = () => {
                                         onChange={handleExerciseFormChange}
                                         required
                                     />
+                                    {exerciseFormData.description && (
+                                        <div className="mt-2 p-3 bg-black/20 border border-white/10 rounded-lg text-sm text-gray-300">
+                                            <p className="text-xs text-gray-500 mb-2 font-semibold uppercase tracking-wider">Preview</p>
+                                            <div 
+                                                dangerouslySetInnerHTML={{ __html: exerciseFormData.description }} 
+                                                className="prose prose-invert max-w-none text-sm break-words" 
+                                            />
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -1764,16 +1895,40 @@ const CourseModules = () => {
 
                                             {/* RIGHT: Search + Results */}
                                             <div className="flex flex-col h-full bg-[var(--input-bg)] rounded-xl border-2 border-[var(--border-strong)] overflow-hidden shadow-inner">
-                                                <div className="p-3 sm:p-4  bg-[var(--input-bg)]">
-                                                    <h3 className="font-bold text-sm sm:text-base md:text-lg text-[var(--text-primary)] flex items-center gap-2">
-                                                        <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-green-500"></span>
-                                                        Question Bank
-                                                    </h3>
-                                                    <p className="text-[10px] sm:text-xs text-[var(--text-muted)] mt-0.5">Filter and select questions to add</p>
+                                                <div className="p-3 sm:p-4 bg-[var(--input-bg)] flex justify-between items-start">
+                                                    <div>
+                                                        <h3 className="font-bold text-sm sm:text-base md:text-lg text-[var(--text-primary)] flex items-center gap-2">
+                                                            <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-green-500"></span>
+                                                            Question Bank
+                                                        </h3>
+                                                        <p className="text-[10px] sm:text-xs text-[var(--text-muted)] mt-0.5">Filter and select questions to add</p>
+                                                    </div>
+                                                    {(filteredQuestions?.filtered_questions?.length > 0) && (
+                                                        <button
+                                                            onClick={() => {
+                                                                const allIds = filteredQuestions.filtered_questions.map(q => q.id);
+                                                                if (selectedPoolQs.length === allIds.length) {
+                                                                    setSelectedPoolQs([]);
+                                                                } else {
+                                                                    setSelectedPoolQs(allIds);
+                                                                }
+                                                            }}
+                                                            className="text-xs text-blue-500 hover:text-blue-400 font-bold transition px-2 py-1 bg-blue-500/10 rounded border border-blue-500/30"
+                                                        >
+                                                            {selectedPoolQs.length === filteredQuestions.filtered_questions.length ? 'Deselect All' : 'Select All'}
+                                                        </button>
+                                                    )}
                                                 </div>
 
                                                 {/* Filter controls */}
-                                                <div className="px-3 sm:px-4 pb-3 sm:pb-4 border-b-2 border-[var(--border-subtle)] bg-[var(--input-bg)] flex items-center gap-2">
+                                                <div className="px-3 sm:px-4 pb-3 sm:pb-4 border-b-2 border-[var(--border-subtle)] bg-[var(--input-bg)] flex flex-wrap items-center gap-2">
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Tags"
+                                                        value={filterTags}
+                                                        onChange={e => setFilterTags(e.target.value)}
+                                                        className="w-24 flex-1 sm:flex-none bg-[var(--surface-2)] border-2 border-[var(--border-strong)] rounded-xl px-2 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-blue-500/50 transition-colors"
+                                                    />
                                                     <input
                                                         type="number"
                                                         placeholder="Marks"
@@ -1829,7 +1984,7 @@ const CourseModules = () => {
                                                                         <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded">{q.points} pts</span>
                                                                     </div>
                                                                 </div>
-                                                                <input type="radio" readOnly checked={selectedPoolQs.includes(q.id)} className="w-4 h-4 text-green-500 rounded border-2 border-[var(--border-strong)] bg-[var(--input-bg)] focus:ring-green-500 focus:ring-offset-[var(--bg-primary)] accent-green-500 flex-shrink-0" />
+                                                                <input type="checkbox" readOnly checked={selectedPoolQs.includes(q.id)} className="w-4 h-4 text-green-500 rounded border-2 border-[var(--border-strong)] bg-[var(--input-bg)] focus:ring-green-500 focus:ring-offset-[var(--bg-primary)] accent-green-500 flex-shrink-0" />
                                                             </div>
                                                         ))
                                                     ) : (
@@ -1874,7 +2029,19 @@ const CourseModules = () => {
                                                                 placeholder="Pick N"
                                                                 title="Number of random questions to pick from selected"
                                                                 value={randomSetCount}
-                                                                onChange={e => setRandomSetCount(e.target.value)}
+                                                                onChange={e => {
+                                                                    if (e.target.value === '') {
+                                                                        setRandomSetCount('');
+                                                                    } else {
+                                                                        let val = parseInt(e.target.value, 10);
+                                                                        if (!isNaN(val)) {
+                                                                            const maxVal = selectedPoolQs.length || 1;
+                                                                            if (val > maxVal) val = maxVal;
+                                                                            if (val < 1) val = 1;
+                                                                            setRandomSetCount(val.toString());
+                                                                        }
+                                                                    }
+                                                                }}
                                                                 className="w-24 bg-[var(--input-bg)] border-2 border-[var(--border-strong)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-blue-500/50 transition-colors flex-shrink-0 text-center"
                                                                 min="1"
                                                                 max={selectedPoolQs.length || 1}
@@ -1907,8 +2074,8 @@ const CourseModules = () => {
                             </div>
                             <div className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-primary)] border-2 border-[var(--border-strong)]">
                                 <div className="flex-1 pr-3">
-                                    <span className="text-sm font-semibold text-[var(--text-primary)]">Shuffle Test Cases</span>
-                                    <p className="text-xs muted mt-0.5">Randomize test case order for coding questions</p>
+                                    <span className="text-sm font-semibold text-[var(--text-primary)]">Shuffle Options</span>
+                                    <p className="text-xs muted mt-0.5">Randomize option order for MCQ/MCC questions</p>
                                 </div>
                                 <button
                                     type="button"

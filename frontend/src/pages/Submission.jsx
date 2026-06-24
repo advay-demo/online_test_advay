@@ -193,10 +193,6 @@ const Submission = () => {
               <p className="text-xl font-semibold text-white mb-2">Quiz Submitted Successfully</p>
               <p className="text-base muted mb-6">Your answers have been recorded for evaluation.</p>
 
-              {submission.percent !== undefined && (
-                <p className="text-2xl font-bold mb-6">Score: {submission.percent}%</p>
-              )}
-
               <Link
                 to={(isTeacher && isModeratorActive) ? "/teacher/courses" : "/courses"}
                 className="bg-indigo-600 text-white px-10 py-3 rounded-xl font-semibold hover:bg-indigo-700 transition text-lg inline-flex items-center gap-2"

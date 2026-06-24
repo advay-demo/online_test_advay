@@ -183,7 +183,7 @@ const CourseEnrollment = ({ courseId }) => {
                                     <div>
                                         <h3 className="text-base sm:text-lg font-bold mb-4 flex items-center gap-2">
                                             <span className="w-2 h-2 rounded-full bg-red-500"></span>
-                                            Rejected ({countLabel(filteredRejected.length, enrollments.rejected.length)})
+                                            Rejected / Removed ({countLabel(filteredRejected.length, enrollments.rejected.length)})
                                         </h3>
                                         <div className="space-y-3">
                                             {filteredRejected.map((student) => (
