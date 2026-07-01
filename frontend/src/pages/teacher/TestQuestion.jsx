@@ -23,7 +23,7 @@ const TestQuestion = () => {
     const { user } = useAuthStore();
 
     const {
-        currentQuestion,
+        currentQuestion: storeCurrentQuestion,
         paper,
         loading,
         error,
@@ -43,6 +43,7 @@ const TestQuestion = () => {
     const [userAnswer, setUserAnswer] = useState('');
     const [showResult, setShowResult] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [currentQuestion, setCurrentQuestion] = useState(null);
     const timerIntervalRef = useRef(null);
     const initializingRef = useRef(false);
 
@@ -92,6 +93,13 @@ const TestQuestion = () => {
             }
         }
     }, [currentQuestion]);
+
+    // Update local currentQuestion only if we are not showing a result
+    useEffect(() => {
+        if (!showResult && storeCurrentQuestion) {
+            setCurrentQuestion(storeCurrentQuestion);
+        }
+    }, [storeCurrentQuestion, showResult]);
 
     // Timer effect
     useEffect(() => {
@@ -177,17 +185,8 @@ const TestQuestion = () => {
 
             setShowResult(true);
 
-            // Reset answer for next question if there is one
-            const nextQ = result.next_question || result.current_question;
-            if (nextQ) {
-                if (nextQ.type === 'code' && nextQ.snippet) {
-                    setUserAnswer(nextQ.snippet);
-                } else if (nextQ.type === 'mcc') {
-                    setUserAnswer([]);
-                } else {
-                    setUserAnswer('');
-                }
-            }
+            // We don't update userAnswer here anymore because currentQuestion won't change yet.
+            // The Next Question button will trigger the currentQuestion update.
         } catch (err) {
             console.error('Failed to submit answer:', err);
             alert(err.message || 'Failed to submit answer');
@@ -1114,23 +1113,30 @@ const TestQuestion = () => {
 
                                 {/* Action buttons */}
                                 <div className="flex justify-between sm:gap-3 sm:justify-end gap-3 pt-6 sm:pt-8 border-t-2 border-[var(--border-subtle)] mt-auto">
-                                    <button
-                                        onClick={handleSubmitAnswer}
-                                        disabled={submitting || loading}
-                                        className="px-5 sm:px-8 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-500 text-white font-semibold hover:shadow-xl hover:shadow-cyan-600/30 active:scale-95 transition-all duration-300 disabled:opacity-60 text-sm "
-                                    >
-                                        {submitting ? (
-                                            <>
-
-                                                <span>Checking...</span>
-                                            </>
-                                        ) : (
-                                            <>
-
-                                                <span>Check Answer</span>
-                                            </>
-                                        )}
-                                    </button>
+                                    {!showResult ? (
+                                        <button
+                                            onClick={handleSubmitAnswer}
+                                            disabled={submitting || loading}
+                                            className="px-5 sm:px-8 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-500 text-white font-semibold hover:shadow-xl hover:shadow-cyan-600/30 active:scale-95 transition-all duration-300 disabled:opacity-60 text-sm "
+                                        >
+                                            {submitting ? 'Checking...' : 'Check Answer'}
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={() => {
+                                                if (storeCurrentQuestion && storeCurrentQuestion.id !== currentQuestion.id) {
+                                                    setShowResult(false);
+                                                    setCurrentQuestion(storeCurrentQuestion);
+                                                } else {
+                                                    handleCompleteTest();
+                                                }
+                                            }}
+                                            className="px-5 sm:px-8 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white font-semibold hover:shadow-xl hover:shadow-blue-600/30 active:scale-95 transition-all duration-300 text-sm flex items-center gap-2"
+                                        >
+                                            <span>{storeCurrentQuestion && storeCurrentQuestion.id !== currentQuestion.id ? 'Next Question' : 'Finish Test'}</span>
+                                            {storeCurrentQuestion && storeCurrentQuestion.id !== currentQuestion.id && <BiSkipNext className="w-5 h-5" />}
+                                        </button>
+                                    )}
 
                                     <button
                                         onClick={handleCompleteTest}

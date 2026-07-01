@@ -6,6 +6,12 @@ import Insights from '../../../pages/student/Insights';
 
 vi.mock('../../../components/layout/Sidebar', () => ({ default: () => <div data-testid="sidebar">Sidebar</div> }));
 vi.mock('../../../components/layout/Header', () => ({ default: () => <div data-testid="header">Header</div> }));
+vi.mock('../../../api/api', () => ({
+  fetchStudentDashboardCourses: vi.fn().mockResolvedValue({
+    dashboard: { total_enrolled: 10, completed_lessons: 5, upcoming_quizzes: [] },
+    stats: { certificates: 1, highest_score: 95 }
+  })
+}));
 
 describe('Student Insights Component', () => {
   const renderComponent = () => {

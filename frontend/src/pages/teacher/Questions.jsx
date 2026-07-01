@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FaSearch, FaEdit, FaTrash, FaBook, FaCode, FaCheckCircle, FaEllipsisV, FaTimes, FaPlus, FaUpload, FaFileAlt, FaExternalLinkAlt, FaPlay, FaRegQuestionCircle } from 'react-icons/fa';
+import { FaSearch, FaEdit, FaTrash, FaBook, FaCode, FaCheckCircle, FaEllipsisV, FaTimes, FaPlus, FaUpload, FaFileAlt, FaExternalLinkAlt, FaPlay, FaRegQuestionCircle, FaDownload } from 'react-icons/fa';
 import { FaPersonCircleQuestion } from "react-icons/fa6";
 import { CgArrangeFront } from "react-icons/cg";
 import { BiSolidSelectMultiple } from "react-icons/bi";
@@ -297,8 +297,8 @@ const Questions = () => {
 
                         {/* Filters and Search */}
                         <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3 sm:gap-4 mb-6">
-                            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-5 gap-2 sm:gap-3 md:gap-4 flex-1 p-1.5">
-                                <div className="col-span-2 sm:col-span-2 md:col-span-1">
+                            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-6 gap-2 sm:gap-3 md:gap-4 flex-1 p-1.5">
+                                <div className="col-span-2 sm:col-span-2 md:col-span-2 lg:col-span-1 lg:col-start-1">
                                     <div className="relative">
                                         <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] w-3.5 h-3.5 transition-colors" />
                                         <input
@@ -355,7 +355,7 @@ const Questions = () => {
                                         <option value="false">Inactive</option>
                                     </select>
                                 </div>
-                                <div className="flex justify-end gap-2 sm:gap-3">
+                                <div className="flex justify-end gap-2 sm:gap-3 col-span-2 md:col-span-6 lg:col-span-2">
                                     <button
                                         className="px-3 sm:px-5 py-2.5 border-2 border-[var(--border-strong)] bg-[var(--card-bg)] rounded-xl text-xs sm:text-sm font-semibold hover:border-blue-500/40 hover:bg-blue-500/5 hover:shadow-md transition-all duration-300 flex items-center justify-center gap-2"
                                         onClick={exportQuestions}
